@@ -97,12 +97,27 @@ indexeddomain.o: ../include/dlvgrounder.h ../include/literal.h
 indexeddomain.o: ../include/printable.h ../include/constant.h
 indexeddomain.o: ../include/term.h
 literal.o: ../include/literal.h ../include/gringo.h ../include/printable.h
+lparselexer.o: ../include/lparselexer.h ../include/gringo.h
+lparselexer.o: ../include/gringolexer.h ../include/lparseparser.h
+lparselexer.o: ../include/gringoparser.h lparseparser_impl.h
 lparseoutput.o: ../include/lparseoutput.h ../include/gringo.h
 lparseoutput.o: ../include/output.h ../include/value.h
 lparseparser.o: ../include/lparseparser.h ../include/gringo.h
 lparseparser.o: ../include/gringoparser.h lparseparser_impl.h
 lparseparser.o: ../include/lparselexer.h ../include/gringolexer.h
 lparseparser.o: ../include/grounder.h ../include/output.h ../include/value.h
+lparseparser_impl.o: ../include/gringo.h ../include/lparseparser.h
+lparseparser_impl.o: ../include/gringoparser.h ../include/literal.h
+lparseparser_impl.o: ../include/printable.h ../include/aggregateliteral.h
+lparseparser_impl.o: ../include/expandable.h ../include/predicateliteral.h
+lparseparser_impl.o: ../include/groundable.h ../include/value.h
+lparseparser_impl.o: ../include/conditionalliteral.h
+lparseparser_impl.o: ../include/relationliteral.h
+lparseparser_impl.o: ../include/assignmentliteral.h ../include/term.h
+lparseparser_impl.o: ../include/constant.h ../include/functionterm.h
+lparseparser_impl.o: ../include/rangeterm.h ../include/multipleargsterm.h
+lparseparser_impl.o: ../include/normalrule.h ../include/statement.h
+lparseparser_impl.o: ../include/grounder.h ../include/output.h
 multipleargsterm.o: ../include/multipleargsterm.h ../include/gringo.h
 multipleargsterm.o: ../include/term.h ../include/printable.h
 multipleargsterm.o: ../include/value.h

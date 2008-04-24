@@ -2,6 +2,9 @@ all:
 	make -C lib
 	make -C app
 
+doc:
+	make -C doc
+
 clean:
 	make -C lib clean
 	make -C app clean
