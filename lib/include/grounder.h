@@ -24,6 +24,7 @@ namespace NS_GRINGO
 		void reset();
 		void ground();
 		void addSCC(SCC *scc);
+		void addTrueNegation(const std::string &id, int arity);
 		int getVar(std::string *var);
 		std::string createUniqueVar();
 		std::string getVarString(int uid);
@@ -35,8 +36,8 @@ namespace NS_GRINGO
 		// access binders
 		int getBinder(int var);
 		void setConstValue(const std::string &id, Value *v);
-		Value *createConstValue(const std::string *id);
-		Value *createStringValue(const std::string *id);
+		Value *createConstValue(std::string *id);
+		Value *createStringValue(std::string *id);
 		void preprocess();
 		NS_OUTPUT::Output *getOutput();
 		Evaluator *getEvaluator();
@@ -58,11 +59,12 @@ namespace NS_GRINGO
 		std::map<std::string, Value*> const_;
 		std::vector<Value> substitution_;
 		std::vector<int> binder_;
-		StringVector strings_;
+		std::vector<std::string*> strings_;
 		bool hideAll_;
 		std::map<std::pair<std::string, int>, bool> hide_;
 		// constructed from hide_
 		std::vector<bool> visible_;
+		std::set<Signature> trueNegPred_;
 	};
 }
 

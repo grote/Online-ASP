@@ -15,6 +15,7 @@
 
 namespace NS_GRINGO
 {
+	typedef std::pair<std::string, int> Signature;
 	class Evaluator;
 
 

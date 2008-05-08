@@ -74,9 +74,11 @@ namespace NS_GRINGO
 		 * \brief This method is used for static preprocessing.
 		 *
 		 * Currently this method is used to remove all terms of the form: a;b.
+		 * Additionally new Integrity Rules of the form: :- a, -a. are intoduced if
+		 * predicates withe a leading "-" are used.
 		 * \param Reference to the object that is preprocessed
 		 */
-		virtual void preprocess(Expandable *e) = 0;
+		virtual void preprocess(Grounder *g, Expandable *e) = 0;
 		/**
 		 * \brief This method is called to undo a call to finish() and evaluate()
 		 */

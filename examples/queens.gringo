@@ -16,7 +16,7 @@ negq(X,Y) :- d(X), d(Y), not q(X,Y).
 :- d(X), not hasq(X). 
 hasq(X) :-  q(X,Y). 
 
-d(1..50).
+d(1..10).
 
 % Typical command line 
 % lparse -1 -d none -c queens=8 queens.lp  | smodels

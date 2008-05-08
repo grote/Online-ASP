@@ -25,7 +25,7 @@ namespace NS_GRINGO
 		virtual bool solved();
 		virtual bool isFact();
 		virtual void ground(Grounder *g);
-		virtual void preprocess(Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual bool match(Grounder *g);
 		virtual void print(std::ostream &out);

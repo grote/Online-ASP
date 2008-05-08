@@ -74,7 +74,7 @@ bool AssignmentLiteral::match(Grounder *g)
 	return c_->getValue() == t_->getValue();
 }
 
-void AssignmentLiteral::preprocess(Expandable *e)
+void AssignmentLiteral::preprocess(Grounder *g, Expandable *e)
 {
 	// nothing todo
 }

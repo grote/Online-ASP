@@ -2,6 +2,7 @@
 #include "statement.h"
 #include "constant.h"
 #include "predicateliteral.h"
+#include "normalrule.h"
 #include "dependencygraph.h"
 #include "scc.h"
 #include "value.h"
@@ -199,6 +200,8 @@ Grounder::~Grounder()
 		delete *it;
 	for(std::map<std::string, Value*>::iterator it = const_.begin(); it != const_.end(); it++)
 		delete it->second;
+	for(std::vector<std::string*>::iterator it = strings_.begin(); it != strings_.end(); it++)
+		delete *it;
 }
 
 Value Grounder::getValue(int var)
@@ -226,7 +229,10 @@ void Grounder::setConstValue(const std::string &id, Value *v)
 {
 	Value *&ref = const_[id];
 	if(ref)
+	{
 		std::cerr << "warning: multiple definitions of #const " << id << std::endl;
+		delete v;
+	}
 	else
 		ref = v;
 }
@@ -241,7 +247,7 @@ NS_OUTPUT::Output *Grounder::getOutput()
 	return output_;
 }
 
-Value *Grounder::createConstValue(const std::string *id)
+Value *Grounder::createConstValue(std::string *id)
 {
 	std::map<std::string, Value*>::iterator pos = const_.find(*id);
 	if(pos != const_.end())
@@ -249,19 +255,44 @@ Value *Grounder::createConstValue(const std::string *id)
 		delete id;
 		return new Value(*(pos->second));
 	}
-	return createStringValue(id);
+	else
+	{
+		return createStringValue(id);
+	}
 }
 
-Value *Grounder::createStringValue(const std::string *id)
+Value *Grounder::createStringValue(std::string *id)
 {
-	strings_.push_back(*id);
-	delete id;
-	return new Value(&strings_.back());
+	strings_.push_back(id);
+	return new Value(strings_.back());
 }
 
 void Grounder::hideAll()
 {
 	hideAll_ = true;
+}
+
+void Grounder::addTrueNegation(const std::string &id, int arity)
+{
+	if(trueNegPred_.insert(Signature(id, arity)).second)
+	{
+		TermVector *tp = new TermVector();
+		TermVector *tn = new TermVector();
+		for(int i = 0; i < arity; i++)
+		{
+			// in theory existing vars could be reused
+			std::string var = createUniqueVar();
+			tp->push_back(new Constant(Constant::VAR, this, new std::string(var)));
+			tn->push_back(new Constant(Constant::VAR, this, new std::string(var)));
+		}
+		PredicateLiteral *p = new PredicateLiteral(new std::string(id.substr(1)), tp);
+		PredicateLiteral *n = new PredicateLiteral(new std::string(id), tn);
+		LiteralVector *body = new LiteralVector();
+		body->push_back(p);
+		body->push_back(n);
+		NormalRule *r = new NormalRule(0, body);
+		addStatement(r);
+	}
 }
 
 void Grounder::setVisible(std::string *id, int arity, bool visible)

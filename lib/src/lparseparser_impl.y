@@ -209,8 +209,10 @@ ntermlist(res) ::= arg_list(term).                      { res = new TermVector()
 arg_list(res) ::= arg_list(list) SEMI range_term(term). { res = MultipleArgsTerm::create(list, term); }
 arg_list(res) ::= range_term(term).                     { res = term; }
 
-range_term(res) ::= constant(l) DOTS constant(u). { res = new RangeTerm(*l, *u); delete l; delete u; }
-range_term(res) ::= term(term).                   { res = term; }
+// the problem here is that with a lookahead of one the first argument of a range_term cant be a more complex structure
+// cause in this case it cant be distinuished from a non constant term (at least the cant do)
+range_term(res) ::= constant(l) DOTS const_term(u). { res = new RangeTerm(*l, *u); delete l; delete u; }
+range_term(res) ::= term(term).                     { res = term; }
 
 term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, pParser->getGrounder(), x); }
 term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, pParser->getGrounder(), x); }

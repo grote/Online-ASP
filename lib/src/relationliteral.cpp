@@ -108,7 +108,7 @@ bool RelationLiteral::match(Grounder *g)
 	assert(false);
 }
 
-void RelationLiteral::preprocess(Expandable *e)
+void RelationLiteral::preprocess(Grounder *g, Expandable *e)
 {
 	// nothing todo
 }

@@ -292,7 +292,7 @@ PredicateLiteral::~PredicateLiteral()
 	}
 }
 
-void PredicateLiteral::preprocess(Expandable *e)
+void PredicateLiteral::preprocess(Grounder *g, Expandable *e)
 {
 	if(variables_)
 	{
@@ -317,6 +317,8 @@ void PredicateLiteral::preprocess(Expandable *e)
 			}
 		}
 	}
+	if((*id_)[0] == '-')
+		g->addTrueNegation(*id_, variables_ ? variables_->size() : 0);
 }
 
 TermVector *PredicateLiteral::getArgs()

@@ -224,9 +224,12 @@ void NormalRule::grounded(Grounder *g)
 	}
 	if(!hasHead && body.size() == 0)
 	{
-		// TODO: thats not very nice
-		std::cerr << "inconsistency found" << std::endl;
-		exit(0);
+		// TODO: thats not very nice find a better solution
+		NS_OUTPUT::Conjunction *c = new NS_OUTPUT::Conjunction(body);
+		NS_OUTPUT::Integrity  *i = new NS_OUTPUT::Integrity(c);
+		eval->add(i);
+		//std::cerr << "inconsistency found" << std::endl;
+		//exit(0);
 	}
 	else if(!hasHead)
 	{
@@ -279,11 +282,11 @@ void NormalRule::preprocess(Grounder *g)
 {
 	if(body_)
 		for(size_t i = 0; i < body_->size(); i++)
-			(*body_)[i]->preprocess(this);
+			(*body_)[i]->preprocess(g, this);
 	if(head_)
 	{
 		NormalRuleExpander nre(g, body_);
-		head_->preprocess(&nre);
+		head_->preprocess(g, &nre);
 	}
 }
 

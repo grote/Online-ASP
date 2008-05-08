@@ -307,15 +307,15 @@ NS_OUTPUT::Object *ConditionalLiteral::convert()
 	return pred_->convert(getValues());
 }
 
-void ConditionalLiteral::preprocess(Expandable *e)
+void ConditionalLiteral::preprocess(Grounder *g, Expandable *e)
 {
 	if(conditionals_)
 	{
 		for(size_t i = 0; i < conditionals_->size(); i++)
-			(*conditionals_)[i]->preprocess(this);
+			(*conditionals_)[i]->preprocess(g, this);
 	}
 	ConditionalLiteralExpander cle(e, conditionals_);
-	pred_->preprocess(&cle);
+	pred_->preprocess(g, &cle);
 }
 
 int ConditionalLiteral::getUid()

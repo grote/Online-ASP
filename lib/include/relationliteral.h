@@ -19,7 +19,7 @@ namespace NS_GRINGO
 		virtual void reset();
 		virtual void normalize(Grounder *g, Expandable *r);
 		virtual void finish();
-		virtual void preprocess(Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual bool solved();
 		virtual bool isFact();
 		virtual Literal* clone();

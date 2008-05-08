@@ -30,7 +30,7 @@ namespace NS_GRINGO
 		virtual void evaluate();
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual bool match(Grounder *g);
-		virtual void preprocess(Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
 		NS_OUTPUT::Object *convert(ValueVector &values);
 		std::string *getId();

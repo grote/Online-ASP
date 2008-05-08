@@ -191,11 +191,11 @@ void AggregateLiteral::appendLiteral(Literal *l)
 	literals_->push_back((ConditionalLiteral*)l);
 }
 
-void AggregateLiteral::preprocess(Expandable *e)
+void AggregateLiteral::preprocess(Grounder *g, Expandable *e)
 {
 	if(literals_)
 		for(size_t i = 0; i < literals_->size(); i++)
-			(*literals_)[i]->preprocess(this);
+			(*literals_)[i]->preprocess(g, this);
 }
 
 ConditionalLiteralVector *AggregateLiteral::getLiterals()

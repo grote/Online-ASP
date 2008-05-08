@@ -30,7 +30,7 @@ namespace NS_GRINGO
 		virtual void ground(Grounder *g);
 		virtual void grounded(Grounder *g);
 		virtual void appendLiteral(Literal *l);
-		virtual void preprocess(Expandable *e);
+		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
 		int getUid();
 		bool isEmpty();

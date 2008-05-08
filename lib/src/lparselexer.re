@@ -42,7 +42,7 @@ begin:
 		COMPUTE         = "#"? 'compute';
 		DIGIT           = [0-9];
 		DIGIT1          = [1-9];
-		IDENTIFIER      = [a-z_] [a-zA-Z0-9_]*;
+		IDENTIFIER      = "-"? [a-z_] [a-zA-Z0-9_]*;
 		STRING          = "\"" [^"\n]* "\"";
 		VARIABLE        = [A-Z] [a-zA-Z0-9_]*;
 		ANONYMVARIABLE  = "_" [A-Z] [a-zA-Z0-9_]*;
