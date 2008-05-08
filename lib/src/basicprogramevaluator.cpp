@@ -120,12 +120,12 @@ void BasicProgramEvaluator::evaluate()
 	{
 		int i = propQ_.back();
 		propQ_.pop_back();
-		assert(i < watches_.size());
+		assert(i < (int)watches_.size());
 		for(IntVector::iterator it = watches_[i].begin(); it != watches_[i].end(); it++)
 		{
-			assert(*it < rules_.size());
+			assert(*it < (int)rules_.size());
 			IntVector &rule = rules_[*it];
-			assert(rule[0] < facts_.size());
+			assert(rule[0] < (int)facts_.size());
 			if(!facts_[rule[0]])
 			{
 				if(rule.size() == 2)
