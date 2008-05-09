@@ -17,3 +17,6 @@
   in theory even variables could occur in rangeterms
 - the lparse preorder functions: plus, times, minus, ... are not supported
   only the infix functions: +, -, *, ... are supported
+- lparse literals: lt, gt, ... are not supported
+  only the infix literals: <=, >=, ... are supported
+- implement lparse compute statement

@@ -37,6 +37,7 @@ namespace NS_GRINGO
 		void start();
 		bool hasWeight();
 		bool hasNext();
+		void setNeg(bool neg);
 		void next();
 		void cacheVariables();
 		ValueVector &getValues();

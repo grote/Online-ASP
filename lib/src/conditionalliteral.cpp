@@ -11,12 +11,18 @@ using namespace NS_GRINGO;
 		
 ConditionalLiteral::ConditionalLiteral(PredicateLiteral *pred, LiteralVector *conditionals) : Literal(), pred_(pred), conditionals_(conditionals), weight_(0), grounder_(0)
 {
-	setNeg(pred_->getNeg());
+	Literal::setNeg(pred_->getNeg());
 }
 
 void ConditionalLiteral::setWeight(Term *w)
 {
 	weight_ = w;
+}
+
+void ConditionalLiteral::setNeg(bool neg)
+{
+	pred_->setNeg(neg);
+	Literal::setNeg(neg);
 }
 
 void ConditionalLiteral::appendLiteral(Literal *l)

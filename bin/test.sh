@@ -8,4 +8,4 @@ echo -n "compute{" > solution.lp
 gringo2 -l $* | clasp -n $n | tail -n 4 | head -n 1 | tr '\n' '}' | sed -e 's/ /,/g' | sed -e 's/,}/}./g'  1>> solution.lp
 #lparse $* | clasp -n $n | tail -n 4 | head -n 1 | tr '\n' '}' | sed -e 's/) /),/g' | sed -e 's/,}/}./g'  1>> solution.lp
 echo "smodels says: "
-lparse $* solution.lp | smodels
+lparse --true-negation $* solution.lp | smodels
