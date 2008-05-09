@@ -20,3 +20,5 @@
 - lparse literals: lt, gt, ... are not supported
   only the infix literals: <=, >=, ... are supported
 - implement lparse compute statement
+- think of a better method to order the rules in a sub program (SCC::check)
+  if there is any
