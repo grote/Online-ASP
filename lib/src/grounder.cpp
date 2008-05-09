@@ -61,10 +61,22 @@ void Grounder::addDomains()
 	}
 }
 
-void Grounder::reset()
+void Grounder::reset(bool warn = false)
 {
 	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
 		(*it)->reset();
+	// all nodes with zero defines have to be false
+	for(NodeVector::iterator it = depGraph_->getPredNodes().begin(); it != depGraph_->getPredNodes().end(); it++)
+	{
+		Node *n = *it;
+		if(n->complete())
+		{
+			Signature &sig = (*depGraph_->getPred())[n->getUid()];
+			if(warn)
+				std::cerr << "Warning: " << sig.first << "/" << sig.second << " is never defined" << std::endl;
+			n->setSolved(true);
+		}
+	}
 }
 
 void Grounder::preprocess()
@@ -91,13 +103,13 @@ void Grounder::start(NS_OUTPUT::Output &output)
 	std::cerr << "done" << std::endl;
 	std::cerr << "buidling dependencygraph ... ";
 	buildDepGraph();
-	reset();
+	reset(true);
 	depGraph_->calcSCCs();
 	std::cerr << "done" << std::endl;
 	std::cerr << "checking ... ";
 	if(!depGraph_->check(this))
 		return;
-	reset();
+	reset(false);
 	std::cerr << "done" << std::endl;
 	std::cerr << "grounding ... ";
 	ground();

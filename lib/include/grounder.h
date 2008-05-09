@@ -21,7 +21,7 @@ namespace NS_GRINGO
 		void start(NS_OUTPUT::Output &output);
 		void start();
 		void addDomains();
-		void reset();
+		void reset(bool warn);
 		void ground();
 		void addSCC(SCC *scc);
 		void addTrueNegation(const std::string &id, int arity);

@@ -17,6 +17,7 @@ namespace NS_GRINGO
 		void addDependency(Node *n, bool neg = false);
 		bool complete();
 		bool solved();
+		void setSolved(bool solved);
 		void reset();
 		void finish();
 		int getUid();

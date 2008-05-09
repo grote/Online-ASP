@@ -181,6 +181,11 @@ void DependencyGraph::calcSCCs()
 	}
 }
 
+NodeVector &DependencyGraph::getPredNodes()
+{
+	return predicateNodes_;
+}
+
 std::vector<std::pair<std::string, int> > *DependencyGraph::getPred()
 {
 	return &pred_;

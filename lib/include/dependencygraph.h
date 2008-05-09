@@ -15,6 +15,7 @@ namespace NS_GRINGO
 		Node *createStatementNode(Statement *r);
 		Node *createPredicateNode(PredicateLiteral *pred);
 		Node *createPredicateNode();
+		NodeVector &getPredNodes();
 		void calcSCCs();
 		bool check(Grounder *g);
 		std::vector<std::pair<std::string, int> > *getPred();

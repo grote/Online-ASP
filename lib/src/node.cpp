@@ -41,9 +41,14 @@ bool Node::solved()
 	return solved_;
 }
 
+void Node::setSolved(bool solved)
+{
+	solved_ = solved;
+}
+
 void Node::evaluate()
 {
-	solved_ = complete() && (scc_->getType() == SCC::FACT  || scc_->getType() == SCC::BASIC);
+	setSolved(complete() && (scc_->getType() == SCC::FACT  || scc_->getType() == SCC::BASIC));
 }
 
 void Node::reset()
