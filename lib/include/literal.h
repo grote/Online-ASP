@@ -76,7 +76,8 @@ namespace NS_GRINGO
 		 * Currently this method is used to remove all terms of the form: a;b.
 		 * Additionally new Integrity Rules of the form: :- a, -a. are intoduced if
 		 * predicates withe a leading "-" are used.
-		 * \param Reference to the object that is preprocessed
+		 * \param g The grounder
+		 * \param e Reference to the object that is preprocessed
 		 */
 		virtual void preprocess(Grounder *g, Expandable *e) = 0;
 		/**
