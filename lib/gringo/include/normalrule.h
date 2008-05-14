@@ -7,10 +7,19 @@
 
 namespace NS_GRINGO
 {
+	/// This class is used to represent normal rules including integrity constraints and facts
 	class NormalRule : public Statement, public Expandable
 	{
 	public:
+		/**
+		 * \brief Constructor
+		 * \param head The head of the rule
+		 * \param body The body of the rule
+		 */
 		NormalRule(Literal *head, LiteralVector *body);
+		/// Destructor
+		virtual ~NormalRule();
+		// implemented from base class or interface
 		virtual void getVars(VarSet &vars);
 		virtual void buildDepGraph(DependencyGraph *dg);
 		virtual void print(std::ostream &out);
@@ -25,12 +34,22 @@ namespace NS_GRINGO
 		virtual void grounded(Grounder *g);
 		virtual bool ground(Grounder *g);
 		virtual void addDomain(PredicateLiteral *pl);
-		virtual ~NormalRule();
 	private:
+		/**
+		 * \brief Calculate the global vars in the body
+		 * \param glob The resulting set of global vars
+		 */
 		void getGlobalVars(VarSet &glob);
+		/**
+		 * \brief Calculate the relevant vars in the body
+		 * \param relevant The resulting set of relevant vars
+		 * \param glob The set of global vars
+		 */
 		void getRelevantVars(VarSet &relevant, VarSet &glob);
 	public:
+		/// The haed
 		Literal *head_;
+		/// The body
 		LiteralVector *body_;
 	};
 }

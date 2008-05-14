@@ -1,5 +1,5 @@
 CC      = g++
-CFLAGS  = -O3 -Wall -I../lib/include -DNDEBUG
+CFLAGS  = -O3 -Wall -I../lib/gringo/include -I../lib -DNDEBUG
 #CFLAGS  = -O0 -Wall -g -I.
 LDFLAGS = 
 
@@ -8,8 +8,8 @@ OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
 all: ../bin/gringo
 
-../bin/gringo: $(OBJECTS) ../bin/libgringo.a
-	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) ../bin/libgringo.a
+../bin/gringo: $(OBJECTS) ../bin/libgringo.a ../bin/libclasp.a
+	$(CC) $(LDFLAGS) -o $@ $(OBJECTS) ../bin/libgringo.a ../bin/libclasp.a
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<

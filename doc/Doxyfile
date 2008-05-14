@@ -87,7 +87,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = /mnt/data/roland/Documents/uni/thesis/trunk/gringo2/lib/
+INPUT                  = /mnt/data/roland/Documents/uni/thesis/trunk/gringo2/lib/gringo
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cc \

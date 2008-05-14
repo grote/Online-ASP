@@ -22,7 +22,7 @@ namespace NS_GRINGO
 			virtual void print(NS_OUTPUT::Object *o) = 0;
 			virtual void finalize() = 0;
 			bool addAtom(NS_OUTPUT::Atom *r);
-			int newUid();
+			virtual int newUid();
 			virtual ~Output();
 		protected:
 			int uids_;

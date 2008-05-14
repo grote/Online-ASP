@@ -1,5 +1,5 @@
 note:
-	echo "U should use cmake." && echo "This Makefile file is depricated."
+	echo "U should use cmake." && echo "This Makefile file is deprecated."
 all: note
 	make -C lib
 	make -C app
