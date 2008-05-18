@@ -57,6 +57,15 @@ basicprogramevaluator.o: ../include/output.h ../include/value.h
 basicprogramevaluator.o: ../include/grounder.h ../include/node.h
 claspoutput.o: ../include/claspoutput.h ../include/gringo.h
 claspoutput.o: ../include/output.h ../include/value.h ../include/grounder.h
+claspoutput.o: ../../clasp/include/program_builder.h
+claspoutput.o: ../../clasp/include/solver_types.h
+claspoutput.o: ../../clasp/include/literal.h
+claspoutput.o: ../../clasp/include/util/platform.h
+claspoutput.o: ../../clasp/include/pod_vector.h
+claspoutput.o: ../../clasp/include/util/pod_vector.h
+claspoutput.o: ../../clasp/include/constraint.h
+claspoutput.o: ../../clasp/include/program_rule.h
+claspoutput.o: ../../clasp/include/util/misc_types.h
 conditionalliteral.o: ../include/conditionalliteral.h ../include/gringo.h
 conditionalliteral.o: ../include/literal.h ../include/printable.h
 conditionalliteral.o: ../include/groundable.h ../include/expandable.h

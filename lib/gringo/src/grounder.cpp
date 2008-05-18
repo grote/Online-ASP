@@ -95,23 +95,23 @@ void Grounder::start()
 void Grounder::start(NS_OUTPUT::Output &output)
 {
 	output_ = &output;
-	std::cerr << "preprocessing ... ";
+	std::cerr << "preprocessing ... " << std::endl;
 	preprocess();
 	std::cerr << "done" << std::endl;
-	std::cerr << "adding domain predicates ... ";
+	std::cerr << "adding domain predicates ... " << std::endl;
 	addDomains();
 	std::cerr << "done" << std::endl;
-	std::cerr << "buidling dependencygraph ... ";
+	std::cerr << "buidling dependencygraph ... " << std::endl;
 	buildDepGraph();
 	reset(true);
 	depGraph_->calcSCCs();
 	std::cerr << "done" << std::endl;
-	std::cerr << "checking ... ";
+	std::cerr << "checking ... " << std::endl;
 	if(!depGraph_->check(this))
 		return;
 	reset(false);
 	std::cerr << "done" << std::endl;
-	std::cerr << "grounding ... ";
+	std::cerr << "grounding ... " << std::endl;
 	ground();
 	std::cerr << "done" << std::endl;
 }

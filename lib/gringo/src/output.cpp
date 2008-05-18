@@ -378,3 +378,104 @@ Aggregate::~Aggregate()
 		delete *it;
 }
 
+// =============== NS_OUTPUT::Compute ===============
+Compute::Compute(ObjectVector &lits) : Object(0x42)
+{
+	std::swap(lits, lits_);
+}
+
+void Compute::print_plain(std::ostream &out)
+{
+	out << "compute { ";
+	bool comma = false;
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+	{
+		if(comma)
+			out << ", ";
+		else
+			comma = true;
+		(*it)->print_plain(out);
+	}
+	out << " }." << std::endl;
+}
+
+void Compute::print(std::ostream &out)
+{
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		(*it)->print(out);
+	out << type_ << " " << uid_ << " " << lits_.size();
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		out << " " << (*it)->getUid();
+	out << std::endl;
+}
+
+Compute::~Compute()
+{
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		delete *it;
+}
+
+void Compute::addDomain(bool fact)
+{
+}
+
+void Compute::addUid(Output *o)
+{
+	uid_ = o->newUid();
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		(*it)->addUid(o);
+}
+		
+// =============== NS_OUTPUT::Optimize ===============
+Optimize::Optimize(Type type, ObjectVector &lits, IntVector &weights) : Object(type)
+{
+	std::swap(lits, lits_);
+	std::swap(weights, weights_);
+}
+
+void Optimize::print_plain(std::ostream &out)
+{
+	switch(type_)
+	{
+		case MINIMIZE:
+			out << "minimize [ ";
+			break;
+		case MAXIMIZE:
+			out << "maximize [ ";
+			break;
+	}
+	bool comma = false;
+	IntVector::iterator itWeights = weights_.begin();
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++, itWeights++)
+	{
+		if(comma)
+			out << ", ";
+		else
+			comma = true;
+		(*it)->print_plain(out);
+		out << " = " << *itWeights;
+	}
+	out << " ]." << std::endl;
+}
+
+void Optimize::print(std::ostream &out)
+{
+}
+
+Optimize::~Optimize()
+{
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		delete *it;
+}
+
+void Optimize::addDomain(bool fact)
+{
+}
+
+void Optimize::addUid(Output *o)
+{
+	uid_ = o->newUid();
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		(*it)->addUid(o);
+}
+

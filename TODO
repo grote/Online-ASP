@@ -19,7 +19,10 @@
   only the infix functions: +, -, *, ... are supported
 - lparse literals: lt, gt, ... are not supported
   only the infix literals: <=, >=, ... are supported
-- implement lparse compute statement
 - think of a better method to order the rules in a sub program (SCC::check)
   if there is any
+- move the list of all predicates into the grounder
 - implement a better hanling of strings
+  clean up and simplify code
+- handle compute/optimize statements in internal interface to clasp
+

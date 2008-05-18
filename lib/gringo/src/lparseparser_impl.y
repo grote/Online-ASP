@@ -19,8 +19,9 @@
 #include "rangeterm.h"
 #include "multipleargsterm.h"
 
-// rules
+// statements
 #include "normalrule.h"
+#include "weightedstatement.h"
 
 // misc
 #include "grounder.h"
@@ -50,8 +51,14 @@ using namespace NS_GRINGO;
 %token_destructor { DELETE_PTR($$) }
 
 // token types/destructors for nonterminals
-%type rule { Statement* }
-%destructor rule { DELETE_PTR($$) }
+%type rule     { Statement* }
+%type minimize { Statement* }
+%type maximize { Statement* }
+%type compute  { Statement* }
+%destructor rule     { DELETE_PTR($$) }
+%destructor minimze  { DELETE_PTR($$) }
+%destructor maximize { DELETE_PTR($$) }
+%destructor compute  { DELETE_PTR($$) }
 
 %type body  { LiteralVector* }
 %destructor body { DELETE_PTR($$) }
@@ -130,7 +137,7 @@ using namespace NS_GRINGO;
 
 start ::= program.
 
-program ::= program rule(rule) DOT. { pParser->getGrounder()->addStatement(rule); }
+program ::= program rule(rule) DOT. { if(rule) pParser->getGrounder()->addStatement(rule); }
 program ::= program SHOW show_list DOT.
 program ::= program HIDE hide_list DOT.
 program ::= program DOMAIN domain_list DOT.
@@ -159,6 +166,9 @@ variable_list(res) ::= VARIABLE(var).                           { res = new Stri
 rule(res) ::= head_atom(head) IF body(body). { res = new NormalRule(head, body); }
 rule(res) ::= head_atom(head).               { res = new NormalRule(head, 0); }
 rule(res) ::= IF body(body).                 { res = new NormalRule(0, body); }
+rule(res) ::= maximize(min).                 { res = min; }
+rule(res) ::= minimize(max).                 { res = max; }
+rule(res) ::= compute(comp).                 { res = comp; }
 
 body(res) ::= body(body) COMMA body_literal(literal). { res = body; res->push_back(literal);  }
 body(res) ::= body_literal(literal).                  { res = new LiteralVector(); res->push_back(literal); }
@@ -246,6 +256,12 @@ aggregate(res) ::= TIMES LBRAC weight_list(list) RBRAC. { res = new AggregateLit
 aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC. { res = new AggregateLiteral(AggregateLiteral::COUNT, list); }
 aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.     { res = new AggregateLiteral(AggregateLiteral::SUM, list); }
 aggregate(res) ::= LBRAC constr_list(list) RBRAC.       { res = new AggregateLiteral(AggregateLiteral::COUNT, list); }
+
+compute(res)  ::= COMPUTE  LBRAC  constr_list(list) RBRAC.  { res = new WeightedStatement(WeightedStatement::COMPUTE, list); }
+minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.  { res = new WeightedStatement(WeightedStatement::MINIMIZE, list); }
+minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC. { res = new WeightedStatement(WeightedStatement::MINIMIZE, list); }
+maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.  { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list); }
+maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC. { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list); }
 
 weight_list(res) ::= nweight_list(list). { res = list; }
 weight_list(res) ::= .                   { res = new ConditionalLiteralVector(); }

@@ -6,14 +6,20 @@
 
 using namespace NS_GRINGO;
 		
-DependencyGraph::DependencyGraph()
+DependencyGraph::DependencyGraph() : last_(0)
 {
 }
 
-Node *DependencyGraph::createStatementNode(Statement *r)
+Node *DependencyGraph::createStatementNode(Statement *r, bool preserveOrder)
 {
 	Node *n = new Node(0, r);
 	ruleNodes_.push_back(n);
+	if(preserveOrder)
+	{
+		if(last_)
+			n->addDependency(last_);
+		last_ = n;
+	}
 	return n;
 }
 

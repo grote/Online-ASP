@@ -79,8 +79,14 @@ void SmodelsOutput::printWeightRule(int head, int bound, NS_OUTPUT::ObjectVector
 	for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++)
 		if((*it)->getUid() > 0)
 			*out_ << " " << (*it)->getUid();
-	for(IntVector::iterator it = weights.begin(); it != weights.end(); it++)
-		*out_ << " " << *it;
+	IntVector::iterator itW = weights.begin();
+	for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++, itW++)
+		if((*it)->getUid() < 0)
+			*out_ << " " << *itW;
+	itW = weights.begin();
+	for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++, itW++)
+		if((*it)->getUid() > 0)
+			*out_ << " " << *itW;
 	*out_ << std::endl;
 }
 
@@ -153,6 +159,37 @@ void SmodelsOutput::print(NS_OUTPUT::Integrity *r)
 	printBody(false_, static_cast<NS_OUTPUT::Conjunction*>(r->body_)->lits_);
 }
 
+void SmodelsOutput::print(NS_OUTPUT::Compute *r)
+{
+	for(NS_OUTPUT::ObjectVector::iterator it = r->lits_.begin(); it != r->lits_.end(); it++)
+		compute_.push_back((*it)->getUid());
+}
+
+void SmodelsOutput::print(NS_OUTPUT::Optimize *r)
+{
+	int inv = r->type_ == NS_OUTPUT::Optimize::MAXIMIZE ? -1 : 1;
+	int neg = 0;
+	for(NS_OUTPUT::ObjectVector::iterator it = r->lits_.begin(); it != r->lits_.end(); it++)
+		if((*it)->getUid() * inv < 0)
+			neg++;
+	*out_ << 6 << " " << 0 << " " << r->lits_.size() << " " << neg;
+	for(NS_OUTPUT::ObjectVector::iterator it =  r->lits_.begin(); it != r->lits_.end(); it++)
+		if((*it)->getUid() * inv < 0)
+			*out_ << " " << -(*it)->getUid() * inv;
+	for(NS_OUTPUT::ObjectVector::iterator it =  r->lits_.begin(); it != r->lits_.end(); it++)
+		if((*it)->getUid() * inv > 0)
+			*out_ << " " << (*it)->getUid() * inv;
+	IntVector::iterator itW = r->weights_.begin();
+	for(NS_OUTPUT::ObjectVector::iterator it = r->lits_.begin(); it != r->lits_.end(); it++, itW++)
+		if((*it)->getUid() * inv < 0)
+			*out_ << " " << *itW;
+	itW = r->weights_.begin();
+	for(NS_OUTPUT::ObjectVector::iterator it = r->lits_.begin(); it != r->lits_.end(); it++, itW++)
+		if((*it)->getUid() * inv > 0)
+			*out_ << " " << *itW;
+	*out_ << std::endl;
+}
+
 void SmodelsOutput::print(NS_OUTPUT::Object *r)
 {
 	if(dynamic_cast<NS_OUTPUT::Fact*>(r))
@@ -167,8 +204,17 @@ void SmodelsOutput::print(NS_OUTPUT::Object *r)
 	{
 		print(static_cast<NS_OUTPUT::Rule*>(r));
 	}
+	else if(dynamic_cast<NS_OUTPUT::Optimize*>(r))
+	{
+		print(static_cast<NS_OUTPUT::Optimize*>(r));
+	}
+	else if(dynamic_cast<NS_OUTPUT::Compute*>(r))
+	{
+		print(static_cast<NS_OUTPUT::Compute*>(r));
+	}
 	else
 	{
+		// TODO: do sth here!
 		assert(false);
 	}
 }
@@ -184,10 +230,16 @@ void SmodelsOutput::finalize()
 	*out_ << 0 << std::endl;
 	*out_ << "B+" << std::endl;
 	// compute +
+	for(IntVector::iterator it = compute_.begin(); it != compute_.end(); it++)
+		if(*it > 0)
+			*out_ << *it << std::endl;
 	*out_ << 0 << std::endl;
 	*out_ << "B-" << std::endl;
 	// compute -
 	*out_ << false_ << std::endl;
+	for(IntVector::iterator it = compute_.begin(); it != compute_.end(); it++)
+		if(*it < 0)
+			*out_ << -(*it) << std::endl;
 	*out_ << 0 << std::endl;
 	// number of models
 	*out_ << 1 << std::endl;

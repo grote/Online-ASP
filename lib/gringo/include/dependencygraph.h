@@ -12,7 +12,7 @@ namespace NS_GRINGO
 		typedef std::map<std::pair<std::string, int>, Node*> PredicateMap;
 	public:
 		DependencyGraph();
-		Node *createStatementNode(Statement *r);
+		Node *createStatementNode(Statement *r, bool preserveOrder = false);
 		Node *createPredicateNode(PredicateLiteral *pred);
 		Node *createPredicateNode();
 		NodeVector &getPredNodes();
@@ -31,6 +31,7 @@ namespace NS_GRINGO
 		std::vector<std::pair<std::string, int> > pred_;
 		SCCVector sccs_;
 		SCCSet sccRoots_;
+		Node *last_;
 	};
 }
 

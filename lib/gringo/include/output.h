@@ -131,6 +131,32 @@ namespace NS_GRINGO
 			int          lower_;
 			int          upper_;
 		};
+		
+		struct Compute : public Object
+		{
+			Compute(ObjectVector &lits);
+			void print_plain(std::ostream &out);
+			void print(std::ostream &out);
+			~Compute();
+			void addDomain(bool fact);
+			void addUid(Output *o);
+
+			ObjectVector lits_;
+		};	
+		
+		struct Optimize : public Object
+		{
+			enum Type { MINIMIZE, MAXIMIZE };
+			Optimize(Type type, ObjectVector &lits, IntVector &weights);
+			void print_plain(std::ostream &out);
+			void print(std::ostream &out);
+			~Optimize();
+			void addDomain(bool fact);
+			void addUid(Output *o);
+
+			ObjectVector lits_;
+			IntVector    weights_;
+		};	
 	}
 }
 

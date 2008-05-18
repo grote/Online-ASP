@@ -27,30 +27,25 @@ int LparseLexer::lex(std::string *&lval)
 	lval = 0;
 begin:
 	start = cursor;
-		//MINIMIZE        { return LPARSEPARSER_MINIMIZE; }
-		//MAXIMIZE        { return LPARSEPARSER_MAXIMIZE; }
-		//COMPUTE         { return LPARSEPARSER_COMPUTE; }
-		//ANONYMVARIABLE  { lval = new std::string(start, cursor); return LPARSEPARSER_ANONYMVARIABLE; }
 	/*!re2c
 		ANY             = [\000-\377];
 		WS              = [\t\r ]*;
 		NL              = "\n";
 		IF              = ":-";
 		NOT             = 'not';
-		MINIMIZE        = "#"? 'minimize';
-		MAXIMIZE        = "#"? 'maximize';
-		COMPUTE         = "#"? 'compute';
 		DIGIT           = [0-9];
 		DIGIT1          = [1-9];
 		IDENTIFIER      = "-"? [a-z_] [a-zA-Z0-9_]*;
 		STRING          = "\"" [^"\n]* "\"";
 		VARIABLE        = [A-Z] [a-zA-Z0-9_]*;
-		ANONYMVARIABLE  = "_" [A-Z] [a-zA-Z0-9_]*;
 		COMMENT         = "%" [^\n]* "\n";
-		SHOW            = "#"? "show";
-		HIDE            = "#"? "hide";
+		SHOW            = "#"? 'show';
+		HIDE            = "#"? 'hide';
 		CONST           = "#"? 'const';
-		DOMAIN          = "#"? "domain";
+		DOMAIN          = "#"? 'domain';
+		MINIMIZE        = "#"? 'minimize';
+		MAXIMIZE        = "#"? 'maximize';
+		COMPUTE         = "#"? 'compute';
 
 		CONST           { return LPARSEPARSER_CONST; }
 		SHOW            { return LPARSEPARSER_SHOW; }
@@ -61,6 +56,9 @@ begin:
 		IF              { return LPARSEPARSER_IF; }
 		NOT             { return LPARSEPARSER_NOT; }
 		DOMAIN          { return LPARSEPARSER_DOMAIN; }
+		MINIMIZE        { return LPARSEPARSER_MINIMIZE; }
+		MAXIMIZE        { return LPARSEPARSER_MAXIMIZE; }
+		COMPUTE         { return LPARSEPARSER_COMPUTE; }
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"sum"           { return LPARSEPARSER_SUM; }
