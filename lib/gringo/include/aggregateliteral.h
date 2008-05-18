@@ -29,7 +29,7 @@ namespace NS_GRINGO
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual bool match(Grounder *g);
 		virtual void print(std::ostream &out);
-		virtual void appendLiteral(Literal *l);
+		virtual void appendLiteral(Literal *l, bool materm = false);
 		virtual NS_OUTPUT::Object *convert();
 		ConditionalLiteralVector *getLiterals();
 		void setBounds(Term *lower, Term *upper);

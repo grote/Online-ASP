@@ -28,7 +28,7 @@ namespace NS_GRINGO
 		virtual void reset();
 		virtual void normalize(Grounder *g);
 		virtual void preprocess(Grounder *g);
-		virtual void appendLiteral(Literal *l);
+		virtual void appendLiteral(Literal *l, bool materm = false);
 		virtual void finish();
 		virtual void evaluate();
 		virtual void grounded(Grounder *g);

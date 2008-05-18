@@ -1,28 +1,37 @@
+performance:
 - i think there will be no anonymous variables
   to implement binder spilitting i will simply create new predicateliterals with their own domains
   if we have for example a predicate p(X,Y) where X is relevant and Y is irrelevant
   ill create a new predicate p(X) matching all p(X,_) thats easier and fits better into the current design
 - literals in the body could be ordered by some heuristic see reference in dlv paper
-- the method isFact has to get an additional parameter if aggregates shall be matched
-- write doxygen doc
-- aggregates are always matched at the moment this could be improved
-  (but this seems to not bother performance or program size)
-  currently there is a negative dep added to a rule with an aggregate
-  so every rule with aggregates belongs to a normal program
-- if a conflicting integrity constraint is found grounding could be stopped (and not just exit(0))
-- implement lparse like warnings
-- improve rangeliterals currently range literals of the form:
-    constant .. constant_term 
-  are allowed thats a bit odd cause in the lower bound no functions are allowed
-  in theory even variables could occur in rangeterms
-- the lparse preorder functions: plus, times, minus, ... are not supported
-  only the infix functions: +, -, *, ... are supported
-- lparse literals: lt, gt, ... are not supported
-  only the infix literals: <=, >=, ... are supported
+
+code:
 - think of a better method to order the rules in a sub program (SCC::check)
   if there is any
 - move the list of all predicates into the grounder
 - implement a better hanling of strings
   clean up and simplify code
+- if a conflicting integrity constraint is found grounding could be stopped (and not just exit(0))
+
+documentation:
+- write doxygen doc
+
+propagation: (i think thats not that important)
+- aggregates are always matched at the moment this could be improved
+  (but this seems to not bother performance or program size)
+  currently there is a negative dep added to a rule with an aggregate
+  so every rule with aggregates belongs to a normal program
+- the method isFact has to get an additional parameter if aggregates shall be matched
+
+lparse compatibility:
+- implement lparse like warnings
+- the lparse preorder functions: plus, times, minus, ... are not supported
+  only the infix functions: +, -, *, ... are supported
+- lparse literals: lt, gt, ... are not supported
+  only the infix literals: <=, >=, ... are supported
+
+features:
 - handle compute/optimize statements in internal interface to clasp
+- improve handling of ;'s
+- implement a switch to handle programs that are already ground
 

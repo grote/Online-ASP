@@ -45,26 +45,6 @@ void PredicateLiteral::normalize(Grounder *g, Expandable *r)
 			}
 		}
 	}
-	removeRangeTerms(g, r);
-}
-
-void PredicateLiteral::removeRangeTerms(Grounder *g, Expandable *r)
-{
-	// normalize range terms
-	if(variables_)
-	{
-		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
-		{
-			RangeTerm *rt = dynamic_cast<RangeTerm*>(*it);
-			if(rt)
-			{
-				std::string var = g->createUniqueVar();
-				r->appendLiteral(new RangeLiteral(new Constant(Constant::VAR, g, new std::string(var)), rt->getLower(), rt->getUpper()));
-				*it = new Constant(Constant::VAR, g, new std::string(var));
-				delete rt;
-			}
-		}
-	}
 }
 
 void PredicateLiteral::getVars(VarSet &vars, VarsType type)
@@ -296,6 +276,7 @@ void PredicateLiteral::preprocess(Grounder *g, Expandable *e)
 {
 	if(variables_)
 	{
+		// remove multiple args terms
 		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
 		{
 			MultipleArgsTerm *t = dynamic_cast<MultipleArgsTerm*>(*it);
@@ -310,10 +291,18 @@ void PredicateLiteral::preprocess(Grounder *g, Expandable *e)
 				else
 				{
 					// clone everything except t
-					e->appendLiteral(new PredicateLiteral(*this, t));
+					e->appendLiteral(new PredicateLiteral(*this, t), true);
 					// replace t by extracted literal
 					*it = f;
 				}
+			}
+		}
+		// remove range terms
+		if(variables_)
+		{
+			for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
+			{
+				(*it)->preprocess(*it, g, e);
 			}
 		}
 	}

@@ -16,6 +16,7 @@ namespace NS_GRINGO
 		virtual void getVars(VarSet &vars);
 		virtual bool isComplex();
 		virtual Value getValue();
+		virtual void preprocess(Term *&p, Grounder *g, Expandable *e);
 		int argc();
 		Term *pop();
 		void push(Term *t);

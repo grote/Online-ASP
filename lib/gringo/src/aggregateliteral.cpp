@@ -183,7 +183,7 @@ AggregateLiteral::AggregateLiteral(AggregateLiteral &a) : type_(a.type_), lower_
 		literals_ = 0;
 }
 
-void AggregateLiteral::appendLiteral(Literal *l)
+void AggregateLiteral::appendLiteral(Literal *l, bool materm)
 {
 	if(!literals_)
 		literals_ = new ConditionalLiteralVector();
@@ -196,6 +196,10 @@ void AggregateLiteral::preprocess(Grounder *g, Expandable *e)
 	if(literals_)
 		for(size_t i = 0; i < literals_->size(); i++)
 			(*literals_)[i]->preprocess(g, this);
+	if(upper_)
+		upper_->preprocess(upper_, g, e);
+	if(lower_)
+		lower_->preprocess(lower_, g, e);
 }
 
 ConditionalLiteralVector *AggregateLiteral::getLiterals()

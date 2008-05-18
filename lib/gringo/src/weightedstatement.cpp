@@ -69,7 +69,7 @@ void WeightedStatement::preprocess(Grounder *g)
 		literals_[i]->preprocess(g, this);
 }
 
-void WeightedStatement::appendLiteral(Literal *l)
+void WeightedStatement::appendLiteral(Literal *l, bool materm)
 {
 	assert(dynamic_cast<ConditionalLiteral*>(l));
 	literals_.push_back(static_cast<ConditionalLiteral*>(l));

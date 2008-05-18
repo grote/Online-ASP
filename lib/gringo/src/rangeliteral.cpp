@@ -6,7 +6,7 @@
 
 using namespace NS_GRINGO;
 
-RangeLiteral::RangeLiteral(Constant *var, int lower, int upper) : Literal(), var_(var), lower_(lower), upper_(upper)
+RangeLiteral::RangeLiteral(Constant *var, Term *lower, Term *upper) : Literal(), var_(var), lower_(lower), upper_(upper)
 {
 }
 
@@ -39,11 +39,25 @@ void RangeLiteral::getVars(VarSet &vars, VarsType type)
 	switch(type)
 	{
 		case VARS_PROVIDED:
+		{
+			// even though this cannot happen
+			VarSet needed;
+			lower_->getVars(needed);
+			upper_->getVars(needed);
+			int uid = var_->getUID();
+			if(needed.find(uid) == needed.end())
+				vars.insert(uid);
+			break;
+		}
 		case VARS_GLOBAL:
 		case VARS_ALL:
+			lower_->getVars(vars);
+			upper_->getVars(vars);
 			var_->getVars(vars);
 			break;
 		case VARS_NEEDED:
+			lower_->getVars(vars);
+			upper_->getVars(vars);
 			break;
 	}
 }
@@ -65,7 +79,7 @@ void RangeLiteral::finish()
 
 bool RangeLiteral::match(Grounder *g)
 {
-	return (lower_ <= (int)var_->getValue() && (int)var_->getValue() <= upper_);
+	return ((int)lower_->getValue() <= (int)var_->getValue() && (int)var_->getValue() <= (int)upper_->getValue());
 }
 
 namespace
@@ -121,14 +135,15 @@ namespace
 IndexedDomain *RangeLiteral::createIndexedDomain(VarSet &index)
 {
 	if(index.find(var_->getUID()) == index.end())
-		return new IndexedDomainRange(var_->getUID(), lower_, upper_);
+		return new IndexedDomainRange(var_->getUID(), lower_->getValue(), upper_->getValue());
 	else
 		return new IndexedDomainMatchOnly(this);
 }
 
 void RangeLiteral::preprocess(Grounder *g, Expandable *e)
 {
-	// nothing todo
+	lower_->preprocess(lower_, g, e);
+	upper_->preprocess(upper_, g, e);
 }
 
 NS_OUTPUT::Object *RangeLiteral::convert()
@@ -136,7 +151,7 @@ NS_OUTPUT::Object *RangeLiteral::convert()
 	assert(false);
 }
 
-RangeLiteral::RangeLiteral(RangeLiteral &r) : var_((Constant*)r.var_->clone()), lower_(r.lower_), upper_(r.upper_)
+RangeLiteral::RangeLiteral(RangeLiteral &r) : var_((Constant*)r.var_->clone()), lower_(r.lower_->clone()), upper_(r.upper_->clone())
 {
 }
 
@@ -149,5 +164,9 @@ RangeLiteral::~RangeLiteral()
 {
 	if(var_)
 		delete var_;
+	if(lower_)
+		delete lower_;
+	if(upper_)
+		delete upper_;
 }
 

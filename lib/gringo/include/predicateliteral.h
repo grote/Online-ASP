@@ -41,7 +41,6 @@ namespace NS_GRINGO
 		void getVars(VarSet &vars);
 		ValueVectorSet &getDomain();
 		ValueVector &getValues();
-		void removeRangeTerms(Grounder *g, Expandable *r);
 		virtual ~PredicateLiteral();
 	protected:
 		Node          *predNode_;

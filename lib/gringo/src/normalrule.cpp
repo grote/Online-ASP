@@ -2,6 +2,7 @@
 #include "literal.h"
 #include "predicateliteral.h"
 #include "dependencygraph.h"
+#include "literaldependencygraph.h"
 #include "node.h"
 #include "grounder.h"
 #include "output.h"
@@ -83,6 +84,10 @@ bool NormalRule::checkO(LiteralVector &unsolved)
 
 bool NormalRule::check(VarVector &free)
 {
+	LiteralDependencyGraph dg(head_, body_);
+	dg.getUnboundVars(free);
+
+	/*
 	free.clear();
 	VarSet needed, provided;
 	// all global vars in head are needed
@@ -100,6 +105,7 @@ bool NormalRule::check(VarVector &free)
 	for(VarSet::iterator it = needed.begin(); it != needed.end(); it++)
 		if(provided.find(*it) == provided.end())
 			free.push_back(*it);
+	*/
 
 	return free.size() == 0;
 }
@@ -256,23 +262,32 @@ namespace
 	class NormalRuleExpander : public Expandable
 	{
 	public:
-		NormalRuleExpander(Grounder *g, LiteralVector *r) : g_(g), r_(r)
+		NormalRuleExpander(NormalRule *n, Grounder *g, LiteralVector *r) : n_(n), g_(g), r_(r)
 		{
 		}
-		void appendLiteral(Literal *l)
+		void appendLiteral(Literal *l, bool materm = false)
 		{
-			LiteralVector *r;
-			if(r_)
+			if(materm)
 			{
-				r = new LiteralVector();
-				for(LiteralVector::iterator it = r_->begin(); it != r_->end(); it++)
-					r->push_back((*it)->clone());
+				LiteralVector *r;
+				if(r_)
+				{
+					r = new LiteralVector();
+					for(LiteralVector::iterator it = r_->begin(); it != r_->end(); it++)
+						r->push_back((*it)->clone());
+				}
+				else
+					r = 0;
+				g_->addStatement(new NormalRule(l, r));
 			}
 			else
-				r = 0;
-			g_->addStatement(new NormalRule(l, r));
+			{
+				n_->appendLiteral(l);
+			}
+				
 		}
 	protected:
+		NormalRule    *n_;
 		Grounder      *g_;
 		LiteralVector *r_;
 	};
@@ -285,12 +300,13 @@ void NormalRule::preprocess(Grounder *g)
 			(*body_)[i]->preprocess(g, this);
 	if(head_)
 	{
-		NormalRuleExpander nre(g, body_);
+		NormalRuleExpander nre(this, g, body_);
 		head_->preprocess(g, &nre);
 	}
+	//std::cerr << this << std::endl;
 }
 
-void NormalRule::appendLiteral(Literal *l)
+void NormalRule::appendLiteral(Literal *l, bool materm)
 {
 	if(!body_)
 		body_ = new LiteralVector();	

@@ -1,19 +1,34 @@
 #include "rangeterm.h"
 #include "value.h"
+#include "grounder.h"
+#include "expandable.h"
+#include "constant.h"
+#include "rangeliteral.h"
 
 using namespace NS_GRINGO;
 
-RangeTerm::RangeTerm(int lower, int upper) : Term(), lower_(lower), upper_(upper)
+RangeTerm::RangeTerm(Term *lower, Term *upper) : Term(), lower_(lower), upper_(upper)
 {
 }
 
 void RangeTerm::getVars(VarSet &vars)
 {
+	// rangeterms are eliminated while preprocessing
+	assert(false);
 }
 
 bool RangeTerm::isComplex()
 {
-	return false;
+	// rangeterms are eliminated while preprocessing
+	assert(false);
+}
+
+void RangeTerm::preprocess(Term *&p, Grounder *g, Expandable *e)
+{
+	std::string var = g->createUniqueVar();
+	e->appendLiteral(new RangeLiteral(new Constant(Constant::VAR, g, new std::string(var)), lower_, upper_));
+	p = new Constant(Constant::VAR, g, new std::string(var));
+	delete this;
 }
 
 void RangeTerm::print(std::ostream &out)
@@ -21,12 +36,12 @@ void RangeTerm::print(std::ostream &out)
 	out << lower_ << ".." << upper_;
 }
 
-int RangeTerm::getLower()
+Term *RangeTerm::getLower()
 {
 	return lower_;
 }
 
-int RangeTerm::getUpper()
+Term *RangeTerm::getUpper()
 {
 	return upper_;
 }
@@ -36,7 +51,7 @@ Value RangeTerm::getValue()
 	assert(false);
 }
 
-RangeTerm::RangeTerm(RangeTerm &r) : lower_(r.lower_), upper_(r.upper_)
+RangeTerm::RangeTerm(RangeTerm &r) : lower_(r.lower_->clone()), upper_(r.upper_->clone())
 {
 }
 

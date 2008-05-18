@@ -17,6 +17,7 @@ namespace NS_GRINGO
 		virtual void print(std::ostream &out);
 		virtual void getVars(VarSet &vars);
 		virtual bool isComplex();
+		virtual void preprocess(Term *&p, Grounder *g, Expandable *e);
 		virtual Value getValue();
 		int getUID();
 		virtual Term* clone();

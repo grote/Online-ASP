@@ -6,6 +6,7 @@
 #include "indexeddomain.h"
 #include "dlvgrounder.h"
 #include "value.h"
+#include "literaldependencygraph.h"
 
 using namespace NS_GRINGO;
 		
@@ -25,7 +26,7 @@ void ConditionalLiteral::setNeg(bool neg)
 	Literal::setNeg(neg);
 }
 
-void ConditionalLiteral::appendLiteral(Literal *l)
+void ConditionalLiteral::appendLiteral(Literal *l, bool materm)
 {
 	if(!conditionals_)
 		conditionals_ = new LiteralVector();
@@ -40,8 +41,6 @@ void ConditionalLiteral::normalize(Grounder *g, Expandable *e)
 		for(size_t i = 0; i < l; i++)
 			(*conditionals_)[i]->normalize(g, this);
 	}
-	// only remove the rangeterms but not normalize cause its possible that pred_ is already complete
-	pred_->removeRangeTerms(g, this);
 }
 
 void ConditionalLiteral::getVars(VarSet &vars, VarsType type)
@@ -64,6 +63,29 @@ void ConditionalLiteral::getVars(VarSet &vars, VarsType type)
 		case VARS_GLOBAL:
 			if(conditionals_ != 0)
 			{
+				VarSet all, weight;
+				VarVector free;
+				// get all vars
+				pred_->getVars(all);
+				for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
+					(*it)->getVars(all, VARS_ALL);
+				
+				// get vars not bound by conditionals
+				LiteralDependencyGraph dg(pred_, conditionals_);
+				dg.getUnboundVars(free);
+				
+				// get vars in weight
+				if(weight_)
+					weight_->getVars(weight);
+
+				// a var in weight but not in all is global
+				for(VarSet::iterator it = weight.begin(); it != weight.end(); it++)
+					if(all.find(*it) == all.end())
+						vars.insert(*it);
+				// all free vars must be bound by global vars
+				vars.insert(free.begin(), free.end());
+
+				/*
 				VarSet t1, t2;
 				// get vars needed by the literal
 				pred_->getVars(t1);
@@ -81,6 +103,7 @@ void ConditionalLiteral::getVars(VarSet &vars, VarsType type)
 				for(VarSet::iterator it = t1.begin(); it != t1.end(); it++)
 					if(t2.find(*it) == t2.end())
 						vars.insert(*it);
+				*/
 			}
 			else
 			{
@@ -286,25 +309,33 @@ namespace
 	class ConditionalLiteralExpander : public Expandable
 	{
 	public:
-		ConditionalLiteralExpander(Expandable *e, LiteralVector *c) : e_(e), c_(c)
+		ConditionalLiteralExpander(ConditionalLiteral *l, Expandable *e, LiteralVector *c) : l_(l), e_(e), c_(c)
 		{
 		}
-		void appendLiteral(Literal *l)
+		void appendLiteral(Literal *l, bool materm = false)
 		{
-			LiteralVector *c;
-			if(c_)
+			if(materm)
 			{
-				c = new LiteralVector();
-				for(LiteralVector::iterator it = c_->begin(); it != c_->end(); it++)
-					c->push_back((*it)->clone());
+				LiteralVector *c;
+				if(c_)
+				{
+					c = new LiteralVector();
+					for(LiteralVector::iterator it = c_->begin(); it != c_->end(); it++)
+						c->push_back((*it)->clone());
+				}
+				else
+					c = 0;
+				e_->appendLiteral(new ConditionalLiteral((PredicateLiteral*)l, c));
 			}
 			else
-				c = 0;
-			e_->appendLiteral(new ConditionalLiteral((PredicateLiteral*)l, c));
+			{
+				l_->appendLiteral(l);
+			}
 		}
 	protected:
-		Expandable    *e_;
-		LiteralVector *c_;
+		ConditionalLiteral *l_;
+		Expandable         *e_;
+		LiteralVector      *c_;
 	};
 }
 
@@ -320,8 +351,10 @@ void ConditionalLiteral::preprocess(Grounder *g, Expandable *e)
 		for(size_t i = 0; i < conditionals_->size(); i++)
 			(*conditionals_)[i]->preprocess(g, this);
 	}
-	ConditionalLiteralExpander cle(e, conditionals_);
+	ConditionalLiteralExpander cle(this, e, conditionals_);
 	pred_->preprocess(g, &cle);
+	if(weight_)
+		weight_->preprocess(weight_, g, e);
 }
 
 int ConditionalLiteral::getUid()

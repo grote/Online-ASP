@@ -104,6 +104,11 @@ Constant::~Constant()
 	}
 }
 
+void Constant::preprocess(Term *&p, Grounder *g, Expandable *e)
+{
+	//nothing todo
+}
+
 Constant::Constant(Constant &c) : type_(c.type_), g_(c.g_), value_(c.value_), uid_(c.uid_)
 {
 	if(c.value_.type_ == Value::STRING)

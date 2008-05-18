@@ -9,19 +9,20 @@ namespace NS_GRINGO
 	class RangeTerm : public Term
 	{
 	public:
-		RangeTerm(int lower, int upper);
+		RangeTerm(Term *lower, Term *upper);
 		RangeTerm(RangeTerm &r);
 		virtual Term* clone();
 		virtual void print(std::ostream &out);
 		virtual void getVars(VarSet &vars);
 		virtual bool isComplex();
 		virtual Value getValue();
-		int getLower();
-		int getUpper();
+		virtual void preprocess(Term *&p, Grounder *g, Expandable *e);
+		Term *getLower();
+		Term *getUpper();
 		virtual ~RangeTerm();
 	protected:
-		int lower_;
-		int upper_;
+		Term *lower_;
+		Term *upper_;
 		
 	};
 }

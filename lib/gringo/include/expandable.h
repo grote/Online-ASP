@@ -13,7 +13,7 @@ namespace NS_GRINGO
 		 * \brief Appends a literal to the object
 		 * \param l The literal
 		 */
-		virtual void appendLiteral(Literal *l) = 0;
+		virtual void appendLiteral(Literal *l, bool materm = false) = 0;
 	};
 }
 

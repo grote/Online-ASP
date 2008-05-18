@@ -63,6 +63,11 @@ void MultipleArgsTerm::push(Term *t)
 	args_.push_back(t);
 }
 
+void MultipleArgsTerm::preprocess(Term *&p, Grounder *g, Expandable *e)
+{
+	assert(false);
+}
+
 MultipleArgsTerm *MultipleArgsTerm::create(Term *list, Term *term)
 {
 	MultipleArgsTerm *guess = dynamic_cast<MultipleArgsTerm*>(list);

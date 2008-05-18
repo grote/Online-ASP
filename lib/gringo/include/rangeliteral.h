@@ -9,7 +9,7 @@ namespace NS_GRINGO
 	class RangeLiteral : public Literal
 	{
 	public:
-		RangeLiteral(Constant *var, int lower, int upper);
+		RangeLiteral(Constant *var, Term *lower, Term *upper);
 		RangeLiteral(RangeLiteral &r);
 		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
 		virtual void getVars(VarSet &vars, VarsType type);
@@ -28,8 +28,8 @@ namespace NS_GRINGO
 		virtual ~RangeLiteral();
 	protected:
 		Constant *var_;
-		int lower_;
-		int upper_;
+		Term *lower_;
+		Term *upper_;
 	};
 }
 

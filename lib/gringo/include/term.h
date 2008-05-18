@@ -42,6 +42,15 @@ namespace NS_GRINGO
 		 */
 		virtual Term* clone() = 0;
 		/**
+		 * \brief Static preprocess of the term
+		 *
+		 * Currently rangeterms are removed and replaced by rangeliterals.
+		 * \param p Reference to the place where the current term is stored
+		 * \param g The grounder
+		 * \param e Expandable object
+		 */
+		virtual void preprocess(Term *&p, Grounder *g, Expandable *e) = 0;
+		/**
 		 * \brief Virtual Destructor
 		 */
 		virtual ~Term();

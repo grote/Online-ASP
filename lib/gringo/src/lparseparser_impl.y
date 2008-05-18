@@ -101,13 +101,10 @@ using namespace NS_GRINGO;
 %destructor termlist  { DELETE_PTRVECTOR(TermVector, $$) }
 %destructor ntermlist { DELETE_PTRVECTOR(TermVector, $$) }
 
-%type term       { Term* }
-%type range_term { Term* }
-%destructor term       { DELETE_PTR($$) }
-%destructor range_term { DELETE_PTR($$) }
-
-%type arg_list { Term* }
-%destructor arg_list { DELETE_PTR($$) }
+%type term             { Term* }
+%type multiplearg_term { Term* }
+%destructor term             { DELETE_PTR($$) }
+%destructor multiplearg_term { DELETE_PTR($$) }
 
 %type weight_list  { ConditionalLiteralVector* }
 %type nweight_list { ConditionalLiteralVector* }
@@ -126,6 +123,7 @@ using namespace NS_GRINGO;
 %destructor const_term { DELETE_PTR($$) }
 %destructor constant   { DELETE_PTR($$) }
 
+%left DOTS.
 %left PLUS MINUS.
 %left TIMES DIVIDE MOD.
 
@@ -213,27 +211,23 @@ aggregate_atom(res) ::= aggregate(aggr).                 { res = aggr; aggr->set
 
 termlist(res) ::= ntermlist(list). { res = list; }
 termlist(res) ::= .                { res = new TermVector(); }
-ntermlist(res) ::= termlist(list) COMMA arg_list(term). { res = list; res->push_back(term); }
-ntermlist(res) ::= arg_list(term).                      { res = new TermVector(); res->push_back(term); }
+ntermlist(res) ::= termlist(list) COMMA multiplearg_term(term). { res = list; res->push_back(term); }
+ntermlist(res) ::= multiplearg_term(term).                      { res = new TermVector(); res->push_back(term); }
 
-arg_list(res) ::= arg_list(list) SEMI range_term(term). { res = MultipleArgsTerm::create(list, term); }
-arg_list(res) ::= range_term(term).                     { res = term; }
-
-// the problem here is that with a lookahead of one the first argument of a range_term cant be a more complex structure
-// cause in this case it cant be distinuished from a non constant term (at least the cant do)
-range_term(res) ::= constant(l) DOTS const_term(u). { res = new RangeTerm(*l, *u); delete l; delete u; }
-range_term(res) ::= term(term).                     { res = term; }
+multiplearg_term(res) ::= multiplearg_term(list) SEMI term(term). { res = MultipleArgsTerm::create(list, term); }
+multiplearg_term(res) ::= term(term).                             { res = term; }
 
 term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, pParser->getGrounder(), x); }
 term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, pParser->getGrounder(), x); }
 term(res) ::= STRING(x).     { res = new Constant(Constant::ID, pParser->getGrounder(), x); }
 term(res) ::= NUMBER(x).     { res = new Constant(Constant::NUM, pParser->getGrounder(), x); }
-term(res) ::= LPARA term(a) RPARA.    { res = a; }
-term(res) ::= term(a) MOD term(b).    { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
-term(res) ::= term(a) PLUS term(b).   { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
-term(res) ::= term(a) TIMES term(b).  { res = new FunctionTerm(FunctionTerm::TIMES, a, b); }
-term(res) ::= term(a) MINUS term(b).  { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
-term(res) ::= term(a) DIVIDE term(b). { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
+term(res) ::= LPARA term(a) RPARA.     { res = a; }
+term(res) ::= term(a) MOD term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
+term(res) ::= term(a) PLUS term(b).    { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
+term(res) ::= term(a) TIMES term(b).   { res = new FunctionTerm(FunctionTerm::TIMES, a, b); }
+term(res) ::= term(a) MINUS term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
+term(res) ::= term(a) DIVIDE term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
+term(res) ::= term(l) DOTS term(u).    { res = new RangeTerm(l, u); }
 term(res) ::= ABS LPARA term(a) RPARA. { res = new FunctionTerm(FunctionTerm::ABS, a); }
 
 constant(res) ::= IDENTIFIER(x). { res = pParser->getGrounder()->createConstValue(x); }

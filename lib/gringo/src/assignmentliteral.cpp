@@ -43,8 +43,10 @@ void AssignmentLiteral::getVars(VarSet &vars, VarsType type)
 	switch(type)
 	{
 		case VARS_PROVIDED:
+		{
 			c_->getVars(vars);
 			break;
+		}
 		case VARS_GLOBAL:
 		case VARS_ALL:
 			c_->getVars(vars);
@@ -77,6 +79,7 @@ bool AssignmentLiteral::match(Grounder *g)
 void AssignmentLiteral::preprocess(Grounder *g, Expandable *e)
 {
 	// nothing todo
+	t_->preprocess(t_, g, e);
 }
 
 namespace
