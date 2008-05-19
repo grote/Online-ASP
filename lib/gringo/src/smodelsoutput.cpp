@@ -12,7 +12,8 @@ void SmodelsOutput::initialize(Grounder *g)
 {
 	Output::initialize(g);
 	// should get 1 here
-	false_ = newUid();
+	false_  = newUid();
+	models_ = 1;
 }
 
 void SmodelsOutput::print(NS_OUTPUT::Fact *r)
@@ -161,6 +162,7 @@ void SmodelsOutput::print(NS_OUTPUT::Integrity *r)
 
 void SmodelsOutput::print(NS_OUTPUT::Compute *r)
 {
+	models_ = r->models_;
 	for(NS_OUTPUT::ObjectVector::iterator it = r->lits_.begin(); it != r->lits_.end(); it++)
 		compute_.push_back((*it)->getUid());
 }
@@ -242,7 +244,7 @@ void SmodelsOutput::finalize()
 			*out_ << -(*it) << std::endl;
 	*out_ << 0 << std::endl;
 	// number of models
-	*out_ << 1 << std::endl;
+	*out_ << models_ << std::endl;
 }
 
 SmodelsOutput::~SmodelsOutput()

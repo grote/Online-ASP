@@ -30,7 +30,6 @@ using namespace NS_GRINGO;
 
 #define DELETE_PTR(X) { if(X) delete (X); }
 #define DELETE_PTRVECTOR(T, X) { if(X){ for(T::iterator it = (X)->begin(); it != (X)->end(); it++) delete (*it); delete (X); } }
-
 }  
 
 %name lparseparser
@@ -126,6 +125,7 @@ using namespace NS_GRINGO;
 %left DOTS.
 %left PLUS MINUS.
 %left TIMES DIVIDE MOD.
+%left UMINUS.
 
 // this will define the symbols in the header 
 // even though they are not used in the rules
@@ -162,8 +162,10 @@ variable_list(res) ::= variable_list(list) COMMA VARIABLE(var). { res = list; re
 variable_list(res) ::= VARIABLE(var).                           { res = new StringVector(); res->push_back(*var); delete var; }
 
 rule(res) ::= head_atom(head) IF body(body). { res = new NormalRule(head, body); }
+rule(res) ::= head_atom(head) IF .           { res = new NormalRule(head, 0); }
 rule(res) ::= head_atom(head).               { res = new NormalRule(head, 0); }
 rule(res) ::= IF body(body).                 { res = new NormalRule(0, body); }
+rule(res) ::= IF.                            { res = new NormalRule(0, 0); }
 rule(res) ::= maximize(min).                 { res = min; }
 rule(res) ::= minimize(max).                 { res = max; }
 rule(res) ::= compute(comp).                 { res = comp; }
@@ -203,6 +205,8 @@ constraint_atom(res) ::= predicate(pred) conditional_list(list). { res = new Con
 
 predicate(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new PredicateLiteral(id, list); }
 predicate(res) ::= IDENTIFIER(id).                            { res = new PredicateLiteral(id, new TermVector()); }
+predicate(res) ::= MINUS IDENTIFIER(id) LPARA termlist(list) RPARA. { id->insert(id->begin(), '-'); res = new PredicateLiteral(id, list); }
+predicate(res) ::= MINUS IDENTIFIER(id).                            { id->insert(id->begin(), '-'); res = new PredicateLiteral(id, new TermVector()); }
 
 aggregate_atom(res) ::= term(l) aggregate(aggr) term(u). { res = aggr; aggr->setBounds(l, u); }
 aggregate_atom(res) ::= aggregate(aggr) term(u).         { res = aggr; aggr->setBounds(0, u); }
@@ -228,6 +232,7 @@ term(res) ::= term(a) TIMES term(b).   { res = new FunctionTerm(FunctionTerm::TI
 term(res) ::= term(a) MINUS term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
 term(res) ::= term(a) DIVIDE term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
 term(res) ::= term(l) DOTS term(u).    { res = new RangeTerm(l, u); }
+term(res) ::= MINUS term(b). [UMINUS]  { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(Constant::NUM, pParser->getGrounder(), new std::string("0")), b); }
 term(res) ::= ABS LPARA term(a) RPARA. { res = new FunctionTerm(FunctionTerm::ABS, a); }
 
 constant(res) ::= IDENTIFIER(x). { res = pParser->getGrounder()->createConstValue(x); }
@@ -251,11 +256,12 @@ aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC. { res = new AggregateLit
 aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.     { res = new AggregateLiteral(AggregateLiteral::SUM, list); }
 aggregate(res) ::= LBRAC constr_list(list) RBRAC.       { res = new AggregateLiteral(AggregateLiteral::COUNT, list); }
 
-compute(res)  ::= COMPUTE  LBRAC  constr_list(list) RBRAC.  { res = new WeightedStatement(WeightedStatement::COMPUTE, list); }
-minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.  { res = new WeightedStatement(WeightedStatement::MINIMIZE, list); }
-minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC. { res = new WeightedStatement(WeightedStatement::MINIMIZE, list); }
-maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.  { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list); }
-maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC. { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list); }
+compute(res)  ::= COMPUTE LBRAC  constr_list(list) RBRAC.           { res = new WeightedStatement(WeightedStatement::COMPUTE, list, 1); }
+compute(res)  ::= COMPUTE NUMBER(x) LBRAC  constr_list(list) RBRAC. { res = new WeightedStatement(WeightedStatement::COMPUTE, list, atol(x->c_str())); DELETE_PTR(x); }
+minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.          { res = new WeightedStatement(WeightedStatement::MINIMIZE, list); }
+minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new WeightedStatement(WeightedStatement::MINIMIZE, list); }
+maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.          { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list); }
+maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list); }
 
 weight_list(res) ::= nweight_list(list). { res = list; }
 weight_list(res) ::= .                   { res = new ConditionalLiteralVector(); }

@@ -13,7 +13,8 @@ void ClaspOutput::initialize(Grounder *g)
 {
 	Output::initialize(g);
 	// should get 1 here
-	false_ = newUid();
+	false_  = newUid();
+	models_ = 1;
 }
 
 void ClaspOutput::print(NS_OUTPUT::Fact *r)
@@ -173,6 +174,28 @@ void ClaspOutput::print(NS_OUTPUT::Integrity *r)
 	printBody(false_, static_cast<NS_OUTPUT::Conjunction*>(r->body_)->lits_);
 }
 
+void ClaspOutput::print(NS_OUTPUT::Compute *r)
+{
+	models_ = r->models_;
+	for(NS_OUTPUT::ObjectVector::iterator it = r->lits_.begin(); it != r->lits_.end(); it++)
+	{
+		b_->setCompute(abs((*it)->getUid()), (*it)->getUid() > 0);
+	}
+}
+
+void ClaspOutput::print(NS_OUTPUT::Optimize *r)
+{
+	int inv = r->type_ == NS_OUTPUT::Optimize::MAXIMIZE ? -1 : 1;
+	b_->startRule(Clasp::OPTIMIZERULE, 0);
+	IntVector::iterator itW = r->weights_.begin();
+	for(NS_OUTPUT::ObjectVector::iterator it = r->lits_.begin(); it != r->lits_.end(); it++, itW++)
+	{
+		int uid = (*it)->getUid() * inv;
+		b_->addToBody(abs(uid), uid > 0, *itW);
+	}
+	b_->endRule();
+}
+
 void ClaspOutput::print(NS_OUTPUT::Object *r)
 {
 	if(dynamic_cast<NS_OUTPUT::Fact*>(r))
@@ -186,6 +209,14 @@ void ClaspOutput::print(NS_OUTPUT::Object *r)
 	else if(dynamic_cast<NS_OUTPUT::Rule*>(r))
 	{
 		print(static_cast<NS_OUTPUT::Rule*>(r));
+	}
+	else if(dynamic_cast<NS_OUTPUT::Compute*>(r))
+	{
+		print(static_cast<NS_OUTPUT::Compute*>(r));
+	}
+	else if(dynamic_cast<NS_OUTPUT::Optimize*>(r))
+	{
+		print(static_cast<NS_OUTPUT::Optimize*>(r));
 	}
 	else
 	{

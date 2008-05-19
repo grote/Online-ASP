@@ -30,9 +30,12 @@ namespace NS_GRINGO
 			void printHead(int B, NS_OUTPUT::Aggregate *r);
 			void printBody(int headId, NS_OUTPUT::ObjectVector &body);
 			void printWeightRule(int head, int bound, NS_OUTPUT::ObjectVector &lits, IntVector &weights);
+			void print(NS_OUTPUT::Optimize *r);
+			void print(NS_OUTPUT::Compute *r);
 		private:
 			Clasp::ProgramBuilder *b_;
 			int false_;
+			int models_;
 		};
 	}
 }

@@ -379,14 +379,14 @@ Aggregate::~Aggregate()
 }
 
 // =============== NS_OUTPUT::Compute ===============
-Compute::Compute(ObjectVector &lits) : Object(0x42)
+Compute::Compute(ObjectVector &lits, int models) : Object(0x42), models_(models)
 {
 	std::swap(lits, lits_);
 }
 
 void Compute::print_plain(std::ostream &out)
 {
-	out << "compute { ";
+	out << "compute " << models_ << " { ";
 	bool comma = false;
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 	{

@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 			*/
 			NS_OUTPUT::ClaspOutput o(&b);
 			grounder->start(o);
-			b.endProgram(s, true);
+			b.endProgram(s);
 			StdOutPrinter pr;
 			pr.index = &b.stats.index;
                         p.setModelPrinter(pr);

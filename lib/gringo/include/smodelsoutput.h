@@ -30,6 +30,7 @@ namespace NS_GRINGO
 			void printWeightRule(int head, int bound, NS_OUTPUT::ObjectVector &lits, IntVector &weights);
 		private:
 			int false_;
+			int models_;
 			IntVector compute_;
 		};
 	}

@@ -134,7 +134,7 @@ namespace NS_GRINGO
 		
 		struct Compute : public Object
 		{
-			Compute(ObjectVector &lits);
+			Compute(ObjectVector &lits, int models);
 			void print_plain(std::ostream &out);
 			void print(std::ostream &out);
 			~Compute();
@@ -142,6 +142,7 @@ namespace NS_GRINGO
 			void addUid(Output *o);
 
 			ObjectVector lits_;
+			int models_;
 		};	
 		
 		struct Optimize : public Object

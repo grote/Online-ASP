@@ -31,7 +31,14 @@ lparse compatibility:
   only the infix literals: <=, >=, ... are supported
 
 features:
-- handle compute/optimize statements in internal interface to clasp
+- improve program options of main app
+  - pass through constants
+  - pass options to clasp
+  - in general write a better main app
 - improve handling of ;'s
 - implement a switch to handle programs that are already ground
+
+testing:
+- write tests for all allowed language constructs !!!
+- test conformance with lparse/gringo
 

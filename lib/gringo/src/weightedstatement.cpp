@@ -8,7 +8,7 @@
 
 using namespace NS_GRINGO;
 		
-WeightedStatement::WeightedStatement(Type type, ConditionalLiteralVector *literals) : type_(type)
+WeightedStatement::WeightedStatement(Type type, ConditionalLiteralVector *literals, int number) : type_(type), number_(number)
 {
 	std::swap(literals_, *literals);
 	delete literals;
@@ -108,7 +108,7 @@ void WeightedStatement::grounded(Grounder *g)
 	{
 		case COMPUTE:
 		{
-			NS_OUTPUT::Compute *c = new NS_OUTPUT::Compute(lits);
+			NS_OUTPUT::Compute *c = new NS_OUTPUT::Compute(lits, number_);
 			g->getEvaluator()->add(c);
 			break;
 		}

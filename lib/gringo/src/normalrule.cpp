@@ -183,7 +183,6 @@ bool NormalRule::ground(Grounder *g)
 	}
 	else
 	{
-		assert(head_);
 		grounded(g);
 	}
 	return true;

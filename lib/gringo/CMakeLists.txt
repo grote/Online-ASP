@@ -11,7 +11,7 @@ ADD_CUSTOM_COMMAND(
 	OUTPUT ${GrinGo_BINARY_DIR}/lib/gringo/lparselexer.cpp
 	COMMAND re2c -o ${GrinGo_BINARY_DIR}/lib/gringo/lparselexer.cpp ${GrinGo_SOURCE_DIR}/lib/gringo/src/lparselexer.re
 	MAIN_DEPENDENCY ${GrinGo_SOURCE_DIR}/lib/gringo/src/lparselexer.re
-	DEPENDS ${GrinGo_BINARY_DIR}/lib/gringo/lparseparser_impl.h
+#	DEPENDS ${GrinGo_BINARY_DIR}/lib/gringo/lparseparser_impl.h
 )
 
 ADD_CUSTOM_COMMAND(
