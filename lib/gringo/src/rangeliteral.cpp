@@ -142,8 +142,8 @@ IndexedDomain *RangeLiteral::createIndexedDomain(VarSet &index)
 
 void RangeLiteral::preprocess(Grounder *g, Expandable *e)
 {
-	lower_->preprocess(lower_, g, e);
-	upper_->preprocess(upper_, g, e);
+	lower_->preprocess(this, lower_, g, e);
+	upper_->preprocess(this, upper_, g, e);
 }
 
 NS_OUTPUT::Object *RangeLiteral::convert()

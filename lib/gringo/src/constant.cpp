@@ -104,7 +104,7 @@ Constant::~Constant()
 	}
 }
 
-void Constant::preprocess(Term *&p, Grounder *g, Expandable *e)
+void Constant::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 {
 	//nothing todo
 }

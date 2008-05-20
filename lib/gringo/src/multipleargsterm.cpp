@@ -1,16 +1,18 @@
 #include "multipleargsterm.h"
+#include "literal.h"
+#include "expandable.h"
 #include "value.h"
 
 using namespace NS_GRINGO;
 
-MultipleArgsTerm::MultipleArgsTerm()
+MultipleArgsTerm::MultipleArgsTerm(Term *a, Term *b) : a_(a), b_(b)
 {
 }
 
 MultipleArgsTerm::MultipleArgsTerm(MultipleArgsTerm &r)
 {
-	for(TermVector::iterator it = r.args_.begin(); it != r.args_.end(); it++)
-		args_.push_back((*it)->clone());
+	a_ = a_->clone();
+	b_ = b_->clone();
 }
 
 Term* MultipleArgsTerm::clone()
@@ -20,15 +22,7 @@ Term* MultipleArgsTerm::clone()
 
 void MultipleArgsTerm::print(std::ostream &out)
 {
-	bool comma = false;
-	for(TermVector::iterator it = args_.begin(); it != args_.end(); it++)
-	{
-		if(comma)
-			out << "; ";
-		else
-			comma = true;
-		out << *it;
-	}
+	out << "(" << a_ << "; " << b_ << ")" << std::endl;
 }
 
 void MultipleArgsTerm::getVars(VarSet &vars)
@@ -46,44 +40,46 @@ Value MultipleArgsTerm::getValue()
 	assert(false);
 }
 
-int MultipleArgsTerm::argc()
+namespace
 {
-	return args_.size();
-}
-
-Term *MultipleArgsTerm::pop()
-{
-	Term *t = args_.back();
-	args_.pop_back();
-	return t;
-}
-
-void MultipleArgsTerm::push(Term *t)
-{
-	args_.push_back(t);
-}
-
-void MultipleArgsTerm::preprocess(Term *&p, Grounder *g, Expandable *e)
-{
-	assert(false);
-}
-
-MultipleArgsTerm *MultipleArgsTerm::create(Term *list, Term *term)
-{
-	MultipleArgsTerm *guess = dynamic_cast<MultipleArgsTerm*>(list);
-	// if we dont get a multiple args term we simply make one :)
-	if(!guess)
+	class CloneSentinel : public Term
 	{
-		guess = new MultipleArgsTerm();
-		guess->push(list);
-	}
-	guess->push(term);
-	return guess;
+	public:
+		CloneSentinel(Term *a) : a_(a) {}
+		Term* clone()
+		{
+			Term *a = a_;
+			delete this;
+			return a;
+		}
+		~CloneSentinel() { }
+		// the rest is unused
+		void getVars(VarSet &vars) { assert(false); }
+		bool isComplex() { assert(false); }
+		Value getValue() { assert(false); }
+		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { assert(false); }
+		void print(std::ostream &stream) { assert(false); }
+	protected:
+		Term *a_;
+	};
+}
+
+void MultipleArgsTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
+{
+	p = new CloneSentinel(b_);
+	e->appendLiteral(l->clone(), true);
+	p = a_;
+	a_ = 0;
+	b_ = 0;
+	p->preprocess(l, p, g, e);
+	delete this;
 }
 
 MultipleArgsTerm::~MultipleArgsTerm()
 {
-	for(TermVector::iterator it = args_.begin(); it != args_.end(); it++)
-		delete *it;
+	if(a_)
+		delete a_;
+	if(b_)
+		delete b_;
 }
 

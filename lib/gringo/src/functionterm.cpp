@@ -39,11 +39,11 @@ void FunctionTerm::getVars(VarSet &vars)
 		b_->getVars(vars);
 }
 
-void FunctionTerm::preprocess(Term *&p, Grounder *g, Expandable *e)
+void FunctionTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 {
-	a_->preprocess(a_, g, e);
+	a_->preprocess(l, a_, g, e);
 	if(b_)
-		b_->preprocess(b_, g, e);
+		b_->preprocess(l, b_, g, e);
 }
 
 bool FunctionTerm::isComplex()

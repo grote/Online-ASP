@@ -276,34 +276,9 @@ void PredicateLiteral::preprocess(Grounder *g, Expandable *e)
 {
 	if(variables_)
 	{
-		// remove multiple args terms
 		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
 		{
-			MultipleArgsTerm *t = dynamic_cast<MultipleArgsTerm*>(*it);
-			if(t)
-			{
-				Term *f = t->pop();
-				if(t->argc() == 0)
-				{
-					delete t;
-					*it = f;
-				}
-				else
-				{
-					// clone everything except t
-					e->appendLiteral(new PredicateLiteral(*this, t), true);
-					// replace t by extracted literal
-					*it = f;
-				}
-			}
-		}
-		// remove range terms
-		if(variables_)
-		{
-			for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
-			{
-				(*it)->preprocess(*it, g, e);
-			}
+			(*it)->preprocess(this, *it, g, e);
 		}
 	}
 	if((*id_)[0] == '-')

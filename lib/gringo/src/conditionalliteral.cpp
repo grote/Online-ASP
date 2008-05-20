@@ -354,7 +354,7 @@ void ConditionalLiteral::preprocess(Grounder *g, Expandable *e)
 	ConditionalLiteralExpander cle(this, e, conditionals_);
 	pred_->preprocess(g, &cle);
 	if(weight_)
-		weight_->preprocess(weight_, g, e);
+		weight_->preprocess(this, weight_, g, e);
 }
 
 int ConditionalLiteral::getUid()

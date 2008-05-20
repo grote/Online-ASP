@@ -226,7 +226,7 @@ bool Preprocessor::simplifyClassifiedProgram(uint32 startAtom, uint32& stopAtom)
 				// Reclassify, because an atom may have lost its source
 				stopAtom = 0;
 			}
-			else if (b->heads.empty() && b->value() == value_free) {
+			else if (b->heads.empty() && b->value() != value_false) {
 				// Body is no longer needed. All heads are either superfluous or equivalent
 				// to other atoms. 
 				if (pass_ != maxPass_) {
@@ -297,7 +297,7 @@ bool Preprocessor::newFactBody(PrgBodyNode* body, uint32 id, uint32 oldHash) {
 			body->clearVar(true);
 			nodes_[id].bSeen	= 1;
 			nodes_[id].eq			= ra.first->second;
-			return body->type() != CONSTRAINTRULE && newFacts;
+			return body->type() != CHOICERULE && newFacts;
 		}
 	}
 	prg_->bodyIndex_.insert(ProgramBuilder::BodyIndex::value_type(0, id));

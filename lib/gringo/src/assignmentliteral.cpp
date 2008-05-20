@@ -78,8 +78,7 @@ bool AssignmentLiteral::match(Grounder *g)
 
 void AssignmentLiteral::preprocess(Grounder *g, Expandable *e)
 {
-	// nothing todo
-	t_->preprocess(t_, g, e);
+	t_->preprocess(this, t_, g, e);
 }
 
 namespace

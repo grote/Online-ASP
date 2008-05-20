@@ -1,4 +1,4 @@
-%include {   
+%include {
 
 #include "gringo.h"
 
@@ -100,10 +100,8 @@ using namespace NS_GRINGO;
 %destructor termlist  { DELETE_PTRVECTOR(TermVector, $$) }
 %destructor ntermlist { DELETE_PTRVECTOR(TermVector, $$) }
 
-%type term             { Term* }
-%type multiplearg_term { Term* }
-%destructor term             { DELETE_PTR($$) }
-%destructor multiplearg_term { DELETE_PTR($$) }
+%type term { Term* }
+%destructor term { DELETE_PTR($$) }
 
 %type weight_list  { ConditionalLiteralVector* }
 %type nweight_list { ConditionalLiteralVector* }
@@ -122,6 +120,7 @@ using namespace NS_GRINGO;
 %destructor const_term { DELETE_PTR($$) }
 %destructor constant   { DELETE_PTR($$) }
 
+%left SEMI.
 %left DOTS.
 %left PLUS MINUS.
 %left TIMES DIVIDE MOD.
@@ -215,11 +214,8 @@ aggregate_atom(res) ::= aggregate(aggr).                 { res = aggr; aggr->set
 
 termlist(res) ::= ntermlist(list). { res = list; }
 termlist(res) ::= .                { res = new TermVector(); }
-ntermlist(res) ::= termlist(list) COMMA multiplearg_term(term). { res = list; res->push_back(term); }
-ntermlist(res) ::= multiplearg_term(term).                      { res = new TermVector(); res->push_back(term); }
-
-multiplearg_term(res) ::= multiplearg_term(list) SEMI term(term). { res = MultipleArgsTerm::create(list, term); }
-multiplearg_term(res) ::= term(term).                             { res = term; }
+ntermlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(term); }
+ntermlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }
 
 term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, pParser->getGrounder(), x); }
 term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, pParser->getGrounder(), x); }
@@ -234,6 +230,7 @@ term(res) ::= term(a) DIVIDE term(b).  { res = new FunctionTerm(FunctionTerm::DI
 term(res) ::= term(l) DOTS term(u).    { res = new RangeTerm(l, u); }
 term(res) ::= MINUS term(b). [UMINUS]  { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(Constant::NUM, pParser->getGrounder(), new std::string("0")), b); }
 term(res) ::= ABS LPARA term(a) RPARA. { res = new FunctionTerm(FunctionTerm::ABS, a); }
+term(res) ::= term(a) SEMI term(b).    { res = new MultipleArgsTerm(a, b); }
 
 constant(res) ::= IDENTIFIER(x). { res = pParser->getGrounder()->createConstValue(x); }
 constant(res) ::= NUMBER(x).     { res = new Value(atol(x->c_str())); DELETE_PTR(x); }

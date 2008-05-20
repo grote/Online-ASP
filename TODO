@@ -12,6 +12,7 @@ code:
 - implement a better hanling of strings
   clean up and simplify code
 - if a conflicting integrity constraint is found grounding could be stopped (and not just exit(0))
+- move code concerning visible/hidden predicates to output
 
 documentation:
 - write doxygen doc
@@ -35,7 +36,6 @@ features:
   - pass through constants
   - pass options to clasp
   - in general write a better main app
-- improve handling of ;'s
 - implement a switch to handle programs that are already ground
 
 testing:

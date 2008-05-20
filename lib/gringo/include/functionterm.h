@@ -18,7 +18,7 @@ namespace NS_GRINGO
 		virtual void print(std::ostream &out);
 		virtual Value getValue();
 		virtual Term* clone();
-		virtual void preprocess(Term *&p, Grounder *g, Expandable *e);
+		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual ~FunctionTerm();
 	protected:
 		FunctionType type_;

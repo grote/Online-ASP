@@ -49,7 +49,7 @@ namespace NS_GRINGO
 		 * \param g The grounder
 		 * \param e Expandable object
 		 */
-		virtual void preprocess(Term *&p, Grounder *g, Expandable *e) = 0;
+		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) = 0;
 		/**
 		 * \brief Virtual Destructor
 		 */

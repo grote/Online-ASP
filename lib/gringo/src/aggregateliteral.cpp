@@ -197,9 +197,9 @@ void AggregateLiteral::preprocess(Grounder *g, Expandable *e)
 		for(size_t i = 0; i < literals_->size(); i++)
 			(*literals_)[i]->preprocess(g, this);
 	if(upper_)
-		upper_->preprocess(upper_, g, e);
+		upper_->preprocess(this, upper_, g, e);
 	if(lower_)
-		lower_->preprocess(lower_, g, e);
+		lower_->preprocess(this, lower_, g, e);
 }
 
 ConditionalLiteralVector *AggregateLiteral::getLiterals()

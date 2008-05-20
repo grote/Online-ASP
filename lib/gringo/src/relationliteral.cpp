@@ -110,8 +110,8 @@ bool RelationLiteral::match(Grounder *g)
 
 void RelationLiteral::preprocess(Grounder *g, Expandable *e)
 {
-	a_->preprocess(a_, g, e);
-	b_->preprocess(b_, g, e);
+	a_->preprocess(this, a_, g, e);
+	b_->preprocess(this, b_, g, e);
 }
 
 IndexedDomain *RelationLiteral::createIndexedDomain(VarSet &index)
