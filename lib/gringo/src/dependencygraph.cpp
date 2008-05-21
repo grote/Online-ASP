@@ -25,11 +25,11 @@ Node *DependencyGraph::createStatementNode(Statement *r, bool preserveOrder)
 
 Node *DependencyGraph::createPredicateNode(PredicateLiteral *pred)
 {
-	Node *&n = predicateMap_[std::make_pair(*pred->getId(), pred->getArity())];
+	Node *&n = predicateMap_[std::make_pair(pred->getId(), pred->getArity())];
 	if(!n)
 	{
 		n = new Node(pred_.size());
-		pred_.push_back(std::make_pair(*pred->getId(), pred->getArity()));
+		pred_.push_back(std::make_pair(pred->getId(), pred->getArity()));
 		predicateNodes_.push_back(n);
 	}
 	return n;
@@ -192,7 +192,7 @@ NodeVector &DependencyGraph::getPredNodes()
 	return predicateNodes_;
 }
 
-std::vector<std::pair<std::string, int> > *DependencyGraph::getPred()
+SignatureVector *DependencyGraph::getPred()
 {
 	return &pred_;
 }

@@ -12,6 +12,7 @@ namespace NS_GRINGO
 	public:
 		enum ConstantType { ID, VAR, NUM, STRING };
 	public:
+		Constant(int value);
 		Constant(ConstantType type, Grounder *g, std::string *value);
 		Constant(Constant &c);
 		virtual void print(std::ostream &out);

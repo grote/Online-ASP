@@ -46,13 +46,13 @@ void Grounder::addDomains()
 			DomainPredicate &dp = *it;
 			for(StringVector::iterator it = dp.second->begin(); it != dp.second->end(); it++)
 			{
-				if(vars.find(getVar(&(*it))) != vars.end())
+				if(vars.find(getVar(*it)) != vars.end())
 				{
 					// construct predicate literal
 					TermVector *tv = new TermVector();
 					for(StringVector::iterator vars = dp.second->begin(); vars != dp.second->end(); vars++)
-						tv->push_back(new Constant(Constant::VAR, this, new std::string(*vars)));
-					PredicateLiteral *pred = new PredicateLiteral(new std::string(*dp.first), tv);
+						tv->push_back(new Constant(Constant::VAR, this, *vars));
+					PredicateLiteral *pred = new PredicateLiteral(dp.first, tv);
 					rule->addDomain(pred);
 					break;
 				}
@@ -73,7 +73,7 @@ void Grounder::reset(bool warn = false)
 		{
 			Signature &sig = (*depGraph_->getPred())[n->getUid()];
 			if(warn)
-				std::cerr << "Warning: " << sig.first << "/" << sig.second << " is never defined" << std::endl;
+				std::cerr << "Warning: " << *sig.first << "/" << sig.second << " is never defined" << std::endl;
 			n->setSolved(true);
 		}
 	}
@@ -98,6 +98,8 @@ void Grounder::start(NS_OUTPUT::Output &output)
 	std::cerr << "preprocessing ... " << std::endl;
 	preprocess();
 	std::cerr << "done" << std::endl;
+	if(varMap_.size() == 0)
+		std::cerr << "got ground program i hope u have enough memory :)" << std::endl;
 	std::cerr << "adding domain predicates ... " << std::endl;
 	addDomains();
 	std::cerr << "done" << std::endl;
@@ -116,7 +118,7 @@ void Grounder::start(NS_OUTPUT::Output &output)
 	std::cerr << "done" << std::endl;
 }
 
-std::vector<std::pair<std::string, int> > *Grounder::getPred()
+SignatureVector *Grounder::getPred()
 {
 	return depGraph_->getPred();
 }
@@ -129,7 +131,7 @@ void Grounder::addSCC(SCC *scc)
 void Grounder::ground()
 {
 	visible_.reserve(getPred()->size());
-	for(std::vector<std::pair<std::string, int> >::const_iterator it = getPred()->begin(); it != getPred()->end(); it++)
+	for(SignatureVector::const_iterator it = getPred()->begin(); it != getPred()->end(); it++)
 		visible_.push_back(isVisible(it->first, it->second));
 	output_->initialize(this);
 	substitution_.resize(varMap_.size() + 2);
@@ -159,20 +161,20 @@ void Grounder::ground()
 	output_->finalize();
 }
 
-std::string Grounder::createUniqueVar()
+std::string *Grounder::createUniqueVar()
 {
-	std::string uid;
+	std::string *uid;
 	do
 	{
 		std::stringstream ss;
 		ss << "I_" << internalVars_++;
-		uid = ss.str();
+		uid = createString(ss.str());
 	}
 	while(varMap_.find(uid) != varMap_.end());
 	return uid;
 }
 
-std::string Grounder::getVarString(int uid)
+std::string *Grounder::getVarString(int uid)
 {
 	// inefficient but we need it only for error messages
 	for(VariableMap::iterator it = varMap_.begin(); it != varMap_.end(); it++)
@@ -180,12 +182,11 @@ std::string Grounder::getVarString(int uid)
 			return it->first;
 	// we should get a string for every variable
 	assert(false);
-
 }
 
 int Grounder::getVar(std::string *var)
 {
-	VariableMap::iterator it = varMap_.find(*var);
+	VariableMap::iterator it = varMap_.find(var);
 	if(it != varMap_.end())
 		return it->second;
 	else
@@ -194,7 +195,7 @@ int Grounder::getVar(std::string *var)
 
 int Grounder::registerVar(std::string *var)
 {
-	int &uid = varMap_[*var];
+	int &uid = varMap_[var];
 	if(uid == 0)
 		uid = varMap_.size();
 	return uid;
@@ -204,15 +205,15 @@ Grounder::~Grounder()
 {
 	delete depGraph_;
 	for(DomainVector::iterator it = domains_.begin(); it != domains_.end(); it++)
-	{
-		delete (*it).first;
 		delete (*it).second;
-	}
 	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
 		delete *it;
-	for(std::map<std::string, Value*>::iterator it = const_.begin(); it != const_.end(); it++)
+	for(std::map<std::string*, Value*>::iterator it = const_.begin(); it != const_.end(); it++)
 		delete it->second;
-	for(std::vector<std::string*>::iterator it = strings_.begin(); it != strings_.end(); it++)
+	// TODO: do i really need pointers????
+	StringVector v(stringHash_.begin(), stringHash_.end());
+	stringHash_.clear();
+	for(StringVector::iterator it = v.begin(); it != v.end(); it++)
 		delete *it;
 }
 
@@ -237,12 +238,12 @@ int Grounder::getBinder(int var)
 	return binder_[var];
 }
 
-void Grounder::setConstValue(const std::string &id, Value *v)
+void Grounder::setConstValue(std::string *id, Value *v)
 {
 	Value *&ref = const_[id];
 	if(ref)
 	{
-		std::cerr << "warning: multiple definitions of #const " << id << std::endl;
+		std::cerr << "warning: multiple definitions of #const " << *id << std::endl;
 		delete v;
 	}
 	else
@@ -261,10 +262,9 @@ NS_OUTPUT::Output *Grounder::getOutput()
 
 Value *Grounder::createConstValue(std::string *id)
 {
-	std::map<std::string, Value*>::iterator pos = const_.find(*id);
+	std::map<std::string*, Value*>::iterator pos = const_.find(id);
 	if(pos != const_.end())
 	{
-		delete id;
 		return new Value(*(pos->second));
 	}
 	else
@@ -275,8 +275,7 @@ Value *Grounder::createConstValue(std::string *id)
 
 Value *Grounder::createStringValue(std::string *id)
 {
-	strings_.push_back(id);
-	return new Value(strings_.back());
+	return new Value(id);
 }
 
 void Grounder::hideAll()
@@ -284,7 +283,7 @@ void Grounder::hideAll()
 	hideAll_ = true;
 }
 
-void Grounder::addTrueNegation(const std::string &id, int arity)
+void Grounder::addTrueNegation(std::string *id, int arity)
 {
 	if(trueNegPred_.insert(Signature(id, arity)).second)
 	{
@@ -293,12 +292,13 @@ void Grounder::addTrueNegation(const std::string &id, int arity)
 		for(int i = 0; i < arity; i++)
 		{
 			// in theory existing vars could be reused
-			std::string var = createUniqueVar();
-			tp->push_back(new Constant(Constant::VAR, this, new std::string(var)));
-			tn->push_back(new Constant(Constant::VAR, this, new std::string(var)));
+			std::string *var = createUniqueVar();
+			tp->push_back(new Constant(Constant::VAR, this, var));
+			tn->push_back(new Constant(Constant::VAR, this, var));
 		}
-		PredicateLiteral *p = new PredicateLiteral(new std::string(id.substr(1)), tp);
-		PredicateLiteral *n = new PredicateLiteral(new std::string(id), tn);
+		std::string *pos = createString(id->substr(1));
+		PredicateLiteral *p = new PredicateLiteral(pos, tp);
+		PredicateLiteral *n = new PredicateLiteral(id, tn);
 		LiteralVector *body = new LiteralVector();
 		body->push_back(p);
 		body->push_back(n);
@@ -309,8 +309,7 @@ void Grounder::addTrueNegation(const std::string &id, int arity)
 
 void Grounder::setVisible(std::string *id, int arity, bool visible)
 {
-	hide_[std::make_pair(*id, arity)] = !visible;
-	delete id;
+	hide_[std::make_pair(id, arity)] = !visible;
 }
 
 bool Grounder::isVisible(int uid)
@@ -318,13 +317,25 @@ bool Grounder::isVisible(int uid)
 	return visible_[uid];
 }
 
-bool Grounder::isVisible(const std::string &id, int arity)
+bool Grounder::isVisible(std::string *id, int arity)
 {
-	std::map<std::pair<std::string, int>, bool>::iterator it = hide_.find(std::make_pair(id, arity));
+	std::map<Signature, bool>::iterator it = hide_.find(std::make_pair(id, arity));
 	if(it == hide_.end())
 		return !hideAll_;
 	else
 		return !it->second;
 }
 
+std::string *Grounder::createString(const std::string &s2)
+{
+	return createString(new std::string(s2));
+}
+
+std::string *Grounder::createString(std::string *s)
+{
+	std::pair<StringHash::iterator, bool> res = stringHash_.insert(s);
+	if(!res.second)
+		delete s;
+	return *res.first;
+}
 

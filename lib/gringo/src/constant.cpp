@@ -3,6 +3,10 @@
 
 using namespace NS_GRINGO;
 		
+Constant::Constant(int value) : Term(), type_(NUM), g_(0), value_(value), uid_(0)
+{
+}
+
 Constant::Constant(ConstantType type, Grounder *g, std::string *value) : Term(), type_(type), g_(g), uid_(type == VAR ? g->registerVar(value) : 0)
 {
 	switch(type_)
@@ -19,7 +23,7 @@ Constant::Constant(ConstantType type, Grounder *g, std::string *value) : Term(),
 			else
 			{
 				value_.type_        = Value::STRING;
-				value_.stringValue_ = new std::string(*v->stringValue_);
+				value_.stringValue_ = v->stringValue_;
 				type_               = STRING;
 			}
 
@@ -88,20 +92,6 @@ int Constant::getUID()
 
 Constant::~Constant()
 {
-	switch(type_)
-	{
-		case ID:
-		case VAR:
-		case STRING:
-		{
-			delete value_.stringValue_;
-			break;
-		}
-		case NUM: 
-		{
-			break;
-		}
-	}
 }
 
 void Constant::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
@@ -111,8 +101,6 @@ void Constant::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 
 Constant::Constant(Constant &c) : type_(c.type_), g_(c.g_), value_(c.value_), uid_(c.uid_)
 {
-	if(c.value_.type_ == Value::STRING)
-		value_.stringValue_ = new std::string(*c.value_.stringValue_);
 }
 
 Term* Constant::clone() 

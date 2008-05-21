@@ -144,8 +144,7 @@ namespace NS_GRINGO
 			case INT:
 				return (size_t)intValue_;
 			case STRING:
-				// TODO: change this see todo list
-				return __gnu_cxx::__stl_hash_string(stringValue_->c_str());
+				return (size_t)stringValue_;
 			default:
 				// this shouldnt happen
 				assert(false);

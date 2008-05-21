@@ -28,6 +28,8 @@
 
 using namespace NS_GRINGO;
 
+#define GROUNDER (pParser->getGrounder())
+#define STRING(x) (pParser->getGrounder()->createString(x))
 #define DELETE_PTR(X) { if(X) delete (X); }
 #define DELETE_PTRVECTOR(T, X) { if(X){ for(T::iterator it = (X)->begin(); it != (X)->end(); it++) delete (*it); delete (X); } }
 }  
@@ -138,7 +140,7 @@ program ::= program rule(rule) DOT. { if(rule) pParser->getGrounder()->addStatem
 program ::= program SHOW show_list DOT.
 program ::= program HIDE hide_list DOT.
 program ::= program DOMAIN domain_list DOT.
-program ::= program CONST IDENTIFIER(id) ASSIGN const_term(term) DOT. { pParser->getGrounder()->setConstValue(*id, term); DELETE_PTR(id); }
+program ::= program CONST IDENTIFIER(id) ASSIGN const_term(term) DOT. { pParser->getGrounder()->setConstValue(STRING(id), term); }
 program ::= .
 
 show_list ::= show_list COMMA show_predicate.
@@ -153,12 +155,13 @@ nhide_list ::= hide_predicate.
 domain_list ::= domain_list COMMA domain_predicate.
 domain_list ::= domain_predicate.
 
-show_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { pParser->getGrounder()->setVisible(id, list ? list->size() : 0, true); DELETE_PTR(list); }
-hide_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { pParser->getGrounder()->setVisible(id, list ? list->size() : 0, false); DELETE_PTR(list); }
-domain_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA. { pParser->getGrounder()->addDomains(id, list); }
+// TODO: what about show/hide without parameters
+show_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { pParser->getGrounder()->setVisible(STRING(id), list ? list->size() : 0, true); DELETE_PTR(list); }
+hide_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { pParser->getGrounder()->setVisible(STRING(id), list ? list->size() : 0, false); DELETE_PTR(list); }
+domain_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA. { pParser->getGrounder()->addDomains(STRING(id), list); }
 
-variable_list(res) ::= variable_list(list) COMMA VARIABLE(var). { res = list; res->push_back(*var); delete var; }
-variable_list(res) ::= VARIABLE(var).                           { res = new StringVector(); res->push_back(*var); delete var; }
+variable_list(res) ::= variable_list(list) COMMA VARIABLE(var). { res = list; res->push_back(STRING(var)); }
+variable_list(res) ::= VARIABLE(var).                           { res = new StringVector(); res->push_back(STRING(var)); }
 
 rule(res) ::= head_atom(head) IF body(body). { res = new NormalRule(head, body); }
 rule(res) ::= head_atom(head) IF .           { res = new NormalRule(head, 0); }
@@ -189,7 +192,7 @@ body_atom(res) ::= predicate(pred).      { res = pred; }
 body_atom(res) ::= aggregate_atom(atom). { res = atom; }
 
 // assignment literals are not realy relation literals but they rae used like them
-relation_literal(res) ::= VARIABLE(a) ASSIGN term(b). { res = new AssignmentLiteral(new Constant(Constant::VAR, pParser->getGrounder(), a), b); }
+relation_literal(res) ::= VARIABLE(a) ASSIGN term(b). { res = new AssignmentLiteral(new Constant(Constant::VAR, pParser->getGrounder(), STRING(a)), b); }
 relation_literal(res) ::= term(a) EQ term(b).         { res = new RelationLiteral(RelationLiteral::EQ, a, b); }
 relation_literal(res) ::= term(a) NE term(b).         { res = new RelationLiteral(RelationLiteral::NE, a, b); }
 relation_literal(res) ::= term(a) GT term(b).         { res = new RelationLiteral(RelationLiteral::GT, a, b); }
@@ -202,10 +205,10 @@ head_atom(res) ::= aggregate_atom(atom). { res = atom; }
 
 constraint_atom(res) ::= predicate(pred) conditional_list(list). { res = new ConditionalLiteral(pred, list); }
 
-predicate(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new PredicateLiteral(id, list); }
-predicate(res) ::= IDENTIFIER(id).                            { res = new PredicateLiteral(id, new TermVector()); }
-predicate(res) ::= MINUS IDENTIFIER(id) LPARA termlist(list) RPARA. { id->insert(id->begin(), '-'); res = new PredicateLiteral(id, list); }
-predicate(res) ::= MINUS IDENTIFIER(id).                            { id->insert(id->begin(), '-'); res = new PredicateLiteral(id, new TermVector()); }
+predicate(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new PredicateLiteral(STRING(id), list); }
+predicate(res) ::= IDENTIFIER(id).                            { res = new PredicateLiteral(STRING(id), new TermVector()); }
+predicate(res) ::= MINUS IDENTIFIER(id) LPARA termlist(list) RPARA. { id->insert(id->begin(), '-'); res = new PredicateLiteral(STRING(id), list); }
+predicate(res) ::= MINUS IDENTIFIER(id).                            { id->insert(id->begin(), '-'); res = new PredicateLiteral(STRING(id), new TermVector()); }
 
 aggregate_atom(res) ::= term(l) aggregate(aggr) term(u). { res = aggr; aggr->setBounds(l, u); }
 aggregate_atom(res) ::= aggregate(aggr) term(u).         { res = aggr; aggr->setBounds(0, u); }
@@ -217,10 +220,10 @@ termlist(res) ::= .                { res = new TermVector(); }
 ntermlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(term); }
 ntermlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }
 
-term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, pParser->getGrounder(), x); }
-term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, pParser->getGrounder(), x); }
-term(res) ::= STRING(x).     { res = new Constant(Constant::ID, pParser->getGrounder(), x); }
-term(res) ::= NUMBER(x).     { res = new Constant(Constant::NUM, pParser->getGrounder(), x); }
+term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, pParser->getGrounder(), STRING(x)); }
+term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, pParser->getGrounder(), STRING(x)); }
+term(res) ::= STRING(x).     { res = new Constant(Constant::ID, pParser->getGrounder(), STRING(x)); }
+term(res) ::= NUMBER(x).     { res = new Constant(atol(x->c_str())); DELETE_PTR(x); }
 term(res) ::= LPARA term(a) RPARA.     { res = a; }
 term(res) ::= term(a) MOD term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
 term(res) ::= term(a) PLUS term(b).    { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
@@ -228,15 +231,15 @@ term(res) ::= term(a) TIMES term(b).   { res = new FunctionTerm(FunctionTerm::TI
 term(res) ::= term(a) MINUS term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
 term(res) ::= term(a) DIVIDE term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
 term(res) ::= term(l) DOTS term(u).    { res = new RangeTerm(l, u); }
-term(res) ::= MINUS term(b). [UMINUS]  { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(Constant::NUM, pParser->getGrounder(), new std::string("0")), b); }
+term(res) ::= MINUS term(b). [UMINUS]  { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(0), b); }
 term(res) ::= ABS LPARA term(a) RPARA. { res = new FunctionTerm(FunctionTerm::ABS, a); }
 term(res) ::= term(a) SEMI term(b).    { res = new MultipleArgsTerm(a, b); }
 
-constant(res) ::= IDENTIFIER(x). { res = pParser->getGrounder()->createConstValue(x); }
+constant(res) ::= IDENTIFIER(x). { res = pParser->getGrounder()->createConstValue(STRING(x)); }
 constant(res) ::= NUMBER(x).     { res = new Value(atol(x->c_str())); DELETE_PTR(x); }
 
 const_term(res) ::= constant(c).   { res = c; }
-const_term(res) ::= STRING(x).     { res = pParser->getGrounder()->createStringValue(x); }
+const_term(res) ::= STRING(x).     { res = pParser->getGrounder()->createStringValue(STRING(x)); }
 const_term(res) ::= LPARA const_term(a) RPARA.          { res = a; }
 const_term(res) ::= const_term(a) MOD const_term(b).    { res = new Value(*a % *b); DELETE_PTR(a); DELETE_PTR(b); }
 const_term(res) ::= const_term(a) PLUS const_term(b).   { res = new Value(*a + *b); DELETE_PTR(a); DELETE_PTR(b); }
@@ -266,12 +269,12 @@ nweight_list(res) ::= nweight_list(list) COMMA weight_term(term). { res = list; 
 nweight_list(res) ::= weight_term(term).                          { res = new ConditionalLiteralVector(); res->push_back(term); }
 
 weight_term(res) ::= constraint_literal(literal) ASSIGN term(term). { res = literal; res->setWeight(term); }
-weight_term(res) ::= constraint_literal(literal).                   { res = literal; res->setWeight(new Constant(Constant::NUM, pParser->getGrounder(), new std::string("1"))); }
+weight_term(res) ::= constraint_literal(literal).                   { res = literal; res->setWeight(new Constant(1)); }
 
 constr_list(res) ::= nconstr_list(list). { res = list; }
 constr_list(res) ::= .                   { res = new ConditionalLiteralVector(); }
 nconstr_list(res) ::= nconstr_list(list) COMMA constr_term(term). { res = list; res->push_back(term); }
 nconstr_list(res) ::= constr_term(term).                          { res = new ConditionalLiteralVector(); res->push_back(term); }
 
-constr_term(res) ::= constraint_literal(literal).  { res = literal; res->setWeight(new Constant(Constant::NUM, pParser->getGrounder(), new std::string("1"))); }
+constr_term(res) ::= constraint_literal(literal).  { res = literal; res->setWeight(new Constant(1)); }
 

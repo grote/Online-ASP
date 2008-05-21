@@ -15,7 +15,8 @@
 
 namespace NS_GRINGO
 {
-	typedef std::pair<std::string, int> Signature;
+	typedef std::pair<std::string *, int> Signature;
+	typedef std::vector<Signature> SignatureVector;
 	class Evaluator;
 
 
@@ -41,7 +42,7 @@ namespace NS_GRINGO
 	typedef std::vector<int> IntVector;
 
 	class Constant;
-	typedef std::vector<std::string> StringVector;
+	typedef std::vector<std::string*> StringVector;
 	typedef std::vector<Constant*> ConstantVector;
 
 	class SCC;

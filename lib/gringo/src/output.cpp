@@ -23,9 +23,9 @@ bool Output::addAtom(NS_OUTPUT::Atom *r)
 	AtomHash::iterator res = atoms_[id].find(r->values_);
 	if(res == atoms_[id].end())
 	{
-		const std::string &name = (*g_->getPred())[id].first;
+		const std::string *name = (*g_->getPred())[id].first;
 		std::stringstream ss;
-		ss << name;
+		ss << *name;
 		if(r->values_.size() > 0)
 		{
 			ValueVector::iterator it = r->values_.begin();

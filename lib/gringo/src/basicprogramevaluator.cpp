@@ -27,22 +27,6 @@ int BasicProgramEvaluator::add(NS_OUTPUT::Atom *r)
 		atomHash_[id].insert(std::make_pair(r->values_, std::make_pair(r->node_, uid)));
 		facts_.push_back(false);
 		watches_.push_back(IntVector());
-		/*
-		// debug: 
-		const std::string &name = (*g_->getPred())[id].first;
-		std::stringstream ss;
-		ss << name;
-		if(r->values_.size() > 0)
-		{
-			ValueVector::iterator it = r->values_.begin();
-			ss << "(" << *it;
-			for(it++; it != r->values_.end(); it++)
-				ss << "," << *it;
-			ss << ")";
-		}
-		debug_.push_back(ss.str());
-		*/
-		//std::cout << "got atom: " << debug_[uid] << " = " << facts_[uid] << std::endl;
 		return uid;
 	}
 	else

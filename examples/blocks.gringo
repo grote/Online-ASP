@@ -1,7 +1,7 @@
 #hide.
 #show moved(X,Y).
 
-#const blocks=45.
+#const blocks=10.
 #const timesteps=blocks-1.
 
 % the objects

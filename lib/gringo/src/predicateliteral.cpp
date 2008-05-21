@@ -33,14 +33,9 @@ void PredicateLiteral::normalize(Grounder *g, Expandable *r)
 			{
 				if((*it)->isComplex())
 				{
-					std::string var = g->createUniqueVar();
-					// its better to use an assignmentliteral than a relationliteral here
-					// q(X,Y), p(X,X+Y) could be transformed into
-					// q(X,Y), I=X+Y, p(X,I)
-					// here only p has to be matched
-					//r->appendLiteral(new RelationLiteral(RelationLiteral::EQ, new Constant(Constant::VAR, g, new std::string(var)), *it));
-					r->appendLiteral(new AssignmentLiteral(new Constant(Constant::VAR, g, new std::string(var)), *it));
-					*it = new Constant(Constant::VAR, g, new std::string(var));
+					std::string *var = g->createUniqueVar();
+					r->appendLiteral(new AssignmentLiteral(new Constant(Constant::VAR, g, var), *it));
+					*it = new Constant(Constant::VAR, g, var);
 				}
 			}
 		}
@@ -236,7 +231,7 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 }
 
-PredicateLiteral::PredicateLiteral(PredicateLiteral &p, Term *t) : predNode_(p.predNode_), id_(new std::string(*p.id_)), matchValues_(p.matchValues_.size()), values_(p.values_.size())
+PredicateLiteral::PredicateLiteral(PredicateLiteral &p, Term *t) : predNode_(p.predNode_), id_(p.id_), matchValues_(p.matchValues_.size()), values_(p.values_.size())
 {
 	if(p.variables_)
 	{
@@ -260,8 +255,6 @@ Literal* PredicateLiteral::clone()
 
 PredicateLiteral::~PredicateLiteral()
 {
-	if(id_)
-		delete id_;
 	if(variables_)
 	{
 		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
@@ -282,7 +275,7 @@ void PredicateLiteral::preprocess(Grounder *g, Expandable *e)
 		}
 	}
 	if((*id_)[0] == '-')
-		g->addTrueNegation(*id_, variables_ ? variables_->size() : 0);
+		g->addTrueNegation(id_, variables_ ? variables_->size() : 0);
 }
 
 TermVector *PredicateLiteral::getArgs()

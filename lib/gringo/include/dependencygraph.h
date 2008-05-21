@@ -9,7 +9,7 @@ namespace NS_GRINGO
 	class DependencyGraph
 	{
 	protected:
-		typedef std::map<std::pair<std::string, int>, Node*> PredicateMap;
+		typedef std::map<Signature, Node*> PredicateMap;
 	public:
 		DependencyGraph();
 		Node *createStatementNode(Statement *r, bool preserveOrder = false);
@@ -18,7 +18,7 @@ namespace NS_GRINGO
 		NodeVector &getPredNodes();
 		void calcSCCs();
 		bool check(Grounder *g);
-		std::vector<std::pair<std::string, int> > *getPred();
+		SignatureVector *getPred();
 		virtual ~DependencyGraph();
 	protected:
 		void calcSCCDep(Node *v1, SCC *scc, bool &root);
@@ -28,7 +28,7 @@ namespace NS_GRINGO
 		NodeVector ruleNodes_;
 		NodeVector predicateNodes_;
 		PredicateMap predicateMap_;
-		std::vector<std::pair<std::string, int> > pred_;
+		SignatureVector pred_;
 		SCCVector sccs_;
 		SCCSet sccRoots_;
 		Node *last_;
