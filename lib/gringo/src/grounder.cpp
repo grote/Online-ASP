@@ -215,6 +215,10 @@ Grounder::~Grounder()
 	stringHash_.clear();
 	for(StringVector::iterator it = v.begin(); it != v.end(); it++)
 		delete *it;
+	for (StringVector::iterator it = functionSymbols_.begin(); it != functionSymbols_.end(); ++it)
+	{
+		delete *it;
+	}
 }
 
 Value Grounder::getValue(int var)
@@ -339,3 +343,7 @@ std::string *Grounder::createString(std::string *s)
 	return *res.first;
 }
 
+void Grounder::addFunctionSymbolString(std::string* s)
+{
+	functionSymbols_.push_back(s);
+}

@@ -16,6 +16,7 @@
 #include "term.h"
 #include "constant.h"
 #include "functionterm.h"
+#include "funcsymbolterm.h"
 #include "rangeterm.h"
 #include "multipleargsterm.h"
 
@@ -234,6 +235,7 @@ term(res) ::= term(l) DOTS term(u).    { res = new RangeTerm(l, u); }
 term(res) ::= MINUS term(b). [UMINUS]  { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(0), b); }
 term(res) ::= ABS LPARA term(a) RPARA. { res = new FunctionTerm(FunctionTerm::ABS, a); }
 term(res) ::= term(a) SEMI term(b).    { res = new MultipleArgsTerm(a, b); }
+term(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new FuncSymbolTerm(GROUNDER, STRING(id), list); }
 
 constant(res) ::= IDENTIFIER(x). { res = pParser->getGrounder()->createConstValue(STRING(x)); }
 constant(res) ::= NUMBER(x).     { res = new Value(atol(x->c_str())); DELETE_PTR(x); }
