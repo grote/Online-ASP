@@ -169,7 +169,8 @@ bool PredicateLiteral::match(Grounder *g)
 	{
 		for(int i = 0; i < (int)variables_->size(); i++)
 			matchValues_[i] = (*variables_)[i]->getValue();
-		match = getDomain().find(matchValues_) != getDomain().end();
+		//match = getDomain().find(matchValues_) != getDomain().end();
+		match = predNode_->inDomain(matchValues_);
 	}
 	if(getNeg())
 	{
@@ -214,16 +215,23 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 		bool freeVars = false;
 		ConstantVector param(variables_->size());
 		ConstantVector::iterator paramIt = param.begin();
+		VarSet free;
 		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++, paramIt++)
 		{
 			assert(dynamic_cast<Constant*>(*it));
 			(*paramIt) = static_cast<Constant*>(*it);
-			if(!freeVars && index.find((*paramIt)->getUID()) == index.end())
-				freeVars = true;
+			int uid = (*paramIt)->getUID();
+			if(uid > 0 && index.find(uid) == index.end())
+				free.insert(uid);
 			
 		}
-		if(freeVars)
-			return new IndexedDomainDefault(getDomain(), index, param);
+		if(free.size() > 0)
+		{
+			if(free.size() == param.size())
+				return new IndexedDomainFullMatch(predNode_->getDomain(), param);
+			else
+				return new IndexedDomainDefault(predNode_->getDomain(), index, param);
+		}
 		else
 			return new IndexedDomainMatchOnly(this);
 	}
@@ -304,10 +312,5 @@ void PredicateLiteral::getVars(VarSet &vars)
 	if(variables_)
 		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
 			(*it)->getVars(vars);
-}
-
-ValueVectorSet &PredicateLiteral::getDomain()
-{
-	return predNode_->getDomain();
 }
 

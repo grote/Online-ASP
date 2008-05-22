@@ -39,7 +39,6 @@ namespace NS_GRINGO
 		int getArity();
 		void addDomain(ValueVector &values);
 		void getVars(VarSet &vars);
-		ValueVectorSet &getDomain();
 		ValueVector &getValues();
 		virtual ~PredicateLiteral();
 	protected:

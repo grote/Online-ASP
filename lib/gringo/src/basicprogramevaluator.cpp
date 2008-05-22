@@ -5,6 +5,10 @@
 
 using namespace NS_GRINGO;
 		
+BasicProgramEvaluator::AtomNode::AtomNode(Node *node) : status_(NONE), node_(node)
+{
+}
+
 BasicProgramEvaluator::BasicProgramEvaluator() : Evaluator()
 {
 }
@@ -23,25 +27,45 @@ int BasicProgramEvaluator::add(NS_OUTPUT::Atom *r)
 	AtomHash::iterator res = atomHash_[id].find(r->values_);
 	if(res == atomHash_[id].end())
 	{
-		int uid = facts_.size();
-		atomHash_[id].insert(std::make_pair(r->values_, std::make_pair(r->node_, uid)));
-		facts_.push_back(false);
-		watches_.push_back(IntVector());
+		int uid = atoms_.size();
+		atomHash_[id].insert(std::make_pair(r->values_, uid));
+		atoms_.push_back(AtomNode(r->node_));
 		return uid;
 	}
 	else
-		return res->second.second;
+		return res->second;
 }
 
 void BasicProgramEvaluator::add(NS_OUTPUT::Fact *r)
 {
 	assert(dynamic_cast<NS_OUTPUT::Atom*>(r->head_));
 	int uid = add(static_cast<NS_OUTPUT::Atom*>(r->head_));
-	
-	//std::cerr << "got fact: " << debug_[uid] << std::endl;
+	propagate(uid);
+}
 
-	facts_[uid] = true;
-	propQ_.push_back(uid);
+void BasicProgramEvaluator::propagate(int uid)
+{
+	// its used like a stack but who cares :)
+	std::vector<int> queue;
+	if(atoms_[uid].status_ == NONE)
+		queue.push_back(uid);
+	while(queue.size() > 0)
+	{
+		uid = queue.back();
+		queue.pop_back();
+		atoms_[uid].status_ = FACT;
+		for(IntVector::const_iterator it = atoms_[uid].inBody_.begin(); it != atoms_[uid].inBody_.end(); it++)
+		{
+			
+			rules_[*it].second--;
+			if(rules_[*it].second == 0 && atoms_[rules_[*it].first].status_ == NONE)
+			{
+				atoms_[rules_[*it].first].status_ = QUEUED;
+				queue.push_back(rules_[*it].first);
+			}
+		}
+		atoms_[uid].inBody_.clear();
+	}
 }
 
 void BasicProgramEvaluator::add(NS_OUTPUT::Rule *r)
@@ -49,34 +73,25 @@ void BasicProgramEvaluator::add(NS_OUTPUT::Rule *r)
 	assert(dynamic_cast<NS_OUTPUT::Atom*>(r->head_));
 	assert(dynamic_cast<NS_OUTPUT::Conjunction*>(r->body_));
 	int uid = add(static_cast<NS_OUTPUT::Atom*>(r->head_));
-	//std::cerr << "starting rule with head: " << debug_[uid] << std::endl;
-	if(!facts_[uid])
+	if(atoms_[uid].status_ == NONE)
 	{
+		int ruleId  = rules_.size();
+		int numLits = 0;
 		NS_OUTPUT::ObjectVector &lits = static_cast<NS_OUTPUT::Conjunction*>(r->body_)->lits_;
 		assert(lits.size() > 0);
-		rules_.push_back(IntVector());
-		IntVector &rule = rules_.back();
-		rule.reserve(1 + lits.size());
-		rule.push_back(uid);
-		//std::cerr << debug_[uid] << " :- ";
 		for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++)
 		{
 			assert(dynamic_cast<NS_OUTPUT::Atom*>(*it));
 			int bodyUid = add(static_cast<NS_OUTPUT::Atom*>(*it));
-			//std::cerr << debug_[bodyUid] << " = " << facts_[bodyUid] << ", ";
-			if(!facts_[bodyUid])
-				rule.push_back(bodyUid);
+			if(atoms_[bodyUid].status_ == NONE)
+			{
+				atoms_[bodyUid].inBody_.push_back(ruleId);
+				numLits++;
+			}
 		}
-		//std::cerr << "." << std::endl;
-		if(rule.size() == 1)
-		{
-			facts_[uid] = true;
-			propQ_.push_back(uid);
-			rules_.pop_back();
-			//std::cerr << "got fact: " << debug_[uid] << std::endl;
-		}
-		else
-			watches_[rule[1]].push_back(rules_.size() - 1);
+		rules_.push_back(std::make_pair(uid, numLits));
+		if(numLits == 0)
+			propagate(uid);
 	}
 }
 
@@ -100,50 +115,14 @@ void BasicProgramEvaluator::add(NS_OUTPUT::Object *r)
 void BasicProgramEvaluator::evaluate()
 {
 	//std::cerr << "evaluating basic program" << std::endl;
-	while(propQ_.size() > 0)
-	{
-		int i = propQ_.back();
-		propQ_.pop_back();
-		assert(i < (int)watches_.size());
-		for(IntVector::iterator it = watches_[i].begin(); it != watches_[i].end(); it++)
-		{
-			assert(*it < (int)rules_.size());
-			IntVector &rule = rules_[*it];
-			assert(rule[0] < (int)facts_.size());
-			if(!facts_[rule[0]])
-			{
-				if(rule.size() == 2)
-				{
-					facts_[rule[0]] = true;
-					propQ_.push_back(rule[0]);
-				}
-				else
-				{
-					int newsize = 1;
-					IntVector::iterator solved = rule.begin() + 1;
-					for(IntVector::iterator lit = rule.begin() + 2; lit != rule.end(); lit++)
-						if(!facts_[*lit])
-							*solved++ = *lit, newsize++;
-					rule.resize(newsize);
-					if(rule.size() == 1)
-					{
-						facts_[rule[0]] = true;
-						propQ_.push_back(rule[0]);
-					}
-					else
-						watches_[rule[1]].push_back(*it);
-				}
-			}
-		}
-	}
 	for(AtomLookUp::iterator itHash = atomHash_.begin(); itHash != atomHash_.end(); itHash++)
 	{
 		for(AtomHash::iterator it = itHash->begin(); it != itHash->end(); it++)
 		{
-			if(facts_[it->second.second])
+			if(atoms_[it->second].status_ == FACT)
 			{
 				ValueVector values(it->first);
-				NS_OUTPUT::Atom *a = new NS_OUTPUT::Atom(false, it->second.first, values);
+				NS_OUTPUT::Atom *a = new NS_OUTPUT::Atom(false, atoms_[it->second].node_, values);
 				NS_OUTPUT::Fact f(a);
 				f.addUid(o_);
 				f.addDomain(true);
@@ -151,16 +130,18 @@ void BasicProgramEvaluator::evaluate()
 			}
 			else
 				// remove all atoms that couldnt be derived from the domain
-				it->second.first->removeDomain(it->first);
+				atoms_[it->second].node_->removeDomain(it->first);
 		}
+	}	
+	// cleanup the stl constructs :)
+	{
+		AtomLookUp a;
+		std::swap(atomHash_, a);
+		Rules r;
+		std::swap(rules_, r);
+		Atoms f;
+		std::swap(atoms_, f);
 	}
-	// cleanup but if fear even though clear is called 
-	// the vectors still waste a lot of memory
-	atomHash_.clear();
-	facts_.clear();
-	watches_.clear();
-	rules_.clear();
-
 	//std::cerr << "evaluated basic program" << std::endl;
 }
 

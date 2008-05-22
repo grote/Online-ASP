@@ -20,7 +20,7 @@ namespace NS_GRINGO
 		void setSolved(bool solved);
 		void reset();
 		void finish();
-		int getUid();
+		int getUid() const;
 		void evaluate();
 		void addFact(const ValueVector &values);
 		bool isFact(const ValueVector &values);

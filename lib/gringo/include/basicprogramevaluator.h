@@ -15,21 +15,28 @@ namespace NS_GRINGO
 	{
 	private:
 		/// Type used to assign an id to a (variable free) predicate
-                typedef __gnu_cxx::hash_map<ValueVector, std::pair<Node*, int>, Value::VectorHash> AtomHash;
+                typedef __gnu_cxx::hash_map<ValueVector, int, Value::VectorHash> AtomHash;
 		/// Type used to store the ids to all possible predicates
 		typedef std::vector<AtomHash> AtomLookUp;
-		/// Type used to store the basic program
-		typedef std::vector<IntVector> RuleVector;
-		/// Type used to efficiently propagate literals
-		typedef std::vector<IntVector> Watches;
-		/// Type used to store the facts
-		typedef std::vector<bool> Facts;
+		/// Used to store the atoms
+		enum Status { NONE = 0, FACT = 1, QUEUED = 2};
+		struct AtomNode
+		{
+			AtomNode(Node *node);
+
+			Status status_;
+			Node *node_;
+			IntVector inBody_;
+		};
+		typedef std::vector<std::pair<int, int> > Rules;
+		typedef std::vector<AtomNode> Atoms;
 	public:
 		/// Constructor
 		BasicProgramEvaluator();
 		void initialize(Grounder *g);
 		void add(NS_OUTPUT::Object *r);
 		void evaluate();
+		void propagate(int uid);
 		/// Destructor
 		~BasicProgramEvaluator();
 	private:
@@ -58,17 +65,12 @@ namespace NS_GRINGO
 		 */
 		void add(NS_OUTPUT::Conjunction *r);
 	private:
-		/// Stores facts which have to be propagated
-		IntVector  propQ_;
 		/// Stores the ids of all atoms (predicates)
 		AtomLookUp atomHash_;
-		/// Stores the facts
-		Facts      facts_;
-		/// Stores a pointer to a rule with an atom which is currently no fact
-		Watches    watches_;
+		/// Stores all atoms
+		Atoms      atoms_;
 		/// Stores the basic program
-		RuleVector rules_;
-		//StringVector debug_;
+		Rules      rules_;
 	};
 }
 

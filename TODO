@@ -9,8 +9,6 @@ code:
 - think of a better method to order the rules in a sub program (SCC::check)
   if there is any
 - move the list of all predicates into the grounder
-- implement a better hanling of strings
-  clean up and simplify code
 - if a conflicting integrity constraint is found grounding could be stopped (and not just exit(0))
 - move code concerning visible/hidden predicates to output
 

@@ -44,6 +44,13 @@ bool Node::solved()
 void Node::setSolved(bool solved)
 {
 	solved_ = solved;
+	// when a domain is solved all of its entries are facts
+	if(solved_)
+	{
+		facts_.clear();
+		ValueVectorSet facts;
+		std::swap(facts, facts_);
+	}
 }
 
 void Node::evaluate()
@@ -69,7 +76,11 @@ bool Node::isFact(const ValueVector &values)
 
 void Node::addFact(const ValueVector &values)
 {
-	facts_.insert(values);
+	// fact programs dont need to store their facts seperatly cause 
+	// directly after grounding all values in their domain are facts
+	// and there cant be any cycles through fact programs
+	if(scc_->getType() != SCC::FACT)
+		facts_.insert(values);
 }
 
 bool Node::inDomain(const ValueVector &values)
@@ -92,7 +103,7 @@ ValueVectorSet &Node::getDomain()
 	return domain_;
 }
 
-int Node::getUid()
+int Node::getUid() const
 {
 	return uid_;
 }

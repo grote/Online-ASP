@@ -43,6 +43,19 @@ namespace NS_GRINGO
 		std::vector<std::pair<int, int> > index_;
 		std::vector<const ValueVector*>::iterator current_, end_;
 	};
+
+	class IndexedDomainFullMatch : public IndexedDomain
+	{
+	public:
+		IndexedDomainFullMatch(ValueVectorSet &domain, ConstantVector &param);
+		virtual void firstMatch(int binder, DLVGrounder *g, MatchStatus &status);
+		virtual void nextMatch(int binder, DLVGrounder *g, MatchStatus &status);
+		virtual ~IndexedDomainFullMatch();
+	protected:
+		const ValueVectorSet &domain_;
+		IntVector bind_;
+		ValueVectorSet::const_iterator current_;
+	};
 }
 
 #endif

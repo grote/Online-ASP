@@ -14,13 +14,15 @@ namespace NS_GRINGO
 		class Output
 		{
 		protected:
-			typedef __gnu_cxx::hash_map<ValueVector, std::pair<std::string, int>, Value::VectorHash> AtomHash;
+			typedef __gnu_cxx::hash_map<ValueVector, int, Value::VectorHash> AtomHash;
 			typedef std::vector<AtomHash> AtomLookUp;
 		public:
 			Output(std::ostream *out);
 			virtual void initialize(Grounder *g);
 			virtual void print(NS_OUTPUT::Object *o) = 0;
 			virtual void finalize() = 0;
+			std::string atomToString(int id, const ValueVector &values) const;
+			bool isVisible(int id);
 			bool addAtom(NS_OUTPUT::Atom *r);
 			virtual int newUid();
 			virtual ~Output();
@@ -55,10 +57,10 @@ namespace NS_GRINGO
 			void print_plain(std::ostream &out);
 			void print(std::ostream &out);
 			
-			bool visible_;
-			bool print_;
+			/// the id of the assigned predicate
 			Node *node_;
-			std::string *name_;
+			bool print_;
+			Output *output_;
 			ValueVector values_;
 		};
 

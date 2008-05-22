@@ -36,6 +36,8 @@ IndexedDomainMatchOnly::~IndexedDomainMatchOnly()
 {
 }
 
+//////////////////////////////// IndexedDomainDefault ///////////////////////////////////////
+
 IndexedDomainDefault::IndexedDomainDefault(ValueVectorSet &domain, VarSet &index, ConstantVector &param)
 {
 	// TODO: predicates like p(X,X) are not handles correctly
@@ -133,6 +135,44 @@ void IndexedDomainDefault::nextMatch(int binder, DLVGrounder *g, MatchStatus &st
 }
 
 IndexedDomainDefault::~IndexedDomainDefault()
+{
+}
+
+//////////////////////////////// IndexedDomainFullMatch ///////////////////////////////////////
+
+IndexedDomainFullMatch::IndexedDomainFullMatch(ValueVectorSet &domain, ConstantVector &param) : domain_(domain)
+{
+	for(ConstantVector::iterator it = param.begin(); it != param.end(); it++)
+		bind_.push_back((*it)->getUID());
+}
+
+void IndexedDomainFullMatch::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
+{
+	current_ = domain_.begin();
+	if(current_ != domain_.end())
+	{
+		for(int i = 0; i < bind_.size(); i++)
+			g->g_->setValue(bind_[i], (*current_)[i], binder);
+		status = SuccessfulMatch;
+	}
+	else
+		status = FailureOnFirstMatch;
+}
+
+void IndexedDomainFullMatch::nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
+{
+	current_++;
+	if(current_ != domain_.end())
+	{
+		for(int i = 0; i < bind_.size(); i++)
+			g->g_->setValue(bind_[i], (*current_)[i], binder);
+		status = SuccessfulMatch;
+	}
+	else
+		status = FailureOnNextMatch;
+}
+
+IndexedDomainFullMatch::~IndexedDomainFullMatch()
 {
 }
 

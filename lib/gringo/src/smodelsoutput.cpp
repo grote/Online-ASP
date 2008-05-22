@@ -228,7 +228,9 @@ void SmodelsOutput::finalize()
 	for(AtomLookUp::iterator it = atoms_.begin(); it != atoms_.end(); it++, uid++)
 		if(g_->isVisible(uid))
 			for(AtomHash::iterator atom = it->begin(); atom != it->end(); atom++)
-				*out_ << atom->second.second << " " << atom->second.first << std::endl;
+			{
+				*out_ << atom->second << " " << atomToString(uid, atom->first) << std::endl;
+			}
 	*out_ << 0 << std::endl;
 	*out_ << "B+" << std::endl;
 	// compute +

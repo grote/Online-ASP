@@ -230,7 +230,7 @@ void ClaspOutput::finalize()
 	for(AtomLookUp::iterator it = atoms_.begin(); it != atoms_.end(); it++, uid++)
 		if(g_->isVisible(uid))
 			for(AtomHash::iterator atom = it->begin(); atom != it->end(); atom++)
-				b_->setAtomName(atom->second.second, atom->second.first.c_str());
+				b_->setAtomName(atom->second, atomToString(uid, atom->first).c_str());
 	b_->setCompute(false_, false);
 }
 

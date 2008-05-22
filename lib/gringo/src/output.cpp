@@ -16,37 +16,43 @@ void Output::initialize(Grounder *g)
 	atoms_.resize(g->getPred()->size());
 }
 
+std::string Output::atomToString(int id, const ValueVector &values) const
+{
+	const std::string *name = (*g_->getPred())[id].first;
+	std::stringstream ss;
+	ss << *name;
+	if(values.size() > 0)
+	{
+		ValueVector::const_iterator it = values.begin();
+		ss << "(" << *it;
+		for(it++; it != values.end(); it++)
+			ss << "," << *it;
+		ss << ")";
+	}
+	return ss.str();
+}
+
+bool Output::isVisible(int id)
+{
+	return g_->isVisible(id);
+}
+
+
 bool Output::addAtom(NS_OUTPUT::Atom *r)
 {
-	// TODO: is this a good or a bad place for this method
 	int id = r->node_->getUid();
 	AtomHash::iterator res = atoms_[id].find(r->values_);
 	if(res == atoms_[id].end())
 	{
-		const std::string *name = (*g_->getPred())[id].first;
-		std::stringstream ss;
-		ss << *name;
-		if(r->values_.size() > 0)
-		{
-			ValueVector::iterator it = r->values_.begin();
-			ss << "(" << *it;
-			for(it++; it != r->values_.end(); it++)
-				ss << "," << *it;
-			ss << ")";
-		}
-
-		res = atoms_[id].insert(std::make_pair(r->values_, std::make_pair(ss.str(), newUid()))).first;
-		r->name_    = &res->second.first;
-		r->uid_     = res->second.second;
-		r->visible_ = false;
-		r->visible_ = g_->isVisible(id);
+		res = atoms_[id].insert(std::make_pair(r->values_, newUid())).first;
+		r->output_  = this;
+		r->uid_     = res->second;
 		return true;
 	}
 	else
 	{
-		r->name_    = &res->second.first;
-		r->uid_     =  res->second.second;
-		r->visible_ =  false;
+		r->output_  = this;
+		r->uid_     = res->second;
 		return false;
 	}
 }
@@ -98,13 +104,13 @@ void Atom::addUid(Output *o)
 
 void Atom::print_plain(std::ostream &out)
 {
-	out << (neg_ ? "not " : "") << *name_;
+	out << (neg_ ? "not " : "") << output_->atomToString(node_->getUid(), values_);
 }
 
 void Atom::print(std::ostream &out)
 {
 	if(print_)
-		out << type_ << " " << uid_ << " " << *name_ << " " << (visible_ ? "1 0" : "0") << std::endl;
+		out << type_ << " " << uid_ << " " << output_->atomToString(node_->getUid(), values_) << " " << (output_->isVisible(node_->getUid()) ? "1 0" : "0") << std::endl;
 }
 	
 // =============== NS_OUTPUT::Rule ===============
