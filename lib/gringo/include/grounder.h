@@ -57,9 +57,6 @@ namespace NS_GRINGO
 		bool isVisible(int uid);
 		bool isVisible(std::string *id, int arity);
 		SignatureVector *getPred();
-
-		void addFunctionSymbolString(std::string* s);
-
 		virtual ~Grounder();
 	protected:
 		int internalVars_;
@@ -74,7 +71,6 @@ namespace NS_GRINGO
 		std::vector<Value> substitution_;
 		std::vector<int> binder_;
 		std::set<Signature> trueNegPred_;
-		StringVector functionSymbols_;
 		
 		/// pool of all strings used
 		StringHash stringHash_;

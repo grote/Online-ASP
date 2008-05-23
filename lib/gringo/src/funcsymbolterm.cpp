@@ -4,7 +4,7 @@
 
 using namespace NS_GRINGO;
 
-FuncSymbolTerm::FuncSymbolTerm(Grounder* g, std::string* s, TermVector* tl) : Term(), grounder_(g), funcSymbol_(s), termList_(tl)
+FuncSymbolTerm::FuncSymbolTerm(Grounder* g, std::string* s, TermVector* tl) : Term(), funcSymbol_(s), termList_(tl), grounder_(g)
 {
 }
 
@@ -38,8 +38,6 @@ bool FuncSymbolTerm::isComplex()
 Value FuncSymbolTerm::getValue()
 {
 	std::string* s = new std::string();
-	// grounder can clean this up
-	grounder_->addFunctionSymbolString(s);
 	*s = *funcSymbol_;
 	*s += "(";
 	std::ostringstream ss;
@@ -51,11 +49,16 @@ Value FuncSymbolTerm::getValue()
 	*s += ss.str();
 	*s += ")";
 
+	// grounder can clean this up
+	// if the string already exists s is freed and the old pointer is returned
+	// if the string is new s is inserted into the set of all strings and
+	// the same pointer is returned
+	s = grounder_->createString(s);
 
 	return Value(s);
 }
 
-FuncSymbolTerm::FuncSymbolTerm(FuncSymbolTerm &f) : grounder_(f.grounder_), funcSymbol_(new std::string(*f.funcSymbol_))
+FuncSymbolTerm::FuncSymbolTerm(FuncSymbolTerm &f) : funcSymbol_(f.funcSymbol_), grounder_(f.grounder_)
 {
 	termList_ = new TermVector();
 	for (TermVector::const_iterator i = f.termList_->begin(); i != f.termList_->end(); ++i)
@@ -71,7 +74,6 @@ Term* FuncSymbolTerm::clone()
 
 FuncSymbolTerm::~FuncSymbolTerm()
 {
-	//delete funcSymbol_;
 	for (TermVector::iterator i = termList_->begin(); i != termList_->end(); ++i)
 		delete (*i);
 	delete termList_;

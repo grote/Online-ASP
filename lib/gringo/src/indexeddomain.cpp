@@ -151,7 +151,7 @@ void IndexedDomainFullMatch::firstMatch(int binder, DLVGrounder *g, MatchStatus 
 	current_ = domain_.begin();
 	if(current_ != domain_.end())
 	{
-		for(int i = 0; i < bind_.size(); i++)
+		for(size_t i = 0; i < bind_.size(); i++)
 			g->g_->setValue(bind_[i], (*current_)[i], binder);
 		status = SuccessfulMatch;
 	}
@@ -164,7 +164,7 @@ void IndexedDomainFullMatch::nextMatch(int binder, DLVGrounder *g, MatchStatus &
 	current_++;
 	if(current_ != domain_.end())
 	{
-		for(int i = 0; i < bind_.size(); i++)
+		for(size_t i = 0; i < bind_.size(); i++)
 			g->g_->setValue(bind_[i], (*current_)[i], binder);
 		status = SuccessfulMatch;
 	}
