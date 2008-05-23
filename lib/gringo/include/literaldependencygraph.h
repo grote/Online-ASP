@@ -10,19 +10,20 @@ namespace NS_GRINGO
 	private:
 		struct Node;
 		typedef std::vector<Node*>   NodeVector;
+		typedef std::set<Node*>      NodeSet;
 		typedef std::map<int, Node*> VarNodeMap;
 		struct Node
 		{
-			Node(Literal *l) : l_(l), var_(0), in_(0)
+			Node(Literal *l) : l_(l), var_(0)
 			{
 			}
-			Node(int var) : l_(0), var_(var), in_(0)
+			Node(int var) : l_(0), var_(var)
 			{
 			}
 			Literal *l_;
 			int var_;
-			NodeVector dep_;
-			int in_;
+			NodeSet out_;
+			NodeSet in_;
 		};
 	public:
 		LiteralDependencyGraph(Literal *head, LiteralVector *body);

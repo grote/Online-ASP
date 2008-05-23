@@ -5,6 +5,9 @@ using namespace NS_GRINGO;
 
 LiteralDependencyGraph::LiteralDependencyGraph(Literal *head, LiteralVector *body)
 {
+	// TODO: here could be used a similar datastructure like in basic brograms cause
+	// checking the dependencies between literals and variables is in principle the same
+	// as propagating in basic programs
 	if(head)
 	{
 		Node *ln = new Node(head);
@@ -19,8 +22,8 @@ LiteralDependencyGraph::LiteralDependencyGraph(Literal *head, LiteralVector *bod
 				node = new Node(*it);
 				varNodes_.push_back(node);
 			}
-			node->dep_.push_back(ln);
-			ln->in_++;
+			node->out_.insert(ln);
+			ln->in_.insert(node);
 		}
 	}
 	if(body)
@@ -41,8 +44,8 @@ LiteralDependencyGraph::LiteralDependencyGraph(Literal *head, LiteralVector *bod
 					node = new Node(*it);
 					varNodes_.push_back(node);
 				}
-				node->dep_.push_back(ln);
-				ln->in_++;
+				node->out_.insert(ln);
+				ln->in_.insert(node);
 			}
 			for(VarSet::iterator it = provided.begin(); it != provided.end(); it++)
 			{
@@ -52,8 +55,8 @@ LiteralDependencyGraph::LiteralDependencyGraph(Literal *head, LiteralVector *bod
 					node = new Node(*it);
 					varNodes_.push_back(node);
 				}
-				ln->dep_.push_back(node);
-				node->in_++;
+				ln->out_.insert(node);
+				node->in_.insert(ln);
 			}
 		}
 	}
@@ -61,31 +64,32 @@ LiteralDependencyGraph::LiteralDependencyGraph(Literal *head, LiteralVector *bod
 
 void LiteralDependencyGraph::getUnboundVars(VarVector &free)
 {
-	for(NodeVector::iterator it = varNodes_.begin(); it != varNodes_.end(); it++)
-	{
-		if((*it)->in_ == 0)
-			free.push_back((*it)->var_);
-	}
-	// make a top sort
+	// TODO: this could be done without sets but i think this is no speed critical code
+
+	// propagate the dependencies
 	std::queue<Node*> bf;
 	for(NodeVector::iterator it = litNodes_.begin(); it != litNodes_.end(); it++)
-		if((*it)->in_ == 0)
+		if((*it)->in_.size() == 0)
 			bf.push(*it);
-
 	while(bf.size() > 0)
 	{
 		Node *top = bf.front();
 		bf.pop();
-		for(NodeVector::iterator it = top->dep_.begin(); it != top->dep_.end(); it++)
+		while(top->out_.size() > 0)
 		{
-			(*it)->in_--;
-			if((*it)->in_ == 0)
-				bf.push(*it);
+			Node *n = *top->out_.begin();
+			for(NodeSet::iterator j = n->in_.begin(); j != n->in_.end(); j++)
+				(*j)->out_.erase(n);
+			n->in_.clear();
+			bf.push(n);
 		}
+
 	}
+	// check if there are still variables left which depend on some literals
 	for(NodeVector::iterator it = varNodes_.begin(); it != varNodes_.end(); it++)
 	{
-		if((*it)->in_ > 0 && (*it)->var_ > 0)
+		assert((*it)->var_ > 0);
+		if((*it)->out_.size() > 0)
 			free.push_back((*it)->var_);
 	}
 }
