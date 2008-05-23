@@ -46,7 +46,7 @@ int Value::compare(const Value &b) const
 		case INT:
 			return intValue_ - b.intValue_;
 		case STRING:
-			return stringValue_ - b.stringValue_;
+			return (int)stringValue_ - (int)b.stringValue_;
 	}
 	assert(false);
 }
