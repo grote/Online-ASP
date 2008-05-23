@@ -113,7 +113,7 @@ bool SCC::check(Grounder *g)
 						std::cerr << ", ";
 					else
 						comma = true;
-					std::cerr << g->getVarString(*it);
+					std::cerr << *g->getVarString(*it);
 				}
 				std::cerr << " }" << std::endl;
 				std::cerr << "	" << rules_.back() << std::endl;
