@@ -73,21 +73,26 @@ struct SolveParams {
 	
 	//! sets the restart-parameters to use during search.
 	/*!
-	 * clasp currently supports three different restart-strategies:
+	 * clasp currently supports four different restart-strategies:
 	 *  - fixed-interval restarts: restart every n conflicts
 	 *  - geometric-restarts: restart every n1 * n2^k conflict (k >= 0)
+	 *	- inner-outer-geometric: similar to geometric but sequence is repeated once bound outer is reached. Then, outer = outer*n2
 	 *  - luby's restarts: see: Luby et al. "Optimal speedup of las vegas algorithms."
 	 *  .
 	 * \param base		initial interval or run-length
 	 * \param inc			grow factor
+	 * \param outer		max restart interval, repeat sequence if reached
+	 * \param localR	Use local restarts, i.e. restart if number of conflicts in *one* branch exceed threshold
 	 * \param bounded	allow bounded restarts after first solution was found
 	 * \note
 	 *  if base is equal to 0, restarts are disabled.
 	 *  if inc is equal to 0, luby-restarts are used and base is interpreted as run-length
 	 */
-	void setRestartParams(uint32 base, double inc, bool bounded) {
+	void setRestartParams(uint32 base, double inc, uint32 outer = 0, bool localR = false, bool bounded = false) {
 		restartBounded_	= bounded;
+		restartLocal_		= localR;
 		restartBase_		= base;
+		restartOuter_		= outer;
 		if (inc >= 1.0 || inc == 0.0)	restartInc_		= inc;
 	}
 
@@ -148,8 +153,10 @@ struct SolveParams {
 	double	reduceDInc()		const { return reduceDInc_; }
 	bool		reduceRestart() const { return reduceOnRestart_; }
 	uint32	restartBase()		const { return restartBase_; }
+	uint32	restartOuter()	const { return restartOuter_; }
 	double	restartInc()		const { return restartInc_; }
 	bool		restartBounded()const { return restartBounded_; }
+	bool		restartLocal()	const { return restartLocal_; }
 	uint32	randRuns()			const { return randRuns_; }
 	uint32	randConflicts()	const { return randConflicts_; }
 	double	randomPropability() const { return randProp_; }
@@ -166,11 +173,13 @@ private:
 	double				randProp_;
 	ModelPrinter*	printer_;
 	uint32				restartBase_;
+	uint32				restartOuter_;
 	uint32				randRuns_;
 	uint32				randConflicts_;
 	uint32				shuffleFirst_;
 	uint32				shuffleNext_;
 	bool					restartBounded_;	
+	bool					restartLocal_;
 	bool					reduceOnRestart_;
 };
 

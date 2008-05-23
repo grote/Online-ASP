@@ -131,6 +131,7 @@ bool DefaultUnfoundedCheck::init(Solver& s, const AtomList& prgAtoms, const Body
 	if (!activeClause_) { activeClause_ = new ClauseCreator(solver_); }
 	// add all relevant new atoms
 	AtomList::const_iterator atomsEnd = prgAtoms.end();
+	AtomVec::size_type oldAt = atoms_.size();
 	for (AtomList::const_iterator h = prgAtoms.begin()+startAtom; h != atomsEnd; ++h) {
 		if (relevantPrgAtom(*h)) {
 			UfsAtomNode* hn = addAtom(*h);
@@ -152,7 +153,7 @@ bool DefaultUnfoundedCheck::init(Solver& s, const AtomList& prgAtoms, const Body
 	}
 	propagateSource();
 	// check for initially unfounded atoms
-	for (AtomVec::iterator it = atoms_.begin(); it != atoms_.end(); ++it) {
+	for (AtomVec::iterator it = atoms_.begin()+oldAt; it != atoms_.end(); ++it) {
 		if (!solver_->isFalse((*it)->lit)
 			&& (*it)->source == 0
 			&& !solver_->force(~(*it)->lit, 0)) {

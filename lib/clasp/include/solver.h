@@ -708,7 +708,7 @@ public:
 	 * \note search treats the root level as top-level, i.e. it
 	 * will never backtrack below that level.
 	 */
-	ValueRep search(uint64 maxConflict, double& maxLearnts, double inc, double randProp = 0.0);
+	ValueRep search(uint64 maxConflict, double& maxLearnts, double inc, double randProp = 0.0, bool localR = false);
 
 	//! number of (unprocessed) literals in the propagation queue
 	uint32 queueSize() const { return (uint32) trail_.size() - front_; }
@@ -755,8 +755,13 @@ private:
 	void		undoLevel(bool sp);
 	void		minimizeConflictClause(ClauseCreator& outClause);
 	uint32	analyzeConflict(ClauseCreator& outClause);
-	
-	
+	bool		localRestart(uint64& mCfl) {
+		if (decisionLevel() > 0 && (stats.conflicts - levConflicts_[decisionLevel()-1]) > mCfl) {
+			mCfl = 0;
+			return true;
+		}
+		return false;
+	}
 	SolverStrategies	strategy_;		// Strategies used by this solver-object
 	State							vars_;				// For Var v vars_[v] stores state of v
 	ConstraintDB			constraints_;	// problem constraints
@@ -765,8 +770,8 @@ private:
 	LitVec						conflict_;		// stores conflict-literals for later analysis
 	LitVec						trail_;				// Assignment stack; stores assigments in the order they were made
 	TrailLevels				levels_;			// Stores start-position in trail of every decision level
+	VarVec						levConflicts_;// For a DL d, levConflicts_[d-1] stores num conflicts when d was started
 	Watches						watches_;			// watches_[p.index()] is a list of constraints watching p
-	uint64						nextSpChange_;// 	
 	LitVec::size_type	front_;				// "propagation queue"
 	uint32						binCons_;			// number of binary constraints
 	uint32						ternCons_;		// number of ternary constraints
@@ -776,7 +781,6 @@ private:
 	uint32						eliminated_;	// number of vars currently eliminated
 	DecisionHeuristic*randHeuristic_;
 	bool							shuffle_;			// shuffle program on next simplify?
-	bool							saveProgress_;// use progress saving?
 };
 
 //! returns true if p represents the special variable 0

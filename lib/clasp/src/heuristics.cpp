@@ -385,6 +385,9 @@ Literal ClaspBerkmin::selectVsids(Solver& s) {
 Literal ClaspBerkmin::selectLiteral(Solver& s, Var var, bool vsids) {
 	int32 w0 = vsids ? (int32)s.estimateBCP(posLit(var), 5) : score_[var].occ_;
 	int32 w1 = vsids ? (int32)s.estimateBCP(negLit(var), 5) : 0;
+	if ( s.strategies().saveProgress && std::abs(w0-w1) > 32 ) {
+		s.setPreferredValue(var, (w0-w1)<0?value_false:value_true);
+	}
 	return w0 != w1 
 		? Literal(var, (w0-w1)<0)
 		: s.preferredLiteralByType(var);
@@ -394,7 +397,7 @@ Literal ClaspBerkmin::selectLiteral(Solver& s, Var var, bool vsids) {
 /////////////////////////////////////////////////////////////////////////////////////////
 // ClaspVmtf selection strategy
 /////////////////////////////////////////////////////////////////////////////////////////
-ClaspVmtf::ClaspVmtf(LitVec::size_type mtf, bool loops) : resQueue_(GreaterActivity(score_)), MOVE_TO_FRONT(mtf), loops_(loops) { 
+ClaspVmtf::ClaspVmtf(LitVec::size_type mtf, bool loops) : MOVE_TO_FRONT(mtf), loops_(loops) { 
 }
 
 
@@ -407,13 +410,11 @@ void ClaspVmtf::endInit(const Solver& s) {
 	vars_.clear();
 	for (Var v = 1; v <= s.numVars(); ++v) {
 		if (s.value(v) == value_free) {
-			uint32 s1 = s.estimateBCP(posLit(v), 0) - 1;
-			uint32 s2 = s.estimateBCP(negLit(v), 0) - 1;
-			score_[v].activity_ = ((s1 * s2)<<10) + ((s1 + s2)<<1) + s.numWatches(posLit(v)) + s.numWatches(negLit(v));
+			score_[v].activity_ = momsScore(s, v);
 			score_[v].pos_ = vars_.insert(vars_.end(), v);
 		}
 	}
-	vars_.sort(GreaterActivity(score_));
+	vars_.sort(LessLevel(s, score_));
 	for (VarList::iterator it = vars_.begin(); it != vars_.end(); ++it) {
 		score_[*it].activity_ = 0;
 	}
@@ -433,28 +434,32 @@ void ClaspVmtf::simplify(Solver& s, LitVec::size_type i) {
 
 void ClaspVmtf::newConstraint(const Solver& s, const Literal* first, LitVec::size_type size, ConstraintType t) {
 	if (t != Constraint_t::native_constraint) {
+		LessLevel comp(s, score_);
+		VarVec::size_type maxMove = t == Constraint_t::learnt_conflict ? MOVE_TO_FRONT : MOVE_TO_FRONT/2;
 		for (LitVec::size_type i = 0; i < size; ++i, ++first) {
 			Var v = first->var(); 
 			score_[v].occ_ += 1 - (((int)first->sign())<<1);
-			if (t == Constraint_t::learnt_loop && loops_) {
-				score_[v].level_ = s.level(v);
-				if (resQueue_.size() < MOVE_TO_FRONT/2) {
-					resQueue_.push(v);
+			if (t == Constraint_t::learnt_conflict || loops_) {
+				++score_[v].activity(decay_);
+				if (mtf_.size() < maxMove) {
+					mtf_.push_back(v);
+					std::push_heap(mtf_.begin(), mtf_.end(), comp);
 				}
-				else if (resQueue_.compare()(v, resQueue_.top())) {
-					resQueue_.pop();
-					resQueue_.push(v);
+				else if (comp(v, mtf_[0])) {
+					assert(s.level(v) <= s.level(mtf_[0]));
+					std::pop_heap(mtf_.begin(), mtf_.end(), comp);
+					mtf_.back() = v;
+					std::push_heap(mtf_.begin(), mtf_.end(), comp);
 				}
 			}
 		}
-		while (!resQueue_.empty()) {
-			Var v = resQueue_.top();
-			resQueue_.pop();
-			score_[v].level_ = 0;
+		for (VarVec::size_type i = 0; i != mtf_.size(); ++i) {
+			Var v = mtf_[i];
 			if (score_[v].pos_ != vars_.end()) {
 				vars_.splice(vars_.begin(), vars_, score_[v].pos_);
 			}
 		}
+		mtf_.clear();
 		front_ = vars_.begin();
 	}	
 }
@@ -469,31 +474,8 @@ void ClaspVmtf::undoUntil(const Solver&, LitVec::size_type) {
 	front_ = vars_.begin();
 }
 
-void ClaspVmtf::updateReason(const Solver& s, const LitVec& lits, Literal) {
-	// Idea: don't restrict vars that are moved to the front to the vars that are contained
-	// in the resulting conflict clause, but also move active vars from nogoods that were
-	// used during resolution.
-	const LitVec::size_type maxSize = MOVE_TO_FRONT*5;
-	for (LitVec::size_type i = 0; i < lits.size(); ++i) {
-		Var v = lits[i].var();
-		if (!s.seen(v)) {
-			// Note: Vars are only scored once, even if they occur in multiple clauses.
-			// This is different to the scheme used in ClaspBerkmin, but simplifies use of priority
-			// queue, b/c we don't have to worry about changing activities once a var is in the queue.
-			// Note also that we can't use s.level(v) directly, b/c vars from the current decision level are
-			// undone in analyzeConflict, i.e. once a var v was resolved it is unassigend and the 
-			// value of s.level(v) is no longer valid.
-			++score_[v].activity(decay_);
-			score_[v].level_ = s.level(v);
-			if (resQueue_.size() < maxSize) {
-				resQueue_.push(lits[i].var());
-			}
-			else if (resQueue_.compare()(lits[i].var(), resQueue_.top())) {
-				resQueue_.pop();
-				resQueue_.push(lits[i].var());
-			}
-		}
-	}
+void ClaspVmtf::updateReason(const Solver&, const LitVec&, Literal r) {
+	++score_[r.var()].activity(decay_);
 }
 
 Literal ClaspVmtf::doSelect(Solver& s) {
@@ -549,19 +531,15 @@ void ClaspVsids::newConstraint(const Solver&, const Literal* first, LitVec::size
 	if (t != Constraint_t::native_constraint) {
 		for (LitVec::size_type i = 0; i < size; ++i, ++first) {
 			score_[first->var()].second += 1 - (first->sign() + first->sign());
-			if (t == Constraint_t::learnt_loop && considerLoops_) {
+			if (t == Constraint_t::learnt_conflict || considerLoops_) {
 				updateVarActivity(first->var());
 			}
 		}
 	}
 }
 
-void ClaspVsids::updateReason(const Solver& s, const LitVec& lits, Literal) {
-	for (LitVec::size_type i = 0; i < lits.size(); ++i) {
-		if (!s.seen(lits[i].var())) {
-			updateVarActivity(lits[i].var());
-		}
-	}
+void ClaspVsids::updateReason(const Solver&, const LitVec&, Literal r) {
+	updateVarActivity(r.var());
 }
 
 void ClaspVsids::undoUntil(const Solver& s , LitVec::size_type st) {

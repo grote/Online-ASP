@@ -5,7 +5,7 @@
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 
-ClaspOutput::ClaspOutput(Clasp::ProgramBuilder *b) : Output(&std::cout), b_(b)
+ClaspOutput::ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf) : Output(&std::cout), b_(b), tf_(tf)
 {
 }
 
@@ -28,6 +28,7 @@ void ClaspOutput::print(NS_OUTPUT::Fact *r)
 	else
 		head = r->head_->getUid();
 	//*out_ << 1 << " " << head << " " << 0 << " " << 0 << std::endl;
+	stats_.rules[Clasp::BASICRULE]++;
 	b_->startRule();
 	b_->addHead(head);
 	b_->endRule();
@@ -48,6 +49,7 @@ void ClaspOutput::printBody(NS_OUTPUT::Aggregate *r)
 			nl = newUid();
 			nu = newUid();
 			//*out_ << 1 << " " << r->getUid() << " " << 2 << " " << 1 << " " << nu << " " << nl << std::endl;
+			stats_.rules[Clasp::BASICRULE]++;
 			b_->startRule();
 			b_->addHead(r->getUid());
 			b_->addToBody(nu, false);
@@ -60,6 +62,7 @@ void ClaspOutput::printBody(NS_OUTPUT::Aggregate *r)
 			nl = newUid();
 			nu = 0;
 			//*out_ << 1 << " " << r->getUid() << " " << 1 << " " << 0 << " " << nl << std::endl;
+			stats_.rules[Clasp::BASICRULE]++;
 			b_->startRule();
 			b_->addHead(r->getUid());
 			b_->addToBody(nl, true);
@@ -70,6 +73,7 @@ void ClaspOutput::printBody(NS_OUTPUT::Aggregate *r)
 			nl = 0;
 			nu = newUid();
 			//*out_ << 1 << " " << r->getUid() << " " << 1 << " " << 1 << " " << nu << std::endl;
+			stats_.rules[Clasp::BASICRULE]++;
 			b_->startRule();
 			b_->addHead(r->getUid());
 			b_->addToBody(nu, false);
@@ -80,6 +84,7 @@ void ClaspOutput::printBody(NS_OUTPUT::Aggregate *r)
 			nl = 0;
 			nu = 0;
 			//*out_ << 1 << " " << r->getUid() << " " << 0 << " " << 0 << std::endl;
+			stats_.rules[Clasp::BASICRULE]++;
 			b_->startRule();
 			b_->addHead(r->getUid());
 			b_->endRule();
@@ -89,12 +94,17 @@ void ClaspOutput::printBody(NS_OUTPUT::Aggregate *r)
 
 void ClaspOutput::printWeightRule(int head, int bound, NS_OUTPUT::ObjectVector &lits, IntVector &weights)
 {
-	b_->startRule(Clasp::WEIGHTRULE, bound);
-	b_->addHead(head);
+	stats_.rules[Clasp::WEIGHTRULE]++;
+	Clasp::PrgRule r(Clasp::WEIGHTRULE);
+	r.setBound(bound);
+	r.addHead(head);
 	IntVector::iterator wIt = weights.begin();
 	for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++, wIt++)
-		b_->addToBody(abs((*it)->getUid()), (*it)->getUid() > 0, *wIt);
-	b_->endRule();
+		r.addToBody(abs((*it)->getUid()), (*it)->getUid() > 0, *wIt);
+	if(Clasp::LparseReader::transform_weight & tf_)
+		b_->addAsNormalRules(r);
+	else
+		b_->addRule(r);
 }
 
 void ClaspOutput::printHead(int B, NS_OUTPUT::Aggregate *r)
@@ -115,26 +125,32 @@ void ClaspOutput::printHead(int B, NS_OUTPUT::Aggregate *r)
 	printBody(r);
 	int nn = newUid();
 	//*out_ << 1 << " " << nn << " " << 1 << " " << 1 << " " << r->uid_ << std::endl;
+	stats_.rules[Clasp::BASICRULE]++;
 	b_->startRule();
 	b_->addHead(nn);
 	b_->addToBody(r->uid_, false);
 	b_->endRule();
 	//*out_ << 1 << " " << false_ << " " << 2 << " " << 1 << " " << r->uid_ << " " << B << std::endl;
+	stats_.rules[Clasp::BASICRULE]++;
 	b_->startRule();
 	b_->addHead(false_);
-	b_->addToBody(B, true);
 	b_->addToBody(r->uid_, false);
+	b_->addToBody(B, true);
 	b_->endRule();
 	
 	if(r->lits_.size() == 0)
 		return;
 	
-	b_->startRule(Clasp::CHOICERULE);
+	stats_.rules[Clasp::CHOICERULE]++;
+	Clasp::PrgRule ru(Clasp::CHOICERULE);
 	for(NS_OUTPUT::ObjectVector::iterator it = r->lits_.begin(); it != r->lits_.end(); it++)
-		b_->addHead((*it)->getUid());
-	b_->addToBody(B, true);
-	b_->addToBody(nn, false);
-	b_->endRule();
+		ru.addHead((*it)->getUid());
+	ru.addToBody(B, true);
+	ru.addToBody(nn, false);
+	if(Clasp::LparseReader::transform_choice & tf_)
+		b_->addAsNormalRules(ru);
+	else
+		b_->addRule(ru);
 }
 
 void ClaspOutput::printBody(int headId, NS_OUTPUT::ObjectVector &body)
@@ -147,6 +163,7 @@ void ClaspOutput::printBody(int headId, NS_OUTPUT::ObjectVector &body)
 		else if(dynamic_cast<NS_OUTPUT::Aggregate*>(*it))
 			printBody(static_cast<NS_OUTPUT::Aggregate*>(*it));
 	}
+	stats_.rules[Clasp::BASICRULE]++;
 	b_->startRule();
 	b_->addHead(headId);
 	for(NS_OUTPUT::ObjectVector::iterator it = body.begin(); it != body.end(); it++)
@@ -186,6 +203,7 @@ void ClaspOutput::print(NS_OUTPUT::Compute *r)
 void ClaspOutput::print(NS_OUTPUT::Optimize *r)
 {
 	int inv = r->type_ == NS_OUTPUT::Optimize::MAXIMIZE ? -1 : 1;
+	stats_.rules[Clasp::OPTIMIZERULE]++;
 	b_->startRule(Clasp::OPTIMIZERULE, 0);
 	IntVector::iterator itW = r->weights_.begin();
 	for(NS_OUTPUT::ObjectVector::iterator it = r->lits_.begin(); it != r->lits_.end(); it++, itW++)
@@ -224,6 +242,11 @@ void ClaspOutput::print(NS_OUTPUT::Object *r)
 	}
 }
 
+Clasp::LparseStats &ClaspOutput::getStats()
+{
+	return stats_;
+}
+
 void ClaspOutput::finalize()
 {
 	int uid = 0;
@@ -232,10 +255,13 @@ void ClaspOutput::finalize()
 			for(AtomHash::iterator atom = it->begin(); atom != it->end(); atom++)
 				b_->setAtomName(atom->second, atomToString(uid, atom->first).c_str());
 	b_->setCompute(false_, false);
+	stats_.atoms[0] = uids_ - 1;
+	stats_.atoms[1] = b_->numAtoms() - uids_;
 }
 
 int ClaspOutput::newUid()
 {
+	uids_++;
 	return b_->newAtom();
 }
 

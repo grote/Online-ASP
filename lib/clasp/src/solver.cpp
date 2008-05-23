@@ -176,9 +176,6 @@ bool Solver::endAddConstraints(bool look) {
 	stats.native[0] = numConstraints();
 	stats.native[1] = numBinaryConstraints();
 	stats.native[2] = numTernaryConstraints();
-	saveProgress_		= false;
-	nextSpChange_		= strategies().saveProgress?400:static_cast<uint64>(-1);
-	strategies().saveProgress = false;
 	if (!hasConflict()) {
 		strategy_.heuristic->endInit(*this);	
 	}
@@ -412,6 +409,7 @@ bool Solver::assume(const Literal& p) {
 	assert( value(p.var()) == value_free );
 	++stats.choices;
 	levels_.push_back(LevelInfo((uint32)trail_.size(), ConstraintDB()));
+	levConflicts_.push_back( (uint32)stats.conflicts );
 	return force(p, Antecedent());	// always true
 }
 
@@ -522,11 +520,6 @@ bool Solver::resolveConflict() {
 				impliedLits_.push_back( ImpliedLiteral( trail_.back(), uipLevel, reason(trail_.back().var()) ));
 			}
 			assert(ret);
-			if (--nextSpChange_ == 0) {
-				nextSpChange_ = saveProgress_ ? 400 : 100;
-				saveProgress_ = !saveProgress_;
-				strategy_.saveProgress = saveProgress_;
-			}
 			return ret;
 		}
 		else {
@@ -562,7 +555,7 @@ void Solver::undoUntil(uint32 level) {
 	bool sp = false;
 	do {
 		undoLevel(sp);
-		sp = saveProgress_;
+		sp = strategy_.saveProgress;
 	} while (decisionLevel() > level);
 }
 
@@ -631,6 +624,7 @@ void Solver::undoLevel(bool sp) {
 		undoList[i]->undoLevel(*this);
 	}
 	levels_.pop_back();
+	levConflicts_.pop_back();
 	front_ = trail_.size();
 }
 
@@ -768,7 +762,7 @@ void Solver::reduceLearnts(float maxRem) {
 /////////////////////////////////////////////////////////////////////////////////////////
 // The basic DPLL-like search-function
 /////////////////////////////////////////////////////////////////////////////////////////
-ValueRep Solver::search(uint64 maxConflicts, double& maxLearnts, double inc, double randProp) {
+ValueRep Solver::search(uint64 maxConflicts, double& maxLearnts, double inc, double randProp, bool localR) {
 	maxLearnts = std::min(maxLearnts, (double)std::numeric_limits<LitVec::size_type>::max());
 	initRandomHeuristic(randProp);
 	ValueRep res = value_false;
@@ -789,7 +783,7 @@ ValueRep Solver::search(uint64 maxConflicts, double& maxLearnts, double inc, dou
 				break;
 			}
 		}
-		else if (!resolveConflict() || --maxConflicts == 0) {
+		else if (!resolveConflict() || (!localR && --maxConflicts == 0) || (localR && localRestart(maxConflicts)) ) {
 			res = maxConflicts > 0 ? value_false : value_free;
 			break;
 		}

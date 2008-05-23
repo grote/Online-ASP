@@ -33,7 +33,6 @@
 #include <clasp/include/solver.h>
 #include <clasp/include/pod_vector.h>
 #include <clasp/include/util/indexed_priority_queue.h>
-#include <queue>
 #include <list>
 namespace Clasp { 
 
@@ -223,8 +222,7 @@ private:
  * \ingroup heuristic
  * \see Lawrence Ryan: "Efficient Algorithms for Clause Learning SAT-Solvers"
  *
- * \note This implementation of VMTF differs from the original implementation in four points:
- *	- it moves to the front a selection of variables that were active during conflict resolution.
+ * \note This implementation of VMTF differs from the original implementation in three points:
  *	- if considerLoops is true, it moves to the front a selection of variables from learnt loop nogoods
  *	- it measures variable activity by using a BerkMin-like score scheme
  *	- the initial order of the var list is determined using a MOMs-like score scheme
@@ -261,10 +259,9 @@ private:
 	typedef std::list<Var> VarList;
 	typedef VarList::iterator VarPos;
 	struct VarInfo {
-		VarInfo(VarPos it) : pos_(it), activity_(0), level_(0), occ_(0), decay_(0) { }
+		VarInfo(VarPos it) : pos_(it), activity_(0), occ_(0), decay_(0) { }
 		VarPos	pos_;				// position of var in var list
 		uint32	activity_;	// activity of var - initially 0
-		uint32	level_;			// decision level on which var was assigned
 		int32		occ_;				// which literal of var occurred more often in learnt constraints?
 		uint32	decay_;			// counter for lazy decaying activity
 		uint32& activity(uint32 globalDecay) {
@@ -277,30 +274,24 @@ private:
 	};
 	typedef PodVector<VarInfo>::type Score;
 	
-	// first sort by activity, then by increasing decision level
-	struct GreaterActivity {
-		GreaterActivity(const Score& sc) : sc_(sc) {}
+	struct LessLevel {
+		LessLevel(const Solver& s, const Score& sc) : s_(s), sc_(sc) {}
 		bool operator()(Var v1, Var v2) const {
-			return sc_[v1].activity_ > sc_[v2].activity_
-				|| (sc_[v1].activity_ > sc_[v2].activity_ && sc_[v1].level_ < sc_[v2].level_);
+			return s_.level(v1) < s_.level(v2) 
+				|| (s_.level(v1) == s_.level(v2) && sc_[v1].activity_ > sc_[v2].activity_);
 		}
 		bool operator()(Literal l1, Literal l2) const {
 			return (*this)(l1.var(), l2.var());
 		}
 	private:
-		GreaterActivity& operator=(const GreaterActivity&);
+		LessLevel& operator=(const LessLevel&);
+		const Solver& s_;
 		const Score&	sc_;
-	};
-	typedef std::priority_queue<Var, VarVec, GreaterActivity> PQueue;
-	struct ResQueue : public PQueue {
-		ResQueue(const GreaterActivity& p) : PQueue(p) {}
-		const GreaterActivity& compare() const {
-			return comp;
-		}
+		
 	};
 	Score				score_;			// For each var v score_[v] stores heuristic score of v
 	VarList			vars_;			// List of possible choices, initially ordered by MOMs-like score
-	ResQueue		resQueue_;	// "Active" vars on last conflict that are moved to the front of vars_. At most 5*MOVE_TO_FRONT
+	VarVec			mtf_;				// Vars to be moved to the front of vars_
 	VarPos			front_;			// Current front-position in var list - reset on backtracking 
 	uint32			decay_;			// "global" decay counter. Increased every 512 decisions
 	const LitVec::size_type MOVE_TO_FRONT;

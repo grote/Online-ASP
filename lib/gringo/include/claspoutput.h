@@ -3,6 +3,7 @@
 
 #include <gringo.h>
 #include <output.h>
+#include <clasp/include/lparse_reader.h>
 
 namespace Clasp
 {
@@ -16,12 +17,13 @@ namespace NS_GRINGO
 		class ClaspOutput : public Output
 		{
 		public:
-			ClaspOutput(Clasp::ProgramBuilder *b);
+			ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf);
 			void initialize(Grounder *g);
 			void print(NS_OUTPUT::Object *o);
 			void finalize();
 			~ClaspOutput();
 			int newUid();
+			Clasp::LparseStats &getStats();
 		private:
 			void print(NS_OUTPUT::Fact *r);
 			void print(NS_OUTPUT::Rule *r);
@@ -33,9 +35,11 @@ namespace NS_GRINGO
 			void print(NS_OUTPUT::Optimize *r);
 			void print(NS_OUTPUT::Compute *r);
 		private:
+			Clasp::LparseStats stats_;
 			Clasp::ProgramBuilder *b_;
 			int false_;
 			int models_;
+			Clasp::LparseReader::TransformMode tf_;
 		};
 	}
 }
