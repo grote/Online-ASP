@@ -142,17 +142,38 @@ IndexedDomainDefault::~IndexedDomainDefault()
 
 IndexedDomainFullMatch::IndexedDomainFullMatch(ValueVectorSet &domain, ConstantVector &param) : domain_(domain)
 {
+	//std::cout << "indexedDomainFullMatch ctor" << std::endl;
 	for(ConstantVector::iterator it = param.begin(); it != param.end(); it++)
-		bind_.push_back((*it)->getUID());
+	{
+		// funcSymbolTerms have UID = 0, but have several UIDs
+		if ((*it)->getUID() > 0)
+			bind_.push_back((*it)->getUID());
+		else
+		{
+			//we have a funcSymbol, since we are in IndexedDomainFullMatch
+			//damn
+			//(*it)->getVars(bind_);
+			VarSet tmp;
+			(*it)->getVars(tmp);
+			for (VarSet::const_iterator i = tmp.begin(); i != tmp.end(); ++i)
+			{
+				bind_.push_back(*i);
+			}
+		}
+	}
 }
 
 void IndexedDomainFullMatch::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 {
+	//std::cout << "indexedDomainFullMatch firstMatch" << std::endl;
 	current_ = domain_.begin();
 	if(current_ != domain_.end())
 	{
 		for(size_t i = 0; i < bind_.size(); i++)
+		{
+			//std::cout << "bind_["<< i << "] = " << bind_[i] << std::endl;
 			g->g_->setValue(bind_[i], (*current_)[i], binder);
+		}
 		status = SuccessfulMatch;
 	}
 	else
@@ -161,6 +182,7 @@ void IndexedDomainFullMatch::firstMatch(int binder, DLVGrounder *g, MatchStatus 
 
 void IndexedDomainFullMatch::nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
 {
+	//std::cout << "indexedDomainFullMatch nextMatch" << std::endl;
 	current_++;
 	if(current_ != domain_.end())
 	{

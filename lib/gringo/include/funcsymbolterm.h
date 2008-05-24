@@ -2,11 +2,12 @@
 #define FUNCSYMBOLTERM_H
 
 #include <gringo.h>
-#include <term.h>
+//#include <term.h>
+#include <constant.h>
 
 namespace NS_GRINGO
 {
-	class FuncSymbolTerm : public Term
+	class FuncSymbolTerm : public Constant
 	{
 	public:
 		FuncSymbolTerm(Grounder* g, std::string* s, TermVector* tl);
@@ -19,9 +20,8 @@ namespace NS_GRINGO
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual ~FuncSymbolTerm();
 	protected:
-		std::string*	funcSymbol_;
 		TermVector*		termList_;
-		Grounder*		grounder_;
+		std::string*	funcSymbol_;
 	};
 }
 

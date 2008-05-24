@@ -10,7 +10,7 @@ namespace NS_GRINGO
 	class Constant : public Term
 	{
 	public:
-		enum ConstantType { ID, VAR, NUM, STRING };
+		enum ConstantType { ID, VAR, NUM, STRING, FUNCSYMBOL };
 	public:
 		Constant(int value);
 		Constant(ConstantType type, Grounder *g, std::string *value);

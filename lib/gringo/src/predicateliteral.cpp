@@ -212,7 +212,6 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 	if(variables_)
 	{
-		bool freeVars = false;
 		ConstantVector param(variables_->size());
 		ConstantVector::iterator paramIt = param.begin();
 		VarSet free;
@@ -220,11 +219,32 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 		{
 			assert(dynamic_cast<Constant*>(*it));
 			(*paramIt) = static_cast<Constant*>(*it);
+			//std::cout << "in PredicateLiteral::createIndexedDomain print" << std::endl;
+			//(*paramIt)->print(std::cout);
 			int uid = (*paramIt)->getUID();
 			if(uid > 0 && index.find(uid) == index.end())
 				free.insert(uid);
+			else
+			{
+				VarSet funcSymbolVars;
+				(*paramIt)->getVars(funcSymbolVars);
+				if (funcSymbolVars.size() > 0)
+				{
+					for (VarSet::const_iterator i = index.begin(); i != index.end(); ++i)
+					{
+						//std::cout << "indexVar UID: " << *i << std::endl;
+					}
+					for (VarSet::const_iterator i = funcSymbolVars.begin(); i != funcSymbolVars.end(); ++i)
+					{
+						//std::cout << "funcSymbolVar UID: " << *i << std::endl;
+						if (index.find(*i) == index.end())
+							free.insert(*i);
+					}
+				}
+			}
 			
 		}
+		//std::cout << "free vs param size: " << free.size() << " vs " << param.size() << std::endl;
 		if(free.size() > 0)
 		{
 			if(free.size() == param.size())
