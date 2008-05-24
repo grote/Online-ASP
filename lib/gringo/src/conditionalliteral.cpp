@@ -45,6 +45,7 @@ void ConditionalLiteral::normalize(Grounder *g, Expandable *e)
 
 void ConditionalLiteral::getVars(VarSet &vars, VarsType type)
 {
+	// TODO: this method needs refinement
 	switch(type)
 	{
 		case VARS_ALL:

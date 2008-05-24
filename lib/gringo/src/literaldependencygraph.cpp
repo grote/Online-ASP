@@ -78,10 +78,18 @@ void LiteralDependencyGraph::getUnboundVars(VarVector &free)
 		while(top->out_.size() > 0)
 		{
 			Node *n = *top->out_.begin();
-			for(NodeSet::iterator j = n->in_.begin(); j != n->in_.end(); j++)
-				(*j)->out_.erase(n);
-			n->in_.clear();
-			bf.push(n);
+			if(top->var_ > 0)
+			{
+				n->in_.erase(top);
+				top->out_.erase(n);
+			}
+			else
+			{
+				for(NodeSet::iterator j = n->in_.begin(); j != n->in_.end(); j++)
+					(*j)->out_.erase(n);
+				n->in_.clear();
+				bf.push(n);
+			}
 		}
 
 	}

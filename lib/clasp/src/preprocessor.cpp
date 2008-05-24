@@ -139,6 +139,7 @@ bool Preprocessor::preprocessEq(uint32 maxIters) {
 			it->first = Literal(prg_->getEqAtom(it->first.var()), it->first.sign());
 		}
 	}
+	printf("Finished after %u iterations\n", pass_);
 	return true;
 }
 
@@ -270,8 +271,9 @@ bool Preprocessor::simplifyClassifiedProgram(uint32 startAtom, uint32& stopAtom)
 	return true;
 }
 
+
+// Derived a new fact body. The body is eq to True, therefore does not need a separate variable.
 bool Preprocessor::newFactBody(PrgBodyNode* body, uint32 id, uint32 oldHash) {
-	bool newFacts		= false;
 	// first: delete old entry because hash has changed
 	ProgramBuilder::BodyRange ra = prg_->bodyIndex_.equal_range(oldHash);
 	for (; ra.first != ra.second && prg_->bodies_[ra.first->second] != body; ++ra.first);
@@ -282,10 +284,8 @@ bool Preprocessor::newFactBody(PrgBodyNode* body, uint32 id, uint32 oldHash) {
 	for (; ra.first != ra.second; ++ra.first ) {
 		PrgBodyNode* other = prg_->bodies_[ra.first->second];
 		if (body->equal(*other)) { 
+			// Found an equivalent body, merge heads... 
 			for (VarVec::size_type i = 0; i != body->heads.size(); ++i) {
-				if (prg_->atoms_[body->heads[i]]->value() != value_true) {
-					newFacts = true;
-				}
 				other->heads.push_back( body->heads[i] );
 				setSimplifyBodies( body->heads[i] );
 			}
@@ -293,24 +293,20 @@ bool Preprocessor::newFactBody(PrgBodyNode* body, uint32 id, uint32 oldHash) {
 			if (nodes_[ra.first->second].sHead == 0) {
 				other->simplifyHeads(*prg_, *this, true);
 			}
+			// and remove this body from Program.
 			body->setIgnore(true);
 			body->clearVar(true);
 			nodes_[id].bSeen	= 1;
 			nodes_[id].eq			= ra.first->second;
-			return body->type() != CHOICERULE && newFacts;
+			return true;
 		}
 	}
+	// No equivalent body found. 
 	prg_->bodyIndex_.insert(ProgramBuilder::BodyIndex::value_type(0, id));
 	body->resetSupported();
 	prg_->initialSupp_.push_back(id);
-	if (body->type() != CHOICERULE) {
-		for (VarVec::size_type i = 0; i != body->heads.size(); ++i) {
-			if (prg_->atoms_[body->heads[i]]->value() != value_true) {
-				return true;
-			}
-		}
-	}
-	return false;
+	// Only reclassify if this body derives new facts 
+	return body->type() != CHOICERULE;
 }
 
 void Preprocessor::newFalseBody(PrgBodyNode* body, uint32 id, uint32 oldHash) {
