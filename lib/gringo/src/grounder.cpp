@@ -339,3 +339,11 @@ std::string *Grounder::createString(std::string *s)
 	return *res.first;
 }
 
+FuncSymbol* Grounder::createFuncSymbol(FuncSymbol* fn)
+{
+	std::pair<FuncSymbolHash::iterator, bool> res = funcHash_.insert(fn);
+	if (!res.second)
+		delete fn;
+	return *res.first;
+}
+

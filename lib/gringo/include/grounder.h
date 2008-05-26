@@ -4,6 +4,8 @@
 #include <gringo.h>
 #include <output.h>
 #include <ext/hash_set>
+//sorry for that
+#include "funcsymbol.h"
 
 namespace NS_GRINGO
 {
@@ -18,7 +20,16 @@ namespace NS_GRINGO
 		{
 			inline bool operator()(const std::string* a, const std::string* b) const;
 		};
+		struct funcSym_hash
+		{
+			inline size_t operator()(const FuncSymbol* a) const;
+		};
+		struct funcSym_equal
+		{
+			inline bool operator()(const FuncSymbol* a, const FuncSymbol* b) const;
+		};
 		typedef __gnu_cxx::hash_set<std::string*, string_hash, string_equal> StringHash;
+		typedef __gnu_cxx::hash_set<FuncSymbol*, funcSym_hash, funcSym_equal> FuncSymbolHash;
 		typedef std::pair<std::string*, StringVector*> DomainPredicate;
 		typedef std::vector<DomainPredicate> DomainVector;
 		typedef std::map<std::string*, int> VariableMap;
@@ -49,6 +60,7 @@ namespace NS_GRINGO
 		Value *createStringValue(std::string *id);
 		std::string *createString(std::string *s);
 		std::string *createString(const std::string &s);
+		FuncSymbol* createFuncSymbol(FuncSymbol* fn);
 		void preprocess();
 		NS_OUTPUT::Output *getOutput();
 		Evaluator *getEvaluator();
@@ -74,6 +86,8 @@ namespace NS_GRINGO
 		
 		/// pool of all strings used
 		StringHash stringHash_;
+		///pools of all function symbols used
+		FuncSymbolHash funcHash_;
 
 		// visibility of predicates: move to output
 		bool hideAll_;
@@ -92,6 +106,18 @@ namespace NS_GRINGO
 	{
 		return __gnu_cxx::__stl_hash_string(a->c_str());
 	}
+
+	bool Grounder::funcSym_equal::operator()(const FuncSymbol* a, const FuncSymbol* b) const
+	{
+		return *a == *b;
+	}
+
+	size_t Grounder::funcSym_hash::operator()(const FuncSymbol* a) const
+	{
+		return a->getHash();
+	}
+
+
 }
 
 #endif

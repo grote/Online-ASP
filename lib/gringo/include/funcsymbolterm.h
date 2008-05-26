@@ -19,7 +19,7 @@ namespace NS_GRINGO
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual ~FuncSymbolTerm();
 	protected:
-		std::string*	funcSymbol_;
+		std::string*	name_;
 		TermVector*		termList_;
 		Grounder*		grounder_;
 	};

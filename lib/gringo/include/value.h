@@ -3,6 +3,7 @@
 
 #include <gringo.h>
 #include <ext/hash_set>
+#include "funcsymbol.h"
 //#include <toolbox/allocator.h>
 
 namespace NS_GRINGO
@@ -16,7 +17,7 @@ namespace NS_GRINGO
 	{
 	public:
 		/// The type o a value
-		enum Type { INT, STRING, UNDEF };
+		enum Type { INT, STRING, FUNCSYMBOL, UNDEF };
 		/// Hash function object for single values
 		struct SingleHash
 		{
@@ -66,6 +67,11 @@ namespace NS_GRINGO
 		 * \param intValue The int
 		 */
 		Value(int intValue);
+		/**
+		 * \brief Creates a value encapsulating a function symbol
+		 * \param fn The function symbol
+		 */
+		Value(const FuncSymbol* fn);
 		/**
 		 * \brief Calculates a hash for the value
 		 * \return The Hash
@@ -122,6 +128,8 @@ namespace NS_GRINGO
 			int intValue_;
 			/// The string value
 			std::string *stringValue_;
+			/// The FuncSymbol value
+			const FuncSymbol *funcSymbol_;
 		};
 	};
 	
@@ -145,6 +153,8 @@ namespace NS_GRINGO
 				return (size_t)intValue_;
 			case STRING:
 				return (size_t)stringValue_;
+			case FUNCSYMBOL:
+				return funcSymbol_->getHash();
 			default:
 				// this shouldnt happen
 				assert(false);
