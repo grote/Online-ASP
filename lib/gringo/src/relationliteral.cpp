@@ -2,6 +2,7 @@
 #include "term.h"
 #include "value.h"
 #include "indexeddomain.h"
+#include "literaldependencygraph.h"
 
 using namespace NS_GRINGO;
 
@@ -13,6 +14,16 @@ RelationLiteral::RelationLiteral(RelationType type, Term *a, Term *b) : Literal(
 Node *RelationLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
 {
 	return 0;
+}
+
+void RelationLiteral::createNode(LDGBuilder *dg, bool head)
+{
+	assert(!head);
+	VarSet needed, provided;
+	a_->getVars(needed);
+	if(b_)
+		b_->getVars(needed);
+	dg->createStaticNode(this, needed, provided);
 }
 
 void RelationLiteral::print(std::ostream &out)
@@ -52,25 +63,10 @@ bool RelationLiteral::solved()
 	return true;
 }
 
-void RelationLiteral::normalize(Grounder *g, Expandable *r)
+void RelationLiteral::getVars(VarSet &vars)
 {
-	// nothing todo
-}
-
-void RelationLiteral::getVars(VarSet &vars, VarsType type)
-{
-	switch(type)
-	{
-		case VARS_PROVIDED:
-			// relation literals dont provide vars
-			break;
-		case VARS_GLOBAL:
-		case VARS_ALL:
-		case VARS_NEEDED:
-			a_->getVars(vars);
-			b_->getVars(vars);
-			break;
-	}
+	a_->getVars(vars);
+	b_->getVars(vars);
 }
 
 bool RelationLiteral::checkO(LiteralVector &unsolved)

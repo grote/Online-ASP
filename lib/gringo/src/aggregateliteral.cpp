@@ -5,6 +5,7 @@
 #include "value.h"
 #include "grounder.h"
 #include "dependencygraph.h"
+#include "literaldependencygraph.h"
 #include "indexeddomain.h"
 #include "output.h"
 #include "evaluator.h"
@@ -51,48 +52,14 @@ bool AggregateLiteral::match(Grounder *g)
 	return true;
 }
 
-void AggregateLiteral::normalize(Grounder *g, Expandable *r)
+void AggregateLiteral::getVars(VarSet &vars)
 {
-	// since aggregateliterals dont provide vars we dont need to normalize them
-	// but the conditionals of predicates have to be normalized
+	if(lower_)
+		lower_->getVars(vars);
+	if(upper_)
+		upper_->getVars(vars);
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-		(*it)->normalize(g, this);
-}
-
-void AggregateLiteral::getVars(VarSet &vars, VarsType type, VarVector &glob)
-{
-	// aggregate literals are the only literals with local vars
-	// so all global bound vars are needed to ground the aggregate
-	// only the local vars are not needed
-	Literal::getVars(vars, type == VARS_NEEDED ? VARS_ALL : type, glob);
-}
-
-void AggregateLiteral::getVars(VarSet &vars, VarsType type)
-{
-	switch(type)
-	{
-		case VARS_PROVIDED:
-			// aggregate literals never!!! povide vars (even though in lparse they do)
-			break;
-		case VARS_NEEDED:
-			// at least the global vars are needed
-		case VARS_GLOBAL:
-			if(lower_)
-				lower_->getVars(vars);
-			if(upper_)
-				upper_->getVars(vars);
-			for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-				(*it)->getVars(vars, VARS_GLOBAL);
-			break;
-		case VARS_ALL:
-			if(lower_)
-				lower_->getVars(vars);
-			if(upper_)
-				upper_->getVars(vars);
-			for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-				(*it)->getVars(vars, VARS_ALL);
-			break;
-	}
+		(*it)->getVars(vars);
 }
 
 Node *AggregateLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
@@ -112,6 +79,14 @@ Node *AggregateLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAd
 	}
 	return 0;
 }
+
+void AggregateLiteral::createNode(LDGBuilder *dg, bool head)
+{
+	dg->createGraphNode(this, head);
+	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+		(*it)->createNode(dg, head);
+}
+
 
 void AggregateLiteral::reset()
 {

@@ -17,10 +17,10 @@ namespace NS_GRINGO
 		virtual Literal* clone();
 		void setWeight(Term *w);
 		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
+		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void print(std::ostream &out);
-		virtual void getVars(VarSet &vars, VarsType type);
+		virtual void getVars(VarSet &vars);
 		virtual bool checkO(LiteralVector &unsolved);
-		virtual void normalize(Grounder *g, Expandable *r);
 		virtual void reset();
 		virtual bool solved();
 		virtual bool isFact();
@@ -32,6 +32,7 @@ namespace NS_GRINGO
 		virtual void appendLiteral(Literal *l, bool materm = false);
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
+		bool check(VarVector &free);
 		int getUid();
 		bool isEmpty();
 		void start();
@@ -48,6 +49,7 @@ namespace NS_GRINGO
 		LiteralVector    *conditionals_;
 		Term             *weight_;
 		DLVGrounder      *grounder_;
+		LDG              *dg_;
 
 		std::vector<ValueVector> values_;
 		std::vector<int>         weights_;

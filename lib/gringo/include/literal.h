@@ -33,21 +33,11 @@ namespace NS_GRINGO
 		 */
 		bool getNeg();
 		/**
-		 * \brief Determines the vars of the literal wrt. a set of global variables
-		 *
-		 * The set of global variables has to be ordered. The default implementation 
-		 * calls getVars() and intersects the result with the global variables.
-		 * \param vars Reference to a set used to store the result
-		 * \param type Used to filter variables
-		 * \param glob A Set of global variables
-		 */
-		virtual void getVars(VarSet &vars, VarsType type, VarVector &glob);
-		/**
 		 * \brief Retrieve the vars of the literal
 		 * \param vars Reference to a set used to store the result
 		 * \param type Used to filter variables
 		 */
-		virtual void getVars(VarSet &vars, VarsType type) = 0;
+		virtual void getVars(VarSet &vars) = 0;
 		/**
 		 * \brief Used to check omega restricted parts of literals.
 		 *
@@ -58,18 +48,6 @@ namespace NS_GRINGO
 		 * \return Returns true if check passed
 		 */
 		virtual bool checkO(LiteralVector &unsolved) = 0;
-		/**
-		 * \brief Normalizes the literal.
-		 *
-		 * For easier handling while grounding some literals have to be normalized.
-		 * Currently the following two transformations are applied:
-		 *  - Range terms are removed and replaced and complex terms and
-		 *  - Complex terms are removed from solved predicates.
-		 * This method is called after checkO().
-		 * \param g Reference to the grounder
-		 * \param r Reference to the object that is normalized
-		 */
-		virtual void normalize(Grounder *g, Expandable *r) = 0;
 		/**
 		 * \brief This method is used for static preprocessing.
 		 *
@@ -149,6 +127,7 @@ namespace NS_GRINGO
 		 * \return Returns the node that was created if any otherwise zero
 		 */
 		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo) = 0;
+		virtual void createNode(LDGBuilder *dg, bool head) = 0;
 		/// Destructor
  		virtual ~Literal();
 	protected:

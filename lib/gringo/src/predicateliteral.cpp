@@ -1,4 +1,5 @@
 #include "dependencygraph.h"
+#include "literaldependencygraph.h"
 #include "predicateliteral.h"
 #include "assignmentliteral.h"
 #include "relationliteral.h"
@@ -21,46 +22,16 @@ PredicateLiteral::PredicateLiteral(std::string *id, TermVector *variables) : Lit
 {
 }
 
-void PredicateLiteral::normalize(Grounder *g, Expandable *r)
+PredicateLiteral::PredicateLiteral(PredicateLiteral &p) : predNode_(p.predNode_), id_(p.id_), matchValues_(p.matchValues_.size()), values_(p.values_.size())
 {
-	// since negative or incomplete literals dont provide vars there is no need to normalize them
-	if(!getNeg() && predNode_->complete())
-	{
-		assert(r);
-		if(variables_)
-		{
-			for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
-			{
-				if((*it)->isComplex())
-				{
-					std::string *var = g->createUniqueVar();
-					r->appendLiteral(new AssignmentLiteral(new Constant(Constant::VAR, g, var), *it));
-					*it = new Constant(Constant::VAR, g, var);
-				}
-			}
-		}
-	}
-}
-
-void PredicateLiteral::getVars(VarSet &vars, VarsType type)
-{
-	switch(type)
-	{
-		case VARS_ALL:
-			getVars(vars);
-			break;
-		case VARS_PROVIDED:
-			if(!getNeg() && predNode_->complete())
-				getVars(vars);
-			break;
-		case VARS_GLOBAL:
-			getVars(vars);
-			break;
-		case VARS_NEEDED:
-			if(getNeg() || !predNode_->complete())
-				getVars(vars);
-			break;
-	}
+        if(p.variables_)
+        {
+                variables_ = new TermVector();
+                for(TermVector::iterator it = p.variables_->begin(); it != p.variables_->end(); it++)
+                                variables_->push_back((*it)->clone());
+        }
+        else
+                variables_ = 0;
 }
 
 bool PredicateLiteral::checkO(LiteralVector &unsolved)
@@ -83,6 +54,45 @@ Node *PredicateLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAd
 			break;
 	}
 	return predNode_;
+}
+
+void PredicateLiteral::createNode(LDGBuilder *dg, bool head)
+{
+	VarSet needed, provided;
+	if(head)
+	{
+		if(variables_)
+			for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
+				(*it)->getVars(needed);
+		dg->createHeadNode(this, predNode_->getUid(), needed);
+	}
+	else if(getNeg())
+	{
+		if(variables_)
+			for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
+				(*it)->getVars(needed);
+		dg->createStaticNode(this, needed, provided);
+	}
+	else if(predNode_->complete())
+	{
+		if(variables_)
+			for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
+				if((*it)->isComplex())
+					(*it)->getVars(needed);
+				else
+					(*it)->getVars(provided);
+		dg->createStaticNode(this, needed, provided);
+	}
+	else
+	{
+		if(variables_)
+			for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
+				if((*it)->isComplex())
+					(*it)->getVars(needed);
+				else
+					(*it)->getVars(provided);
+		dg->createOpenNode(this, predNode_->getUid(), needed, provided);
+	}
 }
 
 void PredicateLiteral::print(std::ostream &out)
@@ -219,32 +229,11 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 		{
 			assert(dynamic_cast<Constant*>(*it));
 			(*paramIt) = static_cast<Constant*>(*it);
-			//std::cout << "in PredicateLiteral::createIndexedDomain print" << std::endl;
-			//(*paramIt)->print(std::cout);
 			int uid = (*paramIt)->getUID();
 			if(uid > 0 && index.find(uid) == index.end())
 				free.insert(uid);
-			else
-			{
-				VarSet funcSymbolVars;
-				(*paramIt)->getVars(funcSymbolVars);
-				if (funcSymbolVars.size() > 0)
-				{
-					for (VarSet::const_iterator i = index.begin(); i != index.end(); ++i)
-					{
-						//std::cout << "indexVar UID: " << *i << std::endl;
-					}
-					for (VarSet::const_iterator i = funcSymbolVars.begin(); i != funcSymbolVars.end(); ++i)
-					{
-						//std::cout << "funcSymbolVar UID: " << *i << std::endl;
-						if (index.find(*i) == index.end())
-							free.insert(*i);
-					}
-				}
-			}
 			
 		}
-		//std::cout << "free vs param size: " << free.size() << " vs " << param.size() << std::endl;
 		if(free.size() > 0)
 		{
 			if(free.size() == param.size())
@@ -257,23 +246,6 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 	}
 	else
 		return new IndexedDomainMatchOnly(this);
-}
-
-PredicateLiteral::PredicateLiteral(PredicateLiteral &p, Term *t) : predNode_(p.predNode_), id_(p.id_), matchValues_(p.matchValues_.size()), values_(p.values_.size())
-{
-	if(p.variables_)
-	{
-		variables_ = new TermVector();
-		for(TermVector::iterator it = p.variables_->begin(); it != p.variables_->end(); it++)
-		{
-			if(*it == t)
-				variables_->push_back(*it);
-			else
-				variables_->push_back((*it)->clone());
-		}
-	}
-	else
-		variables_ = 0;
 }
 
 Literal* PredicateLiteral::clone()
@@ -298,9 +270,14 @@ void PredicateLiteral::preprocess(Grounder *g, Expandable *e)
 	if(variables_)
 	{
 		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
-		{
 			(*it)->preprocess(this, *it, g, e);
-		}
+		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
+			if((*it)->isComplex())
+			{
+				std::string *var = g->createUniqueVar();
+				e->appendLiteral(new AssignmentLiteral(new Constant(Constant::VAR, g, var), *it));
+				*it = new Constant(Constant::VAR, g, var);
+			}
 	}
 	if((*id_)[0] == '-')
 		g->addTrueNegation(id_, variables_ ? variables_->size() : 0);

@@ -2,22 +2,19 @@
 #define DLVGROUNDER_H
 
 #include <gringo.h>
-//#include <dependencyrelation.h>
 
 namespace NS_GRINGO
 {
 	class DLVGrounder
 	{
 	public:
-		DLVGrounder(Grounder *g, Groundable *r, LiteralVector &lit, VarSet &glob, VarSet &relevant);
-		DLVGrounder(Grounder *g, Groundable *r, LiteralVector &lit, VarSet &glob, VarSet &relevant, VarSet &index);
-		void debug();
+		DLVGrounder(Grounder *g, Groundable *r, LiteralVector &lit, LDG *dg, const VarVector &relevant);
 		void ground();
+		void debug();
 		~DLVGrounder();
 	private:
 		int closestBinder(int l, VarVector &vars, std::map<int,int> &firstBinder);
-                void sortLiterals();
-		void cacheVariables();
+                void sortLiterals(LDG *dg);
 		void calcDependency();
 	public:
 		Grounder *g_;
@@ -26,7 +23,6 @@ namespace NS_GRINGO
 		IndexedDomainVector dom_;
 		std::vector<VarVector> var_;
 		std::vector<VarVector> dep_;
-		//DependencyRelation rel_;
 		VarVector closestBinderVar_;
 		VarVector closestBinderDep_;
 		VarVector closestBinderRel_;

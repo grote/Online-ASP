@@ -14,10 +14,10 @@ namespace NS_GRINGO
 		RelationLiteral(RelationType type, Term *a, Term *b);
 		RelationLiteral(RelationLiteral &r);
 		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
-		virtual void getVars(VarSet &vars, VarsType type);
+		virtual void createNode(LDGBuilder *dg, bool head);
+		virtual void getVars(VarSet &vars);
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
-		virtual void normalize(Grounder *g, Expandable *r);
 		virtual void finish();
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual bool solved();

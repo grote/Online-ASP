@@ -3,6 +3,7 @@
 #include "indexeddomain.h"
 #include "dlvgrounder.h"
 #include "grounder.h"
+#include "literaldependencygraph.h"
 
 using namespace NS_GRINGO;
 
@@ -13,6 +14,16 @@ RangeLiteral::RangeLiteral(Constant *var, Term *lower, Term *upper) : Literal(),
 Node *RangeLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
 {
 	return 0;
+}
+
+void RangeLiteral::createNode(LDGBuilder *dg, bool head)
+{
+	assert(!head);
+	VarSet needed, provided;
+	upper_->getVars(needed);
+	lower_->getVars(needed);
+	var_->getVars(provided);
+	dg->createStaticNode(this, needed, provided);
 }
 
 void RangeLiteral::print(std::ostream &out)
@@ -30,36 +41,11 @@ bool RangeLiteral::solved()
 	return true;
 }
 
-void RangeLiteral::normalize(Grounder *g, Expandable *r)
+void RangeLiteral::getVars(VarSet &vars)
 {
-}
-
-void RangeLiteral::getVars(VarSet &vars, VarsType type)
-{
-	switch(type)
-	{
-		case VARS_PROVIDED:
-		{
-			// even though this cannot happen
-			VarSet needed;
-			lower_->getVars(needed);
-			upper_->getVars(needed);
-			int uid = var_->getUID();
-			if(needed.find(uid) == needed.end())
-				vars.insert(uid);
-			break;
-		}
-		case VARS_GLOBAL:
-		case VARS_ALL:
-			lower_->getVars(vars);
-			upper_->getVars(vars);
-			var_->getVars(vars);
-			break;
-		case VARS_NEEDED:
-			lower_->getVars(vars);
-			upper_->getVars(vars);
-			break;
-	}
+	lower_->getVars(vars);
+	upper_->getVars(vars);
+	var_->getVars(vars);
 }
 
 bool RangeLiteral::checkO(LiteralVector &unsolved)

@@ -4,41 +4,17 @@
 #include "literal.h"
 #include "indexeddomain.h"
 #include "value.h"
+#include "literaldependencygraph.h"
 
 using namespace NS_GRINGO;
 
-DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, LiteralVector &lit, VarSet &glob, VarSet &relevant) : 
+DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, LiteralVector &lit, LDG *dg, const VarVector &relevant) :
 	g_(g), r_(r), lit_(lit), dom_(lit.size()), var_(lit.size()), dep_(lit.size()), 
 	closestBinderVar_(lit.size()), closestBinderDep_(lit.size()), closestBinderRel_(lit.size() + 1), 
-	global_(glob.begin(), glob.end()),
-	relevant_(relevant.begin(), relevant.end())
+	global_(dg->getGlobalVars()), 
+	relevant_(relevant)
 {
-	sortLiterals();
-	VarSet index;
-	int l = lit_.size();
-	for(int i = 0; i < l; i++)
-	{
-		dom_[i] = lit_[i]->createIndexedDomain(index);
-		lit_[i]->getVars(index, VARS_PROVIDED);
-	}
-	cacheVariables();
-	calcDependency();
-}
-
-DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, LiteralVector &lit, VarSet &glob, VarSet &relevant, VarSet &index) : 
-	g_(g), r_(r), lit_(lit), dom_(lit.size()), var_(lit.size()), dep_(lit.size()), 
-	closestBinderVar_(lit.size()), closestBinderDep_(lit.size()), closestBinderRel_(lit.size() + 1), 
-	global_(glob.begin(), glob.end()), 
-	relevant_(relevant.begin(), relevant.end())
-{
-	sortLiterals();
-	int l = lit_.size();
-	for(int i = 0; i < l; i++)
-	{
-		dom_[i] = lit_[i]->createIndexedDomain(index);
-		lit_[i]->getVars(index, VARS_PROVIDED);
-	}
-	cacheVariables();
+	sortLiterals(dg);
 	calcDependency();
 }
 
@@ -48,45 +24,87 @@ DLVGrounder::~DLVGrounder()
 		delete *it;
 }
 
-void DLVGrounder::sortLiterals()
+void DLVGrounder::sortLiterals(LDG *dg)
 {
-	// TODO: it would be better to cache the variables than calculating them all the times
-	// TODO: maybe this can be improved with a clever heuristic ????
-	LiteralVector::iterator sorted = lit_.begin();
-	// sort the literals in body: literals which bind variables first
-	VarSet provided;
-	while(sorted != lit_.end())
+	VarSet index(dg->getParentVars().begin(), dg->getParentVars().end());
+	LiteralSet list;
+	dg->start(list);
+
+	for(size_t i = 0; i < lit_.size(); i++)
 	{
-		for(LiteralVector::iterator it = sorted; it != lit_.end(); it++)
-		{
-			Literal *l = *it;
-			VarSet needed;
-			l->getVars(needed, VARS_NEEDED, global_);
-			for(VarSet::const_iterator itNeeded = needed.begin(); itNeeded != needed.end(); itNeeded++)
-			{
-				// found a var that is not yet provided
-				if(provided.find(*itNeeded) == provided.end())
-					goto skip;
-			}
-			l->getVars(provided, VARS_PROVIDED);
-			std::swap(*sorted, *it);
-			sorted++;
-skip:			;
-		}
+		assert(list.size() > 0);
+		// TODO: dont choose the first :)
+		Literal *l = *list.begin();
+		dg->propagate(l, list);
+		const VarVector &provided = dg->getProvidedVars(l);
+		const VarVector &needed   = dg->getNeededVars(l);
+		VarSet global;
+		global.insert(needed.begin(), needed.end());
+		global.insert(provided.begin(), provided.end());
+		lit_[i] = l;
+		dom_[i] = l->createIndexedDomain(index);
+		var_[i].insert(var_[i].end(), global.begin(), global.end());
+		index.insert(provided.begin(), provided.end());
 	}
 }
 
-void DLVGrounder::cacheVariables()
+void DLVGrounder::debug()
 {
-	// store variables of literals in vector for faster access
-	std::vector<VarVector>::iterator varIt = var_.begin();
-	for(LiteralVector::iterator it = lit_.begin(); it != lit_.end(); it++, varIt++)
+        int l = lit_.size();
+        std::cerr << "predicates: " << std::endl;
 	{
-		VarSet vars;
-		(*it)->getVars(vars, VARS_GLOBAL, global_);
-		(*varIt).resize(vars.size());
-		std::copy(vars.begin(), vars.end(), (*varIt).begin());
+		bool comma = false;
+		for(int i = 0; i < l; i++)
+		{
+			if(comma)
+				std::cerr << ", ";
+			else
+				comma = true;
+			std::cerr << lit_[i] << " : " << lit_[i]->solved();
+		}
 	}
+	std::cerr << std::endl;
+        std::cerr << "variables: " << std::endl;
+        for(int i = 0; i < l; i++)
+        {
+                std::cerr << "  var(" << lit_[i] << ") = { ";
+                bool comma = false;
+                for(VarVector::iterator it = var_[i].begin(); it != var_[i].end(); it++)
+                {
+                        if(comma)
+                                std::cerr << ", ";
+                        else
+                                comma = true;
+                        std::cerr << *g_->getVarString(*it);
+                }
+                std::cerr << " }" << std::endl;
+        }
+        std::cerr << "dependencies: " << std::endl;
+        for(int i = 0; i < l; i++)
+        {
+                std::cerr << "  dep(" << lit_[i] << ") = { ";
+                bool comma = false;
+                for(VarVector::iterator it = dep_[i].begin(); it != dep_[i].end(); it++)
+                {
+                        if(comma)
+                                std::cerr << ", ";
+                        else
+                                comma = true;
+                        std::cerr << *g_->getVarString(*it);
+                }
+                std::cerr << " }" << std::endl;
+        }
+        std::cerr << "relevant: { ";
+        bool comma = false;
+        for(VarVector::iterator it = relevant_.begin(); it != relevant_.end(); it++)
+        {
+                if(comma)
+                        std::cerr << ", ";
+                else
+                        comma = true;
+                std::cerr << *g_->getVarString(*it);
+        }
+        std::cerr << " }" << std::endl;
 }
 
 void DLVGrounder::calcDependency()
@@ -125,37 +143,6 @@ void DLVGrounder::calcDependency()
 		closestBinderVar_[i] = closestBinder(i, var_[i], firstBinder);
 	for(size_t i = 0; i < lit_.size() + 1; i++)
 		closestBinderRel_[i] = closestBinder(i, relevant_, firstBinder);
-}
-
-void DLVGrounder::debug()
-{
-	std::cerr << "dependencies: " << std::endl;
-	int l = lit_.size();
-	for(int i = 0; i < l; i++)
-	{
-		std::cerr << "	dep(" << lit_[i] << ") = { ";
-		bool comma = false;
-		for(VarVector::iterator it = dep_[i].begin(); it != dep_[i].end(); it++)
-		{
-			if(comma)
-				std::cerr << ", ";
-			else
-				comma = true;
-			std::cerr << g_->getVarString(*it);
-		}
-		std::cerr << " }" << std::endl;
-	}
-	std::cerr << "relevant: { ";
-	bool comma = false;
-	for(VarVector::iterator it = relevant_.begin(); it != relevant_.end(); it++)
-	{
-		if(comma)
-			std::cerr << ", ";
-		else
-			comma = true;
-		std::cerr << g_->getVarString(*it);
-	}
-	std::cerr << " }" << std::endl;
 }
 
 int DLVGrounder::closestBinder(int l, VarVector &vars, std::map<int,int> &firstBinder)

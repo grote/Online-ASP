@@ -42,11 +42,6 @@ namespace NS_GRINGO
 		 */
 		virtual bool check(VarVector &free) = 0;
 		/**
-		 * \brief Normalizes literals for easier handling while grounding
-		 * \param g Reference to the grounder
-		 */
-		virtual void normalize(Grounder *g) = 0;
-		/**
 		 * \brief Performs static preprocessing.
 		 *
 		 * Currently ; and classical negation are removed here.

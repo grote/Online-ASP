@@ -15,6 +15,12 @@
 
 namespace NS_GRINGO
 {
+	class LDGBuilder;
+	typedef std::vector<LDGBuilder*> LDGBuilderVector;
+
+	class LDG;
+	typedef std::vector<LDG*> LDGVector;
+
 	typedef std::pair<std::string *, int> Signature;
 	typedef std::vector<Signature> SignatureVector;
 	class Evaluator;
@@ -38,6 +44,7 @@ namespace NS_GRINGO
 
 	enum VarsType { VARS_PROVIDED, VARS_NEEDED, VARS_GLOBAL, VARS_ALL };
 	typedef std::set<int> VarSet;
+	typedef std::set<int> IntSet;
 	typedef std::vector<int> VarVector;
 	typedef std::vector<int> IntVector;
 
@@ -63,6 +70,7 @@ namespace NS_GRINGO
 
 	class Literal;
 	typedef std::vector<Literal*> LiteralVector;
+	typedef std::set<Literal*> LiteralSet;
 
 	class Node;
 	typedef std::vector<Node*> NodeVector;

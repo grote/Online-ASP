@@ -1,7 +1,5 @@
 #include "constant.h"
 #include "grounder.h"
-//debug
-#include "funcsymbolterm.h"
 
 using namespace NS_GRINGO;
 		
@@ -46,9 +44,6 @@ Constant::Constant(ConstantType type, Grounder *g, std::string *value) : Term(),
 			delete value;
 			break;
 		}
-		default:
-		{
-		}
 	}
 }
 
@@ -79,9 +74,6 @@ void Constant::print(std::ostream &out)
 			out << value_.intValue_;
 			break;
 		}
-		default:
-		{
-		}
 	}
 }
 
@@ -90,17 +82,7 @@ Value Constant::getValue()
 	if(type_ == VAR)
 		return g_->getValue(uid_);
 	else
-	{
-		//assert(type_ == FUNCSYMBOL);
-		if (type_ == FUNCSYMBOL)
-		{
-			std::cout << "ich bin in Constant::getValue obwohl ich eine FuncSymbolTerm Instanz habe, FUCK" << std::endl;
-			std::cout << std::flush;
-			return dynamic_cast<FuncSymbolTerm*>(this)->getValue();
-		}
-		else
-			return value_;
-	}
+		return value_;
 }
 
 int Constant::getUID()

@@ -5,6 +5,7 @@
 #include "indexeddomain.h"
 #include "dlvgrounder.h"
 #include "grounder.h"
+#include "literaldependencygraph.h"
 
 using namespace NS_GRINGO;
 
@@ -16,6 +17,15 @@ AssignmentLiteral::AssignmentLiteral(Constant *c, Term *t) : Literal(), c_(c), t
 Node *AssignmentLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
 {
 	return 0;
+}
+
+void AssignmentLiteral::createNode(LDGBuilder *dg, bool head)
+{
+	assert(!head);
+	VarSet needed, provided;
+	t_->getVars(needed);
+	c_->getVars(provided);
+	dg->createStaticNode(this, needed, provided);
 }
 
 void AssignmentLiteral::print(std::ostream &out)
@@ -33,27 +43,10 @@ bool AssignmentLiteral::solved()
 	return true;
 }
 
-void AssignmentLiteral::normalize(Grounder *g, Expandable *r)
+void AssignmentLiteral::getVars(VarSet &vars)
 {
-	// nothing todo
-}
-
-void AssignmentLiteral::getVars(VarSet &vars, VarsType type)
-{
-	switch(type)
-	{
-		case VARS_PROVIDED:
-		{
-			c_->getVars(vars);
-			break;
-		}
-		case VARS_GLOBAL:
-		case VARS_ALL:
-			c_->getVars(vars);
-		case VARS_NEEDED:
-			t_->getVars(vars);
-			break;
-	}
+	c_->getVars(vars);
+	t_->getVars(vars);
 }
 
 bool AssignmentLiteral::checkO(LiteralVector &unsolved)

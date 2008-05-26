@@ -12,7 +12,7 @@
 
 using namespace NS_GRINGO;
 
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body)
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), dg_(0)
 {
 }
 
@@ -33,19 +33,6 @@ void NormalRule::buildDepGraph(DependencyGraph *dg)
 		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
 			(*it)->createNode(dg, rn, Literal::ADD_BODY_DEP);
 	}
-}
-
-void NormalRule::normalize(Grounder *g)
-{
-	if(body_)
-	{
-		// the bodyvector may realloc
-		size_t l = body_->size();
-		for(size_t i = 0; i < l; i++)
-			(*body_)[i]->normalize(g, this);
-	}
-	if(head_)
-		head_->normalize(g, this);
 }
 
 void NormalRule::print(std::ostream &out)
@@ -84,28 +71,19 @@ bool NormalRule::checkO(LiteralVector &unsolved)
 
 bool NormalRule::check(VarVector &free)
 {
-	LiteralDependencyGraph dg(head_, body_);
-	dg.getUnboundVars(free);
-
-	/*
+	if(dg_)
+		delete dg_;
+	dg_ = new LDG();
 	free.clear();
-	VarSet needed, provided;
-	// all global vars in head are needed
+	LDGBuilder dgb(dg_);
 	if(head_)
-		head_->getVars(needed, VARS_GLOBAL);
+		dgb.addHead(head_);
 	if(body_)
-	{
 		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
-		{
-			(*it)->getVars(needed, VARS_NEEDED);
-			(*it)->getVars(provided, VARS_PROVIDED);
-		}
-	}
-
-	for(VarSet::iterator it = needed.begin(); it != needed.end(); it++)
-		if(provided.find(*it) == provided.end())
-			free.push_back(*it);
-	*/
+			dgb.addToBody(*it);
+	
+	dgb.create();
+	dg_->check(free);
 
 	return free.size() == 0;
 }
@@ -113,10 +91,10 @@ bool NormalRule::check(VarVector &free)
 void NormalRule::getVars(VarSet &vars)
 {
 	if(head_)
-		head_->getVars(vars, VARS_ALL);
+		head_->getVars(vars);
 	if(body_)
 		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
-			(*it)->getVars(vars, VARS_ALL);
+			(*it)->getVars(vars);
 }
 
 void NormalRule::addDomain(PredicateLiteral *pl)
@@ -144,40 +122,33 @@ void NormalRule::evaluate()
 		head_->evaluate();
 }
 
-void NormalRule::getRelevantVars(VarSet &relevant, VarSet &glob)
+void NormalRule::getRelevantVars(VarVector &relevant)
 {
-	VarVector global(glob.begin(), glob.end());
+	// TODO: there must be a better way to do this!!!
+	VarSet global;
+	global.insert(dg_->getGlobalVars().begin(), dg_->getGlobalVars().end());
+	VarSet all;
 	if(head_)
-		head_->getVars(relevant, VARS_ALL, global);
+		head_->getVars(all);
 	if(body_)
 		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
 		{
 			if(!(*it)->solved())
-				(*it)->getVars(relevant, VARS_ALL, global);
+				(*it)->getVars(all);
 		}
-	//relevant.resize(glob.size());
-	//std::copy(glob.begin(), glob.end(), relevant.begin());
-}
-
-void NormalRule::getGlobalVars(VarSet &glob)
-{
-	// extract global vars
-	if(head_)
-		head_->getVars(glob, VARS_GLOBAL);
-	if(body_)
-		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
-			(*it)->getVars(glob, VARS_GLOBAL);
+	for(VarSet::iterator it = all.begin(); it != all.end(); it++)
+		if(global.find(*it) != global.end())
+			relevant.push_back(*it);
 }
 
 bool NormalRule::ground(Grounder *g)
 {
 	if(body_)
 	{
-		VarSet glob, relevant;
-		getGlobalVars(glob);
-		getRelevantVars(relevant, glob);
-		DLVGrounder data(g, this, *body_, glob, relevant);
-		//std::cerr << this << std::endl;
+		//std::cerr << "creating grounder for: " << this << std::endl;
+		VarVector relevant;
+		getRelevantVars(relevant);
+		DLVGrounder data(g, this, *body_, dg_, relevant);
 		//data.debug();
 		data.ground();
 	}
@@ -314,6 +285,8 @@ void NormalRule::appendLiteral(Literal *l, bool materm)
 
 NormalRule::~NormalRule()
 {
+	if(dg_)
+		delete dg_;
 	if(head_)
 		delete head_;
 	if(body_)

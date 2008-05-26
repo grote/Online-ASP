@@ -23,7 +23,6 @@ namespace NS_GRINGO
 		virtual void getVars(VarSet &vars);
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual bool check(VarVector &free);
-		virtual void normalize(Grounder *g);
 		virtual void preprocess(Grounder *g);
 		virtual void reset();
 		virtual void finish();

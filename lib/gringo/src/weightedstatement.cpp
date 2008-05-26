@@ -48,19 +48,11 @@ bool WeightedStatement::checkO(LiteralVector &unsolved)
 
 bool WeightedStatement::check(VarVector &free)
 {
-	VarSet set;
 	free.clear();
 	for(ConditionalLiteralVector::iterator it = literals_.begin(); it != literals_.end(); it++)
-		(*it)->getVars(set, VARS_GLOBAL);
-	free.insert(free.begin(), set.begin(), set.end());
+		(*it)->check(free);
 
 	return free.size() == 0;
-}
-
-void WeightedStatement::normalize(Grounder *g)
-{
-	for(ConditionalLiteralVector::iterator it = literals_.begin(); it != literals_.end(); it++)
-		(*it)->normalize(g, this);
 }
 
 void WeightedStatement::preprocess(Grounder *g)

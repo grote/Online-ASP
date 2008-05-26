@@ -4,13 +4,13 @@
 
 using namespace NS_GRINGO;
 
-FuncSymbolTerm::FuncSymbolTerm(Grounder* g, std::string* s, TermVector* tl) : Constant(FUNCSYMBOL, g, s), termList_(tl), funcSymbol_(s)
+FuncSymbolTerm::FuncSymbolTerm(Grounder* g, std::string* s, TermVector* tl) : Term(), funcSymbol_(s), termList_(tl), grounder_(g)
 {
 }
 
 void FuncSymbolTerm::print(std::ostream &out)
 {
-	out << *funcSymbol_<< "(";
+	out << *funcSymbol_ << "(";
 	for (unsigned int i = 0; i != termList_->size()-1; ++i)
 	{
 		out << *(*termList_)[i] << ",";
@@ -32,13 +32,11 @@ void FuncSymbolTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e
 
 bool FuncSymbolTerm::isComplex()
 {
-	return false;
-	//return true;
+	return true;
 }
 
 Value FuncSymbolTerm::getValue()
 {
-	//std::cout << "FuncSymbolTerm::getValue" << std::endl;
 	std::string* s = new std::string();
 	*s = *funcSymbol_;
 	*s += "(";
@@ -55,12 +53,12 @@ Value FuncSymbolTerm::getValue()
 	// if the string already exists s is freed and the old pointer is returned
 	// if the string is new s is inserted into the set of all strings and
 	// the same pointer is returned
-	s = g_->createString(s);
+	s = grounder_->createString(s);
 
 	return Value(s);
 }
 
-FuncSymbolTerm::FuncSymbolTerm(FuncSymbolTerm &f) : Constant(*this), funcSymbol_(f.funcSymbol_)
+FuncSymbolTerm::FuncSymbolTerm(FuncSymbolTerm &f) : funcSymbol_(f.funcSymbol_), grounder_(f.grounder_)
 {
 	termList_ = new TermVector();
 	for (TermVector::const_iterator i = f.termList_->begin(); i != f.termList_->end(); ++i)

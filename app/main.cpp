@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
 		else if(clasp)
 		{
 			clasp_main(argc, argv);
-			delete grounder;
 		}
 		else
 		{

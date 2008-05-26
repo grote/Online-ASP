@@ -26,7 +26,6 @@ namespace NS_GRINGO
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual bool check(VarVector &free);
 		virtual void reset();
-		virtual void normalize(Grounder *g);
 		virtual void preprocess(Grounder *g);
 		virtual void appendLiteral(Literal *l, bool materm = false);
 		virtual void finish();
@@ -36,21 +35,17 @@ namespace NS_GRINGO
 		virtual void addDomain(PredicateLiteral *pl);
 	private:
 		/**
-		 * \brief Calculate the global vars in the body
-		 * \param glob The resulting set of global vars
-		 */
-		void getGlobalVars(VarSet &glob);
-		/**
 		 * \brief Calculate the relevant vars in the body
 		 * \param relevant The resulting set of relevant vars
-		 * \param glob The set of global vars
 		 */
-		void getRelevantVars(VarSet &relevant, VarSet &glob);
+		void getRelevantVars(VarVector &relevant);
 	public:
 		/// The haed
 		Literal *head_;
 		/// The body
 		LiteralVector *body_;
+		/// The LiteralDependencyGraph
+		LDG *dg_;
 	};
 }
 

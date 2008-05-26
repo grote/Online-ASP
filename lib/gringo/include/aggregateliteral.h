@@ -16,11 +16,10 @@ namespace NS_GRINGO
 		AggregateLiteral(AggregateLiteral &a);
 		virtual Literal* clone();
 		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
-		virtual void getVars(VarSet &vars, VarsType type, VarVector &glob);
-		virtual void getVars(VarSet &vars, VarsType type);
+		virtual void createNode(LDGBuilder *dg, bool head);
+		virtual void getVars(VarSet &vars);
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
-		virtual void normalize(Grounder *g, Expandable *r);
 		virtual void finish();
 		virtual bool solved();
 		virtual bool isFact();

@@ -10,7 +10,7 @@
 
 using namespace NS_GRINGO;
 		
-ConditionalLiteral::ConditionalLiteral(PredicateLiteral *pred, LiteralVector *conditionals) : Literal(), pred_(pred), conditionals_(conditionals), weight_(0), grounder_(0)
+ConditionalLiteral::ConditionalLiteral(PredicateLiteral *pred, LiteralVector *conditionals) : Literal(), pred_(pred), conditionals_(conditionals), weight_(0), grounder_(0), dg_(0)
 {
 	Literal::setNeg(pred_->getNeg());
 }
@@ -33,91 +33,14 @@ void ConditionalLiteral::appendLiteral(Literal *l, bool materm)
 	conditionals_->push_back(l);
 }
 
-void ConditionalLiteral::normalize(Grounder *g, Expandable *e)
+void ConditionalLiteral::getVars(VarSet &vars)
 {
+	pred_->getVars(vars);
 	if(conditionals_)
-	{
-		size_t l = conditionals_->size();
-		for(size_t i = 0; i < l; i++)
-			(*conditionals_)[i]->normalize(g, this);
-	}
-}
-
-void ConditionalLiteral::getVars(VarSet &vars, VarsType type)
-{
-	// TODO: this method needs refinement
-	switch(type)
-	{
-		case VARS_ALL:
-			pred_->getVars(vars);
-			if(conditionals_)
-			{
-				for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
-					(*it)->getVars(vars, VARS_ALL);
-			}
-			if(weight_)
-				weight_->getVars(vars);
-			break;
-		case VARS_PROVIDED:
-			assert(false);
-			break;
-		case VARS_GLOBAL:
-			if(conditionals_ != 0)
-			{
-				VarSet all, weight;
-				VarVector free;
-				// get all vars
-				pred_->getVars(all);
-				for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
-					(*it)->getVars(all, VARS_ALL);
-				
-				// get vars not bound by conditionals
-				LiteralDependencyGraph dg(pred_, conditionals_);
-				dg.getUnboundVars(free);
-				
-				// get vars in weight
-				if(weight_)
-					weight_->getVars(weight);
-
-				// a var in weight but not in all is global
-				for(VarSet::iterator it = weight.begin(); it != weight.end(); it++)
-					if(all.find(*it) == all.end())
-						vars.insert(*it);
-				// all free vars must be bound by global vars
-				vars.insert(free.begin(), free.end());
-
-				/*
-				VarSet t1, t2;
-				// get vars needed by the literal
-				pred_->getVars(t1);
-				for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
-				{
-					// conditionals may both provide and need literals
-					// i.e. a(X,Y) : p(X, I) : I == Y + 1 = (X+2)
-					// here X and I are provided vars but Y is needed
-					(*it)->getVars(t1, VARS_NEEDED);
-					(*it)->getVars(t2, VARS_PROVIDED);
-				}
-				if(weight_)
-					weight_->getVars(t1);
-				// all vars not provided by conditionals are GLOBAL
-				for(VarSet::iterator it = t1.begin(); it != t1.end(); it++)
-					if(t2.find(*it) == t2.end())
-						vars.insert(*it);
-				*/
-			}
-			else
-			{
-				pred_->getVars(vars);
-				if(weight_)
-					weight_->getVars(vars);
-			}
-			break;
-		case VARS_NEEDED:
-			// aggregate literals will call with VARS_GLOBAL
-			assert(false);
-			break;
-	}
+		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
+			(*it)->getVars(vars);
+	if(weight_)
+		weight_->getVars(vars);
 }
 
 bool ConditionalLiteral::checkO(LiteralVector &unsolved)
@@ -141,6 +64,31 @@ Node *ConditionalLiteral::createNode(DependencyGraph *dg, Node *prev, Dependency
 			(*it)->createNode(dg, prev, ADD_BODY_DEP);
 	}
 	return n;
+}
+
+bool ConditionalLiteral::check(VarVector &free)
+{
+	dg_ = new LDG();
+	LDGBuilder dgb(dg_);
+	dgb.addHead(pred_);
+	if(conditionals_)
+		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
+			dgb.addToBody(*it);
+	dgb.create();
+	dg_->check(free);
+	
+	return free.size() == 0;
+}
+
+void ConditionalLiteral::createNode(LDGBuilder *dgb, bool head)
+{
+	dg_ = new LDG();
+	LDGBuilder *subDg = new LDGBuilder(dg_);
+	subDg->addHead(pred_);
+	if(conditionals_)
+		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
+			subDg->addToBody(*it);
+	dgb->addGraph(subDg);
 }
 
 void ConditionalLiteral::print(std::ostream &out)
@@ -216,16 +164,8 @@ void ConditionalLiteral::ground(Grounder *g)
 	{
 		if(!grounder_)
 		{
-			VarSet all, glob, index;
-			getVars(all, VARS_ALL);
-			for(VarSet::iterator it = all.begin(); it != all.end(); it++)
-			{
-				if(g->getBinder(*it) != -1)
-					index.insert(*it);
-				else
-					glob.insert(*it);
-			}
-			grounder_ = new DLVGrounder(g, this, *conditionals_, glob, glob, index);
+			//std::cerr << "creating grounder for: " << this << std::endl;
+			grounder_ = new DLVGrounder(g, this, *conditionals_, dg_, dg_->getGlobalVars());
 		}
 		
 		weights_.clear();
@@ -289,6 +229,8 @@ Literal* ConditionalLiteral::clone()
 
 ConditionalLiteral::~ConditionalLiteral()
 {
+	if(dg_)
+		delete dg_;
 	if(pred_)
 		delete pred_;
 	if(conditionals_)

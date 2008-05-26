@@ -84,7 +84,6 @@ bool SCC::check(Grounder *g)
 	{
 		for(; ok != rules_.end(); ok++)
 		{
-			(*ok)->normalize(g);
 			if(!(*ok)->check(free))
 				break;
 			(*ok)->finish();
@@ -95,7 +94,6 @@ bool SCC::check(Grounder *g)
 			for(it++; it != rules_.end(); it++)
 			{
 				// maybe we get new domain predicates so normalizing has to be restarted
-				(*it)->normalize(g);
 				if((*it)->check(free))
 				{
 					std::swap(*ok, *it);
