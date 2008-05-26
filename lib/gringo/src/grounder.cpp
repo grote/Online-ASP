@@ -215,6 +215,11 @@ Grounder::~Grounder()
 	stringHash_.clear();
 	for(StringVector::iterator it = v.begin(); it != v.end(); it++)
 		delete *it;
+	FuncSymbolVector x(funcHash_.begin(), funcHash_.end());
+	funcHash_.clear();
+	for(FuncSymbolVector::iterator it = x.begin(); it != x.end(); it++)
+		delete *it;
+
 }
 
 Value Grounder::getValue(int var)

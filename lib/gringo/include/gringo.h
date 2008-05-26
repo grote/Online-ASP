@@ -89,6 +89,7 @@ namespace NS_GRINGO
 	typedef std::vector<PredicateLiteral*> PredicateLiteralVector;
 
 	class FuncSymbol;
+	typedef std::vector<FuncSymbol* > FuncSymbolVector;
 
 	namespace NS_OUTPUT
 	{
