@@ -110,6 +110,12 @@ void RelationLiteral::preprocess(Grounder *g, Expandable *e)
 	b_->preprocess(this, b_, g, e);
 }
 
+double RelationLiteral::heuristicValue()
+{
+	// match it as soon as possible
+	return 0;
+}
+
 IndexedDomain *RelationLiteral::createIndexedDomain(VarSet &index)
 {
 	return new IndexedDomainMatchOnly(this);

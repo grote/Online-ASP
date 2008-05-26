@@ -25,6 +25,7 @@ namespace NS_GRINGO
 		virtual NS_OUTPUT::Object *convert();
 		virtual Literal* clone();
 		virtual void print(std::ostream &out);
+		virtual double heuristicValue();
 		virtual ~RangeLiteral();
 	protected:
 		Constant *var_;

@@ -120,6 +120,12 @@ AssignmentLiteral::AssignmentLiteral(AssignmentLiteral &r) : c_((Constant*)r.c_-
 {
 }
 
+double AssignmentLiteral::heuristicValue()
+{
+	// match it as soon as possible
+	return 0;
+}
+
 Literal* AssignmentLiteral::clone()
 {
 	return new AssignmentLiteral(*this);

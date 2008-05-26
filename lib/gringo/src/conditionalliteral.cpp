@@ -300,6 +300,11 @@ void ConditionalLiteral::preprocess(Grounder *g, Expandable *e)
 		weight_->preprocess(this, weight_, g, e);
 }
 
+double ConditionalLiteral::heuristicValue()
+{
+	return DBL_MAX;
+}
+
 int ConditionalLiteral::getUid()
 {
 	return pred_->getUid();

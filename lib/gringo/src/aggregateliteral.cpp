@@ -256,6 +256,11 @@ NS_OUTPUT::Object *AggregateLiteral::convert()
 	return a;
 }
 
+double AggregateLiteral::heuristicValue()
+{
+	return DBL_MAX;
+}
+
 AggregateLiteral::~AggregateLiteral()
 {
 	if(lower_)

@@ -32,6 +32,7 @@ namespace NS_GRINGO
 		virtual void appendLiteral(Literal *l, bool materm = false);
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
+		virtual double heuristicValue();
 		bool check(VarVector &free);
 		int getUid();
 		bool isEmpty();

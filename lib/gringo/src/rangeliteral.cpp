@@ -146,6 +146,12 @@ Literal* RangeLiteral::clone()
 	return new RangeLiteral(*this);
 }
 
+double RangeLiteral::heuristicValue()
+{
+	// hard to estimate cause in general the domainsize is hard to predict
+	return DBL_MAX;
+}
+
 RangeLiteral::~RangeLiteral()
 {
 	if(var_)

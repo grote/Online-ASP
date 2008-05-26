@@ -31,6 +31,7 @@ namespace NS_GRINGO
 		virtual bool match(Grounder *g);
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
+		virtual double heuristicValue();
 		NS_OUTPUT::Object *convert(ValueVector &values);
 		std::string *getId();
 		TermVector *getArgs();

@@ -24,6 +24,17 @@ DLVGrounder::~DLVGrounder()
 		delete *it;
 }
 
+namespace
+{
+	struct LiteralCmp
+	{
+		bool operator()(Literal *a, Literal *b)
+		{
+			return a->heuristicValue() < b->heuristicValue();
+		}
+	};
+}
+
 void DLVGrounder::sortLiterals(LDG *dg)
 {
 	VarSet index(dg->getParentVars().begin(), dg->getParentVars().end());
@@ -33,8 +44,9 @@ void DLVGrounder::sortLiterals(LDG *dg)
 	for(size_t i = 0; i < lit_.size(); i++)
 	{
 		assert(list.size() > 0);
-		// TODO: dont choose the first :)
-		Literal *l = *list.begin();
+		// choose the literal with the least heuristic value
+		LiteralCmp cmp;
+		Literal *l = *std::min_element(list.begin(), list.end(), cmp);
 		dg->propagate(l, list);
 		const VarVector &provided = dg->getProvidedVars(l);
 		const VarVector &needed   = dg->getNeededVars(l);

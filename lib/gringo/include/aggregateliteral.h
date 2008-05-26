@@ -30,6 +30,7 @@ namespace NS_GRINGO
 		virtual void print(std::ostream &out);
 		virtual void appendLiteral(Literal *l, bool materm = false);
 		virtual NS_OUTPUT::Object *convert();
+		virtual double heuristicValue();
 		ConditionalLiteralVector *getLiterals();
 		void setBounds(Term *lower, Term *upper);
 		Term *getLower();

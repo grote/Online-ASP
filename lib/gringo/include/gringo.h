@@ -12,6 +12,7 @@
 #include <map>
 #include <stack>
 #include <cmath>
+#include <cfloat>
 
 namespace NS_GRINGO
 {

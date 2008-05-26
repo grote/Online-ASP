@@ -304,6 +304,30 @@ int PredicateLiteral::getArity()
 	return variables_->size();
 }
 
+double PredicateLiteral::heuristicValue()
+{
+	// TODO: thats too simple !!! i want something better
+	if(!getNeg())
+	{
+		if(predNode_->complete())
+		{
+			if(variables_ && variables_->size() > 0)
+				return pow(predNode_->getDomain().size(), 1.0 / variables_->size());
+			else
+				return 0;
+		}
+		else
+			// the literal doenst help at all
+			return DBL_MAX;
+	}
+	else if(predNode_->solved())
+	{
+		// the literal can be used to check if the assignment is valid
+		return 0;
+	}
+}
+
+
 void PredicateLiteral::getVars(VarSet &vars)
 {
 	if(variables_)

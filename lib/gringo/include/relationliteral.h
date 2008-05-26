@@ -27,6 +27,7 @@ namespace NS_GRINGO
 		virtual bool match(Grounder *g);
 		virtual void print(std::ostream &out);
 		virtual NS_OUTPUT::Object *convert();
+		virtual double heuristicValue();
 		virtual ~RelationLiteral();
 	protected:
 		RelationType type_;

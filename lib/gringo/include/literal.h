@@ -128,6 +128,7 @@ namespace NS_GRINGO
 		 */
 		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo) = 0;
 		virtual void createNode(LDGBuilder *dg, bool head) = 0;
+		virtual double heuristicValue() = 0;
 		/// Destructor
  		virtual ~Literal();
 	protected:
