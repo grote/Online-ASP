@@ -68,6 +68,8 @@ Node *ConditionalLiteral::createNode(DependencyGraph *dg, Node *prev, Dependency
 
 bool ConditionalLiteral::check(VarVector &free)
 {
+	if(dg_)
+		delete dg_;
 	dg_ = new LDG();
 	LDGBuilder dgb(dg_);
 	dgb.addHead(pred_);
@@ -82,6 +84,8 @@ bool ConditionalLiteral::check(VarVector &free)
 
 void ConditionalLiteral::createNode(LDGBuilder *dgb, bool head)
 {
+	if(dg_)
+		delete dg_;
 	dg_ = new LDG();
 	LDGBuilder *subDg = new LDGBuilder(dg_);
 	subDg->addHead(pred_);
