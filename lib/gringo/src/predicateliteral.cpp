@@ -153,11 +153,11 @@ bool PredicateLiteral::isFact()
 		values_.push_back((*it)->getValue());
 	if(getNeg())
 	{
+		assert(!predNode_->isFact(values_));
 		if(predNode_->complete())
 			return !predNode_->inDomain(values_);
 		else
 			return false;
-			
 	}
 	else
 		return predNode_->isFact(values_);
@@ -170,18 +170,29 @@ bool PredicateLiteral::solved()
 
 bool PredicateLiteral::match(Grounder *g)
 {
+	assert(!predNode_->solved() || predNode_->complete());
 	// incomplete prediactes match everything
+	// except if they contain some values that are facts!!!
 	if(!predNode_->complete())
-		return true;
+	{
+		if(getNeg() && predNode_->hasFacts())
+		{
+			for(int i = 0; i < (int)variables_->size(); i++)
+				matchValues_[i] = (*variables_)[i]->getValue();
+			if(predNode_->isFact(matchValues_))
+				return false;
+		}
+		else
+			return true;
+	}
 	// check if current assignment is satisfied wrt the domain
 	bool match = true;
 	if(variables_)
 	{
 		for(int i = 0; i < (int)variables_->size(); i++)
 			matchValues_[i] = (*variables_)[i]->getValue();
-		//match = getDomain().find(matchValues_) != getDomain().end();
-		match = predNode_->inDomain(matchValues_);
 	}
+	match = predNode_->inDomain(matchValues_);
 	if(getNeg())
 	{
 		if(match && (predNode_->solved() || predNode_->isFact(matchValues_)))
@@ -325,6 +336,8 @@ double PredicateLiteral::heuristicValue()
 		// the literal can be used to check if the assignment is valid
 		return 0;
 	}
+	else
+		return DBL_MAX;
 }
 
 

@@ -22,6 +22,7 @@ namespace NS_GRINGO
 		void finish();
 		int getUid() const;
 		void evaluate();
+		bool hasFacts();
 		void addFact(const ValueVector &values);
 		bool isFact(const ValueVector &values);
 		bool inDomain(const ValueVector &values);

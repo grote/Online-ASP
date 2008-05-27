@@ -79,8 +79,13 @@ void Node::addFact(const ValueVector &values)
 	// fact programs dont need to store their facts seperatly cause 
 	// directly after grounding all values in their domain are facts
 	// and there cant be any cycles through fact programs
-	if(scc_->getType() != SCC::FACT)
-		facts_.insert(values);
+	// examples:
+	// a(1).
+	// a(X) :- b(X)
+	// b(X) :- a(X)
+	// here a(1) is a fact but the rest is a basic program and a/1 is
+	// not yet complete
+	facts_.insert(values);
 }
 
 bool Node::inDomain(const ValueVector &values)
@@ -96,6 +101,11 @@ void Node::removeDomain(const ValueVector &values)
 void Node::addDomain(const ValueVector &values)
 {
 	domain_.insert(values);
+}
+
+bool Node::hasFacts()
+{
+	return facts_.size() > 0;
 }
 
 ValueVectorSet &Node::getDomain()
