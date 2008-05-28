@@ -85,7 +85,8 @@ void Node::addFact(const ValueVector &values)
 	// b(X) :- a(X)
 	// here a(1) is a fact but the rest is a basic program and a/1 is
 	// not yet complete
-	facts_.insert(values);
+	if(scc_->getType() != SCC::FACT)
+		facts_.insert(values);
 }
 
 bool Node::inDomain(const ValueVector &values)
