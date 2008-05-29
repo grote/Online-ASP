@@ -70,6 +70,7 @@ begin:
 		STRING          { lval = new std::string(start, cursor); return LPARSEPARSER_STRING; }
 		IDENTIFIER      { lval = new std::string(start, cursor); return LPARSEPARSER_IDENTIFIER; }
 		VARIABLE        { lval = new std::string(start, cursor); return LPARSEPARSER_VARIABLE; }
+		"|"             { return LPARSEPARSER_DISJUNCTION; }
 		"("             { return LPARSEPARSER_LPARA; }
 		")"             { return LPARSEPARSER_RPARA; }
 		"{"             { return LPARSEPARSER_LBRAC; }

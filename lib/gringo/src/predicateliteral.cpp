@@ -286,7 +286,7 @@ void PredicateLiteral::preprocess(Grounder *g, Expandable *e)
 			if((*it)->isComplex())
 			{
 				std::string *var = g->createUniqueVar();
-				e->appendLiteral(new AssignmentLiteral(new Constant(Constant::VAR, g, var), *it));
+				e->appendLiteral(new AssignmentLiteral(new Constant(Constant::VAR, g, var), *it), Expandable::COMPLEXTERM);
 				*it = new Constant(Constant::VAR, g, var);
 			}
 	}

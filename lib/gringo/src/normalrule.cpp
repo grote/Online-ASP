@@ -191,11 +191,22 @@ void NormalRule::grounded(Grounder *g)
 	{
 		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
 		{
-			// TODO: if the literal is true we dont have to add it
-			//       there should be used another method like truthValue->{true, false, undef}
-			//       false cant (should not) occur and only undef literals have to be added
 			if(!(*it)->isFact())
-				body.push_back((*it)->convert());
+			{
+				// flatten conjunctions
+				NS_OUTPUT::Object *c = (*it)->convert();
+				if(dynamic_cast<NS_OUTPUT::Conjunction*>(c))
+				{
+					body.insert(
+						body.end(), 
+						static_cast<NS_OUTPUT::Conjunction*>(c)->lits_.begin(),
+						static_cast<NS_OUTPUT::Conjunction*>(c)->lits_.end());
+					static_cast<NS_OUTPUT::Conjunction*>(c)->lits_.clear();
+					delete c;
+				}
+				else
+					body.push_back((*it)->convert());
+			}
 		}
 	}
 	if(!hasHead && body.size() == 0)
@@ -235,9 +246,9 @@ namespace
 		NormalRuleExpander(NormalRule *n, Grounder *g, LiteralVector *r) : n_(n), g_(g), r_(r)
 		{
 		}
-		void appendLiteral(Literal *l, bool materm = false)
+		void appendLiteral(Literal *l, ExpansionType type)
 		{
-			if(materm)
+			if(type == MATERM)
 			{
 				LiteralVector *r;
 				if(r_)
@@ -252,7 +263,7 @@ namespace
 			}
 			else
 			{
-				n_->appendLiteral(l);
+				n_->appendLiteral(l, type);
 			}
 				
 		}
@@ -276,7 +287,7 @@ void NormalRule::preprocess(Grounder *g)
 	//std::cerr << this << std::endl;
 }
 
-void NormalRule::appendLiteral(Literal *l, bool materm)
+void NormalRule::appendLiteral(Literal *l, ExpansionType type)
 {
 	if(!body_)
 		body_ = new LiteralVector();	

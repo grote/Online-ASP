@@ -85,12 +85,14 @@ using namespace NS_GRINGO;
 %type body_literal       { Literal* }
 %type relation_literal   { Literal* }
 %type conditional        { Literal* }
+%type disjunction        { Literal* }
 
 %destructor body_atom        { DELETE_PTR($$) }
 %destructor head_atom        { DELETE_PTR($$) }
 %destructor body_literal     { DELETE_PTR($$) }
 %destructor relation_literal { DELETE_PTR($$) }
 %destructor conditional      { DELETE_PTR($$) }
+%destructor disjuntion       { DELETE_PTR($$) }
 
 
 %type aggregate      { AggregateLiteral* }
@@ -108,8 +110,10 @@ using namespace NS_GRINGO;
 
 %type weight_list  { ConditionalLiteralVector* }
 %type nweight_list { ConditionalLiteralVector* }
+%type disj_list   { ConditionalLiteralVector* }
 %type constr_list  { ConditionalLiteralVector* }
 %type nconstr_list { ConditionalLiteralVector* }
+%destructor disj_list    { DELETE_PTRVECTOR(ConditionalLiteralVector, $$) }
 %destructor weight_list  { DELETE_PTRVECTOR(ConditionalLiteralVector, $$) }
 %destructor nweight_list { DELETE_PTRVECTOR(ConditionalLiteralVector, $$) }
 %destructor constr_list  { DELETE_PTRVECTOR(ConditionalLiteralVector, $$) }
@@ -189,7 +193,7 @@ body_literal(res) ::= relation_literal(rel). { res = rel; }
 constraint_literal(res) ::= constraint_atom(atom).     { res = atom; }
 constraint_literal(res) ::= NOT constraint_atom(atom). { res = atom; res->setNeg(true); }
 
-body_atom(res) ::= predicate(pred).      { res = pred; }
+body_atom(res) ::= predicate(pred) conditional_list(list). { res = AggregateLiteral::createBody(pred, list); }
 body_atom(res) ::= aggregate_atom(atom). { res = atom; }
 
 // assignment literals are not realy relation literals but they rae used like them
@@ -201,8 +205,12 @@ relation_literal(res) ::= term(a) GE term(b).         { res = new RelationLitera
 relation_literal(res) ::= term(a) LT term(b).         { res = new RelationLiteral(RelationLiteral::LT, a, b); }
 relation_literal(res) ::= term(a) LE term(b).         { res = new RelationLiteral(RelationLiteral::LE, a, b); }
 
-head_atom(res) ::= predicate(pred).      { res = pred; }
 head_atom(res) ::= aggregate_atom(atom). { res = atom; }
+head_atom(res) ::= disjunction(disj).    { res = disj; }
+
+disjunction(res) ::= disj_list(list). { res = AggregateLiteral::createHead(list); }
+disj_list(res) ::= disj_list(list) DISJUNCTION constraint_atom(term). { res = list; res->push_back(term); }
+disj_list(res) ::= constraint_atom(term).                             { res = new ConditionalLiteralVector(); res->push_back(term); }
 
 constraint_atom(res) ::= predicate(pred) conditional_list(list). { res = new ConditionalLiteral(pred, list); }
 

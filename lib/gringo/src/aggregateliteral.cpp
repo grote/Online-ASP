@@ -1,4 +1,5 @@
 #include "aggregateliteral.h"
+#include "predicateliteral.h"
 #include "conditionalliteral.h"
 #include "term.h"
 #include "node.h"
@@ -125,18 +126,24 @@ void AggregateLiteral::print(std::ostream &out)
 		case MAX:
 			out << "max ";
 			break;
+		case DISJUNCTION:
+		case CONJUNCTION:
+			break;
+			
 	}
-	out << "{";
+	if(type_ != DISJUNCTION && type_ != CONJUNCTION)
+		out << "{";
 	bool comma = false;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		if(comma)
-			out << ", ";
+			out << (type_ == DISJUNCTION ? " | " : ", ");
 		else
 			comma = true;
 		out << *it;
 	}
-	out << "}";
+	if(type_ != DISJUNCTION && type_ != CONJUNCTION)
+		out << "}";
 	if(upper_)
 		out << " " << upper_;
 }
@@ -158,7 +165,7 @@ AggregateLiteral::AggregateLiteral(AggregateLiteral &a) : type_(a.type_), lower_
 		literals_ = 0;
 }
 
-void AggregateLiteral::appendLiteral(Literal *l, bool materm)
+void AggregateLiteral::appendLiteral(Literal *l, ExpansionType type)
 {
 	if(!literals_)
 		literals_ = new ConditionalLiteralVector();
@@ -168,7 +175,13 @@ void AggregateLiteral::appendLiteral(Literal *l, bool materm)
 
 void AggregateLiteral::preprocess(Grounder *g, Expandable *e)
 {
-	if(literals_)
+	if(type_ == DISJUNCTION)
+	{
+		assert(literals_);
+		for(size_t i = 0; i < literals_->size(); i++)
+			(*literals_)[i]->preprocessDisjunction(g, this, e);
+	}
+	else if(literals_)
 		for(size_t i = 0; i < literals_->size(); i++)
 			(*literals_)[i]->preprocess(g, this);
 	if(upper_)
@@ -209,7 +222,18 @@ void AggregateLiteral::ground(Grounder *g)
 }
 
 NS_OUTPUT::Object *AggregateLiteral::convert()
-{	
+{
+	if(type_ == CONJUNCTION)
+	{
+		NS_OUTPUT::ObjectVector lits;
+		for(ConditionalLiteralVector::iterator it = getLiterals()->begin(); it != getLiterals()->end(); it++)
+		{
+			ConditionalLiteral *p = *it;
+			for(p->start(); p->hasNext(); p->next())
+				lits.push_back(p->convert());
+		}
+		return new NS_OUTPUT::Conjunction(lits);
+	}
 	NS_OUTPUT::ObjectVector lits;
 	IntVector weights;
 	for(ConditionalLiteralVector::iterator it = getLiterals()->begin(); it != getLiterals()->end(); it++)
@@ -218,7 +242,8 @@ NS_OUTPUT::Object *AggregateLiteral::convert()
 		for(p->start(); p->hasNext(); p->next())
 		{
 			lits.push_back(p->convert());
-			weights.push_back(p->getWeight());
+			if(type_ != DISJUNCTION && type_ != COUNT)
+				weights.push_back(p->getWeight());
 		}
 	}
 	NS_OUTPUT::Aggregate::Type type;
@@ -238,6 +263,9 @@ NS_OUTPUT::Object *AggregateLiteral::convert()
 			break;
 		case MAX:
 			type = NS_OUTPUT::Aggregate::MAX;
+			break;
+		case DISJUNCTION:
+			type = NS_OUTPUT::Aggregate::DISJUNCTION;
 			break;
 		default:
 			assert(false);
@@ -272,6 +300,26 @@ AggregateLiteral::~AggregateLiteral()
 		for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 			delete *it;
 		delete literals_;
+	}
+}
+
+Literal *AggregateLiteral::createHead(ConditionalLiteralVector *list)
+{
+	if(list->size() == 1 && !list->front()->hasConditionals())
+		return list->front()->toPredicateLiteral();
+	else
+		return new AggregateLiteral(DISJUNCTION, list);
+}
+
+Literal *AggregateLiteral::createBody(PredicateLiteral *pred, LiteralVector *list)
+{
+	if(list == 0 || list->size() == 0)
+		return pred;
+	else
+	{
+		ConditionalLiteralVector *clv = new ConditionalLiteralVector();
+		clv->push_back(new ConditionalLiteral(pred, list));
+		return new AggregateLiteral(CONJUNCTION, clv);
 	}
 }
 

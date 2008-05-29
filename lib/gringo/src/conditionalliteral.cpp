@@ -7,10 +7,11 @@
 #include "dlvgrounder.h"
 #include "value.h"
 #include "literaldependencygraph.h"
+#include "aggregateliteral.h"
 
 using namespace NS_GRINGO;
 		
-ConditionalLiteral::ConditionalLiteral(PredicateLiteral *pred, LiteralVector *conditionals) : Literal(), pred_(pred), conditionals_(conditionals), weight_(0), grounder_(0), dg_(0)
+ConditionalLiteral::ConditionalLiteral(PredicateLiteral *pred, LiteralVector *conditionals) : Literal(), pred_(pred), conditionals_(conditionals), weight_(0), grounder_(0), dg_(0), clone_(true)
 {
 	Literal::setNeg(pred_->getNeg());
 }
@@ -26,7 +27,7 @@ void ConditionalLiteral::setNeg(bool neg)
 	Literal::setNeg(neg);
 }
 
-void ConditionalLiteral::appendLiteral(Literal *l, bool materm)
+void ConditionalLiteral::appendLiteral(Literal *l, ExpansionType type)
 {
 	if(!conditionals_)
 		conditionals_ = new LiteralVector();
@@ -214,7 +215,7 @@ IndexedDomain *ConditionalLiteral::createIndexedDomain(VarSet &index)
 	return new IndexedDomainMatchOnly(this);
 }
 
-ConditionalLiteral::ConditionalLiteral(ConditionalLiteral &p) : pred_((PredicateLiteral*)p.pred_->clone()), weight_(p.weight_ ? p.weight_->clone() : 0), grounder_(0)
+ConditionalLiteral::ConditionalLiteral(ConditionalLiteral &p) : pred_(p.clone_ ? static_cast<PredicateLiteral*>(p.pred_->clone()) : p.pred_), weight_(p.weight_ ? p.weight_->clone() : 0), grounder_(0), dg_(0), clone_(true)
 {
 	if(p.conditionals_)
 	{
@@ -259,9 +260,9 @@ namespace
 		ConditionalLiteralExpander(ConditionalLiteral *l, Expandable *e, LiteralVector *c) : l_(l), e_(e), c_(c)
 		{
 		}
-		void appendLiteral(Literal *l, bool materm = false)
+		void appendLiteral(Literal *l, ExpansionType type)
 		{
-			if(materm)
+			if(type == MATERM)
 			{
 				LiteralVector *c;
 				if(c_)
@@ -272,11 +273,11 @@ namespace
 				}
 				else
 					c = 0;
-				e_->appendLiteral(new ConditionalLiteral((PredicateLiteral*)l, c));
+				e_->appendLiteral(new ConditionalLiteral((PredicateLiteral*)l, c), type);
 			}
 			else
 			{
-				l_->appendLiteral(l);
+				l_->appendLiteral(l, type);
 			}
 		}
 	protected:
@@ -284,11 +285,63 @@ namespace
 		Expandable         *e_;
 		LiteralVector      *c_;
 	};
+
+	class DisjunctiveConditionalLiteralExpander : public Expandable
+	{
+	public:
+		DisjunctiveConditionalLiteralExpander(ConditionalLiteral *l, AggregateLiteral *a, Expandable *e) : l_(l), a_(a), e_(e)
+		{
+		}
+		void appendLiteral(Literal *l, ExpansionType type)
+		{
+			switch(type)
+			{
+				case MATERM:
+					l_->clonePredicate(false);
+					e_->appendLiteral(a_->clone(), type);
+					l_->clonePredicate(true);
+					l_->setPredicate(static_cast<PredicateLiteral*>(l));
+					break;
+				case RANGETERM:
+					e_->appendLiteral(l, type);
+					break;
+				default:
+					l_->appendLiteral(l, type);
+					break;
+			}
+		}
+	protected:
+		ConditionalLiteral *l_;
+		AggregateLiteral   *a_;
+		Expandable         *e_;
+	};
+}
+
+void ConditionalLiteral::clonePredicate(bool clone)
+{
+	clone_ = clone;
+}
+
+void ConditionalLiteral::setPredicate(PredicateLiteral* pred)
+{
+	pred_ = pred;
 }
 
 NS_OUTPUT::Object *ConditionalLiteral::convert()
 {
 	return pred_->convert(getValues());
+}
+
+void ConditionalLiteral::preprocessDisjunction(Grounder *g, AggregateLiteral *a, Expandable *e)
+{
+	assert(!weight_);
+	if(conditionals_)
+	{
+		for(size_t i = 0; i < conditionals_->size(); i++)
+			(*conditionals_)[i]->preprocess(g, this);
+	}
+	DisjunctiveConditionalLiteralExpander cle(this, a, e);
+	pred_->preprocess(g, &cle);
 }
 
 void ConditionalLiteral::preprocess(Grounder *g, Expandable *e)
@@ -312,5 +365,18 @@ double ConditionalLiteral::heuristicValue()
 int ConditionalLiteral::getUid()
 {
 	return pred_->getUid();
+}
+
+bool ConditionalLiteral::hasConditionals()
+{
+	return conditionals_ ? conditionals_->size() > 0 : false;
+}
+
+PredicateLiteral *ConditionalLiteral::toPredicateLiteral()
+{
+	PredicateLiteral *pred = pred_;
+	pred_ = 0;
+	delete this;
+	return pred;
 }
 

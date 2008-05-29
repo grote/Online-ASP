@@ -26,7 +26,7 @@ bool RangeTerm::isComplex()
 void RangeTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 {
 	std::string *var = g->createUniqueVar();
-	e->appendLiteral(new RangeLiteral(new Constant(Constant::VAR, g, var), lower_, upper_));
+	e->appendLiteral(new RangeLiteral(new Constant(Constant::VAR, g, var), lower_, upper_), Expandable::RANGETERM);
 	p = new Constant(Constant::VAR, g, var);
 	lower_ = 0;
 	upper_ = 0;

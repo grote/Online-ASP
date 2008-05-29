@@ -81,13 +81,13 @@ void SmodelsOutput::printWeightRule(int head, int bound, NS_OUTPUT::ObjectVector
 		if((*it)->getUid() > 0)
 			*out_ << " " << (*it)->getUid();
 	IntVector::iterator itW = weights.begin();
-	for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++, itW++)
+	for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++, itW != weights.end() ? itW++ : itW)
 		if((*it)->getUid() < 0)
-			*out_ << " " << *itW;
+			*out_ << " " << (itW != weights.end() ? *itW : 1);
 	itW = weights.begin();
-	for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++, itW++)
+	for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++, itW != weights.end() ? itW++ : itW)
 		if((*it)->getUid() > 0)
-			*out_ << " " << *itW;
+			*out_ << " " << (itW != weights.end() ? *itW : 1);
 	*out_ << std::endl;
 }
 

@@ -265,6 +265,7 @@ void Conjunction::addUid(Output *o)
 Aggregate::Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights, int upper) : 
 	Object(neg, type), bounds_(LU), lower_(lower), upper_(upper)
 {
+	assert(type_ != DISJUNCTION);
 	std::swap(lits, lits_);
 	std::swap(weights, weights_);
 }
@@ -272,6 +273,7 @@ Aggregate::Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVecto
 Aggregate::Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights) : 
 	Object(neg, type), bounds_(L), lower_(lower), upper_(0)
 {
+	assert(type_ != DISJUNCTION);
 	std::swap(lits, lits_);
 	std::swap(weights, weights_);
 }
@@ -279,6 +281,7 @@ Aggregate::Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVecto
 Aggregate::Aggregate(bool neg, Type type, ObjectVector lits, IntVector weights, int upper) : 
 	Object(neg, type), bounds_(U), lower_(0), upper_(upper)
 {
+	assert(type_ != DISJUNCTION);
 	std::swap(lits, lits_);
 	std::swap(weights, weights_);
 }
@@ -314,25 +317,30 @@ void Aggregate::print_plain(std::ostream &out)
 		case TIMES:
 			out << " times {";
 			break;
+		case DISJUNCTION:
+			break;
 	}
 	IntVector::iterator itWeight = weights_.begin();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++, itWeight++)
 	{
 		if(comma)
-			out << ", ";
+			out << (type_ == DISJUNCTION ? " | " : ", ");
 		else
 			comma = true;
 		(*it)->print_plain(out);
-		if(type_ != COUNT)
+		if(type_ != COUNT && type_ != DISJUNCTION)
 		{
 			out << " = ";
 			out << *itWeight;
 		}
 	}
-	if(type_ == SUM)
-		out << "] ";
-	else
-		out << "} ";
+	if(type_ != DISJUNCTION)
+	{
+		if(type_ == SUM)
+			out << "] ";
+		else
+			out << "} ";
+	}
 	if(bounds_ == U || bounds_ == LU)
 		std::cout << upper_;
 }
@@ -359,9 +367,12 @@ void Aggregate::print(std::ostream &out)
 	out << " " << lits_.size();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
-	std::cout << " " << weights_.size();
-	for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++)
-		out << " " << *it;
+	if(type_ != COUNT && type_ != DISJUNCTION)
+	{
+		std::cout << " " << weights_.size();
+		for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++)
+			out << " " << *it;
+	}
 	out << std::endl;
 }
 

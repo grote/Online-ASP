@@ -31,7 +31,7 @@ namespace NS_GRINGO
 		virtual void addDomain(PredicateLiteral *pl);
 		virtual void print(std::ostream &out);
 		virtual void grounded(Grounder *g);
-		virtual void appendLiteral(Literal *l, bool materm = false);
+		virtual void appendLiteral(Literal *l, ExpansionType type);
 		/// Destructor
 		virtual ~WeightedStatement();
 	protected:

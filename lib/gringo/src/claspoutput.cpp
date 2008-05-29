@@ -98,9 +98,9 @@ void ClaspOutput::printWeightRule(int head, int bound, NS_OUTPUT::ObjectVector &
 	Clasp::PrgRule r(Clasp::WEIGHTRULE);
 	r.setBound(bound);
 	r.addHead(head);
-	IntVector::iterator wIt = weights.begin();
-	for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++, wIt++)
-		r.addToBody(abs((*it)->getUid()), (*it)->getUid() > 0, *wIt);
+	IntVector::iterator itW = weights.begin();
+	for(NS_OUTPUT::ObjectVector::iterator it = lits.begin(); it != lits.end(); it++, itW != weights.end() ? itW++ : itW)
+		r.addToBody(abs((*it)->getUid()), (*it)->getUid() > 0, itW != weights.end() ? *itW : 1);
 	if(Clasp::LparseReader::transform_weight & tf_)
 		b_->addAsNormalRules(r);
 	else

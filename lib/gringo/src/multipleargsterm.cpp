@@ -67,7 +67,7 @@ namespace
 void MultipleArgsTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 {
 	p = new CloneSentinel(b_);
-	e->appendLiteral(l->clone(), true);
+	e->appendLiteral(l->clone(), Expandable::MATERM);
 	p = a_;
 	a_ = 0;
 	b_ = 0;

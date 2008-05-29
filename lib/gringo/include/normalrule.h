@@ -27,7 +27,7 @@ namespace NS_GRINGO
 		virtual bool check(VarVector &free);
 		virtual void reset();
 		virtual void preprocess(Grounder *g);
-		virtual void appendLiteral(Literal *l, bool materm = false);
+		virtual void appendLiteral(Literal *l, ExpansionType type);
 		virtual void finish();
 		virtual void evaluate();
 		virtual void grounded(Grounder *g);

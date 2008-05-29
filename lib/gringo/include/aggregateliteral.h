@@ -10,7 +10,7 @@ namespace NS_GRINGO
 	class AggregateLiteral : public Literal, public Expandable
 	{
 	public:
-		enum AggregateType { SUM, TIMES, COUNT, MIN, MAX };
+		enum AggregateType { SUM, TIMES, COUNT, MIN, MAX, DISJUNCTION, CONJUNCTION };
 	public:
 		AggregateLiteral(AggregateType type, ConditionalLiteralVector *literals);
 		AggregateLiteral(AggregateLiteral &a);
@@ -28,7 +28,7 @@ namespace NS_GRINGO
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual bool match(Grounder *g);
 		virtual void print(std::ostream &out);
-		virtual void appendLiteral(Literal *l, bool materm = false);
+		virtual void appendLiteral(Literal *l, ExpansionType type);
 		virtual NS_OUTPUT::Object *convert();
 		virtual double heuristicValue();
 		ConditionalLiteralVector *getLiterals();
@@ -37,6 +37,9 @@ namespace NS_GRINGO
 		Term *getUpper();
 		AggregateType getType();
 		virtual ~AggregateLiteral();
+	public:
+	       	static Literal *createHead(ConditionalLiteralVector *list);
+	       	static Literal *createBody(PredicateLiteral *pred, LiteralVector *list);
 	protected:
 		AggregateType type_;
 		ConditionalLiteralVector *literals_;

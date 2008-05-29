@@ -29,10 +29,12 @@ namespace NS_GRINGO
 		virtual bool match(Grounder *g);
 		virtual void ground(Grounder *g);
 		virtual void grounded(Grounder *g);
-		virtual void appendLiteral(Literal *l, bool materm = false);
+		virtual void appendLiteral(Literal *l, ExpansionType type);
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
 		virtual double heuristicValue();
+		bool hasConditionals();
+		PredicateLiteral *toPredicateLiteral();
 		bool check(VarVector &free);
 		int getUid();
 		bool isEmpty();
@@ -44,6 +46,9 @@ namespace NS_GRINGO
 		void cacheVariables();
 		ValueVector &getValues();
 		int getWeight();
+		void clonePredicate(bool clone);
+		void setPredicate(PredicateLiteral* pred);
+		void preprocessDisjunction(Grounder *g, AggregateLiteral *a, Expandable *e);
 		virtual ~ConditionalLiteral();
 	protected:
 		PredicateLiteral *pred_;
@@ -55,6 +60,7 @@ namespace NS_GRINGO
 		std::vector<ValueVector> values_;
 		std::vector<int>         weights_;
 		size_t                   current_;
+		bool                     clone_;
 	};
 }
 
