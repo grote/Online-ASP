@@ -33,8 +33,10 @@ void FuncSymbolTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e
 
 bool FuncSymbolTerm::isComplex()
 {
-	//TODO
-	return false;
+	// TODO: change this to false in the new implementation of functionsymbols
+	//       i want to keep a working version in the trunk so its better to 
+	//       return true for now
+	return true;
 }
 
 Value FuncSymbolTerm::getValue()
