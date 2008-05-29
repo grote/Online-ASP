@@ -205,7 +205,7 @@ void NormalRule::grounded(Grounder *g)
 					delete c;
 				}
 				else
-					body.push_back((*it)->convert());
+					body.push_back(c);
 			}
 		}
 	}
