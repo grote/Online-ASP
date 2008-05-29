@@ -306,7 +306,11 @@ AggregateLiteral::~AggregateLiteral()
 Literal *AggregateLiteral::createHead(ConditionalLiteralVector *list)
 {
 	if(list->size() == 1 && !list->front()->hasConditionals())
-		return list->front()->toPredicateLiteral();
+	{
+		Literal *l = list->front()->toPredicateLiteral();
+		delete list;
+		return l;
+	}
 	else
 		return new AggregateLiteral(DISJUNCTION, list);
 }

@@ -28,6 +28,7 @@ namespace NS_GRINGO
 			void printHead(int B, NS_OUTPUT::Aggregate *r);
 			void printBody(int headId, NS_OUTPUT::ObjectVector &body);
 			void printWeightRule(int head, int bound, NS_OUTPUT::ObjectVector &lits, IntVector &weights);
+			void printDisjunction(NS_OUTPUT::ObjectVector &head, NS_OUTPUT::ObjectVector &body);
 		private:
 			int false_;
 			int models_;

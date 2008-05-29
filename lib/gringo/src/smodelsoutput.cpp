@@ -21,6 +21,12 @@ void SmodelsOutput::print(NS_OUTPUT::Fact *r)
 	int head;
 	if(dynamic_cast<NS_OUTPUT::Aggregate*>(r->head_))
 	{
+		if(static_cast<NS_OUTPUT::Aggregate*>(r->head_)->type_ == Aggregate::DISJUNCTION)
+		{
+			ObjectVector lits;
+			printDisjunction(static_cast<NS_OUTPUT::Aggregate*>(r->head_)->lits_, lits);
+			return;
+		}
 		head = newUid();
 		printHead(head, static_cast<NS_OUTPUT::Aggregate*>(r->head_));
 	}
@@ -120,6 +126,37 @@ void SmodelsOutput::printHead(int B, NS_OUTPUT::Aggregate *r)
 	*out_ << " " << 2 << " " << 1 << " " << nn << " " << B << std::endl;
 }
 
+void SmodelsOutput::printDisjunction(NS_OUTPUT::ObjectVector &head, NS_OUTPUT::ObjectVector &body)
+{
+	int neg = 0;
+	for(NS_OUTPUT::ObjectVector::iterator it = body.begin(); it != body.end(); it++)
+	{
+		if((*it)->getUid() < 0)
+			neg++;
+		else if(dynamic_cast<NS_OUTPUT::Aggregate*>(*it))
+			printBody(static_cast<NS_OUTPUT::Aggregate*>(*it));
+	}
+	if(head.size() == 0)
+		*out_ << 1 << " " << false_;
+	else if(head.size() == 1)
+		*out_ << 1 << " " << head.front()->getUid();
+	else
+	{
+		*out_ << 8 << " " << head.size();
+		for(NS_OUTPUT::ObjectVector::iterator it = head.begin(); it != head.end(); it++)
+			*out_ << " " << (*it)->getUid();
+	}
+	*out_ << " " << body.size() << " " << neg;
+	for(NS_OUTPUT::ObjectVector::iterator it = body.begin(); it != body.end(); it++)
+		if((*it)->getUid() < 0)
+			*out_ << " " << -(*it)->getUid();
+	for(NS_OUTPUT::ObjectVector::iterator it = body.begin(); it != body.end(); it++)
+		if((*it)->getUid() > 0)
+			*out_ << " " << (*it)->getUid();
+	*out_ << std::endl;
+	
+}
+
 void SmodelsOutput::printBody(int headId, NS_OUTPUT::ObjectVector &body)
 {
 	int neg = 0;
@@ -145,6 +182,12 @@ void SmodelsOutput::print(NS_OUTPUT::Rule *r)
 	int head;
 	if(dynamic_cast<NS_OUTPUT::Aggregate*>(r->head_))
 	{
+		if(static_cast<NS_OUTPUT::Aggregate*>(r->head_)->type_ == Aggregate::DISJUNCTION)
+		{
+			assert(dynamic_cast<NS_OUTPUT::Conjunction*>(r->body_));
+			printDisjunction(static_cast<NS_OUTPUT::Aggregate*>(r->head_)->lits_, static_cast<NS_OUTPUT::Conjunction*>(r->body_)->lits_);
+			return;
+		}
 		head = newUid();
 		printHead(head, static_cast<NS_OUTPUT::Aggregate*>(r->head_));
 	}
