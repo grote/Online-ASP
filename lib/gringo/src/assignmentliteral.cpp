@@ -25,7 +25,7 @@ void AssignmentLiteral::createNode(LDGBuilder *dg, bool head)
 	VarSet needed, provided;
 	t_->getVars(needed);
 	c_->getVars(provided);
-	dg->createStaticNode(this, needed, provided);
+	dg->createNode(this, head, needed, provided);
 }
 
 void AssignmentLiteral::print(std::ostream &out)
@@ -43,7 +43,7 @@ bool AssignmentLiteral::solved()
 	return true;
 }
 
-void AssignmentLiteral::getVars(VarSet &vars)
+void AssignmentLiteral::getVars(VarSet &vars) const
 {
 	c_->getVars(vars);
 	t_->getVars(vars);
@@ -116,7 +116,7 @@ IndexedDomain *AssignmentLiteral::createIndexedDomain(VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 }
 
-AssignmentLiteral::AssignmentLiteral(AssignmentLiteral &r) : c_((Constant*)r.c_->clone()), t_(r.t_->clone())
+AssignmentLiteral::AssignmentLiteral(const AssignmentLiteral &r) : c_((Constant*)r.c_->clone()), t_(r.t_->clone())
 {
 }
 
@@ -126,7 +126,7 @@ double AssignmentLiteral::heuristicValue()
 	return 0;
 }
 
-Literal* AssignmentLiteral::clone()
+Literal* AssignmentLiteral::clone() const
 {
 	return new AssignmentLiteral(*this);
 }

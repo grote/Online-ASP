@@ -23,7 +23,7 @@ namespace NS_GRINGO
 		 * \brief Retrieve all Variables in term
 		 * \param vars stores the result
 		 */
-		virtual void getVars(VarSet &vars) = 0;
+		virtual void getVars(VarSet &vars) const = 0;
 		/**
 		 * \brief Return true if the Term is complex
 		 *
@@ -40,7 +40,7 @@ namespace NS_GRINGO
 		 * \brief Creates a copy of the term
 		 * \return The copy
 		 */
-		virtual Term* clone() = 0;
+		virtual Term* clone() const = 0;
 		/**
 		 * \brief Static preprocess of the term
 		 *

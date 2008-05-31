@@ -22,7 +22,7 @@ PredicateLiteral::PredicateLiteral(std::string *id, TermVector *variables) : Lit
 {
 }
 
-PredicateLiteral::PredicateLiteral(PredicateLiteral &p) : predNode_(p.predNode_), id_(p.id_), matchValues_(p.matchValues_.size()), values_(p.values_.size())
+PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : predNode_(p.predNode_), id_(p.id_), matchValues_(p.matchValues_.size()), values_(p.values_.size())
 {
         if(p.variables_)
         {
@@ -59,29 +59,11 @@ Node *PredicateLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAd
 void PredicateLiteral::createNode(LDGBuilder *dg, bool head)
 {
 	VarSet needed, provided;
-	if(head)
+	if(head || getNeg() || !predNode_->complete())
 	{
 		if(variables_)
 			for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
 				(*it)->getVars(needed);
-		dg->createHeadNode(this, predNode_->getUid(), needed);
-	}
-	else if(getNeg())
-	{
-		if(variables_)
-			for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
-				(*it)->getVars(needed);
-		dg->createStaticNode(this, needed, provided);
-	}
-	else if(predNode_->complete())
-	{
-		if(variables_)
-			for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
-				if((*it)->isComplex())
-					(*it)->getVars(needed);
-				else
-					(*it)->getVars(provided);
-		dg->createStaticNode(this, needed, provided);
 	}
 	else
 	{
@@ -91,8 +73,8 @@ void PredicateLiteral::createNode(LDGBuilder *dg, bool head)
 					(*it)->getVars(needed);
 				else
 					(*it)->getVars(provided);
-		dg->createOpenNode(this, predNode_->getUid(), needed, provided);
 	}
+	dg->createNode(this, head, needed, provided);
 }
 
 void PredicateLiteral::print(std::ostream &out)
@@ -259,7 +241,7 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 }
 
-Literal* PredicateLiteral::clone()
+Literal* PredicateLiteral::clone() const
 {
 	return new PredicateLiteral(*this);
 }
@@ -341,10 +323,10 @@ double PredicateLiteral::heuristicValue()
 }
 
 
-void PredicateLiteral::getVars(VarSet &vars)
+void PredicateLiteral::getVars(VarSet &vars) const
 {
 	if(variables_)
-		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
+		for(TermVector::const_iterator it = variables_->begin(); it != variables_->end(); it++)
 			(*it)->getVars(vars);
 }
 

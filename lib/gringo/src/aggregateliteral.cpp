@@ -23,7 +23,7 @@ void AggregateLiteral::setBounds(Term *lower, Term *upper)
 	upper_ = upper;
 }
 
-bool AggregateLiteral::checkO(LiteralVector &unsolved)
+bool AggregateLiteral::checkO(LiteralVector &unsolved) 
 {
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
@@ -53,13 +53,13 @@ bool AggregateLiteral::match(Grounder *g)
 	return true;
 }
 
-void AggregateLiteral::getVars(VarSet &vars)
+void AggregateLiteral::getVars(VarSet &vars) const
 {
 	if(lower_)
 		lower_->getVars(vars);
 	if(upper_)
 		upper_->getVars(vars);
-	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+	for(ConditionalLiteralVector::const_iterator it = literals_->begin(); it != literals_->end(); it++)
 		(*it)->getVars(vars);
 }
 
@@ -153,7 +153,7 @@ IndexedDomain *AggregateLiteral::createIndexedDomain(VarSet &index)
 	return new IndexedDomainMatchOnly(this);
 }
 
-AggregateLiteral::AggregateLiteral(AggregateLiteral &a) : type_(a.type_), lower_(a.lower_ ? a.lower_->clone() : 0), upper_(a.upper_ ? a.upper_->clone() : 0)
+AggregateLiteral::AggregateLiteral(const AggregateLiteral &a) : type_(a.type_), lower_(a.lower_ ? a.lower_->clone() : 0), upper_(a.upper_ ? a.upper_->clone() : 0)
 {
 	if(a.literals_)
 	{
@@ -195,22 +195,22 @@ ConditionalLiteralVector *AggregateLiteral::getLiterals()
 	return literals_;
 }
 
-Literal* AggregateLiteral::clone()
+Literal* AggregateLiteral::clone() const
 {
 	return new AggregateLiteral(*this);
 }
 
-Term *AggregateLiteral::getLower()
+Term *AggregateLiteral::getLower() const
 {
 	return lower_;
 }
 
-Term *AggregateLiteral::getUpper()
+Term *AggregateLiteral::getUpper() const
 {
 	return upper_;
 }
 
-AggregateLiteral::AggregateType AggregateLiteral::getType()
+AggregateLiteral::AggregateType AggregateLiteral::getType() const
 {
 	return type_;
 }

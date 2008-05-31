@@ -13,13 +13,13 @@ namespace NS_GRINGO
 
 	public:
 		ConditionalLiteral(PredicateLiteral *pred, LiteralVector *conditionals);
-		ConditionalLiteral(ConditionalLiteral &p);
-		virtual Literal* clone();
+		ConditionalLiteral(const ConditionalLiteral &p);
+		virtual Literal* clone() const;
 		void setWeight(Term *w);
 		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void print(std::ostream &out);
-		virtual void getVars(VarSet &vars);
+		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
 		virtual bool solved();

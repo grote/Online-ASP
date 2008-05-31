@@ -20,7 +20,7 @@ namespace NS_GRINGO
 		/// Constructor
 		WeightedStatement(Type type, ConditionalLiteralVector *literals, int number = 0);
 		virtual void buildDepGraph(DependencyGraph *dg);
-		virtual void getVars(VarSet &vars);
+		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual bool check(VarVector &free);
 		virtual void preprocess(Grounder *g);

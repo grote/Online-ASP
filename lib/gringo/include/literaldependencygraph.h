@@ -86,9 +86,7 @@ namespace NS_GRINGO
 		void create();
 
 		void createGraphNode(Literal *l, bool head);
-		void createHeadNode(Literal *l, int uid, const VarSet &needed);
-		void createStaticNode(Literal *l, const VarSet &needed, const VarSet &provided);
-		void createOpenNode(Literal *l, int uid, const VarSet &needed, const VarSet &open);
+		void createNode(Literal *l, bool head, const VarSet &needed, const VarSet &provided);
 
 		~LDGBuilder();
 
@@ -100,14 +98,11 @@ namespace NS_GRINGO
 	protected:
 		LDGBuilder *parent_;
 		LDG::LiteralNode *parentNode_;
-		GraphNode *lastGraphNode_;
 		LDG *dg_;
 		LiteralVector head_;
 		LiteralVector body_;
 		VarNodeMap varNodes_;
 		GraphNodeVector graphNodes_;
-		LiteralNodeMap open_;
-		LiteralNodeMap provided_;
 	};
 
 }

@@ -11,7 +11,7 @@ void Literal::setNeg(bool neg)
 	neg_ = neg;
 }
 
-bool Literal::getNeg()
+bool Literal::getNeg() const
 {
 	return neg_;
 }

@@ -9,13 +9,13 @@ MultipleArgsTerm::MultipleArgsTerm(Term *a, Term *b) : a_(a), b_(b)
 {
 }
 
-MultipleArgsTerm::MultipleArgsTerm(MultipleArgsTerm &r)
+MultipleArgsTerm::MultipleArgsTerm(const MultipleArgsTerm &r)
 {
 	a_ = a_->clone();
 	b_ = b_->clone();
 }
 
-Term* MultipleArgsTerm::clone()
+Term* MultipleArgsTerm::clone() const
 {
 	return new MultipleArgsTerm(*this);
 }
@@ -25,7 +25,7 @@ void MultipleArgsTerm::print(std::ostream &out)
 	out << "(" << a_ << "; " << b_ << ")" << std::endl;
 }
 
-void MultipleArgsTerm::getVars(VarSet &vars)
+void MultipleArgsTerm::getVars(VarSet &vars) const
 {
 	assert(false);
 }
@@ -46,7 +46,7 @@ namespace
 	{
 	public:
 		CloneSentinel(Term *a) : a_(a) {}
-		Term* clone()
+		Term* clone() const
 		{
 			Term *a = a_;
 			delete this;
@@ -54,7 +54,7 @@ namespace
 		}
 		~CloneSentinel() { }
 		// the rest is unused
-		void getVars(VarSet &vars) { assert(false); }
+		void getVars(VarSet &vars) const { assert(false); }
 		bool isComplex() { assert(false); }
 		Value getValue() { assert(false); }
 		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { assert(false); }

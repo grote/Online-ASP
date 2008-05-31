@@ -24,7 +24,7 @@ namespace NS_GRINGO
 		 * \brief Returns all variables occuring in the Statement
 		 * \param vars Reference to the result
 		 */
-		virtual void getVars(VarSet &vars) = 0;
+		virtual void getVars(VarSet &vars) const = 0;
 		/**
 		 * \brief Checks the omega restricted part of the Statement
 		 *

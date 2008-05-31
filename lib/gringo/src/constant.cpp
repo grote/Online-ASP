@@ -47,7 +47,7 @@ Constant::Constant(ConstantType type, Grounder *g, std::string *value) : Term(),
 	}
 }
 
-void Constant::getVars(VarSet &vars)
+void Constant::getVars(VarSet &vars) const
 {
 	if(type_ == VAR)
 		vars.insert(uid_);
@@ -99,11 +99,11 @@ void Constant::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 	//nothing todo
 }
 
-Constant::Constant(Constant &c) : type_(c.type_), g_(c.g_), value_(c.value_), uid_(c.uid_)
+Constant::Constant(const Constant &c) : type_(c.type_), g_(c.g_), value_(c.value_), uid_(c.uid_)
 {
 }
 
-Term* Constant::clone() 
+Term* Constant::clone() const
 {
 	return new Constant(*this);
 }

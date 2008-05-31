@@ -10,10 +10,10 @@ namespace NS_GRINGO
 	{
 	public:
 		MultipleArgsTerm(Term *a, Term *b);
-		MultipleArgsTerm(MultipleArgsTerm &r);
-		virtual Term* clone();
+		MultipleArgsTerm(const MultipleArgsTerm &r);
+		virtual Term* clone() const;
 		virtual void print(std::ostream &out);
-		virtual void getVars(VarSet &vars);
+		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual Value getValue();
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);

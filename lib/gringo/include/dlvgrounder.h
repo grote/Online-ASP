@@ -8,7 +8,7 @@ namespace NS_GRINGO
 	class DLVGrounder
 	{
 	public:
-		DLVGrounder(Grounder *g, Groundable *r, LiteralVector &lit, LDG *dg, const VarVector &relevant);
+		DLVGrounder(Grounder *g, Groundable *r, int lits, LDG *dg, const VarVector &relevant);
 		void ground();
 		void debug();
 		~DLVGrounder();
@@ -19,7 +19,7 @@ namespace NS_GRINGO
 	public:
 		Grounder *g_;
 		Groundable *r_;
-		LiteralVector &lit_;
+		LiteralVector lit_;
 		IndexedDomainVector dom_;
 		std::vector<VarVector> var_;
 		std::vector<VarVector> dep_;

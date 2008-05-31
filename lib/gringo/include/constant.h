@@ -14,14 +14,14 @@ namespace NS_GRINGO
 	public:
 		Constant(int value);
 		Constant(ConstantType type, Grounder *g, std::string *value);
-		Constant(Constant &c);
+		Constant(const Constant &c);
 		virtual void print(std::ostream &out);
-		virtual void getVars(VarSet &vars);
+		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual Value getValue();
 		int getUID();
-		virtual Term* clone();
+		virtual Term* clone() const;
  		virtual ~Constant();
 	protected:
 		ConstantType type_;

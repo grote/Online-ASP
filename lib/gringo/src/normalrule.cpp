@@ -88,12 +88,12 @@ bool NormalRule::check(VarVector &free)
 	return free.size() == 0;
 }
 
-void NormalRule::getVars(VarSet &vars)
+void NormalRule::getVars(VarSet &vars) const
 {
 	if(head_)
 		head_->getVars(vars);
 	if(body_)
-		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
+		for(LiteralVector::const_iterator it = body_->begin(); it != body_->end(); it++)
 			(*it)->getVars(vars);
 }
 
@@ -148,7 +148,7 @@ bool NormalRule::ground(Grounder *g)
 		//std::cerr << "creating grounder for: " << this << std::endl;
 		VarVector relevant;
 		getRelevantVars(relevant);
-		DLVGrounder data(g, this, *body_, dg_, relevant);
+		DLVGrounder data(g, this, body_->size(), dg_, relevant);
 		//data.debug();
 		data.ground();
 	}

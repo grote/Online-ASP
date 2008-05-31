@@ -11,7 +11,7 @@ RangeTerm::RangeTerm(Term *lower, Term *upper) : Term(), lower_(lower), upper_(u
 {
 }
 
-void RangeTerm::getVars(VarSet &vars)
+void RangeTerm::getVars(VarSet &vars) const
 {
 	// rangeterms are eliminated while preprocessing
 	assert(false);
@@ -53,11 +53,11 @@ Value RangeTerm::getValue()
 	assert(false);
 }
 
-RangeTerm::RangeTerm(RangeTerm &r) : lower_(r.lower_->clone()), upper_(r.upper_->clone())
+RangeTerm::RangeTerm(const RangeTerm &r) : lower_(r.lower_->clone()), upper_(r.upper_->clone())
 {
 }
 
-Term* RangeTerm::clone()
+Term* RangeTerm::clone() const
 {
 	return new RangeTerm(*this);
 }

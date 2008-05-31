@@ -8,9 +8,9 @@
 
 using namespace NS_GRINGO;
 
-DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, LiteralVector &lit, LDG *dg, const VarVector &relevant) :
-	g_(g), r_(r), lit_(lit), dom_(lit.size()), var_(lit.size()), dep_(lit.size()), 
-	closestBinderVar_(lit.size()), closestBinderDep_(lit.size()), closestBinderRel_(lit.size() + 1), 
+DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, int lits, LDG *dg, const VarVector &relevant) :
+	g_(g), r_(r), lit_(lits), dom_(lits), var_(lits), dep_(lits), 
+	closestBinderVar_(lits), closestBinderDep_(lits), closestBinderRel_(lits + 1), 
 	global_(dg->getGlobalVars()), 
 	relevant_(relevant)
 {
@@ -58,6 +58,7 @@ void DLVGrounder::sortLiterals(LDG *dg)
 		var_[i].insert(var_[i].end(), global.begin(), global.end());
 		index.insert(provided.begin(), provided.end());
 	}
+	assert(list.size() == 0);
 }
 
 void DLVGrounder::debug()

@@ -10,12 +10,12 @@ namespace NS_GRINGO
 	{
 	public:
 		FuncSymbolTerm(Grounder* g, std::string* s, TermVector* tl);
-		FuncSymbolTerm(FuncSymbolTerm &f);
-		virtual void getVars(VarSet &vars);
+		FuncSymbolTerm(const FuncSymbolTerm &f);
+		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual void print(std::ostream &out);
 		virtual Value getValue();
-		virtual Term* clone();
+		virtual Term* clone() const;
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual ~FuncSymbolTerm();
 	protected:

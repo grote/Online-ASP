@@ -10,10 +10,10 @@ namespace NS_GRINGO
 	{
 	public:
 		RangeTerm(Term *lower, Term *upper);
-		RangeTerm(RangeTerm &r);
-		virtual Term* clone();
+		RangeTerm(const RangeTerm &r);
+		virtual Term* clone() const;
 		virtual void print(std::ostream &out);
-		virtual void getVars(VarSet &vars);
+		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual Value getValue();
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);

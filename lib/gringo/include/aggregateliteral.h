@@ -13,11 +13,11 @@ namespace NS_GRINGO
 		enum AggregateType { SUM, TIMES, COUNT, MIN, MAX, DISJUNCTION, CONJUNCTION };
 	public:
 		AggregateLiteral(AggregateType type, ConditionalLiteralVector *literals);
-		AggregateLiteral(AggregateLiteral &a);
-		virtual Literal* clone();
+		AggregateLiteral(const AggregateLiteral &a);
+		virtual Literal* clone() const;
 		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
-		virtual void getVars(VarSet &vars);
+		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
 		virtual void finish();
@@ -33,9 +33,9 @@ namespace NS_GRINGO
 		virtual double heuristicValue();
 		ConditionalLiteralVector *getLiterals();
 		void setBounds(Term *lower, Term *upper);
-		Term *getLower();
-		Term *getUpper();
-		AggregateType getType();
+		Term *getLower() const;
+		Term *getUpper() const;
+		AggregateType getType() const;
 		virtual ~AggregateLiteral();
 	public:
 	       	static Literal *createHead(ConditionalLiteralVector *list);

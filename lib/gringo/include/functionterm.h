@@ -12,12 +12,12 @@ namespace NS_GRINGO
 		enum FunctionType { PLUS, MINUS, TIMES, DIVIDE, MOD, ABS };
 	public:
 		FunctionTerm(FunctionType type, Term *a, Term *b = 0);
-		FunctionTerm(FunctionTerm &f);
-		virtual void getVars(VarSet &vars);
+		FunctionTerm(const FunctionTerm &f);
+		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual void print(std::ostream &out);
 		virtual Value getValue();
-		virtual Term* clone();
+		virtual Term* clone() const;
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual ~FunctionTerm();
 	protected:

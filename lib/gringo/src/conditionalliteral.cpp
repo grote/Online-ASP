@@ -34,11 +34,11 @@ void ConditionalLiteral::appendLiteral(Literal *l, ExpansionType type)
 	conditionals_->push_back(l);
 }
 
-void ConditionalLiteral::getVars(VarSet &vars)
+void ConditionalLiteral::getVars(VarSet &vars) const
 {
 	pred_->getVars(vars);
 	if(conditionals_)
-		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
+		for(LiteralVector::const_iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
 			(*it)->getVars(vars);
 	if(weight_)
 		weight_->getVars(vars);
@@ -170,7 +170,7 @@ void ConditionalLiteral::ground(Grounder *g)
 		if(!grounder_)
 		{
 			//std::cerr << "creating grounder for: " << this << std::endl;
-			grounder_ = new DLVGrounder(g, this, *conditionals_, dg_, dg_->getGlobalVars());
+			grounder_ = new DLVGrounder(g, this, conditionals_->size(), dg_, dg_->getGlobalVars());
 		}
 		
 		weights_.clear();
@@ -215,19 +215,19 @@ IndexedDomain *ConditionalLiteral::createIndexedDomain(VarSet &index)
 	return new IndexedDomainMatchOnly(this);
 }
 
-ConditionalLiteral::ConditionalLiteral(ConditionalLiteral &p) : pred_(p.clone_ ? static_cast<PredicateLiteral*>(p.pred_->clone()) : p.pred_), weight_(p.weight_ ? p.weight_->clone() : 0), grounder_(0), dg_(0), clone_(true)
+ConditionalLiteral::ConditionalLiteral(const ConditionalLiteral &p) : pred_(p.clone_ ? static_cast<PredicateLiteral*>(p.pred_->clone()) : p.pred_), weight_(p.weight_ ? p.weight_->clone() : 0), grounder_(0), dg_(0), clone_(true)
 {
 	if(p.conditionals_)
 	{
 		conditionals_ = new LiteralVector();
-		for(LiteralVector::iterator it = p.conditionals_->begin(); it != p.conditionals_->end(); it++)
+		for(LiteralVector::const_iterator it = p.conditionals_->begin(); it != p.conditionals_->end(); it++)
 			conditionals_->push_back((*it)->clone());
 	}
 	else
 		conditionals_ = 0;
 }
 
-Literal* ConditionalLiteral::clone()
+Literal* ConditionalLiteral::clone() const
 {
 	return new ConditionalLiteral(*this);
 }

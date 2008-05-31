@@ -29,7 +29,7 @@ void WeightedStatement::buildDepGraph(DependencyGraph *dg)
 	}
 }
 
-void WeightedStatement::getVars(VarSet &vars)
+void WeightedStatement::getVars(VarSet &vars) const
 {
 	// noone needs to know the vars in this statement
 	//for(ConditionalLiteralVector::iterator it = literals_.begin(); it != literals_.end(); it++)

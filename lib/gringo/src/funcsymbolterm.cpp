@@ -19,7 +19,7 @@ void FuncSymbolTerm::print(std::ostream &out)
 	out << *(*termList_)[termList_->size()-1] << ")";
 }
 
-void FuncSymbolTerm::getVars(VarSet &vars)
+void FuncSymbolTerm::getVars(VarSet &vars) const
 {
 	for (TermVector::const_iterator i = termList_->begin(); i != termList_->end(); ++i)
 		(*i)->getVars(vars);
@@ -53,7 +53,7 @@ Value FuncSymbolTerm::getValue()
 	return Value(funcSymbol);
 }
 
-FuncSymbolTerm::FuncSymbolTerm(FuncSymbolTerm &f) : name_(f.name_), grounder_(f.grounder_)
+FuncSymbolTerm::FuncSymbolTerm(const FuncSymbolTerm &f) : name_(f.name_), grounder_(f.grounder_)
 {
 	termList_ = new TermVector();
 	for (TermVector::const_iterator i = f.termList_->begin(); i != f.termList_->end(); ++i)
@@ -62,7 +62,7 @@ FuncSymbolTerm::FuncSymbolTerm(FuncSymbolTerm &f) : name_(f.name_), grounder_(f.
 	}
 }
 
-Term* FuncSymbolTerm::clone()
+Term* FuncSymbolTerm::clone() const
 {
 	return new FuncSymbolTerm(*this);
 }

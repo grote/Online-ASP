@@ -32,7 +32,7 @@ void FunctionTerm::print(std::ostream &out)
 	}
 }
 
-void FunctionTerm::getVars(VarSet &vars)
+void FunctionTerm::getVars(VarSet &vars) const
 {
 	a_->getVars(vars);
 	if(b_)
@@ -71,11 +71,11 @@ Value FunctionTerm::getValue()
 	assert(false);
 }
 
-FunctionTerm::FunctionTerm(FunctionTerm &f) : type_(f.type_), a_(f.a_->clone()), b_(f.b_ ? f.b_->clone() : 0)
+FunctionTerm::FunctionTerm(const FunctionTerm &f) : type_(f.type_), a_(f.a_->clone()), b_(f.b_ ? f.b_->clone() : 0)
 {
 }
 
-Term* FunctionTerm::clone()
+Term* FunctionTerm::clone() const
 {
 	return new FunctionTerm(*this);
 }

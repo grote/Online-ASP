@@ -23,7 +23,7 @@ void RelationLiteral::createNode(LDGBuilder *dg, bool head)
 	a_->getVars(needed);
 	if(b_)
 		b_->getVars(needed);
-	dg->createStaticNode(this, needed, provided);
+	dg->createNode(this, head, needed, provided);
 }
 
 void RelationLiteral::print(std::ostream &out)
@@ -63,7 +63,7 @@ bool RelationLiteral::solved()
 	return true;
 }
 
-void RelationLiteral::getVars(VarSet &vars)
+void RelationLiteral::getVars(VarSet &vars) const
 {
 	a_->getVars(vars);
 	b_->getVars(vars);
@@ -121,11 +121,11 @@ IndexedDomain *RelationLiteral::createIndexedDomain(VarSet &index)
 	return new IndexedDomainMatchOnly(this);
 }
 
-RelationLiteral::RelationLiteral(RelationLiteral &r) : type_(r.type_), a_(r.a_->clone()), b_(r.b_->clone())
+RelationLiteral::RelationLiteral(const RelationLiteral &r) : type_(r.type_), a_(r.a_->clone()), b_(r.b_->clone())
 {
 }
 
-Literal* RelationLiteral::clone()
+Literal* RelationLiteral::clone() const
 {
 	return new RelationLiteral(*this);
 }

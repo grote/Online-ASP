@@ -20,7 +20,7 @@ namespace NS_GRINGO
 		/// Destructor
 		virtual ~NormalRule();
 		// implemented from base class or interface
-		virtual void getVars(VarSet &vars);
+		virtual void getVars(VarSet &vars) const;
 		virtual void buildDepGraph(DependencyGraph *dg);
 		virtual void print(std::ostream &out);
 		virtual bool checkO(LiteralVector &unsolved);

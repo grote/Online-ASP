@@ -12,17 +12,17 @@ namespace NS_GRINGO
 		enum RelationType { EQ, NE, GT, GE, LE, LT };
 	public:
 		RelationLiteral(RelationType type, Term *a, Term *b);
-		RelationLiteral(RelationLiteral &r);
+		RelationLiteral(const RelationLiteral &r);
 		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
-		virtual void getVars(VarSet &vars);
+		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
 		virtual void finish();
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual bool solved();
 		virtual bool isFact();
-		virtual Literal* clone();
+		virtual Literal* clone() const;
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual bool match(Grounder *g);
 		virtual void print(std::ostream &out);

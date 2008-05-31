@@ -31,13 +31,13 @@ namespace NS_GRINGO
 		 * \brief Retrieve the sign ofthe literal.
 		 * \return Returns the sign
 		 */
-		bool getNeg();
+		bool getNeg() const;
 		/**
 		 * \brief Retrieve the vars of the literal
 		 * \param vars Reference to a set used to store the result
 		 * \param type Used to filter variables
 		 */
-		virtual void getVars(VarSet &vars) = 0;
+		virtual void getVars(VarSet &vars) const = 0;
 		/**
 		 * \brief Used to check omega restricted parts of literals.
 		 *
@@ -93,7 +93,7 @@ namespace NS_GRINGO
 		 * \brief Clones the literal
 		 * \return Pointer to the new copied literal
 		 */
-		virtual Literal* clone() = 0;
+		virtual Literal* clone() const = 0;
 		/**
 		 * \brief Triggers local grounding
 		 *

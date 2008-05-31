@@ -23,7 +23,7 @@ void RangeLiteral::createNode(LDGBuilder *dg, bool head)
 	upper_->getVars(needed);
 	lower_->getVars(needed);
 	var_->getVars(provided);
-	dg->createStaticNode(this, needed, provided);
+	dg->createNode(this, head, needed, provided);
 }
 
 void RangeLiteral::print(std::ostream &out)
@@ -41,7 +41,7 @@ bool RangeLiteral::solved()
 	return true;
 }
 
-void RangeLiteral::getVars(VarSet &vars)
+void RangeLiteral::getVars(VarSet &vars) const
 {
 	lower_->getVars(vars);
 	upper_->getVars(vars);
@@ -137,11 +137,11 @@ NS_OUTPUT::Object *RangeLiteral::convert()
 	assert(false);
 }
 
-RangeLiteral::RangeLiteral(RangeLiteral &r) : var_((Constant*)r.var_->clone()), lower_(r.lower_->clone()), upper_(r.upper_->clone())
+RangeLiteral::RangeLiteral(const RangeLiteral &r) : var_((Constant*)r.var_->clone()), lower_(r.lower_->clone()), upper_(r.upper_->clone())
 {
 }
 
-Literal* RangeLiteral::clone()
+Literal* RangeLiteral::clone() const
 {
 	return new RangeLiteral(*this);
 }

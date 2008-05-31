@@ -12,12 +12,6 @@ code:
 - move the list of all predicates into the grounder
 - if a conflicting integrity constraint is found grounding could be stopped (and not just exit(0))
 - move code concerning visible/hidden predicates to output
-- improve the literaldependencygraph it should be build by the the literals themselves
-  this way i can calculate an order even for constructs like: { p(X,Y) : X=Y : Y=X } :- a(X).
-  the graph could even be extended over the rules of a sub program to calculate a
-  possible order to ground the rules
-  - think of a better method to order the rules in a sub program (SCC::check)
-    if there is any
 - use c++ exceptions
 
 documentation:
@@ -56,7 +50,7 @@ smodelsoutput:
     useless symbols in some cases (but thats not dramatically cause clasp's
     preprocessor seems to be able to remove them)
   - there is no distinction between COUNT and SUM aggregates (in case 
-    there is distinction at all every aggregate even MIN, MAX, ... is
+    there is no distinction at all every aggregate even MIN, MAX, ... is
     handled like a SUM aggregate :) )
     again it makes no difference for clasp if SUM or COUNT aggregates are
     used cause clasp will detect if all weights are 1
