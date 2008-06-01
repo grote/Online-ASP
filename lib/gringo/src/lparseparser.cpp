@@ -9,7 +9,7 @@ void *lparseparserAlloc(void *(*mallocProc)(size_t));
 void lparseparserFree(void *p, void (*freeProc)(void*));
 void lparseparser(void *yyp, int yymajor, std::string* yyminor, LparseParser *pParser);
 
-LparseParser::LparseParser(std::istream* in) : GrinGoParser()
+LparseParser::LparseParser(std::istream* in) : GrinGoParser(), grounder_(0)
 {
 	lexer_  = new LparseLexer(0);
         pParser = lparseparserAlloc (malloc);

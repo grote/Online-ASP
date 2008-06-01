@@ -8,16 +8,13 @@ namespace NS_GRINGO
 	class GrinGoParser 
 	{
 	public:
-		GrinGoParser() : error_(false), grounder_(0) {} ;
+		GrinGoParser() : error_(false) {} ;
 		virtual ~GrinGoParser() {}
 		virtual GrinGoLexer *getLexer() = 0;
 		virtual void handleError();
 		virtual bool getError();
-		Grounder *getGrounder() { return grounder_; }
-		virtual Grounder *parse() = 0;
 	protected:
 		bool error_;
-		Grounder *grounder_;
 	};
 }
 

@@ -399,8 +399,7 @@ bool ClaspApp::parseLparse() {
 	//bool ret = reader.parse(in, api);
 	bool ret = true;
 	NS_GRINGO::NS_OUTPUT::ClaspOutput output(&api, LparseReader::TransformMode(options.transExt));
-	grounder->start(output);
-	delete grounder;
+	start_grounding(output);
 
 	setState(end_read);
 	if (ret) {

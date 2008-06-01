@@ -66,6 +66,7 @@ namespace NS_GRINGO
 
 	class GrinGoLexer;
 	class LparseLexer;
+	class PlainLparseLexer;
 
 	class Grounder;
 
