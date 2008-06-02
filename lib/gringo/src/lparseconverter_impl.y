@@ -56,7 +56,9 @@ Object *createDisjunction(Object *disj, Object *pred)
 %token_type { std::string* }
 %token_destructor { DELETE_PTR($$) }
 
-%type variable_list { int }
+%type variable_list  { int }
+%type nvariable_list { int }
+
 %type body { Conjunction* }
 %destructor body { DELETE_PTR($$) }
 
