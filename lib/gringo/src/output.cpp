@@ -37,7 +37,7 @@ std::string Output::atomToString(int id, const ValueVector &values) const
 
 bool Output::addAtom(NS_OUTPUT::Atom *r)
 {
-	int id = r->node_->getUid();
+	int id = r->predUid_;
 	AtomHash::iterator res = atoms_[id].find(r->values_);
 	if(res == atoms_[id].end())
 	{
@@ -112,7 +112,12 @@ Object::~Object()
 }
 
 // =============== NS_OUTPUT::Atom ===============
-Atom::Atom(bool neg, Node *node, ValueVector &values) : Object(neg, 0x4), node_(node)
+Atom::Atom(bool neg, Node *node, int predUid, ValueVector &values) : Object(neg, 0x4), node_(node), predUid_(predUid)
+{
+	std::swap(values_, values);
+}
+
+Atom::Atom(bool neg, int predUid, ValueVector &values) : Object(neg, 0x4), node_(0), predUid_(predUid)
 {
 	std::swap(values_, values);
 }
@@ -131,13 +136,13 @@ void Atom::addUid(Output *o)
 
 void Atom::print_plain(std::ostream &out)
 {
-	out << (neg_ ? "not " : "") << output_->atomToString(node_->getUid(), values_);
+	out << (neg_ ? "not " : "") << output_->atomToString(predUid_, values_);
 }
 
 void Atom::print(std::ostream &out)
 {
 	if(print_)
-		out << type_ << " " << uid_ << " " << output_->atomToString(node_->getUid(), values_) << " " << (output_->isVisible(node_->getUid()) ? "1 0" : "0") << std::endl;
+		out << type_ << " " << uid_ << " " << output_->atomToString(predUid_, values_) << " " << (output_->isVisible(predUid_) ? "1 0" : "0") << std::endl;
 }
 	
 // =============== NS_OUTPUT::Rule ===============

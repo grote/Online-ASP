@@ -10,7 +10,7 @@ namespace NS_GRINGO
 	{
 		friend class DependencyGraph;
 	public:
-		Node(int uid = 0, Statement *rule = 0);
+		Node(Statement *rule = 0);
 		NodeVector *getDependency();
 		NodeVector *getNegDependency();
 		Statement* getStatement();
@@ -20,7 +20,6 @@ namespace NS_GRINGO
 		void setSolved(bool solved);
 		void reset();
 		void finish();
-		int getUid() const;
 		void evaluate();
 		bool hasFacts();
 		void addFact(const ValueVector &values);
@@ -31,7 +30,6 @@ namespace NS_GRINGO
 		ValueVectorSet &getDomain();
 		virtual ~Node();
 	protected:
-		int uid_;
 		int defines_;
 		int lowlink_;
 		int index_;

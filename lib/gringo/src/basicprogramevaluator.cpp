@@ -23,7 +23,7 @@ void BasicProgramEvaluator::initialize(Grounder *g)
 int BasicProgramEvaluator::add(NS_OUTPUT::Atom *r)
 {
 	assert(!r->neg_);
-	int id = r->node_->getUid();
+	int id = r->predUid_;
 	AtomHash::iterator res = atomHash_[id].find(r->values_);
 	if(res == atomHash_[id].end())
 	{
@@ -115,14 +115,16 @@ void BasicProgramEvaluator::add(NS_OUTPUT::Object *r)
 void BasicProgramEvaluator::evaluate()
 {
 	//std::cerr << "evaluating basic program" << std::endl;
-	for(AtomLookUp::iterator itHash = atomHash_.begin(); itHash != atomHash_.end(); itHash++)
+
+	for(int uid = 0; uid < (int)atomHash_.size(); uid++)
 	{
-		for(AtomHash::iterator it = itHash->begin(); it != itHash->end(); it++)
+		AtomHash &hash = atomHash_[uid];
+		for(AtomHash::iterator it = hash.begin(); it != hash.end(); it++)
 		{
 			if(atoms_[it->second].status_ == FACT)
 			{
 				ValueVector values(it->first);
-				NS_OUTPUT::Atom *a = new NS_OUTPUT::Atom(false, atoms_[it->second].node_, values);
+				NS_OUTPUT::Atom *a = new NS_OUTPUT::Atom(false, atoms_[it->second].node_, uid, values);
 				NS_OUTPUT::Fact f(a);
 				f.addUid(o_);
 				// we dont need to add the domain as fact

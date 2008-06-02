@@ -18,7 +18,7 @@
 
 using namespace NS_GRINGO;
 		
-PredicateLiteral::PredicateLiteral(std::string *id, TermVector *variables) : Literal(), predNode_(0), id_(id), variables_(variables), matchValues_(variables ? variables->size() : 0)
+PredicateLiteral::PredicateLiteral(Grounder *g, std::string *id, TermVector *variables) : Literal(), predNode_(0), id_(id), variables_(variables), uid_(g->createPred(id, variables->size())), matchValues_(variables ? variables->size() : 0)
 {
 }
 
@@ -190,7 +190,7 @@ bool PredicateLiteral::match(Grounder *g)
 
 NS_OUTPUT::Object * PredicateLiteral::convert(ValueVector &values)
 {
-	return new NS_OUTPUT::Atom(getNeg(), predNode_, values);
+	return new NS_OUTPUT::Atom(getNeg(), predNode_, uid_, values);
 }
 
 NS_OUTPUT::Object *PredicateLiteral::convert()
@@ -284,7 +284,7 @@ TermVector *PredicateLiteral::getArgs()
 
 int PredicateLiteral::getUid()
 {
-	return predNode_->getUid();
+	return uid_;
 }
 
 std::string *PredicateLiteral::getId()

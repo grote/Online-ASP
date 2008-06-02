@@ -215,10 +215,12 @@ disj_list(res) ::= constraint_atom(term).                             { res = ne
 
 constraint_atom(res) ::= predicate(pred) conditional_list(list). { res = new ConditionalLiteral(pred, list); }
 
-predicate(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new PredicateLiteral(STRING(id), list); }
-predicate(res) ::= IDENTIFIER(id).                            { res = new PredicateLiteral(STRING(id), new TermVector()); }
-predicate(res) ::= MINUS IDENTIFIER(id) LPARA termlist(list) RPARA. { id->insert(id->begin(), '-'); res = new PredicateLiteral(STRING(id), list); }
-predicate(res) ::= MINUS IDENTIFIER(id).                            { id->insert(id->begin(), '-'); res = new PredicateLiteral(STRING(id), new TermVector()); }
+predicate(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new PredicateLiteral(GROUNDER, STRING(id), list); }
+predicate(res) ::= IDENTIFIER(id).                            { res = new PredicateLiteral(GROUNDER, STRING(id), new TermVector()); }
+predicate(res) ::= MINUS IDENTIFIER(id) LPARA termlist(list) RPARA. 
+  { res = new PredicateLiteral(GROUNDER, STRING(new std::string("-" + *id)), list); }
+predicate(res) ::= MINUS IDENTIFIER(id).                            
+  { res = new PredicateLiteral(GROUNDER, STRING(new std::string("-" + *id)), new TermVector()); }
 
 aggregate_atom(res) ::= term(l) aggregate(aggr) term(u). { res = aggr; aggr->setBounds(l, u); }
 aggregate_atom(res) ::= aggregate(aggr) term(u).         { res = aggr; aggr->setBounds(0, u); }

@@ -12,7 +12,7 @@ namespace NS_GRINGO
 	class PredicateLiteral : public Literal
 	{
 	public:
-		PredicateLiteral(std::string *id, TermVector *variables);
+		PredicateLiteral(Grounder *g, std::string *id, TermVector *variables);
 		PredicateLiteral(const PredicateLiteral &p);
 		virtual Literal* clone() const;
 		void setWeight(Term *w);
@@ -44,6 +44,7 @@ namespace NS_GRINGO
 		Node          *predNode_;
 		std::string   *id_;
 		TermVector    *variables_;
+		int           uid_;
 
 		ValueVector matchValues_;
 		ValueVector values_;

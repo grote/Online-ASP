@@ -3,33 +3,13 @@
 
 #include <gringo.h>
 #include <output.h>
-#include <ext/hash_set>
-//sorry for that
-#include "funcsymbol.h"
+#include <globalstorage.h>
 
 namespace NS_GRINGO
 {
-	class Grounder
+	class Grounder : public GlobalStorage
 	{
 	protected:
-		struct string_hash
-		{
-			inline size_t operator()(const std::string* a) const;
-		};
-		struct string_equal
-		{
-			inline bool operator()(const std::string* a, const std::string* b) const;
-		};
-		struct funcSym_hash
-		{
-			inline size_t operator()(const FuncSymbol* a) const;
-		};
-		struct funcSym_equal
-		{
-			inline bool operator()(const FuncSymbol* a, const FuncSymbol* b) const;
-		};
-		typedef __gnu_cxx::hash_set<std::string*, string_hash, string_equal> StringHash;
-		typedef __gnu_cxx::hash_set<FuncSymbol*, funcSym_hash, funcSym_equal> FuncSymbolHash;
 		typedef std::pair<std::string*, StringVector*> DomainPredicate;
 		typedef std::vector<DomainPredicate> DomainVector;
 		typedef std::map<std::string*, int> VariableMap;
@@ -57,13 +37,9 @@ namespace NS_GRINGO
 		void setConstValue(std::string *id, Value *v);
 		Value *createConstValue(std::string *id);
 		Value *createStringValue(std::string *id);
-		std::string *createString(std::string *s);
-		std::string *createString(const std::string &s);
-		FuncSymbol* createFuncSymbol(FuncSymbol* fn);
 		void preprocess();
 		NS_OUTPUT::Output *getOutput();
 		Evaluator *getEvaluator();
-		SignatureVector *getPred();
 		virtual ~Grounder();
 	protected:
 		int internalVars_;
@@ -78,34 +54,7 @@ namespace NS_GRINGO
 		std::vector<Value> substitution_;
 		std::vector<int> binder_;
 		std::set<Signature> trueNegPred_;
-		
-		/// pool of all strings used
-		StringHash stringHash_;
-		///pools of all function symbols used
-		FuncSymbolHash funcHash_;
 	};
-
-	bool Grounder::string_equal::operator()(const std::string *a, const std::string *b) const
-	{
-		return *a == *b;
-	}
-
-	size_t Grounder::string_hash::operator()(const std::string* a) const
-	{
-		return __gnu_cxx::__stl_hash_string(a->c_str());
-	}
-
-	bool Grounder::funcSym_equal::operator()(const FuncSymbol* a, const FuncSymbol* b) const
-	{
-		return *a == *b;
-	}
-
-	size_t Grounder::funcSym_hash::operator()(const FuncSymbol* a) const
-	{
-		return a->getHash();
-	}
-
-
 }
 
 #endif

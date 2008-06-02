@@ -12,7 +12,7 @@ DependencyGraph::DependencyGraph() : last_(0)
 
 Node *DependencyGraph::createStatementNode(Statement *r, bool preserveOrder)
 {
-	Node *n = new Node(0, r);
+	Node *n = new Node(r);
 	ruleNodes_.push_back(n);
 	if(preserveOrder)
 	{
@@ -25,20 +25,11 @@ Node *DependencyGraph::createStatementNode(Statement *r, bool preserveOrder)
 
 Node *DependencyGraph::createPredicateNode(PredicateLiteral *pred)
 {
-	Node *&n = predicateMap_[std::make_pair(pred->getId(), pred->getArity())];
+	if((int)predicateNodes_.size() < pred->getUid() + 1)
+		predicateNodes_.resize(pred->getUid() + 1);
+	Node *&n = predicateNodes_[pred->getUid()];
 	if(!n)
-	{
-		n = new Node(pred_.size());
-		pred_.push_back(std::make_pair(pred->getId(), pred->getArity()));
-		predicateNodes_.push_back(n);
-	}
-	return n;
-}
-
-Node *DependencyGraph::createPredicateNode()
-{
-	Node *n = new Node(0);
-	predicateNodes_.push_back(n);
+		n = new Node();
 	return n;
 }
 
@@ -190,11 +181,6 @@ void DependencyGraph::calcSCCs()
 NodeVector &DependencyGraph::getPredNodes()
 {
 	return predicateNodes_;
-}
-
-SignatureVector *DependencyGraph::getPred()
-{
-	return &pred_;
 }
 
 DependencyGraph::~DependencyGraph()

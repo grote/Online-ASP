@@ -18,7 +18,7 @@
 
 using namespace NS_GRINGO;
 
-PlainLparseLexer::PlainLparseLexer(std::istream *in) : GrinGoLexer(in)
+PlainLparseLexer::PlainLparseLexer() : GrinGoLexer(0)
 {
 }
 	

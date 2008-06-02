@@ -9,7 +9,7 @@ namespace NS_GRINGO
 	class LparseLexer : public GrinGoLexer
 	{
 	public:
-		LparseLexer(std::istream *in = &std::cin);
+		LparseLexer();
 		int lex(std::string *&val);
 		virtual ~LparseLexer();
 	};

@@ -4,7 +4,7 @@
 
 using namespace NS_GRINGO;
 
-Node::Node(int uid, Statement *rule) : uid_(uid), defines_(0), lowlink_(-1), index_(-1), stacked_(false), done_(false), scc_(0), rule_(rule), solved_(false)
+Node::Node(Statement *rule) : defines_(0), lowlink_(-1), index_(-1), stacked_(false), done_(false), scc_(0), rule_(rule), solved_(false)
 {
 }
 
@@ -112,11 +112,6 @@ bool Node::hasFacts()
 ValueVectorSet &Node::getDomain()
 {
 	return domain_;
-}
-
-int Node::getUid() const
-{
-	return uid_;
 }
 
 Node::~Node() 

@@ -2,6 +2,7 @@
 #include "lparseconverter_impl.h"
 #include "plainlparselexer.h"
 #include "grounder.h"
+#include "funcsymbol.h"
 
 using namespace NS_GRINGO;
 
@@ -11,14 +12,14 @@ void lparseconverter(void *yyp, int yymajor, std::string* yyminor, LparseConvert
 
 LparseConverter::LparseConverter(std::istream* in) : GrinGoParser(), output_(0)
 {
-	lexer_  = new PlainLparseLexer(0);
+	lexer_  = new PlainLparseLexer();
         pParser = lparseconverterAlloc (malloc);
 	streams_.push_back(in);
 }
 
 LparseConverter::LparseConverter(std::vector<std::istream*> &in) : GrinGoParser()
 {
-	lexer_  = new PlainLparseLexer(0);
+	lexer_  = new PlainLparseLexer();
         pParser = lparseconverterAlloc (malloc);
 	streams_ = in;
 }
@@ -50,5 +51,10 @@ LparseConverter::~LparseConverter()
 GrinGoLexer *LparseConverter::getLexer()
 {
 	return lexer_;
+}
+
+NS_OUTPUT::Output *LparseConverter::getOutput()
+{
+	return output_;
 }
 

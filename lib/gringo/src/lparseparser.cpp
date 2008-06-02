@@ -11,14 +11,14 @@ void lparseparser(void *yyp, int yymajor, std::string* yyminor, LparseParser *pP
 
 LparseParser::LparseParser(std::istream* in) : GrinGoParser(), grounder_(0)
 {
-	lexer_  = new LparseLexer(0);
+	lexer_  = new LparseLexer();
         pParser = lparseparserAlloc (malloc);
 	streams_.push_back(in);
 }
 
 LparseParser::LparseParser(std::vector<std::istream*> &in) : GrinGoParser()
 {
-	lexer_  = new LparseLexer(0);
+	lexer_  = new LparseLexer();
         pParser = lparseparserAlloc (malloc);
 	streams_ = in;
 }

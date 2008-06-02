@@ -51,7 +51,7 @@ void Grounder::addDomains()
 					TermVector *tv = new TermVector();
 					for(StringVector::iterator vars = dp.second->begin(); vars != dp.second->end(); vars++)
 						tv->push_back(new Constant(Constant::VAR, this, *vars));
-					PredicateLiteral *pred = new PredicateLiteral(dp.first, tv);
+					PredicateLiteral *pred = new PredicateLiteral(this, dp.first, tv);
 					rule->addDomain(pred);
 					break;
 				}
@@ -65,14 +65,16 @@ void Grounder::reset(bool warn = false)
 	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
 		(*it)->reset();
 	// all nodes with zero defines have to be false
-	for(NodeVector::iterator it = depGraph_->getPredNodes().begin(); it != depGraph_->getPredNodes().end(); it++)
+	for(int uid = 0; uid < (int)depGraph_->getPredNodes().size(); uid++)
 	{
-		Node *n = *it;
+		Node *n = depGraph_->getPredNodes()[uid];
 		if(n->complete())
 		{
-			Signature &sig = (*depGraph_->getPred())[n->getUid()];
 			if(warn)
+			{
+				Signature &sig = (*getPred())[uid];
 				std::cerr << "Warning: " << *sig.first << "/" << sig.second << " is never defined" << std::endl;
+			}
 			n->setSolved(true);
 		}
 	}
@@ -108,11 +110,6 @@ void Grounder::start()
 	std::cerr << "grounding ... " << std::endl;
 	ground();
 	std::cerr << "done" << std::endl;
-}
-
-SignatureVector *Grounder::getPred()
-{
-	return depGraph_->getPred();
 }
 
 void Grounder::addSCC(SCC *scc)
@@ -199,15 +196,6 @@ Grounder::~Grounder()
 		delete *it;
 	for(std::map<std::string*, Value*>::iterator it = const_.begin(); it != const_.end(); it++)
 		delete it->second;
-	// TODO: do i really need pointers????
-	StringVector v(stringHash_.begin(), stringHash_.end());
-	stringHash_.clear();
-	for(StringVector::iterator it = v.begin(); it != v.end(); it++)
-		delete *it;
-	FuncSymbolVector x(funcHash_.begin(), funcHash_.end());
-	funcHash_.clear();
-	for(FuncSymbolVector::iterator it = x.begin(); it != x.end(); it++)
-		delete *it;
 
 }
 
@@ -286,34 +274,13 @@ void Grounder::addTrueNegation(std::string *id, int arity)
 			tn->push_back(new Constant(Constant::VAR, this, var));
 		}
 		std::string *pos = createString(id->substr(1));
-		PredicateLiteral *p = new PredicateLiteral(pos, tp);
-		PredicateLiteral *n = new PredicateLiteral(id, tn);
+		PredicateLiteral *p = new PredicateLiteral(this, pos, tp);
+		PredicateLiteral *n = new PredicateLiteral(this, id, tn);
 		LiteralVector *body = new LiteralVector();
 		body->push_back(p);
 		body->push_back(n);
 		NormalRule *r = new NormalRule(0, body);
 		addStatement(r);
 	}
-}
-
-std::string *Grounder::createString(const std::string &s2)
-{
-	return createString(new std::string(s2));
-}
-
-std::string *Grounder::createString(std::string *s)
-{
-	std::pair<StringHash::iterator, bool> res = stringHash_.insert(s);
-	if(!res.second)
-		delete s;
-	return *res.first;
-}
-
-FuncSymbol* Grounder::createFuncSymbol(FuncSymbol* fn)
-{
-	std::pair<FuncSymbolHash::iterator, bool> res = funcHash_.insert(fn);
-	if (!res.second)
-		delete fn;
-	return *res.first;
 }
 

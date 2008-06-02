@@ -61,7 +61,8 @@ namespace NS_GRINGO
 
 		struct Atom : public Object
 		{
-			Atom(bool neg, Node *node, ValueVector &values);
+			Atom(bool neg, Node *node, int predUid, ValueVector &values);
+			Atom(bool neg, int predUid, ValueVector &values);
 			void addDomain(bool fact);
 			void addUid(Output *o);
 			void print_plain(std::ostream &out);
@@ -69,6 +70,7 @@ namespace NS_GRINGO
 			
 			/// the id of the assigned predicate
 			Node *node_;
+			int  predUid_;
 			bool print_;
 			Output *output_;
 			ValueVector values_;
