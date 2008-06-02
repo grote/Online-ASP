@@ -116,9 +116,11 @@ int main(int argc, char *argv[])
 
 	if(!clasp)
 		start_grounding();
-
-	delete parser;
-	delete output;
+	
+	if(parser)
+		delete parser;
+	if(output)
+		delete output;
 
 	for(std::vector<std::istream*>::iterator it = streams.begin(); it != streams.end(); it++)
 		delete *it;
