@@ -122,6 +122,10 @@ Atom::Atom(bool neg, int predUid, ValueVector &values) : Object(neg, 0x4), node_
 	std::swap(values_, values);
 }
 
+Atom::Atom(bool neg, int predUid) : Object(neg, 0x4), node_(0), predUid_(predUid)
+{
+}
+
 void Atom::addDomain(bool fact)
 {
 	if(fact)
@@ -251,10 +255,15 @@ Integrity::~Integrity()
 }
 
 // =============== NS_OUTPUT::Conjunction ===============
+Conjunction::Conjunction() : Object(0x8) 
+{
+}
+
 Conjunction::Conjunction(ObjectVector &lits) : Object(0x8) 
 {
 	std::swap(lits, lits_);
 }
+
 void Conjunction::print_plain(std::ostream &out)
 {
 	bool comma = false;
@@ -325,12 +334,16 @@ Aggregate::Aggregate(bool neg, Type type, ObjectVector lits, IntVector weights) 
 	std::swap(weights, weights_);
 }
 
+Aggregate::Aggregate(bool neg, Type type) : Object(neg, type), bounds_(N), lower_(0), upper_(0)
+{
+}
+
 void Aggregate::print_plain(std::ostream &out)
 {
 	if(neg_)
 		out << "not ";
 	if(bounds_ == L || bounds_ == LU)
-		std::cout << lower_;
+		out << lower_;
 	bool comma = false;
 	switch(type_)
 	{
@@ -374,7 +387,7 @@ void Aggregate::print_plain(std::ostream &out)
 			out << "} ";
 	}
 	if(bounds_ == U || bounds_ == LU)
-		std::cout << upper_;
+		out << upper_;
 }
 
 void Aggregate::print(std::ostream &out)
@@ -401,7 +414,7 @@ void Aggregate::print(std::ostream &out)
 		out << " " << (*it)->getUid();
 	if(type_ != COUNT && type_ != DISJUNCTION)
 	{
-		std::cout << " " << weights_.size();
+		out << " " << weights_.size();
 		for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++)
 			out << " " << *it;
 	}

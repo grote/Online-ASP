@@ -27,6 +27,7 @@ LparseConverter::LparseConverter(std::vector<std::istream*> &in) : GrinGoParser(
 bool LparseConverter::parse(NS_OUTPUT::Output *output)
 {
 	output_ = output;
+	output_->initialize(getPred());
 	int token;
 	std::string *lval;
 	for(std::vector<std::istream*>::iterator it = streams_.begin(); it != streams_.end(); it++)
@@ -38,6 +39,7 @@ bool LparseConverter::parse(NS_OUTPUT::Output *output)
 		}
 	}
 	lparseconverter(pParser, 0, lval, this);
+	output_->finalize();
 
 	return !getError();
 }
@@ -56,5 +58,16 @@ GrinGoLexer *LparseConverter::getLexer()
 NS_OUTPUT::Output *LparseConverter::getOutput()
 {
 	return output_;
+}
+
+int LparseConverter::createPred(std::string *id, int arity)
+{
+	std::pair<SignatureHash::iterator, bool> res = predHash_.insert(std::make_pair(Signature(id, arity), (int)pred_.size()));
+	if(res.second)
+	{
+		pred_.push_back(Signature(id, arity));
+		output_->addSignature();
+	}
+	return res.first->second;
 }
 

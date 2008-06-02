@@ -41,7 +41,6 @@ int main(int argc, char *argv[])
 	bool smodels = false;
 	bool lparse  = false;
 	bool clasp   = false;
-	bool convert = false;
 	std::vector<std::istream*> streams;
 	while(argc > 1)
 	{
@@ -88,6 +87,12 @@ int main(int argc, char *argv[])
 	}
 	if(argc == 1)
 		streams.push_back(new std::istream(std::cin.rdbuf()));
+	if(strcmp(argv[1], "--") == 0)
+	{
+		streams.push_back(new std::istream(std::cin.rdbuf()));
+		argc--;
+		argv++;
+	}
 	else
 		while(argc > 1)
 		{

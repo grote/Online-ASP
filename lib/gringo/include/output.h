@@ -63,6 +63,7 @@ namespace NS_GRINGO
 		{
 			Atom(bool neg, Node *node, int predUid, ValueVector &values);
 			Atom(bool neg, int predUid, ValueVector &values);
+			Atom(bool neg, int predUid);
 			void addDomain(bool fact);
 			void addUid(Output *o);
 			void print_plain(std::ostream &out);
@@ -116,6 +117,7 @@ namespace NS_GRINGO
 		struct Conjunction : public Object
 		{
 			Conjunction(ObjectVector &lits);
+			Conjunction();
 			void print_plain(std::ostream &out);
 			void print(std::ostream &out);
 			~Conjunction();
@@ -133,6 +135,7 @@ namespace NS_GRINGO
 			Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights);
 			Aggregate(bool neg, Type type, ObjectVector lits, IntVector weights, int upper);
 			Aggregate(bool neg, Type type, ObjectVector lits, IntVector weights);
+			Aggregate(bool neg, Type type);
 			void print_plain(std::ostream &out);
 			void print(std::ostream &out);
 			void addDomain(bool fact);

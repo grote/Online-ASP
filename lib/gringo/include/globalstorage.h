@@ -10,7 +10,7 @@ namespace NS_GRINGO
 {
 	class GlobalStorage
 	{
-	private:
+	protected:
 		struct string_hash
 		{
 			inline size_t operator()(const std::string* a) const;
@@ -45,7 +45,7 @@ namespace NS_GRINGO
 		SignatureVector *getPred();
 
 		virtual ~GlobalStorage();
-	private:
+	protected:
 		StringHash stringHash_;
 		FuncSymbolHash funcHash_;
 		SignatureHash predHash_;
