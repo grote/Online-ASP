@@ -131,8 +131,10 @@ hide_predicate ::= IDENTIFIER(id). { OUTPUT->setVisible(STRING(id), 0, false); }
 show_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, true); }
 hide_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, false); }
 
-variable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
-variable_list(res) ::= VARIABLE.                           { res = 1; }
+variable_list(res) ::= nvariable_list(list). { res = list; }
+variable_list(res) ::= .                     { res = 0; }
+nvariable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
+nvariable_list(res) ::= VARIABLE.                           { res = 1; }
 
 rule ::= head_atom(head) IF body(body). { Rule r(head, body); r.addUid(OUTPUT); OUTPUT->print(&r); }
 rule ::= head_atom(head) IF .           { Fact r(head); r.addUid(OUTPUT); OUTPUT->print(&r); }
