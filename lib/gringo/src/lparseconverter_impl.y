@@ -128,8 +128,8 @@ nhide_list ::= hide_predicate.
 
 show_predicate ::= IDENTIFIER(id). { OUTPUT->setVisible(STRING(id), 0, true); }
 hide_predicate ::= IDENTIFIER(id). { OUTPUT->setVisible(STRING(id), 0, false); }
-show_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { id = STRING(id); PRED(id, count); OUTPUT->setVisible(id, 0, true); }
-hide_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { id = STRING(id); PRED(id, count); OUTPUT->setVisible(id, 0, false); }
+show_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, true); }
+hide_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, false); }
 
 variable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
 variable_list(res) ::= VARIABLE.                           { res = 1; }
