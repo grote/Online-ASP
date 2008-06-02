@@ -34,11 +34,10 @@ namespace NS_GRINGO
 		typedef std::vector<DomainPredicate> DomainVector;
 		typedef std::map<std::string*, int> VariableMap;
 	public:
-		Grounder();
+		Grounder(NS_OUTPUT::Output *output);
 		void addStatement(Statement *rule);
 		void addDomains(std::string *id, StringVector* list);
 		void buildDepGraph();
-		void start(NS_OUTPUT::Output &output);
 		void start();
 		void addDomains();
 		void reset(bool warn);
@@ -64,10 +63,6 @@ namespace NS_GRINGO
 		void preprocess();
 		NS_OUTPUT::Output *getOutput();
 		Evaluator *getEvaluator();
-		void hideAll();
-		void setVisible(std::string *id, int arity, bool visible);
-		bool isVisible(int uid);
-		bool isVisible(std::string *id, int arity);
 		SignatureVector *getPred();
 		virtual ~Grounder();
 	protected:
@@ -88,13 +83,6 @@ namespace NS_GRINGO
 		StringHash stringHash_;
 		///pools of all function symbols used
 		FuncSymbolHash funcHash_;
-
-		// visibility of predicates: move to output
-		bool hideAll_;
-		std::map<Signature, bool> hide_;
-		// constructed from hide_
-		std::vector<bool> visible_;
-
 	};
 
 	bool Grounder::string_equal::operator()(const std::string *a, const std::string *b) const

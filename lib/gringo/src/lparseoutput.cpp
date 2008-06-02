@@ -7,9 +7,9 @@ LparseOutput::LparseOutput(std::ostream *out) : Output(out)
 {
 }
 
-void LparseOutput::initialize(Grounder *g)
+void LparseOutput::initialize(SignatureVector *pred)
 {
-	Output::initialize(g);
+	Output::initialize(pred);
 }
 
 void LparseOutput::print(NS_OUTPUT::Object *r)

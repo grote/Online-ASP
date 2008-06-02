@@ -32,32 +32,13 @@ MACRO(LEMON NAME SRC DST)
 		MAIN_DEPENDENCY ${SRC}/${NAME}.y
 		DEPENDS lemon ${SRC}/lempar.c
 	)
-ENDMACRO(LEMON SRC DST LEMPAR)
+ENDMACRO(LEMON NAME SRC DST)
 
 RE2C(${GrinGo_SOURCE_DIR}/lib/gringo/src/lparselexer.re ${GrinGo_BINARY_DIR}/lib/gringo/lparselexer.cpp)
 LEMON(lparseparser_impl ${GrinGo_SOURCE_DIR}/lib/gringo/src ${GrinGo_BINARY_DIR}/lib/gringo)
 
 RE2C(${GrinGo_SOURCE_DIR}/lib/gringo/src/plainlparselexer.re ${GrinGo_BINARY_DIR}/lib/gringo/plainlparselexer.cpp)
 LEMON(lparseconverter_impl ${GrinGo_SOURCE_DIR}/lib/gringo/src ${GrinGo_BINARY_DIR}/lib/gringo)
-
-#ADD_CUSTOM_COMMAND(
-#	OUTPUT ${GrinGo_BINARY_DIR}/lib/gringo/lparselexer.cpp
-#	COMMAND re2c -o ${GrinGo_BINARY_DIR}/lib/gringo/lparselexer.cpp ${GrinGo_SOURCE_DIR}/lib/gringo/src/lparselexer.re
-#	MAIN_DEPENDENCY ${GrinGo_SOURCE_DIR}/lib/gringo/src/lparselexer.re
-#	DEPENDS ${GrinGo_BINARY_DIR}/lib/gringo/lparseparser_impl.h
-#)
-
-#ADD_CUSTOM_COMMAND(
-#	OUTPUT ${GrinGo_BINARY_DIR}/lib/gringo/lparseparser_impl.cpp ${GrinGo_BINARY_DIR}/lib/gringo/lparseparser_impl.h
-#	COMMAND cp ${GrinGo_SOURCE_DIR}/lib/gringo/src/lempar.c ${GrinGo_BINARY_DIR}/lib/gringo/lempar.c
-#	COMMAND lemon -q ${GrinGo_SOURCE_DIR}/lib/gringo/src/lparseparser_impl.y
-#	COMMAND rm ${GrinGo_BINARY_DIR}/lib/gringo/lempar.c
-#	COMMAND mv ${GrinGo_SOURCE_DIR}/lib/gringo/src/lparseparser_impl.c ${GrinGo_BINARY_DIR}/lib/gringo/lparseparser_impl.cpp
-#	COMMAND mv ${GrinGo_SOURCE_DIR}/lib/gringo/src/lparseparser_impl.h ${GrinGo_BINARY_DIR}/lib/gringo/lparseparser_impl.h
-#	COMMAND touch ${GrinGo_BINARY_DIR}/lib/gringo/lparseparser_impl.h ${GrinGo_BINARY_DIR}/lib/gringo/lparseparser_impl.cpp
-#	MAIN_DEPENDENCY ${GrinGo_SOURCE_DIR}/lib/gringo/src/lparseparser_impl.y
-#	DEPENDS lemon ${GrinGo_SOURCE_DIR}/lib/gringo/src/lempar.c
-#)
 
 add_library(gringo-lib STATIC ${LIBGRINGO_SRC})
 target_link_libraries (gringo-lib clasp-lib)

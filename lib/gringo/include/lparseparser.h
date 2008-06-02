@@ -11,7 +11,7 @@ namespace NS_GRINGO
 	public:
 		LparseParser(std::vector<std::istream*> &in);
 		LparseParser(std::istream* = &std::cin);
-		Grounder *parse();
+		bool parse(NS_OUTPUT::Output *output);
 		GrinGoLexer *getLexer();
 		Grounder *getGrounder() { return grounder_; }
 		virtual ~LparseParser();

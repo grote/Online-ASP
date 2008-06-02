@@ -5,20 +5,23 @@
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 		
-Output::Output(std::ostream *out) : uids_(1), out_(out), g_(0)
+Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(false)
 {
 	
 }
 
-void Output::initialize(Grounder *g)
+void Output::initialize(SignatureVector *pred)
 {
-	g_ = g;
-	atoms_.resize(g->getPred()->size());
+	pred_ = pred;
+	visible_.reserve(pred_->size());
+	for(SignatureVector::const_iterator it = pred_->begin(); it != pred_->end(); it++)
+		visible_.push_back(isVisible(it->first, it->second));
+	atoms_.resize(pred_->size());
 }
 
 std::string Output::atomToString(int id, const ValueVector &values) const
 {
-	const std::string *name = (*g_->getPred())[id].first;
+	const std::string *name = (*pred_)[id].first;
 	std::stringstream ss;
 	ss << *name;
 	if(values.size() > 0)
@@ -31,12 +34,6 @@ std::string Output::atomToString(int id, const ValueVector &values) const
 	}
 	return ss.str();
 }
-
-bool Output::isVisible(int id)
-{
-	return g_->isVisible(id);
-}
-
 
 bool Output::addAtom(NS_OUTPUT::Atom *r)
 {
@@ -60,6 +57,36 @@ bool Output::addAtom(NS_OUTPUT::Atom *r)
 int Output::newUid()
 {
 	return uids_++;
+}
+
+void Output::hideAll()
+{
+	hideAll_ = true;
+}
+
+void Output::setVisible(std::string *id, int arity, bool visible)
+{
+	hide_[std::make_pair(id, arity)] = !visible;
+}
+
+bool Output::isVisible(int uid)
+{
+	return visible_[uid];
+}
+
+bool Output::isVisible(std::string *id, int arity)
+{
+	std::map<Signature, bool>::iterator it = hide_.find(std::make_pair(id, arity));
+	if(it == hide_.end())
+		return !hideAll_;
+	else
+		return !it->second;
+}
+
+void Output::addSignature()
+{
+	visible_.push_back(isVisible(pred_->back().first, pred_->back().second));
+	atoms_.push_back(AtomHash());
 }
 
 Output::~Output()

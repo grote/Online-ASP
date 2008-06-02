@@ -18,7 +18,7 @@ namespace NS_GRINGO
 		{
 		public:
 			ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf);
-			void initialize(Grounder *g);
+			void initialize(SignatureVector *pred);
 			void print(NS_OUTPUT::Object *o);
 			void finalize();
 			~ClaspOutput();

@@ -398,8 +398,8 @@ bool ClaspApp::parseLparse() {
 	// TODO: put gringo here!!!
 	//bool ret = reader.parse(in, api);
 	bool ret = true;
-	NS_GRINGO::NS_OUTPUT::ClaspOutput output(&api, LparseReader::TransformMode(options.transExt));
-	start_grounding(output);
+	output = new NS_GRINGO::NS_OUTPUT::ClaspOutput(&api, LparseReader::TransformMode(options.transExt));
+	start_grounding();
 
 	setState(end_read);
 	if (ret) {
@@ -409,7 +409,7 @@ bool ClaspApp::parseLparse() {
 	}
 	api.stats.moveTo(*preStats_);
 	// TODO: modify here
-	*lpStats_ = output.getStats();
+	*lpStats_ = static_cast<NS_GRINGO::NS_OUTPUT::ClaspOutput*>(output)->getStats();
 	if (solver.strategies().minimizer && options.optimizeAll) {
 		solver.strategies().minimizer->setMode( MinimizeConstraint::compare_less_equal );
 	}

@@ -23,11 +23,11 @@ LparseParser::LparseParser(std::vector<std::istream*> &in) : GrinGoParser()
 	streams_ = in;
 }
 
-Grounder *LparseParser::parse()
+bool LparseParser::parse(NS_OUTPUT::Output *output)
 {
 	int token;
 	std::string *lval;
-	grounder_ = new Grounder();
+	grounder_ = new Grounder(output);
 	for(std::vector<std::istream*>::iterator it = streams_.begin(); it != streams_.end(); it++)
 	{
 		lexer_->reset(*it);
@@ -41,8 +41,9 @@ Grounder *LparseParser::parse()
 	{
 		delete grounder_;
 		grounder_ = 0;
+		return false;
 	}
-	return grounder_;
+	return true;
 }
 
 LparseParser::~LparseParser()

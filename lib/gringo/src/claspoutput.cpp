@@ -9,9 +9,9 @@ ClaspOutput::ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::Transfor
 {
 }
 
-void ClaspOutput::initialize(Grounder *g)
+void ClaspOutput::initialize(SignatureVector *pred)
 {
-	Output::initialize(g);
+	Output::initialize(pred);
 	// should get 1 here
 	false_  = newUid();
 	models_ = 1;
@@ -251,7 +251,7 @@ void ClaspOutput::finalize()
 {
 	int uid = 0;
 	for(AtomLookUp::iterator it = atoms_.begin(); it != atoms_.end(); it++, uid++)
-		if(g_->isVisible(uid))
+		if(isVisible(uid))
 			for(AtomHash::iterator atom = it->begin(); atom != it->end(); atom++)
 				b_->setAtomName(atom->second, atomToString(uid, atom->first).c_str());
 	b_->setCompute(false_, false);

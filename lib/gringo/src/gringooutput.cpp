@@ -7,9 +7,9 @@ GrinGoOutput::GrinGoOutput(std::ostream *out) : Output(out)
 {
 }
 
-void GrinGoOutput::initialize(Grounder *g)
+void GrinGoOutput::initialize(SignatureVector *pred)
 {
-	Output::initialize(g);
+	Output::initialize(pred);
 }
 
 void GrinGoOutput::print(NS_OUTPUT::Object *r)

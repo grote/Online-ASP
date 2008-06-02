@@ -9,19 +9,25 @@
 #include <gringooutput.h>
 
 // evil hack :)
-NS_GRINGO::LparseConverter *converter = 0;
-NS_GRINGO::Grounder *grounder = 0;
-bool success = false;
-void start_grounding(NS_GRINGO::NS_OUTPUT::Output &output)
+NS_GRINGO::GrinGoParser *parser = 0;
+NS_GRINGO::NS_OUTPUT::Output *output = 0;
+bool convert = false;
+void start_grounding()
 {
-	if(grounder)
+	bool success = parser->parse(output);
+	if(success)
 	{
-		grounder->start(output);
-		delete grounder;
+		std::cerr << "Parsing successful" << std::endl;
+		if(!convert)
+		{
+			NS_GRINGO::Grounder *grounder = static_cast<NS_GRINGO::LparseParser*>(parser)->getGrounder();
+			grounder->start();
+			delete grounder;
+		}
 	}
 	else
 	{
-		success = converter->parse(&output);
+		std::cerr << "Parsing failed" << std::endl;
 	}
 }
 
@@ -95,67 +101,24 @@ int main(int argc, char *argv[])
 	argv[0] = arg0;
 	
 	if(convert)
-	{
-		LparseConverter parser(streams);
-		converter = &parser;
-		if(smodels)
-		{
-			NS_OUTPUT::SmodelsOutput output(&std::cout);
-			success = parser.parse(&output);
-		}
-		else if(lparse)
-		{
-			NS_OUTPUT::LparseOutput output(&std::cout);
-			success = parser.parse(&output);
-		}
-		else if(clasp)
-		{
-			clasp_main(argc, argv);
-		}
-		else
-		{
-			NS_OUTPUT::GrinGoOutput output(&std::cout);
-			success = parser.parse(&output);
-		}
-		if(success)
-			std::cerr << "parsing successful" << std::endl;
-		else
-			std::cerr << "parsing failed" << std::endl;
-	}
+		parser = new LparseConverter(streams);
 	else
-	{
-		LparseParser parser(streams);
-		grounder = parser.parse();
-		if(grounder)
-		{
-			std::cerr << "parsing successful" << std::endl;
-			if(smodels)
-			{
-				NS_OUTPUT::SmodelsOutput output(&std::cout);
-				grounder->start(output);
-				delete grounder;
-			}
-			else if(lparse)
-			{
-				NS_OUTPUT::LparseOutput output(&std::cout);
-				grounder->start(output);
-				delete grounder;
-			}
-			else if(clasp)
-			{
-				clasp_main(argc, argv);
-			}
-			else
-			{
-				grounder->start();
-				delete grounder;
-			}
-		}
-		else
-		{
-			std::cerr << "parsing failed" << std::endl;
-		}
-	}
+		parser = new LparseParser(streams);
+
+	if(smodels)
+		output = new NS_OUTPUT::SmodelsOutput(&std::cout);
+	else if(lparse)
+		output = new NS_OUTPUT::LparseOutput(&std::cout);
+	else if(clasp)
+		clasp_main(argc, argv);
+	else
+		output = new NS_OUTPUT::GrinGoOutput(&std::cout);
+
+	if(!clasp)
+		start_grounding();
+
+	delete parser;
+	delete output;
 
 	for(std::vector<std::istream*>::iterator it = streams.begin(); it != streams.end(); it++)
 		delete *it;

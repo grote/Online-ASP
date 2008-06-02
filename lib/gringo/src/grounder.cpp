@@ -6,13 +6,12 @@
 #include "dependencygraph.h"
 #include "scc.h"
 #include "value.h"
-#include "gringooutput.h"
 #include "evaluator.h"
 #include "node.h"
 
 using namespace NS_GRINGO;
 
-Grounder::Grounder() : internalVars_(0), depGraph_(new DependencyGraph()), output_(0), eval_(0), hideAll_(false)
+Grounder::Grounder(NS_OUTPUT::Output *output) : internalVars_(0), depGraph_(new DependencyGraph()), output_(output), eval_(0)
 {
 }
 
@@ -88,13 +87,6 @@ void Grounder::preprocess()
 
 void Grounder::start()
 {
-	NS_OUTPUT::GrinGoOutput output(&std::cout);
-	start(output);
-}
-
-void Grounder::start(NS_OUTPUT::Output &output)
-{
-	output_ = &output;
 	std::cerr << "preprocessing ... " << std::endl;
 	preprocess();
 	std::cerr << "done" << std::endl;
@@ -130,10 +122,7 @@ void Grounder::addSCC(SCC *scc)
 
 void Grounder::ground()
 {
-	visible_.reserve(getPred()->size());
-	for(SignatureVector::const_iterator it = getPred()->begin(); it != getPred()->end(); it++)
-		visible_.push_back(isVisible(it->first, it->second));
-	output_->initialize(this);
+	output_->initialize(getPred());
 	substitution_.resize(varMap_.size() + 2);
 	binder_.resize(varMap_.size() + 2, -1);
 	for(SCCVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
@@ -283,11 +272,6 @@ Value *Grounder::createStringValue(std::string *id)
 	return new Value(id);
 }
 
-void Grounder::hideAll()
-{
-	hideAll_ = true;
-}
-
 void Grounder::addTrueNegation(std::string *id, int arity)
 {
 	if(trueNegPred_.insert(Signature(id, arity)).second)
@@ -310,25 +294,6 @@ void Grounder::addTrueNegation(std::string *id, int arity)
 		NormalRule *r = new NormalRule(0, body);
 		addStatement(r);
 	}
-}
-
-void Grounder::setVisible(std::string *id, int arity, bool visible)
-{
-	hide_[std::make_pair(id, arity)] = !visible;
-}
-
-bool Grounder::isVisible(int uid)
-{
-	return visible_[uid];
-}
-
-bool Grounder::isVisible(std::string *id, int arity)
-{
-	std::map<Signature, bool>::iterator it = hide_.find(std::make_pair(id, arity));
-	if(it == hide_.end())
-		return !hideAll_;
-	else
-		return !it->second;
 }
 
 std::string *Grounder::createString(const std::string &s2)

@@ -18,19 +18,29 @@ namespace NS_GRINGO
 			typedef std::vector<AtomHash> AtomLookUp;
 		public:
 			Output(std::ostream *out);
-			virtual void initialize(Grounder *g);
+			virtual void initialize(SignatureVector *pred);
 			virtual void print(NS_OUTPUT::Object *o) = 0;
 			virtual void finalize() = 0;
 			std::string atomToString(int id, const ValueVector &values) const;
-			bool isVisible(int id);
 			bool addAtom(NS_OUTPUT::Atom *r);
 			virtual int newUid();
 			virtual ~Output();
+
+			void hideAll();
+			void setVisible(std::string *id, int arity, bool visible);
+			bool isVisible(int uid);
+			bool isVisible(std::string *id, int arity);
+			
+			// must be called if predicates are added after initialize has been called
+			void addSignature();
 		protected:
 			int uids_;
 			std::ostream *out_;
-			Grounder *g_;
 			AtomLookUp atoms_;
+			SignatureVector *pred_;
+			bool hideAll_;
+			std::map<Signature, bool> hide_;
+			std::vector<bool> visible_;
 		};
 	
 		struct Object

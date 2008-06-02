@@ -8,9 +8,9 @@ SmodelsOutput::SmodelsOutput(std::ostream *out) : Output(out)
 {
 }
 
-void SmodelsOutput::initialize(Grounder *g)
+void SmodelsOutput::initialize(SignatureVector *pred)
 {
-	Output::initialize(g);
+	Output::initialize(pred);
 	// should get 1 here
 	false_  = newUid();
 	models_ = 1;
@@ -269,7 +269,7 @@ void SmodelsOutput::finalize()
 	*out_ << 0 << std::endl;
 	int uid = 0;
 	for(AtomLookUp::iterator it = atoms_.begin(); it != atoms_.end(); it++, uid++)
-		if(g_->isVisible(uid))
+		if(isVisible(uid))
 			for(AtomHash::iterator atom = it->begin(); atom != it->end(); atom++)
 			{
 				*out_ << atom->second << " " << atomToString(uid, atom->first) << std::endl;

@@ -14,7 +14,7 @@ namespace NS_GRINGO
 		{
 		public:
 			SmodelsOutput(std::ostream *out);
-			void initialize(Grounder *g);
+			void initialize(SignatureVector *pred);
 			void print(NS_OUTPUT::Object *o);
 			void finalize();
 			~SmodelsOutput();

@@ -12,7 +12,7 @@ namespace NS_GRINGO
 		{
 		public:
 			GrinGoOutput(std::ostream *out);
-			virtual void initialize(Grounder *g);
+			virtual void initialize(SignatureVector *pred);
 			virtual void print(NS_OUTPUT::Object *o);
 			virtual void finalize();
 			virtual ~GrinGoOutput();

@@ -29,6 +29,7 @@
 
 using namespace NS_GRINGO;
 
+#define OUTPUT (pParser->getGrounder()->getOutput())
 #define GROUNDER (pParser->getGrounder())
 #define STRING(x) (pParser->getGrounder()->createString(x))
 #define DELETE_PTR(X) { if(X) delete (X); }
@@ -151,7 +152,7 @@ program ::= .
 show_list ::= show_list COMMA show_predicate.
 show_list ::= show_predicate.
 
-hide_list ::= .           { pParser->getGrounder()->hideAll(); }
+hide_list ::= .           { OUTPUT->hideAll(); }
 hide_list ::= nhide_list.
 
 nhide_list ::= nhide_list COMMA hide_predicate.
@@ -161,9 +162,9 @@ domain_list ::= domain_list COMMA domain_predicate.
 domain_list ::= domain_predicate.
 
 // TODO: what about show/hide without parameters
-show_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { pParser->getGrounder()->setVisible(STRING(id), list ? list->size() : 0, true); DELETE_PTR(list); }
-hide_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { pParser->getGrounder()->setVisible(STRING(id), list ? list->size() : 0, false); DELETE_PTR(list); }
-domain_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA. { pParser->getGrounder()->addDomains(STRING(id), list); }
+show_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list ? list->size() : 0, true); DELETE_PTR(list); }
+hide_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list ? list->size() : 0, false); DELETE_PTR(list); }
+domain_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA. { GROUNDER->addDomains(STRING(id), list); }
 
 variable_list(res) ::= variable_list(list) COMMA VARIABLE(var). { res = list; res->push_back(STRING(var)); }
 variable_list(res) ::= VARIABLE(var).                           { res = new StringVector(); res->push_back(STRING(var)); }
@@ -197,7 +198,7 @@ body_atom(res) ::= predicate(pred) conditional_list(list). { res = AggregateLite
 body_atom(res) ::= aggregate_atom(atom). { res = atom; }
 
 // assignment literals are not realy relation literals but they rae used like them
-relation_literal(res) ::= VARIABLE(a) ASSIGN term(b). { res = new AssignmentLiteral(new Constant(Constant::VAR, pParser->getGrounder(), STRING(a)), b); }
+relation_literal(res) ::= VARIABLE(a) ASSIGN term(b). { res = new AssignmentLiteral(new Constant(Constant::VAR, GROUNDER, STRING(a)), b); }
 relation_literal(res) ::= term(a) EQ term(b).         { res = new RelationLiteral(RelationLiteral::EQ, a, b); }
 relation_literal(res) ::= term(a) NE term(b).         { res = new RelationLiteral(RelationLiteral::NE, a, b); }
 relation_literal(res) ::= term(a) GT term(b).         { res = new RelationLiteral(RelationLiteral::GT, a, b); }
@@ -229,9 +230,9 @@ termlist(res) ::= .                { res = new TermVector(); }
 ntermlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(term); }
 ntermlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }
 
-term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, pParser->getGrounder(), STRING(x)); }
-term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, pParser->getGrounder(), STRING(x)); }
-term(res) ::= STRING(x).     { res = new Constant(Constant::ID, pParser->getGrounder(), STRING(x)); }
+term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, GROUNDER, STRING(x)); }
+term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }
+term(res) ::= STRING(x).     { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }
 term(res) ::= NUMBER(x).     { res = new Constant(atol(x->c_str())); DELETE_PTR(x); }
 term(res) ::= LPARA term(a) RPARA.     { res = a; }
 term(res) ::= term(a) MOD term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
@@ -245,11 +246,11 @@ term(res) ::= ABS LPARA term(a) RPARA. { res = new FunctionTerm(FunctionTerm::AB
 term(res) ::= term(a) SEMI term(b).    { res = new MultipleArgsTerm(a, b); }
 term(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new FuncSymbolTerm(GROUNDER, STRING(id), list); }
 
-constant(res) ::= IDENTIFIER(x). { res = pParser->getGrounder()->createConstValue(STRING(x)); }
+constant(res) ::= IDENTIFIER(x). { res = GROUNDER->createConstValue(STRING(x)); }
 constant(res) ::= NUMBER(x).     { res = new Value(atol(x->c_str())); DELETE_PTR(x); }
 
 const_term(res) ::= constant(c).   { res = c; }
-const_term(res) ::= STRING(x).     { res = pParser->getGrounder()->createStringValue(STRING(x)); }
+const_term(res) ::= STRING(x).     { res = GROUNDER->createStringValue(STRING(x)); }
 const_term(res) ::= LPARA const_term(a) RPARA.          { res = a; }
 const_term(res) ::= const_term(a) MOD const_term(b).    { res = new Value(*a % *b); DELETE_PTR(a); DELETE_PTR(b); }
 const_term(res) ::= const_term(a) PLUS const_term(b).   { res = new Value(*a + *b); DELETE_PTR(a); DELETE_PTR(b); }
