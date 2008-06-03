@@ -72,9 +72,10 @@ int main(int argc, char *argv[])
 		{
 			std::cerr << "Usage: " << arg0 << " [gringo options] [files] [--[ clasp options]] " << std::endl << std::endl;
 			std::cerr << "gringo options are: " << std::endl;
-			std::cerr << "	-c : Use internal interface to clasp" << std::endl;
-			std::cerr << "	-l : Print smodels output" << std::endl;
-			std::cerr << "	-p : Print plain lparse-like output" << std::endl;
+			std::cerr << "	--convert : convert already ground program" << std::endl;
+			std::cerr << "	-c        : Use internal interface to clasp" << std::endl;
+			std::cerr << "	-l        : Print smodels output" << std::endl;
+			std::cerr << "	-p        : Print plain lparse-like output" << std::endl;
 			std::cerr << "	The default output is something strange :)" << std::endl << std::endl;
 			std::cerr << "clasp options are: " << std::endl;
 			int   argc_c = 2;
@@ -87,7 +88,7 @@ int main(int argc, char *argv[])
 	}
 	if(argc == 1)
 		streams.push_back(new std::istream(std::cin.rdbuf()));
-	if(strcmp(argv[1], "--") == 0)
+	else if(strcmp(argv[1], "--") == 0)
 	{
 		streams.push_back(new std::istream(std::cin.rdbuf()));
 		argc--;
