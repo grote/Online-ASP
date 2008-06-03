@@ -44,6 +44,24 @@ namespace NS_GRINGO
 		std::vector<const ValueVector*>::iterator current_, end_;
 	};
 
+	class IndexedDomainNewDefault : public IndexedDomain
+	{
+		typedef __gnu_cxx::hash_map<ValueVector, std::vector<const ValueVector*>, Value::VectorHash> ValueVectorMap;
+		//typedef std::map<ValueVector, std::vector<const ValueVector*> > ValueVectorMap;
+	public:
+		IndexedDomainNewDefault(ValueVectorSet &domain, VarSet &index, ConstantVector &param);
+		virtual void firstMatch(int binder, DLVGrounder *g, MatchStatus &status);
+		virtual void nextMatch(int binder, DLVGrounder *g, MatchStatus &status);
+		virtual ~IndexedDomainNewDefault();
+	protected:
+		ValueVector currentIndex_;
+                ValueVectorMap domain_;
+		std::vector<std::pair<int, int> > bind_;
+		std::vector<std::pair<int, int> > index_;
+		std::vector<const ValueVector*>::iterator current_, end_;
+	};
+
+
 	class IndexedDomainFullMatch : public IndexedDomain
 	{
 	public:
