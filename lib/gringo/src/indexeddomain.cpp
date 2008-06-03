@@ -193,6 +193,12 @@ IndexedDomainFullMatch::~IndexedDomainFullMatch()
 
 IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet &index, ConstantVector &param)
 {
+	TermVector paramNew;
+	paramNew.resize(param.size());
+	for(ConstantVector::iterator i = param.begin(); i != param.end(); ++i)
+	{
+		paramNew.push_back(*i);
+	}
 	std::cout << "IndexedDomain Default ctor" << std::endl;
 	std::cout << "index= ";
 	for (VarSet::const_iterator i = index.begin(); i != index.end(); ++i)
@@ -215,38 +221,55 @@ IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet 
 	std::vector<std::pair<int, Value> > constant;
 	std::map<int, std::vector<int> > equal;
 
-	for(int i = 0; i < (int)param.size(); i++)
+	for(int i = 0; i < (int)paramNew.size(); i++)
 	{
-		int uid = param[i]->getUID();
-		if(uid)
-			if(index.find(uid) != index.end())
-				index_.push_back(std::make_pair(i, uid));
-			// in index_ sind alle Variablen die gebunden sind, index_[stelle, uid]
-			// die Stelle ist die nummer der Variable im Prädikat, angefangen mit 0
-			else
+		VarSet variables;
+		param[i]->getVars(variables);
+		if (variables.size() > 0)
+			for (VarSet::const_iterator j = variables.begin(); j != variables.end(); ++j)
 			{
-				// insert binders only once
-				equal[uid].push_back(i);
-				if(equal[uid].size() == 1)
-					bind_.push_back(std::make_pair(i, uid));
-				//bind_ sind alle Variablen [stelle, uid] die jetzt gebunden werden müssen (noch frei sind)
+				//add the UID of bound variables
+				if (index.find(*j) != index.end())
+					indexNew_.insert(*j);
+				else
+				{
+					// what about equal variables
+					bindNew_.insert(*j);
+				}
 			}
 		else
 			constant.push_back(std::make_pair(i, param[i]->getValue()));
+
+//		int uid = param[i]->getUID();
+//		if(uid)
+//			if(index.find(uid) != index.end())
+//				index_.push_back(std::make_pair(i, uid));
+//			// in index_ sind alle Variablen die gebunden sind, index_[stelle, uid]
+//			// die Stelle ist die nummer der Variable im Prädikat, angefangen mit 0
+//			else
+//			{
+//				// insert binders only once
+//				equal[uid].push_back(i);
+//				if(equal[uid].size() == 1)
+//					bind_.push_back(std::make_pair(i, uid));
+//				//bind_ sind alle Variablen [stelle, uid] die jetzt gebunden werden müssen (noch frei sind)
+//			}
+//		else
+//			constant.push_back(std::make_pair(i, param[i]->getValue()));
 	}
 
-	std::map<int, std::vector<int> >::iterator equalIt = equal.begin(), eraseIt;
-	while(equalIt != equal.end())
-	{
-		if(equalIt->second.size() == 1)
-		{
-			eraseIt = equalIt;
-			equalIt++;
-			equal.erase(eraseIt);
-		}
-		else
-			equalIt++;
-	}
+//	std::map<int, std::vector<int> >::iterator equalIt = equal.begin(), eraseIt;
+//	while(equalIt != equal.end())
+//	{
+//		if(equalIt->second.size() == 1)
+//		{
+//			eraseIt = equalIt;
+//			equalIt++;
+//			equal.erase(eraseIt);
+//		}
+//		else
+//			equalIt++;
+//	}
 
 	for(ValueVectorSet::iterator it = domain.begin(); it != domain.end(); it++)
 	{
@@ -256,25 +279,29 @@ IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet 
 		// p(X,Y,4,X)
 		// Es werden alle domaininhalte (instances) übersprungen die an diesen Stellen nicht gleich sind.
 		// p(1,2,4,2) wird übersprungen
-		for(equalIt = equal.begin(); equalIt != equal.end(); equalIt++)
-		{
-			std::vector<int> &eq = equalIt->second;
-			Value v = val[*(eq.begin())];
-			for(std::vector<int>::iterator it = eq.begin() + 1; it != eq.end(); it++)
-			{
-				if(v != val[*it])
-					goto skip;
-			}
-		}
+//		for(equalIt = equal.begin(); equalIt != equal.end(); equalIt++)
+//		{
+//			std::vector<int> &eq = equalIt->second;
+//			Value v = val[*(eq.begin())];
+//			for(std::vector<int>::iterator it = eq.begin() + 1; it != eq.end(); it++)
+//			{
+//				if(v != val[*it])
+//					goto skip;
+//			}
+//		}
 		// auch alle die die gesetzte Konstante vom Prädikat p(X,2,Y) nicht an dieser Stelle haben werden übersprungen
 		for(std::vector<std::pair<int, Value> >::iterator it = constant.begin(); it != constant.end(); it++)
 			if(val[it->first] != it->second)
 				goto skip;
 
 		// in index sind alle gebundenen Variablen (a(X) :- r(X), p(X,Y) == X) einmal vorhanden index_[stelle,uid]
-		// curIndex ist also danach eine Liste mit stellen die durch Variablen gebunden werden
+		// curIndex ist also danach eine Liste mit Werten die durch Variablen gebunden werden
 		for(std::vector<std::pair<int, int> >::iterator it = index_.begin(); it != index_.end(); it++)
+		{
 			curIndex.push_back(val[it->first]);
+		}
+
+		//if (val.unifies(paramNew, indexNew_, curIndex))
 		//die indexedDomain mit dem Index aller einer Instanz aller gebundenen Variablen ist gleich der Instanz aus der Domain
 		// (mehrere Instanzen)
 		domain_[curIndex].push_back(&val);

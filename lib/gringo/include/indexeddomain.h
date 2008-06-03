@@ -57,7 +57,9 @@ namespace NS_GRINGO
 		ValueVector currentIndex_;
                 ValueVectorMap domain_;
 		std::vector<std::pair<int, int> > bind_;
+		VarSet bindNew_;
 		std::vector<std::pair<int, int> > index_;
+		VarSet indexNew_;
 		std::vector<const ValueVector*>::iterator current_, end_;
 	};
 
