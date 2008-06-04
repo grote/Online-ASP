@@ -37,6 +37,7 @@ bool FuncSymbolTerm::isComplex()
 	//       i want to keep a working version in the trunk so its better to 
 	//       return true for now
 	return true;
+	//return false;
 }
 
 Value FuncSymbolTerm::getValue()
