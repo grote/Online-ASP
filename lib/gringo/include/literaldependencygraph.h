@@ -53,6 +53,8 @@ namespace NS_GRINGO
 
 		const VarVector &getNeededVars(Literal *l) const;
 		const VarVector &getProvidedVars(Literal *l) const;
+		
+		bool hasVarNodes() const;
 
 		~LDG();
 	protected:

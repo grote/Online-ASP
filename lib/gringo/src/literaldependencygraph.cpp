@@ -27,6 +27,11 @@ LDG::LDG()
 {
 }
 
+bool LDG::hasVarNodes() const
+{
+	return varNodes_.size() > 0;
+}
+
 const VarVector &LDG::getGlobalVars() const
 {
 	return globalVars_;

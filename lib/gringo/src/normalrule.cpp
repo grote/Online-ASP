@@ -145,12 +145,25 @@ bool NormalRule::ground(Grounder *g)
 {
 	if(body_)
 	{
-		//std::cerr << "creating grounder for: " << this << std::endl;
-		VarVector relevant;
-		getRelevantVars(relevant);
-		DLVGrounder data(g, this, body_->size(), dg_, relevant);
-		//data.debug();
-		data.ground();
+		// if there are no varnodes we can do sth simpler
+		if(!dg_->hasVarNodes())
+		{
+			for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
+			{
+				if(!(*it)->match(g))
+					return true;
+			}
+			grounded(g);
+		}
+		else
+		{
+			//std::cerr << "creating grounder for: " << this << std::endl;
+			VarVector relevant;
+			getRelevantVars(relevant);
+			DLVGrounder data(g, this, body_->size(), dg_, relevant);
+			//data.debug();
+			data.ground();
+		}
 	}
 	else
 	{
