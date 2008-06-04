@@ -22,7 +22,7 @@ PredicateLiteral::PredicateLiteral(Grounder *g, std::string *id, TermVector *var
 {
 }
 
-PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : predNode_(p.predNode_), id_(p.id_), matchValues_(p.matchValues_.size()), values_(p.values_.size())
+PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : predNode_(p.predNode_), id_(p.id_), uid_(p.uid_), matchValues_(p.matchValues_.size()), values_(p.values_.size())
 {
         if(p.variables_)
         {
@@ -216,24 +216,15 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 	if(variables_)
 	{
 		ConstantVector param(variables_->size());
-		ConstantVector::iterator paramIt = param.begin();
-		VarSet free;
-		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++, paramIt++)
-		{
-			assert(dynamic_cast<Constant*>(*it));
-			(*paramIt) = static_cast<Constant*>(*it);
-			int uid = (*paramIt)->getUID();
-			if(uid > 0 && index.find(uid) == index.end())
-				free.insert(uid);
-			
-		}
+		VarSet vars, free;
+		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
+			(*it)->getVars(vars);
+		for(VarSet::iterator it = vars.begin(); it != vars.end(); it++)
+			if(index.find(*it) == index.end())
+				free.insert(*it);
 		if(free.size() > 0)
 		{
-			if(free.size() == param.size())
-				return new IndexedDomainFullMatch(predNode_->getDomain(), param);
-			else
-				return new IndexedDomainDefault(predNode_->getDomain(), index, param);
-		//		return new IndexedDomainNewDefault(predNode_->getDomain(), index, *variables_);
+			return new IndexedDomainNewDefault(predNode_->getDomain(), index, *variables_);
 		}
 		else
 			return new IndexedDomainMatchOnly(this);

@@ -2,6 +2,9 @@
 #include "value.h"
 #include "grounder.h"
 #include "funcsymbol.h"
+#include "assignmentliteral.h"
+#include "constant.h"
+#include "expandable.h"
 
 using namespace NS_GRINGO;
 
@@ -29,6 +32,13 @@ void FuncSymbolTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e
 {
 	for (TermVector::iterator i = termList_->begin(); i != termList_->end(); ++i)
 		(*i)->preprocess(l, (*i), g, e);
+	for(TermVector::iterator it = termList_->begin(); it != termList_->end(); it++)
+		if((*it)->isComplex())
+		{
+			std::string *var = g->createUniqueVar();
+			e->appendLiteral(new AssignmentLiteral(new Constant(Constant::VAR, g, var), *it), Expandable::COMPLEXTERM);
+			*it = new Constant(Constant::VAR, g, var);
+		}
 }
 
 bool FuncSymbolTerm::isComplex()
@@ -36,8 +46,8 @@ bool FuncSymbolTerm::isComplex()
 	// TODO: change this to false in the new implementation of functionsymbols
 	//       i want to keep a working version in the trunk so its better to 
 	//       return true for now
-	return true;
-	//return false;
+	//return true;
+	return false;
 }
 
 Value FuncSymbolTerm::getValue()
