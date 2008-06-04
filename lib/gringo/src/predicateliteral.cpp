@@ -232,7 +232,8 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 			if(free.size() == param.size())
 				return new IndexedDomainFullMatch(predNode_->getDomain(), param);
 			else
-				return new IndexedDomainDefault(predNode_->getDomain(), index, param);
+		//		return new IndexedDomainDefault(predNode_->getDomain(), index, param);
+				return new IndexedDomainNewDefault(predNode_->getDomain(), index, *variables_);
 		}
 		else
 			return new IndexedDomainMatchOnly(this);

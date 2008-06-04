@@ -59,6 +59,11 @@ namespace
 		Value getValue() { assert(false); }
 		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { assert(false); }
 		void print(std::ostream &stream) { assert(false); }
+		bool unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
+			       	ValueVector& boundSubstitution, ValueVector& freeSubstitutions) const
+		{
+			assert(false);
+		}
 	protected:
 		Term *a_;
 	};

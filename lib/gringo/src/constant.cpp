@@ -108,3 +108,54 @@ Term* Constant::clone() const
 	return new Constant(*this);
 }
 
+bool Constant::unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
+			       	ValueVector& boundSubstitutions, ValueVector& freeSubstitutions) const
+{
+	switch(type_)
+	{
+		case VAR:
+			{
+				for (unsigned int i = 0; i < boundVariables.size(); ++i)
+				{
+					//if variable is bound
+					if (boundVariables[i] == uid_)
+					{
+
+						// variable is not set, then set, else compare
+						if (boundSubstitutions[i].type_ == Value::UNDEF)
+						{
+							boundSubstitutions[i] = t;
+							return true;
+						}
+						else
+							return boundSubstitutions[i] == t;
+					}
+				}
+				for (unsigned int i = 0; i < freeVariables.size(); ++i)
+				{
+					if (freeVariables[i] == uid_)
+					{
+						if (freeSubstitutions[i].type_ == Value::UNDEF)
+						{
+							freeSubstitutions[i] = t;
+							return true;
+						}
+						else
+							return freeSubstitutions[i] == t;
+					}
+				}
+				assert(false);
+				break;
+			}
+		case ID:
+		case STRING:
+		case NUM:
+			{
+				return t == value_;
+			}	
+		default: 
+		{
+			assert(false);
+		}
+	}
+}

@@ -51,6 +51,22 @@ namespace NS_GRINGO
 		 */
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) = 0;
 		/**
+		 * \brief Unifies the term with the value
+		 *
+		 * \param t The Value the term is unified with
+		 * \param boundVariables The bound variables
+		 * \param freeVariables The non bound variables
+		 * \param boundSubstitutions OutputVector for all substitutions of the bound variables
+		 * boundSubstitution[i] is the substitution for variable boundVariables[i]
+		 * \param freeSubstitutions Output map for all substitutions of non bound variables
+		 * freeSubstitution[i] is the substitution for variable freeVariables[i]
+		 *
+		 *
+		 * \return true if the term unifies with t, otherwise false
+		 */
+		virtual bool unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
+			       	ValueVector& boundSubstitution, ValueVector& freeSubstitutions) const = 0;
+		/**
 		 * \brief Virtual Destructor
 		 */
 		virtual ~Term();

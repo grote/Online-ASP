@@ -66,6 +66,29 @@ Term* FuncSymbolTerm::clone() const
 {
 	return new FuncSymbolTerm(*this);
 }
+bool FuncSymbolTerm::unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
+       	ValueVector& boundSubstitution, ValueVector& freeSubstitutions) const
+{
+	if (t.type_ == Value::FUNCSYMBOL)
+	{
+		const std::string* name = t.funcSymbol_->getName();
+		if (name != name_)
+			return false;
+		const ValueVector& values = t.funcSymbol_->getValues();
+		if (values.size() != termList_->size())
+			return false;
+		TermVector::const_iterator term = termList_->begin();
+		for (ValueVector::const_iterator i = values.begin(); i != values.end(); ++i, ++term)
+		{
+			if (!(*term)->unify(*i, boundVariables, freeVariables, boundSubstitution, freeSubstitutions))
+				return false;
+		}
+		return true;
+	}
+	else
+		return false;
+
+}
 
 FuncSymbolTerm::~FuncSymbolTerm()
 {

@@ -13,7 +13,7 @@ code:
 - if a conflicting integrity constraint is found grounding could be stopped (and not just exit(0))
 - move code concerning visible/hidden predicates to output
 - use c++ exceptions
-
+- fix the preprocessing for functionsymbols
 documentation:
 - write doxygen doc
 

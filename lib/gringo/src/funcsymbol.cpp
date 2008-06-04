@@ -48,3 +48,13 @@ void FuncSymbol::print(std::ostream& out) const
 		out << args_[i] << ",";
 	out << args_[args_.size()-1] << ")";
 }
+
+const std::string* FuncSymbol::getName() const
+{
+	return name_;
+}
+
+const ValueVector& FuncSymbol::getValues() const
+{
+	return args_;
+}

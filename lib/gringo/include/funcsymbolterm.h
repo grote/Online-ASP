@@ -17,6 +17,8 @@ namespace NS_GRINGO
 		virtual Value getValue();
 		virtual Term* clone() const;
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
+		virtual bool unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
+			       	ValueVector& boundSubstitution, ValueVector& freeSubstitutions) const;
 		virtual ~FuncSymbolTerm();
 	protected:
 		std::string*	name_;

@@ -22,6 +22,8 @@ namespace NS_GRINGO
 		virtual Value getValue();
 		int getUID();
 		virtual Term* clone() const;
+		virtual bool unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
+			       	ValueVector& boundSubstitution, ValueVector& freeSubstitutions) const;
  		virtual ~Constant();
 	protected:
 		ConstantType type_;

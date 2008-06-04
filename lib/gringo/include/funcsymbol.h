@@ -28,18 +28,28 @@ namespace NS_GRINGO
 		 * \brief Comparison operator
 		 */
 		bool operator==(const FuncSymbol& a) const;
-		/*+
+		/**
 		 * \brief Prints the function symbol
 		 * \param out The output stream
 		 */
 		void print(std::ostream& out) const;
+		/**
+		 * \brief Get the name of the function symbol
+		 * \return the string pointer to the name
+		 */
+		const std::string* getName() const;
+		/**
+		 * \brief Get the values of the function symbol
+		 * \return a vector of values
+		 */
+		const ValueVector& getValues() const;
 		/**
 		 * \brief Virtual Destructor
 		 */
 		virtual ~FuncSymbol();
 	protected:
 		const std::string*	name_;
-		ValueVector				args_;
+		ValueVector		args_;
 	};
 }
 

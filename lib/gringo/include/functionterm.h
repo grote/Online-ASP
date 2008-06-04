@@ -19,6 +19,11 @@ namespace NS_GRINGO
 		virtual Value getValue();
 		virtual Term* clone() const;
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
+		virtual bool unify(const Value&, const VarVector&, const VarVector&,
+			       	ValueVector&, ValueVector&) const
+		{
+			assert(false);
+		}
 		virtual ~FunctionTerm();
 	protected:
 		FunctionType type_;

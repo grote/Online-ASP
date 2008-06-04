@@ -191,196 +191,80 @@ IndexedDomainFullMatch::~IndexedDomainFullMatch()
 
 //////////////////////////////// IndexedDomainNewDefault ///////////////////////////////////////
 
-IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet &index, ConstantVector &param)
+IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet &index, const TermVector &paramNew)
 {
-	TermVector paramNew;
-	paramNew.resize(param.size());
-	for(ConstantVector::iterator i = param.begin(); i != param.end(); ++i)
-	{
-		paramNew.push_back(*i);
-	}
-	std::cout << "IndexedDomain Default ctor" << std::endl;
-	std::cout << "index= ";
-	for (VarSet::const_iterator i = index.begin(); i != index.end(); ++i)
-		std::cout << *i << " ";
-	std::cout << std::endl;
-	std::cout << "Domain: " << std::endl;
-	for (ValueVectorSet::const_iterator i = domain.begin(); i != domain.end(); ++i)
-	{
-		for (ValueVector::const_iterator j = i->begin(); j != i->end(); ++j)
-		{
-			if (j->type_ == Value::INT)
-				std::cout << j->intValue_ << " ";
-			else
-				std::cout << *j->stringValue_ << " ";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << std::endl;
-	// TODO: predicates like p(X,X) are not handles correctly
-	std::vector<std::pair<int, Value> > constant;
-	std::map<int, std::vector<int> > equal;
-
 	for(int i = 0; i < (int)paramNew.size(); i++)
 	{
 		VarSet variables;
-		param[i]->getVars(variables);
-		if (variables.size() > 0)
-			for (VarSet::const_iterator j = variables.begin(); j != variables.end(); ++j)
+		paramNew[i]->getVars(variables);
+		for (VarSet::const_iterator j = variables.begin(); j != variables.end(); ++j)
+		{
+			//add the UID of bound variables
+			if (index.find(*j) != index.end())
+				index_.push_back(*j);
+			else
 			{
-				//add the UID of bound variables
-				if (index.find(*j) != index.end())
-					indexNew_.insert(*j);
-				else
-				{
-					// what about equal variables
-					bindNew_.insert(*j);
-				}
+				// what about equal variables
+				bind_.push_back(*j);
 			}
-		else
-			constant.push_back(std::make_pair(i, param[i]->getValue()));
-
-//		int uid = param[i]->getUID();
-//		if(uid)
-//			if(index.find(uid) != index.end())
-//				index_.push_back(std::make_pair(i, uid));
-//			// in index_ sind alle Variablen die gebunden sind, index_[stelle, uid]
-//			// die Stelle ist die nummer der Variable im Prädikat, angefangen mit 0
-//			else
-//			{
-//				// insert binders only once
-//				equal[uid].push_back(i);
-//				if(equal[uid].size() == 1)
-//					bind_.push_back(std::make_pair(i, uid));
-//				//bind_ sind alle Variablen [stelle, uid] die jetzt gebunden werden müssen (noch frei sind)
-//			}
-//		else
-//			constant.push_back(std::make_pair(i, param[i]->getValue()));
+		}
 	}
 
-//	std::map<int, std::vector<int> >::iterator equalIt = equal.begin(), eraseIt;
-//	while(equalIt != equal.end())
-//	{
-//		if(equalIt->second.size() == 1)
-//		{
-//			eraseIt = equalIt;
-//			equalIt++;
-//			equal.erase(eraseIt);
-//		}
-//		else
-//			equalIt++;
-//	}
+	//make unique
+	sort(index_.begin(), index_.end());
+	VarVector::iterator newEnd = std::unique(index_.begin(), index_.end());
+	index_.erase(newEnd, index_.end());
+
+	sort(bind_.begin(), bind_.end());
+	newEnd = std::unique(bind_.begin(), bind_.end());
+	bind_.erase(newEnd, bind_.end());
+
 
 	for(ValueVectorSet::iterator it = domain.begin(); it != domain.end(); it++)
 	{
 		const ValueVector &val = (*it);
-		ValueVector curIndex;
-		// diese Schleife geht durch alle equal, das ist eine Liste mit Variablen X die doppelt vorkommen im Predikat
-		// p(X,Y,4,X)
-		// Es werden alle domaininhalte (instances) übersprungen die an diesen Stellen nicht gleich sind.
-		// p(1,2,4,2) wird übersprungen
-//		for(equalIt = equal.begin(); equalIt != equal.end(); equalIt++)
-//		{
-//			std::vector<int> &eq = equalIt->second;
-//			Value v = val[*(eq.begin())];
-//			for(std::vector<int>::iterator it = eq.begin() + 1; it != eq.end(); it++)
-//			{
-//				if(v != val[*it])
-//					goto skip;
-//			}
-//		}
-		// auch alle die die gesetzte Konstante vom Prädikat p(X,2,Y) nicht an dieser Stelle haben werden übersprungen
-		for(std::vector<std::pair<int, Value> >::iterator it = constant.begin(); it != constant.end(); it++)
-			if(val[it->first] != it->second)
-				goto skip;
+		ValueVector curIndex(index_.size(),Value());
+		ValueVector curValue(bind_.size(), Value());
 
-		// in index sind alle gebundenen Variablen (a(X) :- r(X), p(X,Y) == X) einmal vorhanden index_[stelle,uid]
-		// curIndex ist also danach eine Liste mit Werten die durch Variablen gebunden werden
-		for(std::vector<std::pair<int, int> >::iterator it = index_.begin(); it != index_.end(); it++)
+
+		assert(paramNew.size() == val.size());
+		TermVector::const_iterator p = paramNew.begin();
+		for (ValueVector::const_iterator i = val.begin(); i != val.end(); ++i, ++p)
 		{
-			curIndex.push_back(val[it->first]);
+			(*p)->unify(*i, index_, bind_, curIndex, curValue);
 		}
 
-		//if (val.unifies(paramNew, indexNew_, curIndex))
+
 		//die indexedDomain mit dem Index aller einer Instanz aller gebundenen Variablen ist gleich der Instanz aus der Domain
 		// (mehrere Instanzen)
-		domain_[curIndex].push_back(&val);
-skip:;
+		domain_[curIndex].push_back(curValue);
 	}
 }
 
 void IndexedDomainNewDefault::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 {
-	std::cout << "IndexedDomain firstMatch: " << std::endl;
-	for (ValueVectorMap::const_iterator i = domain_.begin(); i != domain_.end(); ++i)
-	{
-		std::cout << "domain_[";
-		for (ValueVector::const_iterator j = i->first.begin(); j != i->first.end(); ++j)
-		{
-			if (j->type_ == Value::INT)
-				std::cout << j->intValue_ << " ";
-			else
-				std::cout << *j->stringValue_ << " ";
-		}
-		std::cout << "]" << std::endl;
 
-		for (std::vector<const ValueVector*>::const_iterator j = i->second.begin(); j != i->second.end(); ++j)
-		{
-			for (ValueVector::const_iterator k = (*j)->begin(); k != (*j)->end(); ++k)
-			{
-				if (k->type_ == Value::INT)
-					std::cout << k->intValue_ << " ";
-				else
-					std::cout << *k->stringValue_ << " ";
-			}
-			std::cout << " | ";
-		}
-		std::cout << std::endl;
-	}
-
-	std::cout << "index_[stelle, uid], alle Variablen die gebunden sind";
-	for (std::vector<std::pair<int, int> >::const_iterator i = index_.begin(); i != index_.end(); ++i)
-	{
-		std::cout << "[" << i->first << "," << i->second << "]";
-	}
-	std::cout << std::endl;
 	currentIndex_.clear();
-	for(std::vector<std::pair<int, int> >::iterator it = index_.begin(); it != index_.end(); it++)
+	for (VarVector::const_iterator i = index_.begin(); i != index_.end(); ++i)
 	{
-		std::cout << "getValue auf " << it->second << " liefert ";
-       		Value fuck = g->g_->getValue(it->second);
-		if (fuck.type_ == Value::INT)
-			std::cout << fuck.intValue_;
-		else
-			std::cout << *fuck.stringValue_;
-		currentIndex_.push_back(g->g_->getValue(it->second));
+		currentIndex_.push_back(g->g_->getValue(*i));
 	}
-	std::cout << std::endl;
-	std::cout << "currentIndex Size: " << currentIndex_.size() << std::endl;
+
+
 	ValueVectorMap::iterator it = domain_.find(currentIndex_);
-	std::cout << "IndexedDomain and stelle des currentIndexes: ";
-	for (std::vector<const ValueVector*>::const_iterator i = it->second.begin(); i != it->second.end(); ++i)
-	{
-		for (ValueVector::const_iterator j = (*i)->begin(); j != (*i)->end(); ++j)
-		{
-			if (j->type_ == Value::INT)
-				std::cout << j->intValue_ << " ";
-			else
-				std::cout << *(j->stringValue_) << " ";
-		}
-		std::cout << " | " << std::endl;
-	}
-	std::cout << std::endl;
+
+
+
 	if(it != domain_.end())
 	{
 		current_ = it->second.begin();
 		end_     = it->second.end();
 		assert(current_ != end_);
 		//Vorsicht: it wird überschrieben !
-		for(std::vector<std::pair<int, int> >::iterator it = bind_.begin(); it != bind_.end(); it++)
+		for(unsigned int i = 0; i < bind_.size(); ++i)
 		{
 			// setze freie Variable X(it->second) auf currentDomain[1 >1< 2], weil X an stelle 2 ist
-			g->g_->setValue(it->second, (**current_)[it->first], binder);
+			g->g_->setValue(bind_[i], (*current_)[i], binder);
 		}
 		status = SuccessfulMatch;
 	}
@@ -393,14 +277,16 @@ void IndexedDomainNewDefault::nextMatch(int binder, DLVGrounder *g, MatchStatus 
 	current_++;
 	if(current_ != end_)
 	{
-		for(std::vector<std::pair<int, int> >::iterator it = bind_.begin(); it != bind_.end(); it++)
+		for(unsigned int i = 0; i < bind_.size(); ++i)
 		{
-			g->g_->setValue(it->second, (**current_)[it->first], binder);
+			// setze freie Variable X(it->second) auf currentDomain[1 >1< 2], weil X an stelle 2 ist
+			g->g_->setValue(bind_[i], (*current_)[i], binder);
 		}
 		status = SuccessfulMatch;
 	}
 	else
 		status = FailureOnNextMatch;
+
 }
 
 IndexedDomainNewDefault::~IndexedDomainNewDefault()
