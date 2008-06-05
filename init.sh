@@ -9,6 +9,11 @@ cd ..
 mkdir -p release
 cd release
 cmake ../..
+cd ..
+
+mkdir -p win32
+cd win32
+cmake -DCMAKE_TOOLCHAIN_FILE=../../mingw.cmake ../..
 
 echo "To compile the project simply change to folder build/debug or build/release and type make."
 
