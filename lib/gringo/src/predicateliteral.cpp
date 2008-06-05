@@ -215,7 +215,6 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 	if(variables_)
 	{
-		ConstantVector param(variables_->size());
 		VarSet vars, free;
 		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
 			(*it)->getVars(vars);

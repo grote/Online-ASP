@@ -204,7 +204,7 @@ IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet 
 				index_.push_back(*j);
 			else
 			{
-				// what about equal variables
+				//and unbound variables
 				bind_.push_back(*j);
 			}
 		}
@@ -225,19 +225,26 @@ IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet 
 		const ValueVector &val = (*it);
 		ValueVector curIndex(index_.size(),Value());
 		ValueVector curValue(bind_.size(), Value());
+		bool doContinue = false;
 
 
 		assert(paramNew.size() == val.size());
 		TermVector::const_iterator p = paramNew.begin();
 		for (ValueVector::const_iterator i = val.begin(); i != val.end(); ++i, ++p)
 		{
-			(*p)->unify(*i, index_, bind_, curIndex, curValue);
+			if (!(*p)->unify(*i, index_, bind_, curIndex, curValue))
+			{
+				doContinue = true;
+				break;
+			}
 		}
+
+		if (doContinue) continue;
 
 
 		//die indexedDomain mit dem Index aller einer Instanz aller gebundenen Variablen ist gleich der Instanz aus der Domain
 		// (mehrere Instanzen)
-		domain_[curIndex].push_back(curValue);
+		domain_[curIndex].insert(domain_[curIndex].end(),curValue.begin(), curValue.end());
 	}
 }
 
@@ -259,12 +266,12 @@ void IndexedDomainNewDefault::firstMatch(int binder, DLVGrounder *g, MatchStatus
 	{
 		current_ = it->second.begin();
 		end_     = it->second.end();
-		assert(current_ != end_);
-		//Vorsicht: it wird überschrieben !
 		for(unsigned int i = 0; i < bind_.size(); ++i)
 		{
-			// setze freie Variable X(it->second) auf currentDomain[1 >1< 2], weil X an stelle 2 ist
-			g->g_->setValue(bind_[i], (*current_)[i], binder);
+			assert(current_ != end_);
+			// setze freie Variable X(bind_[i]) auf currentDomain[1 >1< 2], weil X an stelle 2(i) ist
+			g->g_->setValue(bind_[i], (*current_), binder);
+			++current_;
 		}
 		status = SuccessfulMatch;
 	}
@@ -274,13 +281,15 @@ void IndexedDomainNewDefault::firstMatch(int binder, DLVGrounder *g, MatchStatus
 
 void IndexedDomainNewDefault::nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
 {
-	current_++;
+	//current_++;
 	if(current_ != end_)
 	{
 		for(unsigned int i = 0; i < bind_.size(); ++i)
 		{
+			assert(current_ != end_);
 			// setze freie Variable X(it->second) auf currentDomain[1 >1< 2], weil X an stelle 2 ist
-			g->g_->setValue(bind_[i], (*current_)[i], binder);
+			g->g_->setValue(bind_[i], (*current_), binder);
+			++current_;
 		}
 		status = SuccessfulMatch;
 	}
