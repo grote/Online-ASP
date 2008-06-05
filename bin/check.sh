@@ -5,10 +5,20 @@ gringo2 -l $* > compare.gringo
 
 awk '
 func seek0(fin, fout) {
+	max = 1
 	do {
 		getline l < fin
-		print l > fout
+		if (l != 0) {
+			print l > fout
+			split(l, a, " ")
+			for(i in a) {
+				if (a[i] + 0 > max) {
+					max = a[i] + 0
+				}
+			}
+		}
 	} while( l != "0" )
+	return max
 }
 
 func symtab(fin, fout, a, ka) {
@@ -18,7 +28,7 @@ func symtab(fin, fout, a, ka) {
 		if( l != "0" ) {
 			split(l, s, " ")
 			a[s[2]] = s[1]
-			ka[++j] = s[2]
+			ka[j++] = s[2]
 		}
 	} while( l != "0" )
 	asort(ka)
@@ -31,34 +41,48 @@ func rest(fin, fout) {
 	}
 }
 
-func intersect(a, ka, la, fa, b, kb, lb, fb)
+func intersect(a, ka, la, ma, fa, b, kb, lb, mb, fb)
 {
 	ia = 1;
 	ib = 1;
+	i = 1
 	while (ia <= la && ib <= lb) {
 		na = ka[ia]
 		nb = kb[ib]
 		if (na == nb) {
-			print a[na] " " na > fa
-			print b[nb] " " nb > fb
+			ra[i] = a[na] " " na
+			rb[i] = b[nb] " " nb
 			ia++;
 			ib++;
 		} else if (na > nb) {
+			ra[i] = (++ma) " " nb
+			rb[i] = b[nb] " " nb
+			print "1 1 1 0 " ma > fa
 			ib++;
 		} else {
+			ra[i] = a[na] " " na
+			rb[i] = (++mb) " " na
+			print "1 1 1 0 " mb > fb
 			ia++;
 		}
+		i++
+	}
+	print "0" > fa
+	print "0" > fb
+	for(j = 1; j < i; j++) {
+		print ra[j] > fa
+		print rb[j] > fb
 	}
 	print "0" > fa
 	print "0" > fb
 }
 
 BEGIN {
-	seek0("compare.lparse", "compare.lparse.reduced")
-	seek0("compare.gringo", "compare.gringo.reduced")
+	ma = seek0("compare.lparse", "compare.lparse.reduced")
+	mb = seek0("compare.gringo", "compare.gringo.reduced")
 	la = symtab("compare.lparse", "compare.lparse.reduced", a, ka)
 	lb = symtab("compare.gringo", "compare.gringo.reduced", b, kb)
-	intersect(a, ka, la, "compare.lparse.reduced", b, kb, lb, "compare.gringo.reduced")
+	intersect(a, ka, la, ma, "compare.lparse.reduced", b, kb, lb, mb, "compare.gringo.reduced")
 	rest("compare.lparse", "compare.lparse.reduced")
 	rest("compare.gringo", "compare.gringo.reduced")
 }
@@ -72,7 +96,7 @@ clasp < compare1.lp
 echo "second comparison"
 clasp < compare2.lp
 
-rm compare.lparse compare.lparse.reduced 
-rm compare.gringo compare.gringo.reduced 
-rm compare1.lp compare2.lp
+#rm compare.lparse compare.lparse.reduced 
+#rm compare.gringo compare.gringo.reduced 
+#rm compare1.lp compare2.lp
 
