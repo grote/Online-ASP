@@ -118,8 +118,14 @@ using namespace NS_GRINGO;
 %destructor constr_list  { DELETE_PTRVECTOR(ConditionalLiteralVector, $$) }
 %destructor nconstr_list { DELETE_PTRVECTOR(ConditionalLiteralVector, $$) }
 
-%type variable_list { StringVector* }
-%destructor variable_list { DELETE_PTR($$) }
+%type variable_list { int }
+%destructor variable_list { }
+
+%type domain_var { StringVector* }
+%destructor domain_var { DELETE_PTR($$) }
+
+%type domain_list { std::vector<StringVector*>* }
+%destructor domain_list { DELETE_PTRVECTOR(std::vector<StringVector*>, $$) }
 
 %type const_term { Value* }
 %type constant   { Value* }
@@ -159,15 +165,23 @@ nhide_list ::= hide_predicate.
 domain_list ::= domain_list COMMA domain_predicate.
 domain_list ::= domain_predicate.
 
-// TODO: what about show/hide without parameters
-show_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list ? list->size() : 0, true); DELETE_PTR(list); }
+show_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list, true); }
 show_predicate ::= IDENTIFIER(id).                                   { OUTPUT->setVisible(STRING(id), 0, true); }
-hide_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list ? list->size() : 0, false); DELETE_PTR(list); }
+show_predicate ::= IDENTIFIER(id) SLASH NUMBER(n).                   { OUTPUT->setVisible(STRING(id), atol(n->c_str()), true); DELETE_PTR(n); }
+hide_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list, false); }
 hide_predicate ::= IDENTIFIER(id).                                   { OUTPUT->setVisible(STRING(id), 0, false); }
-domain_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA. { GROUNDER->addDomains(STRING(id), list); }
+hide_predicate ::= IDENTIFIER(id) SLASH NUMBER(n).                   { OUTPUT->setVisible(STRING(id), atol(n->c_str()), false); DELETE_PTR(n); }
 
-variable_list(res) ::= variable_list(list) COMMA VARIABLE(var). { res = list; res->push_back(STRING(var)); }
-variable_list(res) ::= VARIABLE(var).                           { res = new StringVector(); res->push_back(STRING(var)); }
+domain_predicate ::= IDENTIFIER(id) LPARA domain_list(list) RPARA. { GROUNDER->addDomains(STRING(id), list); }
+
+variable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
+variable_list(res) ::= VARIABLE.                           { res = 0; }
+
+domain_var(res) ::= VARIABLE(var).                       { res = new StringVector(); res->push_back(STRING(var)); }
+domain_var(res) ::= domain_var(list) SEMI VARIABLE(var). { res = list; res->push_back(STRING(var)); }
+
+domain_list(res) ::= domain_list(list) COMMA domain_var(var). { res = list; res->push_back(var); }
+domain_list(res) ::= domain_var(var).                         { res = new std::vector<StringVector*>(); res->push_back(var); }
 
 rule(res) ::= head_atom(head) IF body(body). { res = new NormalRule(head, body); }
 rule(res) ::= head_atom(head) IF .           { res = new NormalRule(head, 0); }

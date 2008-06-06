@@ -127,6 +127,8 @@ nhide_list ::= hide_predicate.
 
 show_predicate ::= IDENTIFIER(id). { OUTPUT->setVisible(STRING(id), 0, true); }
 hide_predicate ::= IDENTIFIER(id). { OUTPUT->setVisible(STRING(id), 0, false); }
+show_predicate ::= IDENTIFIER(id) SLASH NUMBER(n). { OUTPUT->setVisible(STRING(id), atol(n->c_str()), true); DELETE_PTR(n); }
+hide_predicate ::= IDENTIFIER(id) SLASH NUMBER(n). { OUTPUT->setVisible(STRING(id), atol(n->c_str()), false); DELETE_PTR(n); }
 show_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, true); }
 hide_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, false); }
 

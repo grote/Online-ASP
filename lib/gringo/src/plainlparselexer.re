@@ -73,6 +73,7 @@ begin:
 		"["             { return LPARSECONVERTER_LSBRAC; }
 		"]"             { return LPARSECONVERTER_RSBRAC; }
 		"."             { return LPARSECONVERTER_DOT; }
+		"/"             { return LPARSECONVERTER_SLASH; }
 		","             { return LPARSECONVERTER_COMMA; }
 		"-"             { return LPARSECONVERTER_MINUS; }
 		ANY             { return LPARSECONVERTER_ERROR; }

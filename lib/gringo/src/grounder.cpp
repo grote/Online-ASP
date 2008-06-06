@@ -20,9 +20,29 @@ void Grounder::addStatement(Statement *rule)
 	rules_.push_back(rule);
 }
 
-void Grounder::addDomains(std::string *id, StringVector* list)
+void Grounder::addDomains(std::string *id, std::vector<StringVector*>::iterator pos, std::vector<StringVector*>::iterator end, StringVector &list)
 {
-	domains_.push_back(DomainPredicate(id, list));
+	if(pos == end)
+	{
+		domains_.push_back(DomainPredicate(id, new StringVector(list)));
+	}
+	else
+	{
+		for(StringVector::iterator it = (*pos)->begin(); it != (*pos)->end(); it++)
+		{
+			list.push_back(*it);
+			addDomains(id, pos + 1, end, list);
+			list.pop_back();
+		}
+		delete (*pos);
+	}
+}
+
+void Grounder::addDomains(std::string *id, std::vector<StringVector*>* list)
+{
+	StringVector empty;
+	addDomains(id, list->begin(), list->end(), empty);
+	delete list;
 }
 
 void Grounder::buildDepGraph()

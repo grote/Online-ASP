@@ -77,6 +77,7 @@ begin:
 		"}"             { return LPARSEPARSER_RBRAC; }
 		"["             { return LPARSEPARSER_LSBRAC; }
 		"]"             { return LPARSEPARSER_RSBRAC; }
+		"/"             { return LPARSEPARSER_SLASH; }
 		"."             { return LPARSEPARSER_DOT; }
 		".."            { return LPARSEPARSER_DOTS; }
 		";"             { return LPARSEPARSER_SEMI; }
