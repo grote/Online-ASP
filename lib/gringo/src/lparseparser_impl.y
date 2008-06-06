@@ -102,9 +102,7 @@ using namespace NS_GRINGO;
 %destructor aggregate_atom { DELETE_PTR($$) }
 
 %type termlist  { TermVector* }
-%type ntermlist { TermVector* }
 %destructor termlist  { DELETE_PTRVECTOR(TermVector, $$) }
-%destructor ntermlist { DELETE_PTRVECTOR(TermVector, $$) }
 
 %type term { Term* }
 %destructor term { DELETE_PTR($$) }
@@ -163,7 +161,9 @@ domain_list ::= domain_predicate.
 
 // TODO: what about show/hide without parameters
 show_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list ? list->size() : 0, true); DELETE_PTR(list); }
+show_predicate ::= IDENTIFIER(id).                                   { OUTPUT->setVisible(STRING(id), 0, true); }
 hide_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list ? list->size() : 0, false); DELETE_PTR(list); }
+hide_predicate ::= IDENTIFIER(id).                                   { OUTPUT->setVisible(STRING(id), 0, false); }
 domain_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA. { GROUNDER->addDomains(STRING(id), list); }
 
 variable_list(res) ::= variable_list(list) COMMA VARIABLE(var). { res = list; res->push_back(STRING(var)); }
@@ -225,10 +225,8 @@ aggregate_atom(res) ::= aggregate(aggr) term(u).         { res = aggr; aggr->set
 aggregate_atom(res) ::= term(l) aggregate(aggr).         { res = aggr; aggr->setBounds(l, 0); }
 aggregate_atom(res) ::= aggregate(aggr).                 { res = aggr; aggr->setBounds(0, 0); }
 
-termlist(res) ::= ntermlist(list). { res = list; }
-termlist(res) ::= .                { res = new TermVector(); }
-ntermlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(term); }
-ntermlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }
+termlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(term); }
+termlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }
 
 term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, GROUNDER, STRING(x)); }
 term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }

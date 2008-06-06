@@ -57,7 +57,6 @@ Object *createDisjunction(Object *disj, Object *pred)
 %token_destructor { DELETE_PTR($$) }
 
 %type variable_list  { int }
-%type nvariable_list { int }
 
 %type body { Conjunction* }
 %destructor body { DELETE_PTR($$) }
@@ -90,9 +89,7 @@ Object *createDisjunction(Object *disj, Object *pred)
 %destructor aggregate { DELETE_PTR($$) }
 
 %type constant_list  { ValueVector* }
-%type nconstant_list { ValueVector* }
 %destructor constant_list  { DELETE_PTR($$) }
-%destructor nconstant_list { DELETE_PTR($$) }
 
 %type weight_literal { WeightLit* }
 %destructor weight_literal { DELETE_PTR($$) }
@@ -133,10 +130,8 @@ hide_predicate ::= IDENTIFIER(id). { OUTPUT->setVisible(STRING(id), 0, false); }
 show_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, true); }
 hide_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, false); }
 
-variable_list(res) ::= nvariable_list(list). { res = list; }
-variable_list(res) ::= .                     { res = 0; }
-nvariable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
-nvariable_list(res) ::= VARIABLE.                           { res = 1; }
+variable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
+variable_list(res) ::= VARIABLE.                           { res = 1; }
 
 rule ::= head_atom(head) IF body(body). { Rule r(head, body); r.addUid(OUTPUT); OUTPUT->print(&r); }
 rule ::= head_atom(head) IF .           { Fact r(head); r.addUid(OUTPUT); OUTPUT->print(&r); }
@@ -178,15 +173,13 @@ aggregate_atom(res) ::= aggregate(aggr) NUMBER(u). { res = aggr; aggr->bounds_ =
 aggregate_atom(res) ::= NUMBER(l) aggregate(aggr). { res = aggr; aggr->bounds_ = Aggregate::L; aggr->lower_ = atol(l->c_str()); DELETE_PTR(l); }
 aggregate_atom(res) ::= aggregate(aggr).           { res = aggr; }
 
-constant_list(res) ::= nconstant_list(list). { res = list; }
-constant_list(res) ::= .                     { res = new ValueVector(); }
-nconstant_list(res) ::= constant_list(list) COMMA constant(val). { res = list; res->push_back(*val); DELETE_PTR(val); }
-nconstant_list(res) ::= constant(val).                           { res = new ValueVector(); res->push_back(*val); DELETE_PTR(val); }
+constant_list(res) ::= constant_list(list) COMMA constant(val). { res = list; res->push_back(*val); DELETE_PTR(val); }
+constant_list(res) ::= constant(val).                           { res = new ValueVector(); res->push_back(*val); DELETE_PTR(val); }
 
 constant(res) ::= IDENTIFIER(id). { res = new Value(STRING(id)); }
 constant(res) ::= NUMBER(n).      { res = new Value(atol(n->c_str())); DELETE_PTR(n); }
 constant(res) ::= STRING(id).     { res = new Value(STRING(id)); }
-constant(res) ::= IDENTIFIER(id) LPARA nconstant_list(list) RPARA. { res = new Value(FUNCSYM(new FuncSymbol(STRING(id), *list))); DELETE_PTR(list); }
+constant(res) ::= IDENTIFIER(id) LPARA constant_list(list) RPARA. { res = new Value(FUNCSYM(new FuncSymbol(STRING(id), *list))); DELETE_PTR(list); }
 
 aggregate(res) ::= SUM LBRAC weight_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= MIN LBRAC weight_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::MIN, list->first, list->second); DELETE_PTR(list); }
