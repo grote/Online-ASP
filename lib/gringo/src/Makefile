@@ -3,7 +3,7 @@ CFLAGS  = -O3 -Wall -I../include -I../.. -DNDEBUG
 #CFLAGS  = -O0 -Wall -g -I.
 LDFLAGS = 
 
-SOURCES = $(wildcard *.cpp) lparselexer.cpp lparseparser_impl.cpp
+SOURCES = $(wildcard *.cpp) lparselexer.cpp lparseconverter_impl.cpp plainlparselexer.cpp lparseparser_impl.cpp
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
 all: ../../../bin/libgringo.a
@@ -14,11 +14,20 @@ all: ../../../bin/libgringo.a
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+plainlparselexer.cpp: plainlparselexer.re
+	re2c -o $@ $<
+
 lparselexer.cpp: lparselexer.re
 	re2c -o $@ $<
 
 lemon: lemon.c
 	gcc -o $@ $<
+
+lparseconverter_impl.cpp lparseconverter_impl.h: lparseconverter_impl.y lemon lempar.c
+	./lemon lparseconverter_impl.y
+	rm lparseconverter_impl.out
+	mv lparseconverter_impl.c lparseconverter_impl.cpp
+	touch lparseconverter_impl.h lparseconverter_impl.cpp
 
 lparseparser_impl.cpp lparseparser_impl.h: lparseparser_impl.y lemon lempar.c
 	./lemon lparseparser_impl.y
@@ -27,7 +36,7 @@ lparseparser_impl.cpp lparseparser_impl.h: lparseparser_impl.y lemon lempar.c
 	touch lparseparser_impl.h lparseparser_impl.cpp
 
 clean:
-	rm -f $(OBJECTS) lparseparser_impl.h lparseparser_impl.cpp lparselexer.cpp lemon gringo
+	rm -f $(OBJECTS) lparseparser_impl.h lparseparser_impl.cpp lparseconverter_impl.h lparseconverter_impl.cpp lparselexer.cpp lemon gringo plainlparselexer.cpp
 
 depend: $(SOURCES) true
 	makedepend -Y -- $(CFLAGS) -- $(SOURCES) &> /dev/null
@@ -120,7 +129,7 @@ literaldependencygraph.o: ../include/printable.h
 lparseoutput.o: ../include/lparseoutput.h ../include/gringo.h
 lparseoutput.o: ../include/output.h ../include/value.h
 lparseparser.o: ../include/lparseparser.h ../include/gringo.h
-lparseparser.o: ../include/gringoparser.h lparseparser_impl.h
+lparseparser.o: ../include/gringoparser.h lparseconverter_impl.h
 lparseparser.o: ../include/lparselexer.h ../include/gringolexer.h
 lparseparser.o: ../include/grounder.h ../include/output.h ../include/value.h
 multipleargsterm.o: ../include/multipleargsterm.h ../include/gringo.h
@@ -184,17 +193,17 @@ weightedstatement.o: ../include/node.h ../include/value.h ../include/output.h
 weightedstatement.o: ../include/grounder.h ../include/evaluator.h
 lparselexer.o: ../include/lparselexer.h ../include/gringo.h
 lparselexer.o: ../include/gringolexer.h ../include/lparseparser.h
-lparselexer.o: ../include/gringoparser.h lparseparser_impl.h
-lparseparser_impl.o: ../include/gringo.h ../include/lparseparser.h
-lparseparser_impl.o: ../include/gringoparser.h ../include/literal.h
-lparseparser_impl.o: ../include/printable.h ../include/aggregateliteral.h
-lparseparser_impl.o: ../include/expandable.h ../include/predicateliteral.h
-lparseparser_impl.o: ../include/groundable.h ../include/value.h
-lparseparser_impl.o: ../include/conditionalliteral.h
-lparseparser_impl.o: ../include/relationliteral.h
-lparseparser_impl.o: ../include/assignmentliteral.h ../include/term.h
-lparseparser_impl.o: ../include/constant.h ../include/functionterm.h
-lparseparser_impl.o: ../include/funcsymbolterm.h ../include/rangeterm.h
-lparseparser_impl.o: ../include/multipleargsterm.h ../include/normalrule.h
-lparseparser_impl.o: ../include/statement.h ../include/weightedstatement.h
-lparseparser_impl.o: ../include/grounder.h ../include/output.h
+lparselexer.o: ../include/gringoparser.h lparseconverter_impl.h
+lparseconverter_impl.o: ../include/gringo.h ../include/lparseparser.h
+lparseconverter_impl.o: ../include/gringoparser.h ../include/literal.h
+lparseconverter_impl.o: ../include/printable.h ../include/aggregateliteral.h
+lparseconverter_impl.o: ../include/expandable.h ../include/predicateliteral.h
+lparseconverter_impl.o: ../include/groundable.h ../include/value.h
+lparseconverter_impl.o: ../include/conditionalliteral.h
+lparseconverter_impl.o: ../include/relationliteral.h
+lparseconverter_impl.o: ../include/assignmentliteral.h ../include/term.h
+lparseconverter_impl.o: ../include/constant.h ../include/functionterm.h
+lparseconverter_impl.o: ../include/funcsymbolterm.h ../include/rangeterm.h
+lparseconverter_impl.o: ../include/multipleargsterm.h ../include/normalrule.h
+lparseconverter_impl.o: ../include/statement.h ../include/weightedstatement.h
+lparseconverter_impl.o: ../include/grounder.h ../include/output.h
