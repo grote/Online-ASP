@@ -9,11 +9,11 @@ performance:
   of the memstress examples by 66% (but does it help in real world apps?)
 
 code:
-- move the list of all predicates into the grounder
+- write a better main app
 - if a conflicting integrity constraint is found grounding could be stopped (and not just exit(0))
-- move code concerning visible/hidden predicates to output
 - use c++ exceptions
 - fix the preprocessing for functionsymbols
+
 documentation:
 - write doxygen doc
 
@@ -25,18 +25,13 @@ propagation: (i think thats not that important)
 - the method isFact has to get an additional parameter if aggregates shall be matched
 
 lparse compatibility:
+- extend domain predicates currently no ;'s are allowed 
+- improve handling of constants
 - implement lparse like warnings
 - the lparse preorder functions: plus, times, minus, ... are not supported
   only the infix functions: +, -, *, ... are supported
 - lparse literals: lt, gt, ... are not supported
   only the infix literals: <=, >=, ... are supported
-
-features:
-- improve program options of main app
-  - pass through constants
-  - pass options to clasp
-  - in general write a better main app
-- implement a switch to handle programs that are already ground
 
 testing:
 - write tests for all allowed language constructs !!!
@@ -56,3 +51,4 @@ smodelsoutput:
     used cause clasp will detect if all weights are 1
   - i believe that there is an easy transformation from MIN, MAX aggregates 
     to normalrules this transformation should be applied in the output
+
