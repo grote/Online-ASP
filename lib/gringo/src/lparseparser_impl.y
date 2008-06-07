@@ -175,7 +175,7 @@ hide_predicate ::= IDENTIFIER(id) SLASH NUMBER(n).                   { OUTPUT->s
 domain_predicate ::= IDENTIFIER(id) LPARA domain_list(list) RPARA. { GROUNDER->addDomains(STRING(id), list); }
 
 variable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
-variable_list(res) ::= VARIABLE.                           { res = 0; }
+variable_list(res) ::= VARIABLE.                           { res = 1; }
 
 domain_var(res) ::= VARIABLE(var).                       { res = new StringVector(); res->push_back(STRING(var)); }
 domain_var(res) ::= domain_var(list) SEMI VARIABLE(var). { res = list; res->push_back(STRING(var)); }

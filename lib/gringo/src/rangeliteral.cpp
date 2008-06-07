@@ -73,18 +73,19 @@ namespace
 	class IndexedDomainRange : public IndexedDomain
 	{
 	public:
-		IndexedDomainRange(int var, int lower, int upper);
+		IndexedDomainRange(int var, Term *lower, Term *upper);
 		virtual void firstMatch(int binder, DLVGrounder *g, MatchStatus &status);
 		virtual void nextMatch(int binder, DLVGrounder *g, MatchStatus &status);
 		virtual ~IndexedDomainRange();
 	protected:
 		int var_;
 		int current_;
-		int lower_;
-		int upper_;
+		int end_;
+		Term *lower_;
+		Term *upper_;
 	};
 
-	IndexedDomainRange::IndexedDomainRange(int var, int lower, int upper) : IndexedDomain(), var_(var), current_(0), lower_(lower), upper_(upper)
+	IndexedDomainRange::IndexedDomainRange(int var, Term *lower, Term *upper) : IndexedDomain(), var_(var), current_(0), end_(0), lower_(lower), upper_(upper)
 	{
 	}
 
@@ -92,7 +93,8 @@ namespace
 	{
 		if(lower_ <= upper_)
 		{
-			current_ = lower_;
+			end_     = upper_->getValue();
+			current_ = lower_->getValue();
 			g->g_->setValue(var_, Value(current_), binder);
 			status = SuccessfulMatch;
 		}
@@ -102,7 +104,7 @@ namespace
 
 	void IndexedDomainRange::nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		if(current_ < upper_)
+		if(current_ < end_)
 		{
 			current_++;
 			g->g_->setValue(var_, Value(current_), binder);
@@ -121,7 +123,7 @@ namespace
 IndexedDomain *RangeLiteral::createIndexedDomain(VarSet &index)
 {
 	if(index.find(var_->getUID()) == index.end())
-		return new IndexedDomainRange(var_->getUID(), lower_->getValue(), upper_->getValue());
+		return new IndexedDomainRange(var_->getUID(), lower_, upper_);
 	else
 		return new IndexedDomainMatchOnly(this);
 }

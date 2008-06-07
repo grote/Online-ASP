@@ -4,9 +4,7 @@ performance:
   if we have for example a predicate p(X,Y) where X is relevant and Y is irrelevant
   ill create a new predicate p(X) matching all p(X,_) thats easier and fits better into the current design
 - literals in the body could be ordered by some heuristic see reference in dlv paper
-- specialize domains for single/pair values this saves 12 bytes for each vector
-  since values have a size of 8 bytes this could reduce the memory consumtion 
-  of the memstress examples by 66% (but does it help in real world apps?)
+- dont use tons of small vectors in domains instead put all values into 1 big vector
 
 code:
 - write a better main app
@@ -25,7 +23,6 @@ propagation: (i think thats not that important)
 - the method isFact has to get an additional parameter if aggregates shall be matched
 
 lparse compatibility:
-- extend domain predicates currently no ;'s are allowed 
 - improve handling of constants
 - implement lparse like warnings
 - the lparse preorder functions: plus, times, minus, ... are not supported

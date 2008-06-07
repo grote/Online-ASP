@@ -1,13 +1,13 @@
 #hide.
-#show q(X,Y).
+#show q/2. 
 
-#const queens = 200.
-#const diags  = queens * 2 - 1.
+queens(10).
+diags(Q * 2 - 1) :- queens(Q).
 
-d(1..queens).
-diag(1..diags).
+d(1..Q) :- queens(Q).
+diag(1..D) :- diags(D).
 
-diagX(X,Y,X - Y + queens) :- d(X), d(Y).
+diagX(X,Y,X - Y + Q) :- queens(Q), d(X), d(Y).
 diagY(X,Y,X + Y - 1) :- d(X), d(Y).
 
 % exactly 1 queen in each row/col
@@ -17,6 +17,4 @@ diagY(X,Y,X + Y - 1) :- d(X), d(Y).
 % at most 1 queen on each diagonal
 { q(X,Y) : diagX(X,Y,D) } 1 :- diag(D).
 { q(X,Y) : diagY(X,Y,D) } 1 :- diag(D).
-
-
 

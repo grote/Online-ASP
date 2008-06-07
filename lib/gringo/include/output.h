@@ -45,8 +45,8 @@ namespace NS_GRINGO
 	
 		struct Object
 		{
-			Object(int type);
-			Object(bool neg, int type);
+			Object();
+			Object(bool neg);
 			virtual void print(std::ostream &out) = 0;
 			virtual void print_plain(std::ostream &out) = 0;
 			virtual void addUid(Output *o) = 0;
@@ -55,7 +55,6 @@ namespace NS_GRINGO
 			virtual ~Object();
 			
 			bool neg_;
-			const int type_;
 			int uid_;
 		};
 
@@ -69,7 +68,7 @@ namespace NS_GRINGO
 			void print_plain(std::ostream &out);
 			void print(std::ostream &out);
 			
-			/// the id of the assigned predicate
+			// TODO: change sth here!
 			Node *node_;
 			int  predUid_;
 			bool print_;
@@ -142,6 +141,7 @@ namespace NS_GRINGO
 			void addUid(Output *o);
 			~Aggregate();
 
+			int          type_;
 			ObjectVector lits_;
 			IntVector    weights_;
 			Bounds       bounds_;
@@ -172,6 +172,7 @@ namespace NS_GRINGO
 			void addDomain(bool fact);
 			void addUid(Output *o);
 
+			int          type_;
 			ObjectVector lits_;
 			IntVector    weights_;
 		};	

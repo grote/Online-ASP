@@ -16,7 +16,7 @@ namespace NS_GRINGO
 	public:
 		Grounder(NS_OUTPUT::Output *output);
 		void addStatement(Statement *rule);
-		void addDomains(std::string *id, StringVector* list);
+		void addDomains(std::string *id, std::vector<StringVector*>* list);
 		void buildDepGraph();
 		void start();
 		void addDomains();
@@ -41,6 +41,8 @@ namespace NS_GRINGO
 		NS_OUTPUT::Output *getOutput();
 		Evaluator *getEvaluator();
 		virtual ~Grounder();
+	protected:
+		void addDomains(std::string *id, std::vector<StringVector*>::iterator pos, std::vector<StringVector*>::iterator end, StringVector &list);
 	protected:
 		int internalVars_;
 		SCCVector sccs_;
