@@ -228,8 +228,6 @@ void NormalRule::grounded(Grounder *g)
 		NS_OUTPUT::Conjunction *c = new NS_OUTPUT::Conjunction(body);
 		NS_OUTPUT::Integrity  *i = new NS_OUTPUT::Integrity(c);
 		eval->add(i);
-		//std::cerr << "inconsistency found" << std::endl;
-		//exit(0);
 	}
 	else if(!hasHead)
 	{

@@ -18,26 +18,6 @@ namespace NS_GRINGO
 	public:
 		/// The type o a value
 		enum Type { INT, STRING, FUNCSYMBOL, UNDEF };
-		/// Hash function object for single values
-		struct SingleHash
-		{
-			/**
-			 * \brief Hash function for single values
-			 * \param key The value
-			 * \return The hash
-			 */
-			inline size_t operator() (const Value &key) const;
-		};
-		/// Hash function object for tuples of values
-		struct PairHash
-		{
-			/**
-			 * \brief Hash function for tuples of values
-			 * \param key The tuple
-			 * \return The hash
-			 */
-			inline size_t operator() (const std::pair<const Value, const Value> &key) const;
-		};
 		/// Hash function object for arrays of values
 		struct VectorHash
 		{
@@ -46,7 +26,16 @@ namespace NS_GRINGO
 			 * \param key The array
 			 * \return The hash
 			 */
-			inline size_t operator() (const std::vector<Value> &key) const;
+			inline size_t operator() (const ValueVector &key) const;
+		};	
+		/// Comaparison function object for arrays of values
+		struct VectorEqual
+		{
+			/**
+			 * \brief Comparison function for arrays of values
+			 * \return The hash
+			 */
+			inline bool operator() (const ValueVector &a, const ValueVector &b) const;
 		};	
 	public:
 		/**
@@ -83,6 +72,12 @@ namespace NS_GRINGO
 		 * \return Return an int less then 0 if the the value is lower than b, 0 if the values are equal or an int > 0 if the value is greater than b
 		 */
 		int compare(const Value &b) const;
+		/**
+		 * \brief Function used to compare Values in hash_sets or hash_maps.
+		 * This function doesnt throw an exception if the types of the values are distinct
+		 * \return The result of the comparisson
+		 */
+		bool equal_set(const Value &b) const;
 		/**
 		 * \brief Operator to compare Values
 		 * \return The result of the comparisson
@@ -142,8 +137,7 @@ namespace NS_GRINGO
 	std::ostream &operator<<(std::ostream &out, const Value &v);
 	
 	/// Type to efficiently access values
-	typedef __gnu_cxx::hash_set<ValueVector, Value::VectorHash> ValueVectorSet;
-	//typedef std::set<ValueVector> ValueVectorSet;
+	typedef __gnu_cxx::hash_set<ValueVector, Value::VectorHash, Value::VectorEqual> ValueVectorSet;
 
 	size_t Value::hashValue() const
 	{
@@ -161,31 +155,23 @@ namespace NS_GRINGO
 		}
 	}
 
-	size_t Value::SingleHash::operator() (const Value &key) const
+	bool Value::VectorEqual::operator() (const ValueVector &a, const ValueVector &b) const
 	{
-		return key.hashValue();
-	}
-
-	size_t Value::PairHash::operator() (const std::pair<const Value, const Value> &key) const
-	{
-		size_t hash;
-		size_t x;
-		hash = key.first.hashValue();
-		if((x = hash & 0xF0000000L) != 0)
-			hash ^= (x >> 24);
-		hash&= ~x;
-		hash = (hash << 4) + key.second.hashValue();
-		if((x = hash & 0xF0000000L) != 0)
-			hash ^= (x >> 24);
-		hash &= ~x;
-		return hash;
-	}
-
-	size_t Value::VectorHash::operator() (const std::vector<Value> &key) const
+		if(a.size() != b.size())
+			return false;
+		for(ValueVector::const_iterator i = a.begin(), j = b.begin(); i != a.end(); i++, j++)
+		{
+			if(!i->equal_set(*j))
+				return false;
+		}
+		return true;
+	}	
+	
+	size_t Value::VectorHash::operator() (const ValueVector &key) const
 	{
 		size_t hash = 0;
 		size_t x = 0;
-		for(std::vector<Value>::const_iterator it = key.begin(); it != key.end(); it++, x++)
+		for(ValueVector::const_iterator it = key.begin(); it != key.end(); it++, x++)
 		{
 			hash = (hash << 4) + it->hashValue();
 			if((x = hash & 0xF0000000L) != 0)

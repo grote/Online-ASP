@@ -1,5 +1,5 @@
 #include "value.h"
-#include <ext/hash_map>
+#include "gringoexception.h"
 
 using namespace NS_GRINGO;
 
@@ -39,12 +39,29 @@ Value::Value(const Value &v)
 	}
 }
 
+bool Value::equal_set(const Value &b) const
+{
+	if(type_ != b.type_)
+		return false;
+
+	switch(type_)
+	{
+		case UNDEF:
+			assert(false);
+		case INT:
+			return intValue_ == b.intValue_;
+		case STRING:
+			return stringValue_ == b.stringValue_;
+		case FUNCSYMBOL:
+			return funcSymbol_ == b.funcSymbol_;
+	}
+	assert(false);
+}
+
 int Value::compare(const Value &b) const
 {
-	if(type_ < b.type_)
-		return -1;
-	if(type_ > b.type_)
-		return 1;
+	if(type_ != b.type_)
+		throw GrinGoException("error comparing different types");
 
 	switch(type_)
 	{
@@ -62,9 +79,18 @@ int Value::compare(const Value &b) const
 
 Value::operator int()
 {
-	if(type_ == INT)
-		return intValue_;
-	return 0;
+	switch(type_)
+	{
+		case UNDEF:
+			assert(false);
+		case INT:
+			return intValue_;
+		case STRING:
+			throw GrinGoException("error trying to convert string to int");
+		case FUNCSYMBOL:
+			throw GrinGoException("error trying to convert functionsymbol to int");
+	}
+	assert(false);
 }
 
 bool Value::operator<(const Value &b) const
@@ -111,9 +137,8 @@ std::ostream &NS_GRINGO::operator<<(std::ostream &out, const Value &v)
 			out << (*v.stringValue_);
 			break;
 		case Value::FUNCSYMBOL:
-			{
-				v.funcSymbol_->print(out);
-			}
+			v.funcSymbol_->print(out);
+			break;
 
 	}
 	return out;

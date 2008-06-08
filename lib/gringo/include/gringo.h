@@ -100,6 +100,22 @@ namespace NS_GRINGO
 		class Object;
 		class Atom;
 	}
+
+	/// Class used to ensure destruction of local pointers
+	template <class T>
+	class Finalize
+	{
+	public:
+		Finalize(T *f) : f_(f)
+		{
+		}
+		~Finalize()
+		{
+			delete f_;
+		}
+	private:
+		T *f_;
+	};
 }
 
 #endif

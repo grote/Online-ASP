@@ -1,5 +1,6 @@
 #include "smodelsoutput.h"
 #include "grounder.h"
+#include "gringoexception.h"
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
@@ -259,8 +260,7 @@ void SmodelsOutput::print(NS_OUTPUT::Object *r)
 	}
 	else
 	{
-		// TODO: do sth here!
-		assert(false);
+		throw GrinGoException(std::string("smodelsoutput: unhandled object: ") + typeid(r).name());
 	}
 }
 

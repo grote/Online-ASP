@@ -29,7 +29,7 @@ namespace NS_GRINGO
 
 	class IndexedDomainNewDefault : public IndexedDomain
 	{
-		typedef __gnu_cxx::hash_map<ValueVector, ValueVector, Value::VectorHash> ValueVectorMap;
+		typedef __gnu_cxx::hash_map<ValueVector, ValueVector, Value::VectorHash, Value::VectorEqual> ValueVectorMap;
 	public:
 		IndexedDomainNewDefault(ValueVectorSet &domain, VarSet &index, const TermVector &param);
 		virtual void firstMatch(int binder, DLVGrounder *g, MatchStatus &status);
