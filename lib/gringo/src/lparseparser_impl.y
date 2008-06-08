@@ -78,8 +78,8 @@ using namespace NS_GRINGO;
 %destructor weight_term        { DELETE_PTR($$) }
 %destructor constr_term        { DELETE_PTR($$) }
 
-%type predicate          { PredicateLiteral* }
-%destructor predicate          { DELETE_PTR($$) }
+%type predicate { PredicateLiteral* }
+%destructor predicate { DELETE_PTR($$) }
 
 %type body_atom          { Literal* }
 %type head_atom          { Literal* }
@@ -101,11 +101,15 @@ using namespace NS_GRINGO;
 %destructor aggregate      { DELETE_PTR($$) }
 %destructor aggregate_atom { DELETE_PTR($$) }
 
-%type termlist  { TermVector* }
-%destructor termlist  { DELETE_PTRVECTOR(TermVector, $$) }
+%type termlist       { TermVector* }
+%type const_termlist { TermVector* }
+%destructor termlist       { DELETE_PTRVECTOR(TermVector, $$) }
+%destructor const_termlist { DELETE_PTRVECTOR(TermVector, $$) }
 
-%type term { Term* }
-%destructor term { DELETE_PTR($$) }
+%type term       { Term* }
+%type const_term { Term* }
+%destructor term       { DELETE_PTR($$) }
+%destructor const_term { DELETE_PTR($$) }
 
 %type weight_list  { ConditionalLiteralVector* }
 %type nweight_list { ConditionalLiteralVector* }
@@ -127,10 +131,8 @@ using namespace NS_GRINGO;
 %type domain_list { std::vector<StringVector*>* }
 %destructor domain_list { DELETE_PTRVECTOR(std::vector<StringVector*>, $$) }
 
-%type const_term { Value* }
-%type constant   { Value* }
-%destructor const_term { DELETE_PTR($$) }
-%destructor constant   { DELETE_PTR($$) }
+%type neg_pred { std::string* }
+%destructor neg_pred { DELETE_PTR($$) }
 
 %left SEMI.
 %left DOTS.
@@ -165,14 +167,17 @@ nhide_list ::= hide_predicate.
 domain_list ::= domain_list COMMA domain_predicate.
 domain_list ::= domain_predicate.
 
-show_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list, true); }
-show_predicate ::= IDENTIFIER(id).                                   { OUTPUT->setVisible(STRING(id), 0, true); }
-show_predicate ::= IDENTIFIER(id) SLASH NUMBER(n).                   { OUTPUT->setVisible(STRING(id), atol(n->c_str()), true); DELETE_PTR(n); }
-hide_predicate ::= IDENTIFIER(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list, false); }
-hide_predicate ::= IDENTIFIER(id).                                   { OUTPUT->setVisible(STRING(id), 0, false); }
-hide_predicate ::= IDENTIFIER(id) SLASH NUMBER(n).                   { OUTPUT->setVisible(STRING(id), atol(n->c_str()), false); DELETE_PTR(n); }
+neg_pred(res) ::= IDENTIFIER(id).       { res = id; }
+neg_pred(res) ::= MINUS IDENTIFIER(id). { id->insert(id->begin(), '-'); res = id; }
 
-domain_predicate ::= IDENTIFIER(id) LPARA domain_list(list) RPARA. { GROUNDER->addDomains(STRING(id), list); }
+show_predicate ::= neg_pred(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list, true); }
+show_predicate ::= neg_pred(id).                                   { OUTPUT->setVisible(STRING(id), 0, true); }
+show_predicate ::= neg_pred(id) SLASH NUMBER(n).                   { OUTPUT->setVisible(STRING(id), atol(n->c_str()), true); DELETE_PTR(n); }
+hide_predicate ::= neg_pred(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list, false); }
+hide_predicate ::= neg_pred(id).                                   { OUTPUT->setVisible(STRING(id), 0, false); }
+hide_predicate ::= neg_pred(id) SLASH NUMBER(n).                   { OUTPUT->setVisible(STRING(id), atol(n->c_str()), false); DELETE_PTR(n); }
+
+domain_predicate ::= neg_pred(id) LPARA domain_list(list) RPARA. { GROUNDER->addDomains(STRING(id), list); }
 
 variable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
 variable_list(res) ::= VARIABLE.                           { res = 1; }
@@ -258,18 +263,21 @@ term(res) ::= ABS LPARA term(a) RPARA. { res = new FunctionTerm(FunctionTerm::AB
 term(res) ::= term(a) SEMI term(b).    { res = new MultipleArgsTerm(a, b); }
 term(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new FuncSymbolTerm(GROUNDER, STRING(id), list); }
 
-constant(res) ::= IDENTIFIER(x). { res = GROUNDER->createConstValue(STRING(x)); }
-constant(res) ::= NUMBER(x).     { res = new Value(atol(x->c_str())); DELETE_PTR(x); }
+const_termlist(res) ::= const_termlist(list) COMMA const_term(term). { res = list; res->push_back(term); }
+const_termlist(res) ::= const_term(term).                            { res = new TermVector(); res->push_back(term); }
 
-const_term(res) ::= constant(c).   { res = c; }
-const_term(res) ::= STRING(x).     { res = GROUNDER->createStringValue(STRING(x)); }
-const_term(res) ::= LPARA const_term(a) RPARA.          { res = a; }
-const_term(res) ::= const_term(a) MOD const_term(b).    { res = new Value(*a % *b); DELETE_PTR(a); DELETE_PTR(b); }
-const_term(res) ::= const_term(a) PLUS const_term(b).   { res = new Value(*a + *b); DELETE_PTR(a); DELETE_PTR(b); }
-const_term(res) ::= const_term(a) TIMES const_term(b).  { res = new Value(*a * *b); DELETE_PTR(a); DELETE_PTR(b); }
-const_term(res) ::= const_term(a) MINUS const_term(b).  { res = new Value(*a - *b); DELETE_PTR(a); DELETE_PTR(b); }
-const_term(res) ::= const_term(a) DIVIDE const_term(b). { res = new Value(*a / *b); DELETE_PTR(a); DELETE_PTR(b); }
-const_term(res) ::= ABS LPARA const_term(a) RPARA.      { res = a; }
+const_term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }
+const_term(res) ::= STRING(x).     { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }
+const_term(res) ::= NUMBER(x).     { res = new Constant(atol(x->c_str())); DELETE_PTR(x); }
+const_term(res) ::= LPARA const_term(a) RPARA.           { res = a; }
+const_term(res) ::= const_term(a) MOD const_term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
+const_term(res) ::= const_term(a) PLUS const_term(b).    { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
+const_term(res) ::= const_term(a) TIMES const_term(b).   { res = new FunctionTerm(FunctionTerm::TIMES, a, b); }
+const_term(res) ::= const_term(a) MINUS const_term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
+const_term(res) ::= const_term(a) DIVIDE const_term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
+const_term(res) ::= MINUS const_term(b). [UMINUS]        { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(0), b); }
+const_term(res) ::= ABS LPARA const_term(a) RPARA.       { res = new FunctionTerm(FunctionTerm::ABS, a); }
+const_term(res) ::= IDENTIFIER(id) LPARA const_termlist(list) RPARA. { res = new FuncSymbolTerm(GROUNDER, STRING(id), list); }
 
 aggregate(res) ::= SUM LBRAC weight_list(list) RBRAC.   { res = new AggregateLiteral(AggregateLiteral::SUM, list); }
 aggregate(res) ::= MIN LBRAC weight_list(list) RBRAC.   { res = new AggregateLiteral(AggregateLiteral::MIN, list); }

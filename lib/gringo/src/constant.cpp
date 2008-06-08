@@ -12,26 +12,7 @@ Constant::Constant(ConstantType type, Grounder *g, std::string *value) : Term(),
 	switch(type_)
 	{
 		case ID:
-		{
-			Value *v = g->createConstValue(value);
-			if(v->type_ == Value::INT)
-			{
-				value_.type_     = Value::INT;
-				value_.intValue_ = v->intValue_;
-				type_            = NUM;
-			}
-			else
-			{
-				value_.type_        = Value::STRING;
-				value_.stringValue_ = v->stringValue_;
-				type_               = STRING;
-			}
-
-			delete v;
-			break;
-		}
 		case VAR:
-		case STRING:
 		{
 			value_.type_        = Value::STRING;
 			value_.stringValue_ = value;
@@ -64,7 +45,6 @@ void Constant::print(std::ostream &out)
 	{
 		case VAR:
 		case ID:
-		case STRING:
 		{
 			out << *(value_.stringValue_);
 			break;
@@ -75,6 +55,20 @@ void Constant::print(std::ostream &out)
 			break;
 		}
 	}
+}
+
+Value Constant::getConstValue()
+{
+	switch(type_)
+	{
+		case VAR:
+			assert(false);
+		case ID:
+			return g_->getConstValue(value_.stringValue_);
+		case NUM:
+			return value_;
+	}
+	assert(false);
 }
 
 Value Constant::getValue()
@@ -96,7 +90,12 @@ Constant::~Constant()
 
 void Constant::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 {
-	//nothing todo
+	if(type_ == ID)
+	{
+		value_ = g_->getConstValue(value_.stringValue_);
+		if(value_.type_ == Value::INT)
+			type_ = NUM;
+	}
 }
 
 Constant::Constant(const Constant &c) : type_(c.type_), g_(c.g_), value_(c.value_), uid_(c.uid_)
@@ -148,7 +147,6 @@ bool Constant::unify(const Value& t, const VarVector& boundVariables, const VarV
 				break;
 			}
 		case ID:
-		case STRING:
 		case NUM:
 			{
 				return t == value_;

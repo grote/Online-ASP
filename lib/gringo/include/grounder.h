@@ -13,6 +13,7 @@ namespace NS_GRINGO
 		typedef std::pair<std::string*, StringVector*> DomainPredicate;
 		typedef std::vector<DomainPredicate> DomainVector;
 		typedef std::map<std::string*, int> VariableMap;
+		typedef std::map<std::string*, std::pair<bool, Term*> > ConstTerms;
 	public:
 		Grounder(NS_OUTPUT::Output *output);
 		void addStatement(Statement *rule);
@@ -34,9 +35,8 @@ namespace NS_GRINGO
 		void setTempValue(int var, const Value &val);
 		// access binders
 		int getBinder(int var);
-		void setConstValue(std::string *id, Value *v);
-		Value *createConstValue(std::string *id);
-		Value *createStringValue(std::string *id);
+		void setConstValue(std::string *id, Term *p);
+		Value getConstValue(std::string *id);
 		void preprocess();
 		NS_OUTPUT::Output *getOutput();
 		Evaluator *getEvaluator();
@@ -52,9 +52,9 @@ namespace NS_GRINGO
 		DependencyGraph *depGraph_;
 		NS_OUTPUT::Output *output_;
 		Evaluator *eval_;
-		std::map<std::string*, Value*> const_;
-		std::vector<Value> substitution_;
-		std::vector<int> binder_;
+		ConstTerms constTerms_;
+		ValueVector substitution_;
+		IntVector binder_;
 		std::set<Signature> trueNegPred_;
 	};
 }

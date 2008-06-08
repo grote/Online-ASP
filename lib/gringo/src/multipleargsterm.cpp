@@ -35,6 +35,11 @@ bool MultipleArgsTerm::isComplex()
 	assert(false);
 }
 
+Value MultipleArgsTerm::getConstValue()
+{
+	assert(false);
+}
+
 Value MultipleArgsTerm::getValue()
 {
 	assert(false);
@@ -57,6 +62,7 @@ namespace
 		void getVars(VarSet &vars) const { assert(false); }
 		bool isComplex() { assert(false); }
 		Value getValue() { assert(false); }
+		Value getConstValue() { assert(false); }
 		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { assert(false); }
 		void print(std::ostream &stream) { assert(false); }
 		bool unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,

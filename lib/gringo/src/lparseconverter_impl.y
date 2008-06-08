@@ -103,6 +103,9 @@ Object *createDisjunction(Object *disj, Object *pred)
 %destructor constr_list    { DELETE_PTR($$) }
 %destructor nconstr_list   { DELETE_PTR($$) }
 
+%type neg_pred { std::string* }
+%destructor neg_pred { DELETE_PTR($$) }
+
 // this will define the symbols in the header
 // even though they are not used in the rules
 %nonassoc ERROR EOI.
@@ -125,12 +128,15 @@ hide_list ::= nhide_list.
 nhide_list ::= nhide_list COMMA hide_predicate.
 nhide_list ::= hide_predicate.
 
-show_predicate ::= IDENTIFIER(id). { OUTPUT->setVisible(STRING(id), 0, true); }
-hide_predicate ::= IDENTIFIER(id). { OUTPUT->setVisible(STRING(id), 0, false); }
-show_predicate ::= IDENTIFIER(id) SLASH NUMBER(n). { OUTPUT->setVisible(STRING(id), atol(n->c_str()), true); DELETE_PTR(n); }
-hide_predicate ::= IDENTIFIER(id) SLASH NUMBER(n). { OUTPUT->setVisible(STRING(id), atol(n->c_str()), false); DELETE_PTR(n); }
-show_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, true); }
-hide_predicate ::= IDENTIFIER(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, false); }
+neg_pred(res) ::= IDENTIFIER(id).       { res = id; }
+neg_pred(res) ::= MINUS IDENTIFIER(id). { id->insert(id->begin(), '-'); res = id; }
+
+show_predicate ::= neg_pred(id). { OUTPUT->setVisible(STRING(id), 0, true); }
+hide_predicate ::= neg_pred(id). { OUTPUT->setVisible(STRING(id), 0, false); }
+show_predicate ::= neg_pred(id) SLASH NUMBER(n). { OUTPUT->setVisible(STRING(id), atol(n->c_str()), true); DELETE_PTR(n); }
+hide_predicate ::= neg_pred(id) SLASH NUMBER(n). { OUTPUT->setVisible(STRING(id), atol(n->c_str()), false); DELETE_PTR(n); }
+show_predicate ::= neg_pred(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, true); }
+hide_predicate ::= neg_pred(id) LPARA variable_list(count) RPARA. { OUTPUT->setVisible(STRING(id), count, false); }
 
 variable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
 variable_list(res) ::= VARIABLE.                           { res = 1; }

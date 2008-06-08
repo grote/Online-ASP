@@ -10,7 +10,7 @@ namespace NS_GRINGO
 	class Constant : public Term
 	{
 	public:
-		enum ConstantType { ID, VAR, NUM, STRING };
+		enum ConstantType { ID, VAR, NUM };
 	public:
 		Constant(int value);
 		Constant(ConstantType type, Grounder *g, std::string *value);
@@ -19,6 +19,7 @@ namespace NS_GRINGO
 		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
+		virtual Value getConstValue();
 		virtual Value getValue();
 		int getUID();
 		virtual Term* clone() const;

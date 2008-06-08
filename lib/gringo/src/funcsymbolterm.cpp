@@ -50,6 +50,20 @@ bool FuncSymbolTerm::isComplex()
 	return false;
 }
 
+Value FuncSymbolTerm::getConstValue()
+{
+	ValueVector args;
+	for (unsigned int i = 0; i != termList_->size(); ++i)
+	{
+		args.push_back((*termList_)[i]->getConstValue());
+	}
+
+	FuncSymbol* funcSymbol = new FuncSymbol(name_, args);
+
+	funcSymbol = grounder_->createFuncSymbol(funcSymbol);
+	return Value(funcSymbol);
+}
+
 Value FuncSymbolTerm::getValue()
 {
 	ValueVector args;

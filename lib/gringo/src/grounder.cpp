@@ -222,8 +222,8 @@ Grounder::~Grounder()
 		delete (*it).second;
 	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
 		delete *it;
-	for(std::map<std::string*, Value*>::iterator it = const_.begin(); it != const_.end(); it++)
-		delete it->second;
+	for(ConstTerms::iterator it = constTerms_.begin(); it != constTerms_.end(); it++)
+		delete it->second.second;
 
 }
 
@@ -248,16 +248,30 @@ int Grounder::getBinder(int var)
 	return binder_[var];
 }
 
-void Grounder::setConstValue(std::string *id, Value *v)
+void Grounder::setConstValue(std::string *id, Term *t)
 {
-	Value *&ref = const_[id];
-	if(ref)
+	std::pair<ConstTerms::iterator, bool> res = constTerms_.insert(std::make_pair(id, std::make_pair(false, t)));
+	if(!res.second)
 	{
 		std::cerr << "warning: multiple definitions of #const " << *id << std::endl;
-		delete v;
+		delete t;
+	}
+}
+
+Value Grounder::getConstValue(std::string *id)
+{
+	ConstTerms::iterator it = constTerms_.find(id);
+	if(it != constTerms_.end())
+	{
+		if(it->second.first)
+			throw GrinGoException("error cyclic constant definition");
+		it->second.first = true;
+		Value v = it->second.second->getConstValue();
+		it->second.first = false;
+		return v;
 	}
 	else
-		ref = v;
+		return Value(id);
 }
 
 Evaluator *Grounder::getEvaluator()
@@ -268,24 +282,6 @@ Evaluator *Grounder::getEvaluator()
 NS_OUTPUT::Output *Grounder::getOutput()
 {
 	return output_;
-}
-
-Value *Grounder::createConstValue(std::string *id)
-{
-	std::map<std::string*, Value*>::iterator pos = const_.find(id);
-	if(pos != const_.end())
-	{
-		return new Value(*(pos->second));
-	}
-	else
-	{
-		return createStringValue(id);
-	}
-}
-
-Value *Grounder::createStringValue(std::string *id)
-{
-	return new Value(id);
 }
 
 void Grounder::addTrueNegation(std::string *id, int arity)

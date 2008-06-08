@@ -37,6 +37,13 @@ namespace NS_GRINGO
 		 */
 		virtual Value getValue() = 0;
 		/**
+		 * \brief Returns the Value of the term
+		 * There must be no variables, rangeterms or multipleargsterms in the term. 
+		 * Ids are replaced by their corresponding const value, stored in the grounder.
+		 * \return The value
+		 */
+		virtual Value getConstValue() = 0;
+		/**
 		 * \brief Creates a copy of the term
 		 * \return The copy
 		 */

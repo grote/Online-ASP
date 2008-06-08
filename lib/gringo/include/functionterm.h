@@ -17,6 +17,7 @@ namespace NS_GRINGO
 		virtual bool isComplex();
 		virtual void print(std::ostream &out);
 		virtual Value getValue();
+		virtual Value getConstValue();
 		virtual Term* clone() const;
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual bool unify(const Value&, const VarVector&, const VarVector&,

@@ -51,6 +51,26 @@ bool FunctionTerm::isComplex()
 	return true;
 }
 
+Value FunctionTerm::getConstValue()
+{
+	switch(type_)
+	{
+		case ABS:
+			return Value(abs(a_->getConstValue()));
+		case PLUS:
+			return Value(a_->getConstValue() + b_->getConstValue());
+		case MINUS:
+			return Value(a_->getConstValue() - b_->getConstValue());
+		case TIMES:
+			return Value(a_->getConstValue() * b_->getConstValue());
+		case DIVIDE:
+			return Value(a_->getConstValue() / b_->getConstValue());
+		case MOD:
+			return Value(a_->getConstValue() % b_->getConstValue());
+	}
+	assert(false);
+}
+
 Value FunctionTerm::getValue()
 {
 	switch(type_)

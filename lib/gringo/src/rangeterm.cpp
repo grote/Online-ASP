@@ -48,6 +48,11 @@ Term *RangeTerm::getUpper()
 	return upper_;
 }
 
+Value RangeTerm::getConstValue()
+{
+	assert(false);
+}
+
 Value RangeTerm::getValue()
 {
 	assert(false);
