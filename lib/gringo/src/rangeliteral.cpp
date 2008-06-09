@@ -91,10 +91,10 @@ namespace
 
 	void IndexedDomainRange::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		if(lower_ <= upper_)
+		end_     = upper_->getValue();
+		current_ = lower_->getValue();
+		if(current_ <= end_)
 		{
-			end_     = upper_->getValue();
-			current_ = lower_->getValue();
 			g->g_->setValue(var_, Value(current_), binder);
 			status = SuccessfulMatch;
 		}

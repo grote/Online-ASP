@@ -23,7 +23,6 @@ propagation: (i think thats not that important)
 - the method isFact has to get an additional parameter if aggregates shall be matched
 
 lparse compatibility:
-- improve handling of constants
 - implement lparse like warnings
 - the lparse preorder functions: plus, times, minus, ... are not supported
   only the infix functions: +, -, *, ... are supported

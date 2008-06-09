@@ -30,6 +30,11 @@ colB(X,Y,C4) :- place(X, Y, N, C1, C2, C3, C4).
  :- check(X,Y), colL(X,Y,C1), colR(X+1,Y,C2), C1 != C2.
  :- check(X,Y), colT(X,Y,C1), colB(X,Y+1,C2), C1 != C2.
 
+ :- colL(0,Y,C), C != 0.
+ :- colR(16,Y,C), C != 0.
+ :- colT(X,0,C), C != 0.
+ :- colB(X,16,C), C != 0.
+
 %%%%%%%%%%%%%%%%%% instance %%%%%%%%%%%%%%%%%%%%%%
 
 piece(1, 1, 17, 0, 0).
