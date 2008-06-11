@@ -15,8 +15,18 @@
 
 using namespace NS_GRINGO;
 
-AggregateLiteral::AggregateLiteral(AggregateType type, ConditionalLiteralVector *literals) : Literal(), type_(type), literals_(literals), lower_(0), upper_(0), equal_(0)
+AggregateLiteral::AggregateLiteral(ConditionalLiteralVector *literals) : Literal(), literals_(literals), lower_(0), upper_(0), equal_(0)
 {
+}
+
+bool AggregateLiteral::solved()
+{
+	return false;
+}
+
+bool AggregateLiteral::isFact()
+{
+	return fact_;
 }
 
 void AggregateLiteral::setBounds(Term *lower, Term *upper)
@@ -42,56 +52,7 @@ bool AggregateLiteral::checkO(LiteralVector &unsolved)
 	return true;
 }
 
-bool AggregateLiteral::isFact()
-{
-	// TODO: for now !!!!
-	return false;
-}
-
-bool AggregateLiteral::solved()
-{
-	/*
-	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-		if(!(*it)->solved())
-			return false;
-	return true;
-	*/
-	return false;
-}
-
-bool AggregateLiteral::matchSum(Grounder *g, int &lower, int &upper, bool checkBounds)
-{
-	lower = 0;
-	upper = 0;
-	int fixed = 0;
-	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-	{
-		ConditionalLiteral *p = *it;
-		p->ground(g);
-		for(p->start(); p->hasNext(); p->next())
-		{
-			if(!p->match(g))
-				continue;
-			int weight = p->getWeight();
-			if(p->isFact())
-				fixed+= weight;
-			else
-			{
-				if(weight > 0)
-					upper+= weight;
-				else
-					lower+= weight;
-			}
-		}
-	}
-	lower+= fixed;
-	upper+= fixed;
-	if(checkBounds)
-		return this->checkBounds(lower, upper);
-	else
-		return true;
-}
-
+/*
 bool AggregateLiteral::matchTimes(Grounder *g, int &lower, int &upper, bool checkBounds)
 {
 	lower = 1;
@@ -198,82 +159,36 @@ bool AggregateLiteral::matchMax(Grounder *g, int &lower, int &upper, bool checkB
 	else
 		return true;
 }
+*/
 
 bool AggregateLiteral::checkBounds(int lower, int upper)
 {
 	int lowerBound = lower_ ? (int)lower_->getValue() : lower;
 	int upperBound = upper_ ? (int)upper_->getValue() : upper;
+	// stupid bounds
 	if(lowerBound > upperBound)
-		return false;
+		return getNeg();
+	// the aggregate lies completely in the intervall
+	// ---|         |--- <- Bounds
+	// ------|   |------ <- Aggregate
 	if(lower >= lowerBound && upper <= upperBound)
 	{
-		fact_ = true;
-		return true;
+		return !getNeg();
 	}
-	fact_ = false;
+	// the intervals dont intersect
+	// ----------|   |--- <- Bounds
+	// ---|   |---------- <- Aggregate
 	if(upper < lowerBound || lower > upperBound)
-		return false;
+		return getNeg();
+	// the intervalls intersect
 	return true;
-}
-
-bool AggregateLiteral::matchConjunction(Grounder *g)
-{
-	fact_ = false;
-	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-	{
-		ConditionalLiteral *p = *it;
-		p->ground(g);
-		for(p->start(); p->hasNext(); p->next())
-		{
-			if(!p->match(g))
-				return false;
-		}
-	}
-	return true;
-}
-
-bool AggregateLiteral::matchDisjunction(Grounder *g)
-{
-	fact_ = false;
-	bool matchFound = false;
-	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-	{
-		ConditionalLiteral *p = *it;
-		p->ground(g);
-		for(p->start(); p->hasNext(); p->next())
-		{
-			if(p->match(g))
-				matchFound = true;
-		}
-	}
-	return matchFound;
 }
 
 bool AggregateLiteral::match(Grounder *g)
 {
 	int upper, lower;
-	return match(g, lower, upper, true);
-}
-
-bool AggregateLiteral::match(Grounder *g, int &lower, int &upper, bool checkBounds)
-{
-	switch(type_)
-	{
-		case COUNT:
-		case SUM:
-			return matchSum(g, upper, lower, checkBounds);
-		case TIMES:
-			return matchTimes(g, upper, lower, checkBounds);
-		case MIN:
-			return matchMin(g, upper, lower, checkBounds);
-		case MAX:
-			return matchMax(g, upper, lower, checkBounds);
-		case DISJUNCTION:
-			return matchDisjunction(g);
-		case CONJUNCTION:
-			return matchConjunction(g);
-	}
-	assert(false);
+	match(g, lower, upper);
+	return checkBounds(lower, upper);
 }
 
 void AggregateLiteral::getVars(VarSet &vars) const
@@ -323,7 +238,6 @@ void AggregateLiteral::createNode(LDGBuilder *dg, bool head)
 		(*it)->createNode(dg, head);
 }
 
-
 void AggregateLiteral::reset()
 {
 	// aggregate literals should never occur negativly in heads
@@ -338,49 +252,6 @@ void AggregateLiteral::finish()
 	assert(!getNeg());
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 		(*it)->finish();
-}
-
-void AggregateLiteral::print(std::ostream &out)
-{
-	if(lower_)
-		out << lower_ << " ";
-	switch(type_)
-	{
-		case SUM:
-			out << "sum ";
-			break;
-		case TIMES:
-			out << "times ";
-			break;
-		case COUNT:
-			out << "count ";
-			break;
-		case MIN:
-			out << "min ";
-			break;
-		case MAX:
-			out << "max ";
-			break;
-		case DISJUNCTION:
-		case CONJUNCTION:
-			break;
-			
-	}
-	if(type_ != DISJUNCTION && type_ != CONJUNCTION)
-		out << "{";
-	bool comma = false;
-	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-	{
-		if(comma)
-			out << (type_ == DISJUNCTION ? " | " : ", ");
-		else
-			comma = true;
-		out << *it;
-	}
-	if(type_ != DISJUNCTION && type_ != CONJUNCTION)
-		out << "}";
-	if(upper_)
-		out << " " << upper_;
 }
 
 namespace
@@ -406,7 +277,7 @@ namespace
 
 	void IndexedDomainAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		l_->match(g->g_, lower_, upper_, false);
+		l_->match(g->g_, lower_, upper_);
 		current_ = lower_;
 		if(current_ <= upper_)
 		{
@@ -452,7 +323,7 @@ IndexedDomain *AggregateLiteral::createIndexedDomain(VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 }
 
-AggregateLiteral::AggregateLiteral(const AggregateLiteral &a) : type_(a.type_), lower_(a.lower_ ? a.lower_->clone() : 0), upper_(a.upper_ ? a.upper_->clone() : 0), equal_(a.equal_ ? static_cast<Constant*>(equal_->clone()) : 0)
+AggregateLiteral::AggregateLiteral(const AggregateLiteral &a) : lower_(a.lower_ ? a.lower_->clone() : 0), upper_(a.upper_ ? a.upper_->clone() : 0), equal_(a.equal_ ? static_cast<Constant*>(equal_->clone()) : 0)
 {
 	if(a.literals_)
 	{
@@ -474,13 +345,16 @@ void AggregateLiteral::appendLiteral(Literal *l, ExpansionType type)
 
 void AggregateLiteral::preprocess(Grounder *g, Expandable *e)
 {
+	/*
 	if(type_ == DISJUNCTION)
 	{
 		assert(literals_);
 		for(size_t i = 0; i < literals_->size(); i++)
 			(*literals_)[i]->preprocessDisjunction(g, this, e);
 	}
-	else if(literals_)
+	else 
+	*/
+	if(literals_)
 		for(size_t i = 0; i < literals_->size(); i++)
 			(*literals_)[i]->preprocess(g, this);
 	if(upper_)
@@ -489,14 +363,9 @@ void AggregateLiteral::preprocess(Grounder *g, Expandable *e)
 		lower_->preprocess(this, lower_, g, e);
 }
 
-ConditionalLiteralVector *AggregateLiteral::getLiterals()
+ConditionalLiteralVector *AggregateLiteral::getLiterals() const
 {
 	return literals_;
-}
-
-Literal* AggregateLiteral::clone() const
-{
-	return new AggregateLiteral(*this);
 }
 
 Term *AggregateLiteral::getLower() const
@@ -507,74 +376,6 @@ Term *AggregateLiteral::getLower() const
 Term *AggregateLiteral::getUpper() const
 {
 	return upper_;
-}
-
-AggregateLiteral::AggregateType AggregateLiteral::getType() const
-{
-	return type_;
-}
-
-NS_OUTPUT::Object *AggregateLiteral::convert()
-{
-	if(type_ == CONJUNCTION)
-	{
-		NS_OUTPUT::ObjectVector lits;
-		for(ConditionalLiteralVector::iterator it = getLiterals()->begin(); it != getLiterals()->end(); it++)
-		{
-			ConditionalLiteral *p = *it;
-			for(p->start(); p->hasNext(); p->next())
-				lits.push_back(p->convert());
-		}
-		return new NS_OUTPUT::Conjunction(lits);
-	}
-	NS_OUTPUT::ObjectVector lits;
-	IntVector weights;
-	for(ConditionalLiteralVector::iterator it = getLiterals()->begin(); it != getLiterals()->end(); it++)
-	{
-		ConditionalLiteral *p = *it;
-		for(p->start(); p->hasNext(); p->next())
-		{
-			lits.push_back(p->convert());
-			if(type_ != DISJUNCTION && type_ != COUNT)
-				weights.push_back(p->getWeight());
-		}
-	}
-	NS_OUTPUT::Aggregate::Type type;
-	switch(type_)
-	{
-		case SUM:
-			type = NS_OUTPUT::Aggregate::SUM;
-			break;
-		case COUNT:
-			type = NS_OUTPUT::Aggregate::COUNT;
-			break;
-		case TIMES:
-			type = NS_OUTPUT::Aggregate::TIMES;
-			break;
-		case MIN:
-			type = NS_OUTPUT::Aggregate::MIN;
-			break;
-		case MAX:
-			type = NS_OUTPUT::Aggregate::MAX;
-			break;
-		case DISJUNCTION:
-			type = NS_OUTPUT::Aggregate::DISJUNCTION;
-			break;
-		default:
-			assert(false);
-			break;
-	}
-	NS_OUTPUT::Aggregate *a;
-	if(lower_ && upper_)
-		a = new NS_OUTPUT::Aggregate(getNeg(), type, lower_->getValue(), lits, weights, upper_->getValue());
-	else if(lower_)
-		a = new NS_OUTPUT::Aggregate(getNeg(), type, lower_->getValue(), lits, weights);
-	else if(upper_)
-		a = new NS_OUTPUT::Aggregate(getNeg(), type, lits, weights, upper_->getValue());
-	else
-		a = new NS_OUTPUT::Aggregate(getNeg(), type, lits, weights);
-
-	return a;
 }
 
 double AggregateLiteral::heuristicValue()
@@ -595,30 +396,6 @@ AggregateLiteral::~AggregateLiteral()
 		for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 			delete *it;
 		delete literals_;
-	}
-}
-
-Literal *AggregateLiteral::createHead(ConditionalLiteralVector *list)
-{
-	if(list->size() == 1 && !list->front()->hasConditionals())
-	{
-		Literal *l = list->front()->toPredicateLiteral();
-		delete list;
-		return l;
-	}
-	else
-		return new AggregateLiteral(DISJUNCTION, list);
-}
-
-Literal *AggregateLiteral::createBody(PredicateLiteral *pred, LiteralVector *list)
-{
-	if(list == 0 || list->size() == 0)
-		return pred;
-	else
-	{
-		ConditionalLiteralVector *clv = new ConditionalLiteralVector();
-		clv->push_back(new ConditionalLiteral(pred, list));
-		return new AggregateLiteral(CONJUNCTION, clv);
 	}
 }
 

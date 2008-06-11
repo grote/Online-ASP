@@ -12,6 +12,12 @@
 #include "relationliteral.h"
 #include "assignmentliteral.h"
 
+// aggregates
+#include "sumaggregate.h"  
+#include "countaggregate.h"  
+#include "disjunctionaggregate.h"
+#include "conjunctionaggregate.h"
+
 // terms
 #include "term.h"
 #include "constant.h"
@@ -214,7 +220,7 @@ body_literal(res) ::= VARIABLE(id) ASSIGN aggregate(aggr). { res = aggr; aggr->s
 constraint_literal(res) ::= constraint_atom(atom).     { res = atom; }
 constraint_literal(res) ::= NOT constraint_atom(atom). { res = atom; res->setNeg(true); }
 
-body_atom(res) ::= predicate(pred) conditional_list(list). { res = AggregateLiteral::createBody(pred, list); }
+body_atom(res) ::= predicate(pred) conditional_list(list). { res = ConjunctionAggregate::createBody(pred, list); }
 body_atom(res) ::= aggregate_atom(atom). { res = atom; }
 
 // assignment literals are not realy relation literals but they rae used like them
@@ -229,7 +235,7 @@ relation_literal(res) ::= term(a) LE term(b).         { res = new RelationLitera
 head_atom(res) ::= aggregate_atom(atom). { res = atom; }
 head_atom(res) ::= disjunction(disj).    { res = disj; }
 
-disjunction(res) ::= disj_list(list). { res = AggregateLiteral::createHead(list); }
+disjunction(res) ::= disj_list(list). { res = DisjunctionAggregate::createHead(list); }
 disj_list(res) ::= disj_list(list) DISJUNCTION constraint_atom(term). { res = list; res->push_back(term); }
 disj_list(res) ::= constraint_atom(term).                             { res = new ConditionalLiteralVector(); res->push_back(term); }
 
@@ -280,13 +286,12 @@ const_term(res) ::= MINUS const_term(b). [UMINUS]        { res = new FunctionTer
 const_term(res) ::= ABS LPARA const_term(a) RPARA.       { res = new FunctionTerm(FunctionTerm::ABS, a); }
 const_term(res) ::= IDENTIFIER(id) LPARA const_termlist(list) RPARA. { res = new FuncSymbolTerm(GROUNDER, STRING(id), list); }
 
-aggregate(res) ::= SUM LBRAC weight_list(list) RBRAC.   { res = new AggregateLiteral(AggregateLiteral::SUM, list); }
-aggregate(res) ::= MIN LBRAC weight_list(list) RBRAC.   { res = new AggregateLiteral(AggregateLiteral::MIN, list); }
-aggregate(res) ::= MAX LBRAC weight_list(list) RBRAC.   { res = new AggregateLiteral(AggregateLiteral::MAX, list); }
-aggregate(res) ::= TIMES LBRAC weight_list(list) RBRAC. { res = new AggregateLiteral(AggregateLiteral::TIMES, list); }
-aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC. { res = new AggregateLiteral(AggregateLiteral::COUNT, list); }
-aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.     { res = new AggregateLiteral(AggregateLiteral::SUM, list); }
-aggregate(res) ::= LBRAC constr_list(list) RBRAC.       { res = new AggregateLiteral(AggregateLiteral::COUNT, list); }
+aggregate(res) ::= SUM LSBRAC weight_list(list) RSBRAC.   { res = new SumAggregate(list); }
+aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.       { res = new SumAggregate(list); }
+aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC.   { res = new CountAggregate(list); }
+aggregate(res) ::= LBRAC constr_list(list) RBRAC.         { res = new CountAggregate(list); }
+aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { assert(false); /* res = new MinAggregate(list); */ }
+aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { assert(false); /* res = new MaxAggregate(list); */ }
 
 compute(res)  ::= COMPUTE LBRAC  constr_list(list) RBRAC.           { res = new WeightedStatement(WeightedStatement::COMPUTE, list, 1); }
 compute(res)  ::= COMPUTE NUMBER(x) LBRAC  constr_list(list) RBRAC. { res = new WeightedStatement(WeightedStatement::COMPUTE, list, atol(x->c_str())); DELETE_PTR(x); }

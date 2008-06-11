@@ -16,7 +16,7 @@ namespace NS_GRINGO
 		ConditionalLiteral(const ConditionalLiteral &p);
 		virtual Literal* clone() const;
 		void setWeight(Term *w);
-		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
+		virtual Node *createNode(DependencyGraph *dg, Node *prev, Literal::DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void print(std::ostream &out);
 		virtual void getVars(VarSet &vars) const;
@@ -33,19 +33,25 @@ namespace NS_GRINGO
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
 		virtual double heuristicValue();
+		void setNeg(bool neg);
+
 		bool hasConditionals();
 		PredicateLiteral *toPredicateLiteral();
 		bool check(VarVector &free);
 		int getUid();
+		
+		// functions to access all possible bindings of the conditional literal
 		bool isEmpty();
 		void start();
 		bool hasWeight();
 		bool hasNext();
-		void setNeg(bool neg);
+		void remove();
+		bool match();
 		int count();
 		void next();
 		ValueVector &getValues();
 		int getWeight();
+
 		void clonePredicate(bool clone);
 		void setPredicate(PredicateLiteral* pred);
 		void preprocessDisjunction(Grounder *g, AggregateLiteral *a, Expandable *e);

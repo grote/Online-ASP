@@ -181,9 +181,9 @@ void NormalRule::grounded(Grounder *g)
 
 	if(head_ && head_->match(g))
 	{
-		// TODO: if the head is already a fact this rule is useless!!! of course 
-		// this may lead into trouble with choice rules no aggregate may claim 
-		// that it is a fact (at least for now)
+		// NOTE: if the head is already a fact this rule is useless!!! of course 
+		// except if the head is a choice head since choice heads are always facts
+		// currently aggregates are only facts if all their literals are facts
 		if(head_->isFact())
 			return;
 		hasHead = true;
@@ -282,14 +282,14 @@ namespace
 
 void NormalRule::preprocess(Grounder *g)
 {
-	if(body_)
-		for(size_t i = 0; i < body_->size(); i++)
-			(*body_)[i]->preprocess(g, this);
 	if(head_)
 	{
 		NormalRuleExpander nre(this, g, body_);
 		head_->preprocess(g, &nre);
 	}
+	if(body_)
+		for(size_t i = 0; i < body_->size(); i++)
+			(*body_)[i]->preprocess(g, this);
 	//std::cerr << this << std::endl;
 }
 

@@ -93,6 +93,8 @@ namespace NS_GRINGO
 
 	class FuncSymbol;
 	typedef std::vector<FuncSymbol* > FuncSymbolVector;
+	
+	class ConditionalLiteralTarget;
 
 	namespace NS_OUTPUT
 	{

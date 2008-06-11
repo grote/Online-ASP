@@ -58,7 +58,6 @@ begin:
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return LPARSECONVERTER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return LPARSECONVERTER_NUMBER; }
 		"sum"           { return LPARSECONVERTER_SUM; }
-		"times"         { return LPARSECONVERTER_TIMES; }
 		"max"           { return LPARSECONVERTER_MIN; }
 		"min"           { return LPARSECONVERTER_MAX; }
 		"count"         { return LPARSECONVERTER_COUNT; }

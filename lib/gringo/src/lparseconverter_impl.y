@@ -192,7 +192,6 @@ constant(res) ::= IDENTIFIER(id) LPARA constant_list(list) RPARA. { res = new Va
 aggregate(res) ::= SUM LBRAC weight_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= MIN LBRAC weight_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::MIN, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= MAX LBRAC weight_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::MAX, list->first, list->second); DELETE_PTR(list); }
-aggregate(res) ::= TIMES LBRAC weight_list(list) RBRAC. { res = new Aggregate(false, Aggregate::TIMES, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC. { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.     { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= LBRAC constr_list(list) RBRAC.       { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }

@@ -8,6 +8,7 @@
 #include "value.h"
 #include "literaldependencygraph.h"
 #include "aggregateliteral.h"
+#include "conditionalliteraltarget.h"
 
 using namespace NS_GRINGO;
 		
@@ -106,9 +107,21 @@ void ConditionalLiteral::print(std::ostream &out)
 		out << " = " << weight_;
 }
 
+bool ConditionalLiteral::match(Grounder *g)
+{
+	assert(false);
+}
+
 void ConditionalLiteral::start()
 {
 	current_ = 0;
+}
+
+void ConditionalLiteral::remove()
+{
+	std::swap(values_[current_], values_.back());
+	values_.pop_back();
+	current_--;
 }
 
 bool ConditionalLiteral::hasNext()
@@ -126,7 +139,7 @@ bool ConditionalLiteral::isFact()
 	return pred_->isFact(values_[current_]);
 }
 
-bool ConditionalLiteral::match(Grounder *g)
+bool ConditionalLiteral::match()
 {
 	return pred_->match(values_[current_]);
 }
@@ -195,6 +208,7 @@ void ConditionalLiteral::grounded(Grounder *g)
 	if(weight_)
 		weights_.push_back(weight_->getValue());
 	values_.push_back(ValueVector());
+
 	std::swap(values_.back(), values);
 }
 
@@ -328,31 +342,31 @@ NS_OUTPUT::Object *ConditionalLiteral::convert()
 void ConditionalLiteral::preprocessDisjunction(Grounder *g, AggregateLiteral *a, Expandable *e)
 {
 	assert(!weight_);
+	DisjunctiveConditionalLiteralExpander cle(this, a, e);
+	pred_->preprocess(g, &cle);
 	if(conditionals_)
 	{
 		for(size_t i = 0; i < conditionals_->size(); i++)
 			(*conditionals_)[i]->preprocess(g, this);
 	}
-	DisjunctiveConditionalLiteralExpander cle(this, a, e);
-	pred_->preprocess(g, &cle);
 }
 
 void ConditionalLiteral::preprocess(Grounder *g, Expandable *e)
 {
+	ConditionalLiteralExpander cle(this, e, conditionals_);
+	pred_->preprocess(g, &cle);
 	if(conditionals_)
 	{
 		for(size_t i = 0; i < conditionals_->size(); i++)
 			(*conditionals_)[i]->preprocess(g, this);
 	}
-	ConditionalLiteralExpander cle(this, e, conditionals_);
-	pred_->preprocess(g, &cle);
 	if(weight_)
 		weight_->preprocess(this, weight_, g, e);
 }
 
 double ConditionalLiteral::heuristicValue()
 {
-	return DBL_MAX;
+	assert(false);
 }
 
 int ConditionalLiteral::getUid()

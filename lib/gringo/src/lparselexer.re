@@ -63,7 +63,6 @@ begin:
 		"0"             { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"sum"           { return LPARSEPARSER_SUM; }
 		"abs"           { return LPARSEPARSER_ABS; }
-		"times"         { return LPARSEPARSER_TIMES; }
 		"max"           { return LPARSEPARSER_MIN; }
 		"min"           { return LPARSEPARSER_MAX; }
 		"count"         { return LPARSEPARSER_COUNT; }
