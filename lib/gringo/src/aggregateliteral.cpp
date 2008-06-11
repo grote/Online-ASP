@@ -10,10 +10,12 @@
 #include "indexeddomain.h"
 #include "output.h"
 #include "evaluator.h"
+#include "constant.h"
+#include "dlvgrounder.h"
 
 using namespace NS_GRINGO;
 
-AggregateLiteral::AggregateLiteral(AggregateType type, ConditionalLiteralVector *literals) : Literal(), type_(type), literals_(literals), lower_(0), upper_(0)
+AggregateLiteral::AggregateLiteral(AggregateType type, ConditionalLiteralVector *literals) : Literal(), type_(type), literals_(literals), lower_(0), upper_(0), equal_(0)
 {
 }
 
@@ -21,6 +23,13 @@ void AggregateLiteral::setBounds(Term *lower, Term *upper)
 {
 	lower_ = lower;
 	upper_ = upper;
+}
+
+void AggregateLiteral::setEqual(Constant *equal)
+{
+	equal_ = equal;
+	lower_ = equal_->clone();
+	upper_ = equal_->clone();
 }
 
 bool AggregateLiteral::checkO(LiteralVector &unsolved) 
@@ -35,26 +44,242 @@ bool AggregateLiteral::checkO(LiteralVector &unsolved)
 
 bool AggregateLiteral::isFact()
 {
+	// TODO: for now !!!!
 	return false;
 }
 
 bool AggregateLiteral::solved()
 {
+	/*
+	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+		if(!(*it)->solved())
+			return false;
+	return true;
+	*/
 	return false;
 }
 
-bool AggregateLiteral::match(Grounder *g)
+bool AggregateLiteral::matchSum(Grounder *g, int &lower, int &upper, bool checkBounds)
 {
-	// TODO: needs improvement
+	lower = 0;
+	upper = 0;
+	int fixed = 0;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
-		(*it)->ground(g);
+		ConditionalLiteral *p = *it;
+		p->ground(g);
+		for(p->start(); p->hasNext(); p->next())
+		{
+			if(!p->match(g))
+				continue;
+			int weight = p->getWeight();
+			if(p->isFact())
+				fixed+= weight;
+			else
+			{
+				if(weight > 0)
+					upper+= weight;
+				else
+					lower+= weight;
+			}
+		}
+	}
+	lower+= fixed;
+	upper+= fixed;
+	if(checkBounds)
+		return this->checkBounds(lower, upper);
+	else
+		return true;
+}
+
+bool AggregateLiteral::matchTimes(Grounder *g, int &lower, int &upper, bool checkBounds)
+{
+	lower = 1;
+	upper = 1;
+	int fixed = 1;
+	bool hasZero = false;
+	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+	{
+		ConditionalLiteral *p = *it;
+		p->ground(g);
+		for(p->start(); p->hasNext(); p->next())
+		{
+			if(!p->match(g))
+				continue;
+			int weight = p->getWeight();
+			if(p->isFact())
+				fixed*= weight;
+			else
+			{
+				if(weight == 0)
+					hasZero = true;
+				else if(weight > 0)
+					upper*= weight;
+				else
+					lower*= weight;
+			}
+		}
+	}
+	lower*= fixed;
+	upper*= fixed;
+	if(hasZero && lower > 0)
+		lower = 0;
+	if(hasZero && upper < 0)
+		upper = 0;
+	if(checkBounds)
+		return this->checkBounds(lower, upper);
+	else
+		return true;
+}
+
+bool AggregateLiteral::matchMin(Grounder *g, int &lower, int &upper, bool checkBounds)
+{
+	lower = INT_MAX;
+	upper = INT_MIN;
+	int fixed = INT_MAX;
+	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+	{
+		ConditionalLiteral *p = *it;
+		p->ground(g);
+		for(p->start(); p->hasNext(); p->next())
+		{
+			if(!p->match(g))
+				continue;
+			int weight = p->getWeight();
+			if(p->isFact())
+				fixed = std::min(fixed, weight);
+			else
+			{
+				lower = std::min(lower, weight);
+				upper = std::max(upper, weight);
+			}
+		}
+	}
+	lower = std::min(lower, fixed);
+	if(upper > fixed || upper == INT_MIN)
+		upper = fixed;
+	if(checkBounds)
+		return this->checkBounds(lower, upper);
+	else
+		return true;
+}
+
+bool AggregateLiteral::matchMax(Grounder *g, int &lower, int &upper, bool checkBounds)
+{
+	lower = INT_MAX;
+	upper = INT_MIN;
+	int fixed = INT_MIN;
+	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+	{
+		ConditionalLiteral *p = *it;
+		p->ground(g);
+		for(p->start(); p->hasNext(); p->next())
+		{
+			if(!p->match(g))
+				continue;
+			int weight = p->getWeight();
+			if(p->match(g))
+			{
+				if(p->isFact())
+					fixed = std::max(fixed, weight);
+				else
+				{
+					lower = std::min(lower, weight);
+					upper = std::max(upper, weight);
+				}
+			}
+		}
+	}
+	if(lower < fixed || lower == INT_MAX)
+		lower = fixed;
+	upper = std::max(upper, fixed);
+	if(checkBounds)
+		return this->checkBounds(lower, upper);
+	else
+		return true;
+}
+
+bool AggregateLiteral::checkBounds(int lower, int upper)
+{
+	int lowerBound = lower_ ? (int)lower_->getValue() : lower;
+	int upperBound = upper_ ? (int)upper_->getValue() : upper;
+	if(lowerBound > upperBound)
+		return false;
+	if(lower >= lowerBound && upper <= upperBound)
+	{
+		fact_ = true;
+		return true;
+	}
+	fact_ = false;
+	if(upper < lowerBound || lower > upperBound)
+		return false;
+	return true;
+}
+
+bool AggregateLiteral::matchConjunction(Grounder *g)
+{
+	fact_ = false;
+	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+	{
+		ConditionalLiteral *p = *it;
+		p->ground(g);
+		for(p->start(); p->hasNext(); p->next())
+		{
+			if(!p->match(g))
+				return false;
+		}
 	}
 	return true;
 }
 
+bool AggregateLiteral::matchDisjunction(Grounder *g)
+{
+	fact_ = false;
+	bool matchFound = false;
+	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+	{
+		ConditionalLiteral *p = *it;
+		p->ground(g);
+		for(p->start(); p->hasNext(); p->next())
+		{
+			if(p->match(g))
+				matchFound = true;
+		}
+	}
+	return matchFound;
+}
+
+bool AggregateLiteral::match(Grounder *g)
+{
+	int upper, lower;
+	return match(g, lower, upper, true);
+}
+
+bool AggregateLiteral::match(Grounder *g, int &lower, int &upper, bool checkBounds)
+{
+	switch(type_)
+	{
+		case COUNT:
+		case SUM:
+			return matchSum(g, upper, lower, checkBounds);
+		case TIMES:
+			return matchTimes(g, upper, lower, checkBounds);
+		case MIN:
+			return matchMin(g, upper, lower, checkBounds);
+		case MAX:
+			return matchMax(g, upper, lower, checkBounds);
+		case DISJUNCTION:
+			return matchDisjunction(g);
+		case CONJUNCTION:
+			return matchConjunction(g);
+	}
+	assert(false);
+}
+
 void AggregateLiteral::getVars(VarSet &vars) const
 {
+	if(equal_)
+		equal_->getVars(vars);
 	if(lower_)
 		lower_->getVars(vars);
 	if(upper_)
@@ -83,7 +308,10 @@ Node *AggregateLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAd
 
 void AggregateLiteral::createNode(LDGBuilder *dg, bool head)
 {
-	dg->createGraphNode(this, head);
+	VarSet needed, provided;
+	if(equal_)
+		equal_->getVars(provided);
+	dg->createNode(this, head, needed, provided, true);
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 		(*it)->createNode(dg, head);
 }
@@ -148,12 +376,76 @@ void AggregateLiteral::print(std::ostream &out)
 		out << " " << upper_;
 }
 
-IndexedDomain *AggregateLiteral::createIndexedDomain(VarSet &index)
+namespace
 {
-	return new IndexedDomainMatchOnly(this);
+	class IndexedDomainAggregate : public IndexedDomain
+	{
+	public:
+		IndexedDomainAggregate(AggregateLiteral *l, int var);
+		virtual void firstMatch(int binder, DLVGrounder *g, MatchStatus &status);
+		virtual void nextMatch(int binder, DLVGrounder *g, MatchStatus &status);
+		virtual ~IndexedDomainAggregate();
+	protected:
+		AggregateLiteral *l_;
+		int var_;
+		int current_;
+		int lower_;
+		int upper_;
+	};
+
+	IndexedDomainAggregate::IndexedDomainAggregate(AggregateLiteral *l, int var) : l_(l), var_(var)
+	{
+	}
+
+	void IndexedDomainAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
+	{
+		l_->match(g->g_, lower_, upper_, false);
+		current_ = lower_;
+		if(current_ <= upper_)
+		{
+			g->g_->setValue(var_, Value(current_), binder);
+			status = SuccessfulMatch;
+		}
+		else
+			status = FailureOnFirstMatch;
+	}
+
+	void IndexedDomainAggregate::nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
+	{
+		if(current_ < upper_)
+		{
+			current_++;
+			g->g_->setValue(var_, Value(current_), binder);
+			status = SuccessfulMatch;
+		}
+		else
+			status = FailureOnNextMatch;
+	}
+
+	IndexedDomainAggregate::~IndexedDomainAggregate()
+	{
+	}
+	
 }
 
-AggregateLiteral::AggregateLiteral(const AggregateLiteral &a) : type_(a.type_), lower_(a.lower_ ? a.lower_->clone() : 0), upper_(a.upper_ ? a.upper_->clone() : 0)
+IndexedDomain *AggregateLiteral::createIndexedDomain(VarSet &index)
+{
+	if(equal_)
+	{
+		if(index.find(equal_->getUID()) != index.end())
+		{
+			return new IndexedDomainMatchOnly(this);
+		}
+		else
+		{
+			return new IndexedDomainAggregate(this, equal_->getUID());
+		}
+	}
+	else
+		return new IndexedDomainMatchOnly(this);
+}
+
+AggregateLiteral::AggregateLiteral(const AggregateLiteral &a) : type_(a.type_), lower_(a.lower_ ? a.lower_->clone() : 0), upper_(a.upper_ ? a.upper_->clone() : 0), equal_(a.equal_ ? static_cast<Constant*>(equal_->clone()) : 0)
 {
 	if(a.literals_)
 	{
@@ -213,12 +505,6 @@ Term *AggregateLiteral::getUpper() const
 AggregateLiteral::AggregateType AggregateLiteral::getType() const
 {
 	return type_;
-}
-
-void AggregateLiteral::ground(Grounder *g)
-{
-	for(ConditionalLiteralVector::iterator it = getLiterals()->begin(); it != getLiterals()->end(); it++)
-		(*it)->ground(g);
 }
 
 NS_OUTPUT::Object *AggregateLiteral::convert()
@@ -291,6 +577,8 @@ double AggregateLiteral::heuristicValue()
 
 AggregateLiteral::~AggregateLiteral()
 {
+	if(equal_)
+		delete equal_;
 	if(lower_)
 		delete lower_;
 	if(upper_)

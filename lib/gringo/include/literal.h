@@ -95,14 +95,6 @@ namespace NS_GRINGO
 		 */
 		virtual Literal* clone() const = 0;
 		/**
-		 * \brief Triggers local grounding
-		 *
-		 * Some literals may need local grounding. For example Aggregates in the head 
-		 * with conditionals have to be grounded independently of the body of the rule.
-		 * The default implementation does nothing.
-		 */
-		virtual void ground(Grounder *g);
-		/**
 		 * \brief Creates an index on the domain of the literal
 		 * \param index Stores a set to the variables that have to be indexed.
 		 * \return Returns the new indexed domain
@@ -110,6 +102,8 @@ namespace NS_GRINGO
 		virtual IndexedDomain *createIndexedDomain(VarSet &index) = 0;
 		/**
 		 * \brief Determines if the literal can be satisfied wrt. the current substitution
+		 *
+		 * Also local grounding of an aggregate may be startet here.
 		 * \param g Reference to the grounder
 		 * \return returns true if the literal matches.
 		 */

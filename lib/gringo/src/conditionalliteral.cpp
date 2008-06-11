@@ -121,6 +121,16 @@ void ConditionalLiteral::next()
 	current_++;
 }
 
+bool ConditionalLiteral::isFact()
+{
+	return pred_->isFact(values_[current_]);
+}
+
+bool ConditionalLiteral::match(Grounder *g)
+{
+	return pred_->match(values_[current_]);
+}
+
 ValueVector &ConditionalLiteral::getValues()
 {
 	return values_[current_];
@@ -136,6 +146,11 @@ int ConditionalLiteral::getWeight()
 	return weights_[current_];
 }
 
+int ConditionalLiteral::count()
+{
+	return values_.size();
+}
+
 void ConditionalLiteral::reset()
 {
 	pred_->reset();
@@ -146,25 +161,15 @@ void ConditionalLiteral::finish()
 	pred_->finish();
 }
 
-bool ConditionalLiteral::isFact()
-{
-	// not used yet
-	assert(false);
-}
-
 bool ConditionalLiteral::solved()
 {
-	// not used yet
-	assert(false);
-}
-
-bool ConditionalLiteral::match(Grounder *g)
-{
-	return pred_->match(g);
+	return pred_->solved();
 }
 
 void ConditionalLiteral::ground(Grounder *g)
 {
+	weights_.clear();
+	values_.clear();
 	if(conditionals_)
 	{
 		if(!grounder_)
@@ -173,36 +178,24 @@ void ConditionalLiteral::ground(Grounder *g)
 			grounder_ = new DLVGrounder(g, this, conditionals_->size(), dg_, dg_->getGlobalVars());
 		}
 		
-		weights_.clear();
-		values_.clear();
 		grounder_->ground();
 	}
 	else
 	{
-		values_.resize(1);
-		values_.back().clear();
-		if(weight_)
-			weights_.resize(1);
-		cacheVariables();
+		grounded(g);
 	}
-}
-
-void ConditionalLiteral::cacheVariables()
-{
-	values_.back().resize(pred_->getArgs()->size());
-	ValueVector::iterator valIt = values_.back().begin();
-	for(TermVector::iterator it = pred_->getArgs()->begin(); it != pred_->getArgs()->end(); it++, valIt++)
-		*valIt = (*it)->getValue();
-	if(weight_)
-		weights_.back() = weight_->getValue();
 }
 
 void ConditionalLiteral::grounded(Grounder *g)
 {
-	values_.push_back(ValueVector());
+	ValueVector values;
+	values.reserve(pred_->getArgs()->size());
+	for(TermVector::iterator it = pred_->getArgs()->begin(); it != pred_->getArgs()->end(); it++)
+		values.push_back((*it)->getValue());
 	if(weight_)
-		weights_.push_back(0);
-	cacheVariables();
+		weights_.push_back(weight_->getValue());
+	values_.push_back(ValueVector());
+	std::swap(values_.back(), values);
 }
 
 bool ConditionalLiteral::isEmpty()
@@ -212,7 +205,7 @@ bool ConditionalLiteral::isEmpty()
 
 IndexedDomain *ConditionalLiteral::createIndexedDomain(VarSet &index)
 {
-	return new IndexedDomainMatchOnly(this);
+	assert(false);
 }
 
 ConditionalLiteral::ConditionalLiteral(const ConditionalLiteral &p) : pred_(p.clone_ ? static_cast<PredicateLiteral*>(p.pred_->clone()) : p.pred_), weight_(p.weight_ ? p.weight_->clone() : 0), grounder_(0), dg_(0), clone_(true)

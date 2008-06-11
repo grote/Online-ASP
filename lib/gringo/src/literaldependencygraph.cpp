@@ -151,7 +151,7 @@ LDG::~LDG()
 
 ///////////////////////////////////// LiteralDependencyGraphBuilder ///////////////////////////////////////////
 
-LDGBuilder::GraphNode::GraphNode(Literal *l, bool head) : head_(head), l_(l)
+LDGBuilder::GraphNode::GraphNode(LDG::LiteralNode *n) : n_(n)
 {
 }
 
@@ -182,16 +182,15 @@ void LDGBuilder::create()
 		(*it)->createNode(this, false);
 	for(GraphNodeVector::iterator i = graphNodes_.begin(); i != graphNodes_.end(); i++)
 	{
-		LDG::LiteralNode *l = createLiteralNode((*i)->l_, (*i)->head_);
 		for(LDGBuilderVector::iterator j = (*i)->sub_.begin(); j != (*i)->sub_.end(); j++)
-			(*j)->createSubGraph(this, (*i)->head_, l);
+			(*j)->createSubGraph(this, (*i)->n_);
 	}
 }
 
-void LDGBuilder::createSubGraph(LDGBuilder *parent, bool head, LDG::LiteralNode *l)
+void LDGBuilder::createSubGraph(LDGBuilder *parent, LDG::LiteralNode *n)
 {
 	parent_     = parent;
-	parentNode_ = l;
+	parentNode_ = n;
 	create();
 	parentNode_->sub_.push_back(dg_);
 }
@@ -230,12 +229,7 @@ LDG::VarNode *LDGBuilder::createVarNode(int var)
 	return v;
 }
 
-void LDGBuilder::createGraphNode(Literal *l, bool head)
-{
-	graphNodes_.push_back(new GraphNode(l, head));
-}
-
-void LDGBuilder::createNode(Literal *l, bool head, const VarSet &needed, const VarSet &provided)
+void LDGBuilder::createNode(Literal *l, bool head, const VarSet &needed, const VarSet &provided, bool graph)
 {
 	LDG::LiteralNode *n = createLiteralNode(l, head);
 	for(VarSet::iterator it = needed.begin(); it != needed.end(); it++)
@@ -253,6 +247,8 @@ void LDGBuilder::createNode(Literal *l, bool head, const VarSet &needed, const V
 		if(v)
 			n->out_.push_back(v);
 	}
+	if(graph)
+		graphNodes_.push_back(new GraphNode(n));
 }
 
 LDGBuilder::~LDGBuilder()

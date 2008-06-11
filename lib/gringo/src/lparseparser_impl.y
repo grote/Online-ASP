@@ -206,9 +206,10 @@ conditional(res) ::= relation_literal(rel). { res = rel; }
 conditional_list(res) ::= conditional_list(list) DDOT conditional(cond). { res = list ? list : new LiteralVector(); res->push_back(cond); }
 conditional_list(res) ::= .                                              { res = 0; }
 
-body_literal(res) ::= body_atom(atom).     { res = atom; }
-body_literal(res) ::= NOT body_atom(atom). { res = atom; res->setNeg(true); }
-body_literal(res) ::= relation_literal(rel). { res = rel; }
+body_literal(res) ::= body_atom(atom).                     { res = atom; }
+body_literal(res) ::= NOT body_atom(atom).                 { res = atom; res->setNeg(true); }
+body_literal(res) ::= relation_literal(rel).               { res = rel; }
+body_literal(res) ::= VARIABLE(id) ASSIGN aggregate(aggr). { res = aggr; aggr->setEqual(new Constant(Constant::VAR, GROUNDER, STRING(id))); }
 
 constraint_literal(res) ::= constraint_atom(atom).     { res = atom; }
 constraint_literal(res) ::= NOT constraint_atom(atom). { res = atom; res->setNeg(true); }

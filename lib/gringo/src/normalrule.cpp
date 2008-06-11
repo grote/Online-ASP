@@ -179,20 +179,15 @@ void NormalRule::grounded(Grounder *g)
 	NS_OUTPUT::ObjectVector body;
 	Evaluator *eval = g->getEvaluator();
 
-	if(head_)
+	if(head_ && head_->match(g))
 	{
-		// TODO: if an aggregate is used in the head and doesnt support any literals the rule can be skipped
-		//       if the head is trivially false we get an integrity constraint
-		//       a method like truthValue->{true, false, undef} could be used here too
-		// some heads may involve local grounding
-		head_->ground(g);
-		// nothing has to be done if the head is already a fact
-		// it could even lead to problems with the basic program evaluator 
-		// this is not tested
+		// TODO: if the head is already a fact this rule is useless!!! of course 
+		// this may lead into trouble with choice rules no aggregate may claim 
+		// that it is a fact (at least for now)
 		if(head_->isFact())
 			return;
-		head = head_->convert();
 		hasHead = true;
+		head = head_->convert();
 	}
 	else
 	{

@@ -27,7 +27,7 @@ namespace NS_GRINGO
 		virtual void finish();
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual bool match(Grounder *g);
-		virtual void ground(Grounder *g);
+		void ground(Grounder *g);
 		virtual void grounded(Grounder *g);
 		virtual void appendLiteral(Literal *l, ExpansionType type);
 		virtual void preprocess(Grounder *g, Expandable *e);
@@ -42,8 +42,8 @@ namespace NS_GRINGO
 		bool hasWeight();
 		bool hasNext();
 		void setNeg(bool neg);
+		int count();
 		void next();
-		void cacheVariables();
 		ValueVector &getValues();
 		int getWeight();
 		void clonePredicate(bool clone);

@@ -16,10 +16,6 @@ bool Literal::getNeg() const
 	return neg_;
 }
 		
-void Literal::ground(Grounder *g)
-{
-}
-
 void Literal::evaluate()
 {
 }

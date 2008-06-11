@@ -73,10 +73,9 @@ namespace NS_GRINGO
 
 		struct GraphNode
 		{
-			bool head_;
-			Literal *l_;
+			LDG::LiteralNode *n_;
 			LDGBuilderVector sub_;
-			GraphNode(Literal *l, bool head);
+			GraphNode(LDG::LiteralNode *l);
 		};
 		typedef std::vector<GraphNode*> GraphNodeVector;
 	public:
@@ -87,15 +86,14 @@ namespace NS_GRINGO
 
 		void create();
 
-		void createGraphNode(Literal *l, bool head);
-		void createNode(Literal *l, bool head, const VarSet &needed, const VarSet &provided);
+		void createNode(Literal *l, bool head, const VarSet &needed, const VarSet &provided, bool graph = false);
 
 		~LDGBuilder();
 
 	protected:
 		LDG::LiteralNode *createLiteralNode(Literal *l, bool head);
 		LDG::VarNode *createVarNode(int var);
-		void createSubGraph(LDGBuilder *parent, bool head, LDG::LiteralNode *l);
+		void createSubGraph(LDGBuilder *parent, LDG::LiteralNode *l);
 
 	protected:
 		LDGBuilder *parent_;

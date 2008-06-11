@@ -121,8 +121,21 @@ void PredicateLiteral::evaluate()
 		predNode_->evaluate();
 }
 
-void PredicateLiteral::ground(Grounder *g)
+bool PredicateLiteral::isFact(const ValueVector &values)
 {
+	// a precondition for this method is that the predicate is not false!
+	if(predNode_->solved())
+		return true;
+	if(getNeg())
+	{
+		assert(!predNode_->isFact(values_));
+		if(predNode_->complete())
+			return !predNode_->inDomain(values_);
+		else
+			return false;
+	}
+	else
+		return predNode_->isFact(values_);
 }
 
 bool PredicateLiteral::isFact()
@@ -150,6 +163,26 @@ bool PredicateLiteral::solved()
 	return predNode_->solved();
 }
 
+bool PredicateLiteral::match(const ValueVector &values)
+{
+	if(!predNode_->complete())
+	{
+		if(getNeg())
+			return !predNode_->isFact(values);
+		else
+			return true;
+	}
+	bool match = predNode_->inDomain(values);
+	if(getNeg())
+	{
+		return !(match && (predNode_->solved() || predNode_->isFact(values)));
+	}
+	else
+	{
+		return match;
+	}
+}
+
 bool PredicateLiteral::match(Grounder *g)
 {
 	assert(!predNode_->solved() || predNode_->complete());
@@ -161,8 +194,7 @@ bool PredicateLiteral::match(Grounder *g)
 		{
 			for(int i = 0; i < (int)variables_->size(); i++)
 				matchValues_[i] = (*variables_)[i]->getValue();
-			if(predNode_->isFact(matchValues_))
-				return false;
+			return !predNode_->isFact(matchValues_);
 		}
 		else
 			return true;
@@ -177,15 +209,12 @@ bool PredicateLiteral::match(Grounder *g)
 	match = predNode_->inDomain(matchValues_);
 	if(getNeg())
 	{
-		if(match && (predNode_->solved() || predNode_->isFact(matchValues_)))
-			return false;
+		return !(match && (predNode_->solved() || predNode_->isFact(matchValues_)));
 	}
 	else
 	{
-		if(!match)
-			return false;
+		return match;
 	}
-	return true;
 }
 
 NS_OUTPUT::Object * PredicateLiteral::convert(ValueVector &values)
@@ -195,7 +224,7 @@ NS_OUTPUT::Object * PredicateLiteral::convert(ValueVector &values)
 
 NS_OUTPUT::Object *PredicateLiteral::convert()
 {
-	// the method isFact or ground has to be called before this method
+	// the method isFact has to be called before this method
 	/*
 	values_.clear();
 	for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)

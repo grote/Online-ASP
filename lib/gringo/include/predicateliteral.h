@@ -21,14 +21,15 @@ namespace NS_GRINGO
 		virtual void print(std::ostream &out);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
-		virtual void ground(Grounder *g);
 		virtual void reset();
 		virtual bool solved();
 		virtual bool isFact();
+		bool isFact(const ValueVector &values);
 		virtual void finish();
 		virtual void evaluate();
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual bool match(Grounder *g);
+		bool match(const ValueVector &values);
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
 		virtual double heuristicValue();
