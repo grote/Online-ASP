@@ -8,7 +8,7 @@
 
 using namespace NS_GRINGO;
 		
-WeightedStatement::WeightedStatement(Type type, ConditionalLiteralVector *literals, int number) : type_(type), number_(number)
+WeightedStatement::WeightedStatement(Type type, ConditionalLiteralVector *literals, bool setSemantics, int number) : type_(type), setSemantics_(setSemantics), number_(number)
 {
 	std::swap(literals_, *literals);
 	delete literals;
@@ -82,17 +82,63 @@ void WeightedStatement::evaluate()
 	// nothing todo
 }
 
+namespace
+{
+	struct Hash
+	{
+		Value::VectorHash hash;
+		size_t operator()(const std::pair<int, ValueVector> &k) const
+		{
+			return (size_t)k.first + hash(k.second);
+		}
+	};
+	struct Equal
+	{
+		Value::VectorEqual equal;
+		size_t operator()(const std::pair<int, ValueVector> &a, const std::pair<int, ValueVector> &b) const
+		{
+			return a.first == b.first && equal(a.second, b.second);
+		}
+	};
+	typedef __gnu_cxx::hash_set<std::pair<int, ValueVector>, Hash, Equal> UidValueSet;
+}
 void WeightedStatement::grounded(Grounder *g)
 {
 	NS_OUTPUT::ObjectVector lits;
 	IntVector weights;
-	for(ConditionalLiteralVector::iterator it = literals_.begin(); it != literals_.end(); it++)
+	if(setSemantics_)
 	{
-		ConditionalLiteral *p = *it;
-		for(p->start(); p->hasNext(); p->next())
+		UidValueSet set;
+		for(ConditionalLiteralVector::iterator it = literals_.begin(); it != literals_.end(); it++)
 		{
-			lits.push_back(p->convert());
-			weights.push_back(p->getWeight());
+			ConditionalLiteral *p = *it;
+			if(!set.insert(std::make_pair(p->getUid(), p->getValues())).second)
+			{
+				p->remove();
+				continue;
+			}
+			for(p->start(); p->hasNext(); p->next())
+			{
+				lits.push_back(p->convert());
+				weights.push_back(1);
+			}
+		}
+	}
+	else
+	{
+		for(ConditionalLiteralVector::iterator it = literals_.begin(); it != literals_.end(); it++)
+		{
+			ConditionalLiteral *p = *it;
+			for(p->start(); p->hasNext(); p->next())
+			{
+				if(p->getWeight() == 0)
+				{
+					p->remove();
+					continue;
+				}
+				lits.push_back(p->convert());
+				weights.push_back(p->getWeight());
+			}
 		}
 	}
 

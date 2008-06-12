@@ -18,7 +18,7 @@ namespace NS_GRINGO
 		enum Type { COMPUTE, MINIMIZE, MAXIMIZE };
 	public:
 		/// Constructor
-		WeightedStatement(Type type, ConditionalLiteralVector *literals, int number = 0);
+		WeightedStatement(Type type, ConditionalLiteralVector *literals, bool setSemantics, int number = 0);
 		virtual void buildDepGraph(DependencyGraph *dg);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
@@ -36,6 +36,7 @@ namespace NS_GRINGO
 		virtual ~WeightedStatement();
 	protected:
 		Type type_;
+		bool setSemantics_;
 		int number_;
 		ConditionalLiteralVector literals_;
 	};

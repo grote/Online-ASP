@@ -295,12 +295,12 @@ aggregate(res) ::= LBRAC constr_list(list) RBRAC.         { res = new CountAggre
 aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { res = new MinAggregate(list); }
 aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { res = new MaxAggregate(list); }
 
-compute(res)  ::= COMPUTE LBRAC  constr_list(list) RBRAC.           { res = new WeightedStatement(WeightedStatement::COMPUTE, list, 1); }
-compute(res)  ::= COMPUTE NUMBER(x) LBRAC  constr_list(list) RBRAC. { res = new WeightedStatement(WeightedStatement::COMPUTE, list, atol(x->c_str())); DELETE_PTR(x); }
-minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.          { res = new WeightedStatement(WeightedStatement::MINIMIZE, list); }
-minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new WeightedStatement(WeightedStatement::MINIMIZE, list); }
-maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.          { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list); }
-maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list); }
+compute(res)  ::= COMPUTE LBRAC  constr_list(list) RBRAC.           { res = new WeightedStatement(WeightedStatement::COMPUTE, list, true, 1); }
+compute(res)  ::= COMPUTE NUMBER(x) LBRAC  constr_list(list) RBRAC. { res = new WeightedStatement(WeightedStatement::COMPUTE, list, true, atol(x->c_str())); DELETE_PTR(x); }
+minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.          { res = new WeightedStatement(WeightedStatement::MINIMIZE, list, true); }
+minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new WeightedStatement(WeightedStatement::MINIMIZE, list, false); }
+maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.          { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list, true); }
+maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list, false); }
 
 weight_list(res) ::= nweight_list(list). { res = list; }
 weight_list(res) ::= .                   { res = new ConditionalLiteralVector(); }
