@@ -148,7 +148,7 @@ bool ConditionalLiteral::match()
 	return pred_->match(values_[current_]);
 }
 
-ValueVector &ConditionalLiteral::getValues()
+const ValueVector &ConditionalLiteral::getValues()
 {
 	return values_[current_];
 }

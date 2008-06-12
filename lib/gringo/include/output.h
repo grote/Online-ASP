@@ -60,8 +60,8 @@ namespace NS_GRINGO
 
 		struct Atom : public Object
 		{
-			Atom(bool neg, Node *node, int predUid, ValueVector &values);
-			Atom(bool neg, int predUid, ValueVector &values);
+			Atom(bool neg, Node *node, int predUid, const ValueVector &values);
+			Atom(bool neg, int predUid, const ValueVector &values);
 			Atom(bool neg, int predUid);
 			void addDomain(bool fact);
 			void addUid(Output *o);

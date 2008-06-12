@@ -124,8 +124,7 @@ void BasicProgramEvaluator::evaluate()
 		{
 			if(atoms_[it->second].status_ == FACT)
 			{
-				ValueVector values(it->first);
-				NS_OUTPUT::Atom *a = new NS_OUTPUT::Atom(false, atoms_[it->second].node_, uid, values);
+				NS_OUTPUT::Atom *a = new NS_OUTPUT::Atom(false, atoms_[it->second].node_, uid, it->first);
 				NS_OUTPUT::Fact f(a);
 				f.addUid(o_);
 				// we dont need to add the domain as fact

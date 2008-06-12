@@ -112,14 +112,12 @@ Object::~Object()
 }
 
 // =============== NS_OUTPUT::Atom ===============
-Atom::Atom(bool neg, Node *node, int predUid, ValueVector &values) : Object(neg), node_(node), predUid_(predUid)
+Atom::Atom(bool neg, Node *node, int predUid, const ValueVector &values) : Object(neg), node_(node), predUid_(predUid), values_(values)
 {
-	std::swap(values_, values);
 }
 
-Atom::Atom(bool neg, int predUid, ValueVector &values) : Object(neg), node_(0), predUid_(predUid)
+Atom::Atom(bool neg, int predUid, const ValueVector &values) : Object(neg), node_(0), predUid_(predUid), values_(values)
 {
-	std::swap(values_, values);
 }
 
 Atom::Atom(bool neg, int predUid) : Object(neg), node_(0), predUid_(predUid)

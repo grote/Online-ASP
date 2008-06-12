@@ -33,13 +33,13 @@ namespace NS_GRINGO
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
 		virtual double heuristicValue();
-		NS_OUTPUT::Object *convert(ValueVector &values);
+		NS_OUTPUT::Object *convert(const ValueVector &values);
 		std::string *getId();
 		TermVector *getArgs();
 		int getUid();
 		int getArity();
 		void addDomain(ValueVector &values);
-		ValueVector &getValues();
+		const ValueVector &getValues();
 		virtual ~PredicateLiteral();
 	protected:
 		Node          *predNode_;

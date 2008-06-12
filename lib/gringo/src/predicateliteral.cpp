@@ -98,7 +98,7 @@ void PredicateLiteral::print(std::ostream &out)
 	}
 }
 
-ValueVector &PredicateLiteral::getValues()
+const ValueVector &PredicateLiteral::getValues()
 {
 	return values_;
 }
@@ -217,7 +217,7 @@ bool PredicateLiteral::match(Grounder *g)
 	}
 }
 
-NS_OUTPUT::Object * PredicateLiteral::convert(ValueVector &values)
+NS_OUTPUT::Object * PredicateLiteral::convert(const ValueVector &values)
 {
 	return new NS_OUTPUT::Atom(getNeg(), predNode_, uid_, values);
 }

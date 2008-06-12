@@ -185,6 +185,22 @@ lparseparser.o: ../include/gringoparser.h lparseparser_impl.h
 lparseparser.o: ../include/lparselexer.h ../include/gringolexer.h
 lparseparser.o: ../include/grounder.h ../include/output.h ../include/value.h
 lparseparser.o: ../include/funcsymbol.h ../include/globalstorage.h
+maxaggregate.o: ../include/maxaggregate.h ../include/gringo.h
+maxaggregate.o: ../include/aggregateliteral.h ../include/literal.h
+maxaggregate.o: ../include/printable.h ../include/expandable.h
+maxaggregate.o: ../include/conditionalliteral.h ../include/groundable.h
+maxaggregate.o: ../include/term.h ../include/value.h ../include/funcsymbol.h
+maxaggregate.o: ../include/output.h ../include/dlvgrounder.h
+maxaggregate.o: ../include/grounder.h ../include/globalstorage.h
+maxaggregate.o: ../include/indexeddomain.h ../include/constant.h
+minaggregate.o: ../include/minaggregate.h ../include/gringo.h
+minaggregate.o: ../include/aggregateliteral.h ../include/literal.h
+minaggregate.o: ../include/printable.h ../include/expandable.h
+minaggregate.o: ../include/conditionalliteral.h ../include/groundable.h
+minaggregate.o: ../include/term.h ../include/value.h ../include/funcsymbol.h
+minaggregate.o: ../include/output.h ../include/dlvgrounder.h
+minaggregate.o: ../include/grounder.h ../include/globalstorage.h
+minaggregate.o: ../include/indexeddomain.h ../include/constant.h
 multipleargsterm.o: ../include/multipleargsterm.h ../include/gringo.h
 multipleargsterm.o: ../include/term.h ../include/printable.h
 multipleargsterm.o: ../include/literal.h ../include/expandable.h
@@ -284,6 +300,7 @@ lparseparser_impl.o: ../include/groundable.h ../include/value.h
 lparseparser_impl.o: ../include/funcsymbol.h ../include/conditionalliteral.h
 lparseparser_impl.o: ../include/relationliteral.h
 lparseparser_impl.o: ../include/assignmentliteral.h ../include/sumaggregate.h
+lparseparser_impl.o: ../include/minaggregate.h ../include/maxaggregate.h
 lparseparser_impl.o: ../include/countaggregate.h
 lparseparser_impl.o: ../include/disjunctionaggregate.h
 lparseparser_impl.o: ../include/conjunctionaggregate.h ../include/term.h

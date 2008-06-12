@@ -23,7 +23,6 @@ namespace NS_GRINGO
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
 		virtual bool solved();
-		virtual bool isFact();
 		virtual void finish();
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual bool match(Grounder *g);
@@ -31,7 +30,6 @@ namespace NS_GRINGO
 		virtual void grounded(Grounder *g);
 		virtual void appendLiteral(Literal *l, ExpansionType type);
 		virtual void preprocess(Grounder *g, Expandable *e);
-		virtual NS_OUTPUT::Object *convert();
 		virtual double heuristicValue();
 		void setNeg(bool neg);
 
@@ -41,6 +39,8 @@ namespace NS_GRINGO
 		int getUid();
 		
 		// functions to access all possible bindings of the conditional literal
+		virtual NS_OUTPUT::Object *convert();
+		virtual bool isFact();
 		bool isEmpty();
 		void start();
 		bool hasWeight();
@@ -49,7 +49,7 @@ namespace NS_GRINGO
 		bool match();
 		int count();
 		void next();
-		ValueVector &getValues();
+		const ValueVector &getValues();
 		int getWeight();
 
 		void clonePredicate(bool clone);
