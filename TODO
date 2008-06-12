@@ -6,28 +6,21 @@ performance:
 - literals in the body could be ordered by some heuristic see reference in dlv paper
 - dont use tons of small vectors in domains instead put all values into 1 big vector
 
+aggregates/optimize statements:
+- clasp doesnt like zero weights in optimize statements => fix this
+  implement set semantics for optimize statements
+- min/max statements of the form X = min [ a=1, b=19, c=34 ] could bind variables more clever
+  it is stupid to match lower ... upper cause upper maybe MAX_INT it would be much better to
+  match X with {1, 19, 34, MAX_INT}
+
 code:
 - write a better main app
 - if a conflicting integrity constraint is found grounding could be stopped (and not just exit(0))
-- use c++ exceptions
+- use more c++ exceptions
 - fix the preprocessing for functionsymbols
 
 documentation:
 - write doxygen doc
-
-propagation: (i think thats not that important)
-- aggregates are always matched at the moment this could be improved
-  (but this seems to not bother performance or program size)
-  currently there is a negative dep added to a rule with an aggregate
-  so every rule with aggregates belongs to a normal program
-- the method isFact has to get an additional parameter if aggregates shall be matched
-
-lparse compatibility:
-- implement lparse like warnings
-- the lparse preorder functions: plus, times, minus, ... are not supported
-  only the infix functions: +, -, *, ... are supported
-- lparse literals: lt, gt, ... are not supported
-  only the infix literals: <=, >=, ... are supported
 
 testing:
 - write tests for all allowed language constructs !!!

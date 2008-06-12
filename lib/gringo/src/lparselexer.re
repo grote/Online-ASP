@@ -63,8 +63,8 @@ begin:
 		"0"             { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"sum"           { return LPARSEPARSER_SUM; }
 		"abs"           { return LPARSEPARSER_ABS; }
-		"max"           { return LPARSEPARSER_MIN; }
-		"min"           { return LPARSEPARSER_MAX; }
+		"min"           { return LPARSEPARSER_MIN; }
+		"max"           { return LPARSEPARSER_MAX; }
 		"count"         { return LPARSEPARSER_COUNT; }
 		STRING          { lval = new std::string(start, cursor); return LPARSEPARSER_STRING; }
 		IDENTIFIER      { lval = new std::string(start, cursor); return LPARSEPARSER_IDENTIFIER; }
@@ -76,7 +76,6 @@ begin:
 		"}"             { return LPARSEPARSER_RBRAC; }
 		"["             { return LPARSEPARSER_LSBRAC; }
 		"]"             { return LPARSEPARSER_RSBRAC; }
-		"/"             { return LPARSEPARSER_SLASH; }
 		"."             { return LPARSEPARSER_DOT; }
 		".."            { return LPARSEPARSER_DOTS; }
 		";"             { return LPARSEPARSER_SEMI; }

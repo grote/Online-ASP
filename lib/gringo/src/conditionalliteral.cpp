@@ -8,7 +8,6 @@
 #include "value.h"
 #include "literaldependencygraph.h"
 #include "aggregateliteral.h"
-#include "conditionalliteraltarget.h"
 
 using namespace NS_GRINGO;
 		
@@ -121,6 +120,11 @@ void ConditionalLiteral::remove()
 {
 	std::swap(values_[current_], values_.back());
 	values_.pop_back();
+	if(weight_)
+	{
+		std::swap(weights_[current_], weights_.back());
+		weights_.pop_back();
+	}
 	current_--;
 }
 

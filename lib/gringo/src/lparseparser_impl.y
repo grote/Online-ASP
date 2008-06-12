@@ -14,6 +14,8 @@
 
 // aggregates
 #include "sumaggregate.h"  
+#include "minaggregate.h"  
+#include "maxaggregate.h"  
 #include "countaggregate.h"  
 #include "disjunctionaggregate.h"
 #include "conjunctionaggregate.h"
@@ -178,10 +180,10 @@ neg_pred(res) ::= MINUS IDENTIFIER(id). { id->insert(id->begin(), '-'); res = id
 
 show_predicate ::= neg_pred(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list, true); }
 show_predicate ::= neg_pred(id).                                   { OUTPUT->setVisible(STRING(id), 0, true); }
-show_predicate ::= neg_pred(id) SLASH NUMBER(n).                   { OUTPUT->setVisible(STRING(id), atol(n->c_str()), true); DELETE_PTR(n); }
+show_predicate ::= neg_pred(id) DIVIDE NUMBER(n).                   { OUTPUT->setVisible(STRING(id), atol(n->c_str()), true); DELETE_PTR(n); }
 hide_predicate ::= neg_pred(id) LPARA variable_list(list) RPARA.   { OUTPUT->setVisible(STRING(id), list, false); }
 hide_predicate ::= neg_pred(id).                                   { OUTPUT->setVisible(STRING(id), 0, false); }
-hide_predicate ::= neg_pred(id) SLASH NUMBER(n).                   { OUTPUT->setVisible(STRING(id), atol(n->c_str()), false); DELETE_PTR(n); }
+hide_predicate ::= neg_pred(id) DIVIDE NUMBER(n).                   { OUTPUT->setVisible(STRING(id), atol(n->c_str()), false); DELETE_PTR(n); }
 
 domain_predicate ::= neg_pred(id) LPARA domain_list(list) RPARA. { GROUNDER->addDomains(STRING(id), list); }
 
@@ -290,8 +292,8 @@ aggregate(res) ::= SUM LSBRAC weight_list(list) RSBRAC.   { res = new SumAggrega
 aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.       { res = new SumAggregate(list); }
 aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC.   { res = new CountAggregate(list); }
 aggregate(res) ::= LBRAC constr_list(list) RBRAC.         { res = new CountAggregate(list); }
-aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { assert(false); /* res = new MinAggregate(list); */ }
-aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { assert(false); /* res = new MaxAggregate(list); */ }
+aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { res = new MinAggregate(list); }
+aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { res = new MaxAggregate(list); }
 
 compute(res)  ::= COMPUTE LBRAC  constr_list(list) RBRAC.           { res = new WeightedStatement(WeightedStatement::COMPUTE, list, 1); }
 compute(res)  ::= COMPUTE NUMBER(x) LBRAC  constr_list(list) RBRAC. { res = new WeightedStatement(WeightedStatement::COMPUTE, list, atol(x->c_str())); DELETE_PTR(x); }

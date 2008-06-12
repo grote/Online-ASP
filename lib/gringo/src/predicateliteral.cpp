@@ -128,14 +128,14 @@ bool PredicateLiteral::isFact(const ValueVector &values)
 		return true;
 	if(getNeg())
 	{
-		assert(!predNode_->isFact(values_));
+		assert(!predNode_->isFact(values));
 		if(predNode_->complete())
-			return !predNode_->inDomain(values_);
+			return !predNode_->inDomain(values);
 		else
 			return false;
 	}
 	else
-		return predNode_->isFact(values_);
+		return predNode_->isFact(values);
 }
 
 bool PredicateLiteral::isFact()

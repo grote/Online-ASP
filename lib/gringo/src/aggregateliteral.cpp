@@ -93,38 +93,6 @@ bool AggregateLiteral::matchTimes(Grounder *g, int &lower, int &upper, bool chec
 		return true;
 }
 
-bool AggregateLiteral::matchMin(Grounder *g, int &lower, int &upper, bool checkBounds)
-{
-	lower = INT_MAX;
-	upper = INT_MIN;
-	int fixed = INT_MAX;
-	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-	{
-		ConditionalLiteral *p = *it;
-		p->ground(g);
-		for(p->start(); p->hasNext(); p->next())
-		{
-			if(!p->match(g))
-				continue;
-			int weight = p->getWeight();
-			if(p->isFact())
-				fixed = std::min(fixed, weight);
-			else
-			{
-				lower = std::min(lower, weight);
-				upper = std::max(upper, weight);
-			}
-		}
-	}
-	lower = std::min(lower, fixed);
-	if(upper > fixed || upper == INT_MIN)
-		upper = fixed;
-	if(checkBounds)
-		return this->checkBounds(lower, upper);
-	else
-		return true;
-}
-
 bool AggregateLiteral::matchMax(Grounder *g, int &lower, int &upper, bool checkBounds)
 {
 	lower = INT_MAX;

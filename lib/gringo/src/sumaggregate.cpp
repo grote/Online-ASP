@@ -22,12 +22,12 @@ void SumAggregate::match(Grounder *g, int &lower, int &upper)
 		p->ground(g);
 		for(p->start(); p->hasNext(); p->next())
 		{
-			if(!p->match())
+			int weight = p->getWeight();
+			if(!p->match() || weight == 0)
 			{
 				p->remove();
 				continue;
 			}
-			int weight = p->getWeight();
 			if(p->isFact())
 				fixed+= weight;
 			else
