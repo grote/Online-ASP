@@ -12,7 +12,7 @@ namespace NS_GRINGO
 		CountAggregate(ConditionalLiteralVector *literals);
 		CountAggregate(const CountAggregate &a);
 		virtual Literal *clone() const;
-		virtual void match(Grounder *g, int &lower, int &upper);
+		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
 		virtual void print(std::ostream &out);
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~CountAggregate();

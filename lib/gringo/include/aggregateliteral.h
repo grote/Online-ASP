@@ -17,7 +17,7 @@ namespace NS_GRINGO
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual bool match(Grounder *g);
-		virtual void match(Grounder *g, int &lower, int &upper) = 0;
+		virtual void match(Grounder *g, int &lower, int &upper, int &fixed) = 0;
 		virtual void reset();
 		virtual void finish();
 		virtual void preprocess(Grounder *g, Expandable *e);

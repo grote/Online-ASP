@@ -13,7 +13,7 @@ namespace NS_GRINGO
 		ConjunctionAggregate(const ConjunctionAggregate &a);
 		virtual Literal *clone() const;
 		virtual bool match(Grounder *g);
-		virtual void match(Grounder *g, int &lower, int &upper);
+		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
 		virtual void print(std::ostream &out);
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~ConjunctionAggregate();

@@ -92,41 +92,6 @@ bool AggregateLiteral::matchTimes(Grounder *g, int &lower, int &upper, bool chec
 	else
 		return true;
 }
-
-bool AggregateLiteral::matchMax(Grounder *g, int &lower, int &upper, bool checkBounds)
-{
-	lower = INT_MAX;
-	upper = INT_MIN;
-	int fixed = INT_MIN;
-	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-	{
-		ConditionalLiteral *p = *it;
-		p->ground(g);
-		for(p->start(); p->hasNext(); p->next())
-		{
-			if(!p->match(g))
-				continue;
-			int weight = p->getWeight();
-			if(p->match(g))
-			{
-				if(p->isFact())
-					fixed = std::max(fixed, weight);
-				else
-				{
-					lower = std::min(lower, weight);
-					upper = std::max(upper, weight);
-				}
-			}
-		}
-	}
-	if(lower < fixed || lower == INT_MAX)
-		lower = fixed;
-	upper = std::max(upper, fixed);
-	if(checkBounds)
-		return this->checkBounds(lower, upper);
-	else
-		return true;
-}
 */
 
 bool AggregateLiteral::checkBounds(int lower, int upper)
@@ -154,8 +119,8 @@ bool AggregateLiteral::checkBounds(int lower, int upper)
 
 bool AggregateLiteral::match(Grounder *g)
 {
-	int upper, lower;
-	match(g, lower, upper);
+	int upper, lower, fixed;
+	match(g, lower, upper, fixed);
 	return checkBounds(lower, upper);
 }
 
@@ -245,7 +210,8 @@ namespace
 
 	void IndexedDomainAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		l_->match(g->g_, lower_, upper_);
+		int fixed;
+		l_->match(g->g_, lower_, upper_, fixed);
 		current_ = lower_;
 		if(current_ <= upper_)
 		{

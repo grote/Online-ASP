@@ -3,6 +3,10 @@
 #include "term.h"
 #include "value.h"
 #include "output.h"
+#include "dlvgrounder.h"
+#include "grounder.h"
+#include "indexeddomain.h"
+#include "constant.h"
 
 using namespace NS_GRINGO;
 
@@ -10,12 +14,12 @@ MinAggregate::MinAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 {
 }
 
-void MinAggregate::match(Grounder *g, int &lower, int &upper)
+void MinAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
 	fact_ = true;
 	lower = INT_MAX;
 	upper = INT_MIN;
-	int fixed = INT_MAX;
+	fixed = INT_MAX;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -42,6 +46,88 @@ void MinAggregate::match(Grounder *g, int &lower, int &upper)
 	lower = std::min(lower, fixed);
 	if(upper == INT_MIN || fixed > upper)
 		upper = fixed;
+}
+
+namespace
+{
+	class IndexedDomainMinAggregate : public IndexedDomain
+	{
+	protected:
+		typedef std::set<int> IntSet;
+	public:
+		IndexedDomainMinAggregate(MinAggregate *l, int var);
+		virtual void firstMatch(int binder, DLVGrounder *g, MatchStatus &status);
+		virtual void nextMatch(int binder, DLVGrounder *g, MatchStatus &status);
+		virtual ~IndexedDomainMinAggregate();
+	protected:
+		MinAggregate *l_;
+		int var_;
+		IntSet set_;
+		IntSet::iterator current_;
+	};
+
+	IndexedDomainMinAggregate::IndexedDomainMinAggregate(MinAggregate *l, int var) : l_(l), var_(var)
+	{
+		
+	}
+
+	void IndexedDomainMinAggregate::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
+	{
+		int lower, upper, fixed;
+		l_->match(g->g_, lower, upper, fixed);
+		set_.clear();
+		ConditionalLiteralVector *l = l_->getLiterals();
+		for(ConditionalLiteralVector::iterator it = l->begin(); it != l->end(); it++)
+		{
+			ConditionalLiteral *p = *it;
+			for(p->start(); p->hasNext(); p->next())
+			{
+				// insert all possible bindings for the bound
+				int weight = p->getWeight();
+				if(weight < fixed)
+					set_.insert(weight);
+			}
+		}
+		set_.insert(fixed);
+
+		current_ = set_.begin();
+		g->g_->setValue(var_, Value(*current_), binder);
+		status = SuccessfulMatch;
+	}
+
+	void IndexedDomainMinAggregate::nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
+	{
+		
+		current_++;
+		if(current_ != set_.end())
+		{
+			g->g_->setValue(var_, Value(*current_), binder);
+			status = SuccessfulMatch;
+		}
+		else
+			status = FailureOnNextMatch;
+	}
+
+	IndexedDomainMinAggregate::~IndexedDomainMinAggregate()
+	{
+	}
+}
+
+IndexedDomain *MinAggregate::createIndexedDomain(VarSet &index)
+{
+	if(equal_)
+	{
+		if(index.find(equal_->getUID()) != index.end())
+		{
+			return new IndexedDomainMatchOnly(this);
+		}
+		else
+		{
+			return new IndexedDomainMinAggregate(this, equal_->getUID());
+		}
+	}
+	else
+		return new IndexedDomainMatchOnly(this);
 }
 
 void MinAggregate::print(std::ostream &out)

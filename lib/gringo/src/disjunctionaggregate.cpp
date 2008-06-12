@@ -36,7 +36,7 @@ bool DisjunctionAggregate::match(Grounder *g)
 	return match;
 }
 
-void DisjunctionAggregate::match(Grounder *g, int &lower, int &upper)
+void DisjunctionAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
 	assert(false);
 }

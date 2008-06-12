@@ -10,12 +10,12 @@ SumAggregate::SumAggregate(ConditionalLiteralVector *literals) : AggregateLitera
 {
 }
 
-void SumAggregate::match(Grounder *g, int &lower, int &upper)
+void SumAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
 	fact_ = true;
 	lower = 0;
 	upper = 0;
-	int fixed = 0;
+	fixed = 0;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;

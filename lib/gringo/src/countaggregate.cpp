@@ -31,13 +31,13 @@ CountAggregate::CountAggregate(ConditionalLiteralVector *literals) : AggregateLi
 {
 }
 
-void CountAggregate::match(Grounder *g, int &lower, int &upper)
+void CountAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
 	UidValueSet set;
 	fact_ = true;
 	lower = 0;
 	upper = 0;
-	int fixed = 0;
+	fixed = 0;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;

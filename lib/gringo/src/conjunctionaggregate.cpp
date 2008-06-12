@@ -31,7 +31,7 @@ bool ConjunctionAggregate::match(Grounder *g)
 	return true;
 }
 
-void ConjunctionAggregate::match(Grounder *g, int &lower, int &upper)
+void ConjunctionAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 {
 	assert(false);
 }

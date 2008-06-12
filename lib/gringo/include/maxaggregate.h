@@ -12,7 +12,8 @@ namespace NS_GRINGO
 		MaxAggregate(ConditionalLiteralVector *literals);
 		MaxAggregate(const MaxAggregate &a);
 		virtual Literal *clone() const;
-		virtual void match(Grounder *g, int &lower, int &upper);
+		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
+		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual void print(std::ostream &out);
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~MaxAggregate();
