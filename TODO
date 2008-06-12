@@ -5,13 +5,8 @@ performance:
   ill create a new predicate p(X) matching all p(X,_) thats easier and fits better into the current design
 - literals in the body could be ordered by some heuristic see reference in dlv paper
 - dont use tons of small vectors in domains instead put all values into 1 big vector
-
-aggregates/optimize statements:
-- clasp doesnt like zero weights in optimize statements => fix this
-  implement set semantics for optimize statements
-- min/max statements of the form X = min [ a=1, b=19, c=34 ] could bind variables more clever
-  it is stupid to match lower ... upper cause upper maybe MAX_INT it would be much better to
-  match X with {1, 19, 34, MAX_INT}
+  - domains
+  - conditional literals
 
 code:
 - write a better main app

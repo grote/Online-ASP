@@ -17,7 +17,7 @@ void Evaluator::initialize(Grounder *g)
 
 void Evaluator::add(NS_OUTPUT::Object *r)
 {
-	Finalize<NS_OUTPUT::Object> f(r);
+	std::auto_ptr<NS_OUTPUT::Object> f(r);
 	r->addUid(o_);
 	r->addDomain();
 	o_->print(r);

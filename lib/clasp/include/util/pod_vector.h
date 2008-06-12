@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
+#include <cstring>
 namespace bk_lib { namespace detail {
 	
 	struct MemCpyRange {

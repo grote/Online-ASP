@@ -24,6 +24,7 @@ namespace std {
 #include <vector>
 #include <set>
 #include <stdexcept>
+#include <memory>
 #include "value_base.h"
 #include "detail/smartpointer.h"
 namespace ProgramOptions {

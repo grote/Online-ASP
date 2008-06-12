@@ -1,4 +1,3 @@
-
 #include "gringolexer.h"
 
 using namespace NS_GRINGO;

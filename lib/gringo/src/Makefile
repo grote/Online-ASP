@@ -177,6 +177,13 @@ lparseconverter.o: ../include/funcsymbol.h lparseconverter_impl.h
 lparseconverter.o: ../include/plainlparselexer.h ../include/gringolexer.h
 lparseconverter.o: ../include/grounder.h ../include/output.h
 lparseconverter.o: ../include/value.h
+lparseconverter_impl.o: ../include/gringo.h ../include/lparseconverter.h
+lparseconverter_impl.o: ../include/gringoparser.h ../include/globalstorage.h
+lparseconverter_impl.o: ../include/funcsymbol.h ../include/output.h
+lparseconverter_impl.o: ../include/value.h
+lparselexer.o: ../include/lparselexer.h ../include/gringo.h
+lparselexer.o: ../include/gringolexer.h ../include/lparseparser.h
+lparselexer.o: ../include/gringoparser.h lparseparser_impl.h
 lparseoutput.o: ../include/lparseoutput.h ../include/gringo.h
 lparseoutput.o: ../include/output.h ../include/value.h
 lparseoutput.o: ../include/funcsymbol.h
@@ -185,6 +192,24 @@ lparseparser.o: ../include/gringoparser.h lparseparser_impl.h
 lparseparser.o: ../include/lparselexer.h ../include/gringolexer.h
 lparseparser.o: ../include/grounder.h ../include/output.h ../include/value.h
 lparseparser.o: ../include/funcsymbol.h ../include/globalstorage.h
+lparseparser_impl.o: ../include/gringo.h ../include/lparseparser.h
+lparseparser_impl.o: ../include/gringoparser.h ../include/literal.h
+lparseparser_impl.o: ../include/printable.h ../include/aggregateliteral.h
+lparseparser_impl.o: ../include/expandable.h ../include/predicateliteral.h
+lparseparser_impl.o: ../include/groundable.h ../include/value.h
+lparseparser_impl.o: ../include/funcsymbol.h ../include/conditionalliteral.h
+lparseparser_impl.o: ../include/relationliteral.h
+lparseparser_impl.o: ../include/assignmentliteral.h ../include/sumaggregate.h
+lparseparser_impl.o: ../include/minaggregate.h ../include/maxaggregate.h
+lparseparser_impl.o: ../include/countaggregate.h
+lparseparser_impl.o: ../include/disjunctionaggregate.h
+lparseparser_impl.o: ../include/conjunctionaggregate.h ../include/term.h
+lparseparser_impl.o: ../include/constant.h ../include/functionterm.h
+lparseparser_impl.o: ../include/funcsymbolterm.h ../include/rangeterm.h
+lparseparser_impl.o: ../include/multipleargsterm.h ../include/normalrule.h
+lparseparser_impl.o: ../include/statement.h ../include/weightedstatement.h
+lparseparser_impl.o: ../include/grounder.h ../include/output.h
+lparseparser_impl.o: ../include/globalstorage.h
 maxaggregate.o: ../include/maxaggregate.h ../include/gringo.h
 maxaggregate.o: ../include/aggregateliteral.h ../include/literal.h
 maxaggregate.o: ../include/printable.h ../include/expandable.h
@@ -220,6 +245,10 @@ normalrule.o: ../include/evaluator.h
 output.o: ../include/output.h ../include/gringo.h ../include/value.h
 output.o: ../include/funcsymbol.h ../include/node.h ../include/grounder.h
 output.o: ../include/globalstorage.h
+plainlparselexer.o: ../include/plainlparselexer.h ../include/gringo.h
+plainlparselexer.o: ../include/gringolexer.h ../include/lparseconverter.h
+plainlparselexer.o: ../include/gringoparser.h ../include/globalstorage.h
+plainlparselexer.o: ../include/funcsymbol.h lparseconverter_impl.h
 predicateliteral.o: ../include/dependencygraph.h ../include/gringo.h
 predicateliteral.o: ../include/printable.h
 predicateliteral.o: ../include/literaldependencygraph.h

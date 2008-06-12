@@ -98,7 +98,7 @@ void BasicProgramEvaluator::add(NS_OUTPUT::Rule *r)
 void BasicProgramEvaluator::add(NS_OUTPUT::Object *r)
 {
 	// make shure r is deleted even if an exception is thrown
-	Finalize<NS_OUTPUT::Object> f(r);
+	std::auto_ptr<NS_OUTPUT::Object> f(r);
 	if(dynamic_cast<NS_OUTPUT::Rule*>(r))
 	{
 		add(static_cast<NS_OUTPUT::Rule*>(r));

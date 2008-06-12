@@ -24,6 +24,7 @@
 #include <vector>
 #include <map>
 #include <stdexcept>
+#include <typeinfo>
 namespace ProgramOptions {
 
 //! typed value of an option
