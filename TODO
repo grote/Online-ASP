@@ -21,9 +21,6 @@ testing:
 - write tests for all allowed language constructs !!!
 - test conformance with lparse/gringo
 
-lparseouput:
-- print show/hide statements
-
 smodelsoutput:
 - the current smodelsoutput is a mess
   - there is no error handling using incompatible language constructs

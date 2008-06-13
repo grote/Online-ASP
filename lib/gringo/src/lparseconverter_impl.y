@@ -112,17 +112,19 @@ Object *createDisjunction(Object *disj, Object *pred)
 
 %start_symbol start
 
-start ::= program.
+start ::= header program.
 
 program ::= program rule DOT.
-program ::= program SHOW show_list DOT.
-program ::= program HIDE hide_list DOT.
-program ::= .
+program ::= . { OUTPUT->initialize(pConverter->getPred()); }
+
+header ::= header SHOW show_list DOT.
+header ::= header HIDE hide_list DOT.
+header ::= .
 
 show_list ::= show_list COMMA show_predicate.
 show_list ::= show_predicate.
 
-hide_list ::= .           { OUTPUT->hideAll(); }
+hide_list ::= . { OUTPUT->hideAll(); }
 hide_list ::= nhide_list. 
 
 nhide_list ::= nhide_list COMMA hide_predicate.

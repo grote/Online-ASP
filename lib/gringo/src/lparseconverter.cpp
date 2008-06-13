@@ -27,7 +27,6 @@ LparseConverter::LparseConverter(std::vector<std::istream*> &in) : GrinGoParser(
 bool LparseConverter::parse(NS_OUTPUT::Output *output)
 {
 	output_ = output;
-	output_->initialize(getPred());
 	int token;
 	std::string *lval;
 	for(std::vector<std::istream*>::iterator it = streams_.begin(); it != streams_.end(); it++)
