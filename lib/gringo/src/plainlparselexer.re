@@ -75,6 +75,7 @@ begin:
 		"/"             { return LPARSECONVERTER_SLASH; }
 		","             { return LPARSECONVERTER_COMMA; }
 		"-"             { return LPARSECONVERTER_MINUS; }
+		"="             { return LPARSECONVERTER_ASSIGN; }
 		ANY             { return LPARSECONVERTER_ERROR; }
 	*/
 }
