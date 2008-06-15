@@ -22,6 +22,8 @@ int SmodelsConverter::getFalse() const
 
 void SmodelsConverter::handleHead(Object *o)
 {
+	// no negations in the haed
+	assert(!o->neg_);
 	if(dynamic_cast<Atom*>(o))
 	{
 		Atom *head = static_cast<Atom*>(o);
@@ -78,6 +80,10 @@ void SmodelsConverter::handleBody(ObjectVector &body)
 		}
 		else if(dynamic_cast<Aggregate*>(*it))
 		{
+			// forbid negative aggregates (for simplicity)
+			// this could be handled but i rembered this case too late
+			// and i dont see a great modeling advantage
+			assert(!(*it)->neg_);
 			printBody(static_cast<Aggregate*>(*it));
 		}
 		else
@@ -93,47 +99,36 @@ void SmodelsConverter::printHead(Aggregate *a)
 	posA_.clear();
 	wNegA_.clear();
 	wPosA_.clear();
+	int l, u;
 	switch(a->type_)
 	{
 		case Aggregate::COUNT:
-		{
-			int l, u;
 			handleCount(a, l, u);
-			if(l > 0)
-			{
-				neg_.push_back(l);
-				printBasicRule(false_, pos_, neg_);
-				neg_.pop_back();
-			}
-			if(u > 0)
-			{
-				pos_.push_back(u);
-				printBasicRule(false_, pos_, neg_);
-				pos_.pop_back();
-			}
 			break;
-		}
 		case Aggregate::SUM:
-		{
-			int l, u;
 			handleSum(a, l, u);
-			if(l > 0)
-			{
-				neg_.push_back(l);
-				printBasicRule(false_, pos_, neg_);
-				neg_.pop_back();
-			}
-			if(u > 0)
-			{
-				pos_.push_back(u);
-				printBasicRule(false_, pos_, neg_);
-				pos_.pop_back();
-			}
 			break;
-		}
 		case Aggregate::MAX:
-		case Aggregate::MIN:
 			assert(false);
+			break;
+		case Aggregate::MIN:
+			handleMin(a, l, u);
+			break;
+		default:
+			assert(false);
+			break;
+	}
+	if(l > 0)
+	{
+		neg_.push_back(l);
+		printBasicRule(false_, pos_, neg_);
+		neg_.pop_back();
+	}
+	if(u > 0)
+	{
+		pos_.push_back(u);
+		printBasicRule(false_, pos_, neg_);
+		pos_.pop_back();
 	}
 }
 
@@ -250,38 +245,63 @@ void SmodelsConverter::handleSum(Aggregate *a, int &l, int &u)
 	}
 }
 
+void SmodelsConverter::handleMin(Aggregate *a, int &l, int &u)
+{
+	// l is the monotone part and u the inverted antimonotone part
+	// it has nothing to do with lower and upper bound anymore :)
+	IntVector empty, lit(1);
+	if(!(a->bounds_ & Aggregate::LU))
+		return;
+	handleAggregate(a->lits_, a->weights_);
+	l = (a->bounds_ & Aggregate::U) ? newUid() : 0;
+	u = (a->bounds_ & Aggregate::L) ? newUid() : 0;
+	for(IntVector::iterator it = negA_.begin(), itW = wNegA_.begin(); it != negA_.end(); it++, itW++)
+	{
+		lit[0] = *it;
+		if((a->bounds_ & Aggregate::U) && (*itW <= a->upper_))
+			printBasicRule(l, empty, lit);
+		if((a->bounds_ & Aggregate::L) && (*itW < a->lower_))
+			printBasicRule(u, empty, lit);
+	}
+	for(IntVector::iterator it = posA_.begin(), itW = wPosA_.begin(); it != posA_.end(); it++, itW++)
+	{
+		lit[0] = *it;
+		if((a->bounds_ & Aggregate::U) && (*itW <= a->upper_))
+			printBasicRule(l, lit, empty);
+		if((a->bounds_ & Aggregate::L) && (*itW < a->lower_))
+			printBasicRule(u, lit, empty);
+	}
+}
+
 void SmodelsConverter::printBody(Aggregate *a)
 {
 	negA_.clear();
 	posA_.clear();
 	wNegA_.clear();
 	wPosA_.clear();
+	int l, u;
 	switch(a->type_)
 	{
 		case Aggregate::COUNT:
-		{
-			int l, u;
 			handleCount(a, l, u);
-			if(l > 0)
-				pos_.push_back(l);
-			if(u > 0)
-				neg_.push_back(u);
 			break;
-		}
 		case Aggregate::SUM:
-		{
-			int l, u;
 			handleSum(a, l, u);
-			if(l > 0)
-				pos_.push_back(l);
-			if(u > 0)
-				neg_.push_back(u);
 			break;
-		}
 		case Aggregate::MAX:
-		case Aggregate::MIN:
 			assert(false);
+			break;
+		case Aggregate::MIN:
+			handleMin(a, l, u);
+			break;
+		default:
+			assert(false);
+			break;
 	}
+	if(l > 0)
+		pos_.push_back(l);
+	if(u > 0)
+		neg_.push_back(u);
 }
 
 void SmodelsConverter::print(Fact *r)
@@ -332,6 +352,7 @@ void SmodelsConverter::print(Compute *r)
 	{
 		assert(dynamic_cast<Atom*>(*it));
 		Atom *a = static_cast<Atom*>(*it);
+		addAtom(a);
 		int uid = a->getUid();
 		if(uid > 0)
 			pos_.push_back(uid);

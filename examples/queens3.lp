@@ -1,7 +1,7 @@
 #hide.
 #show q(X,Y). 
 
-#const queens = 50.
+#const queens = 100.
 #const diags  = queens * 2 - 1.
 
 d(1..queens).
@@ -15,6 +15,6 @@ diagY(X,Y,X + Y - 1) :- d(X), d(Y).
 1 { q(X,Y) : d(X) } 1 :- d(Y).
 
 % at most 1 queen on each diagonal
-{ q(X,Y) : diagX(X,Y,D) } 1 :- diag(D).
-{ q(X,Y) : diagY(X,Y,D) } 1 :- diag(D).
+ { q(X,Y) : diagX(X,Y,D) } 1 :- diag(D).
+ { q(X,Y) : diagY(X,Y,D) } 1 :- diag(D).
 

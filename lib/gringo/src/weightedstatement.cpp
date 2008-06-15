@@ -10,6 +10,8 @@ using namespace NS_GRINGO;
 		
 WeightedStatement::WeightedStatement(Type type, ConditionalLiteralVector *literals, bool setSemantics, int number) : type_(type), setSemantics_(setSemantics), number_(number)
 {
+	// type_ == COMPUTE => setSemantics
+	assert(type_ != COMPUTE || setSemantics);
 	std::swap(literals_, *literals);
 	delete literals;
 }
@@ -102,6 +104,7 @@ namespace
 	};
 	typedef __gnu_cxx::hash_set<std::pair<int, ValueVector>, Hash, Equal> UidValueSet;
 }
+
 void WeightedStatement::grounded(Grounder *g)
 {
 	NS_OUTPUT::ObjectVector lits;
@@ -112,13 +115,13 @@ void WeightedStatement::grounded(Grounder *g)
 		for(ConditionalLiteralVector::iterator it = literals_.begin(); it != literals_.end(); it++)
 		{
 			ConditionalLiteral *p = *it;
-			if(!set.insert(std::make_pair(p->getUid(), p->getValues())).second)
-			{
-				p->remove();
-				continue;
-			}
 			for(p->start(); p->hasNext(); p->next())
 			{
+				if(!set.insert(std::make_pair(p->getUid(), p->getValues())).second || p->isFact() || (type_ != COMPUTE && !p->match()))
+				{
+					p->remove();
+					continue;
+				}
 				lits.push_back(p->convert());
 				weights.push_back(1);
 			}
@@ -131,7 +134,7 @@ void WeightedStatement::grounded(Grounder *g)
 			ConditionalLiteral *p = *it;
 			for(p->start(); p->hasNext(); p->next())
 			{
-				if(p->getWeight() == 0)
+				if(p->getWeight() == 0 || p->isFact() || !p->match())
 				{
 					p->remove();
 					continue;

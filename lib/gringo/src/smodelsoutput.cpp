@@ -64,7 +64,7 @@ void SmodelsOutput::printWeightRule(int head, int bound, const IntVector &pos, c
 
 void SmodelsOutput::printMinimizeRule(const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg)
 {
-	*out_ << 6 << " " << (pos.size() + neg.size()) << " " << neg.size();
+	*out_ << 6 << " " << 0 << " " << (pos.size() + neg.size()) << " " << neg.size();
 	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++)
 		*out_ << " " << *it;
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)

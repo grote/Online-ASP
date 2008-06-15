@@ -218,12 +218,12 @@ body_literal(res) ::= body_atom(atom).                     { res = atom; }
 body_literal(res) ::= NOT body_atom(atom).                 { res = atom; res->setNeg(true); }
 body_literal(res) ::= relation_literal(rel).               { res = rel; }
 body_literal(res) ::= VARIABLE(id) ASSIGN aggregate(aggr). { res = aggr; aggr->setEqual(new Constant(Constant::VAR, GROUNDER, STRING(id))); }
+body_literal(res) ::= aggregate_atom(atom).                { res = atom; }
 
 constraint_literal(res) ::= constraint_atom(atom).     { res = atom; }
 constraint_literal(res) ::= NOT constraint_atom(atom). { res = atom; res->setNeg(true); }
 
 body_atom(res) ::= predicate(pred) conditional_list(list). { res = ConjunctionAggregate::createBody(pred, list); }
-body_atom(res) ::= aggregate_atom(atom). { res = atom; }
 
 // assignment literals are not realy relation literals but they rae used like them
 relation_literal(res) ::= VARIABLE(a) ASSIGN term(b). { res = new AssignmentLiteral(new Constant(Constant::VAR, GROUNDER, STRING(a)), b); }
