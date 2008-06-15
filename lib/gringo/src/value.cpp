@@ -105,12 +105,12 @@ bool Value::operator>(const Value &b) const
 
 bool Value::operator==(const Value &b) const
 {
-	return compare(b) == 0;
+	return equal_set(b);
 }
 
 bool Value::operator!=(const Value &b) const
 {
-	return compare(b) != 0;
+	return !equal_set(b);
 }
 
 bool Value::operator<=(const Value &b) const
