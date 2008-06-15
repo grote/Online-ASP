@@ -31,7 +31,7 @@ void LparseOutput::initialize(SignatureVector *pred)
 
 void LparseOutput::print(NS_OUTPUT::Object *r)
 {
-	r->print_plain(*out_);
+	r->print_plain(this, *out_);
 }
 
 void LparseOutput::finalize()

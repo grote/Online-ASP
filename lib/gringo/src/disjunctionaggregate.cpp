@@ -61,14 +61,13 @@ DisjunctionAggregate::DisjunctionAggregate(const DisjunctionAggregate &a) : Aggr
 NS_OUTPUT::Object *DisjunctionAggregate::convert()
 {
 	NS_OUTPUT::ObjectVector lits;
-	IntVector weights;
 	for(ConditionalLiteralVector::iterator it = getLiterals()->begin(); it != getLiterals()->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
 		for(p->start(); p->hasNext(); p->next())
 			lits.push_back(p->convert());
 	}
-	return new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::DISJUNCTION, lits, weights);
+	return new NS_OUTPUT::Disjunction(lits);
 }
 
 void DisjunctionAggregate::preprocess(Grounder *g, Expandable *e)

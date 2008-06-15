@@ -42,13 +42,11 @@ bool Output::addAtom(NS_OUTPUT::Atom *r)
 	if(res == atoms_[id].end())
 	{
 		res = atoms_[id].insert(std::make_pair(r->values_, newUid())).first;
-		r->output_  = this;
 		r->uid_     = res->second;
 		return true;
 	}
 	else
 	{
-		r->output_  = this;
 		r->uid_     = res->second;
 		return false;
 	}
@@ -131,20 +129,15 @@ void Atom::addDomain(bool fact)
 	node_->addDomain(values_);
 }
 
-void Atom::addUid(Output *o)
+void Atom::print_plain(Output *o, std::ostream &out)
 {
-	print_ = o->addAtom(this);
+	out << (neg_ ? "not " : "") << o->atomToString(predUid_, values_);
 }
 
-void Atom::print_plain(std::ostream &out)
+void Atom::print(Output *o, std::ostream &out)
 {
-	out << (neg_ ? "not " : "") << output_->atomToString(predUid_, values_);
-}
-
-void Atom::print(std::ostream &out)
-{
-	if(print_)
-	out << 0x4 << " " << uid_ << " " << output_->atomToString(predUid_, values_) << " " << (output_->isVisible(predUid_) ? "1 0" : "0") << std::endl;
+	if(o->addAtom(this))
+		out << 0x4 << " " << uid_ << " " << o->atomToString(predUid_, values_) << " " << (o->isVisible(predUid_) ? "1 0" : "0") << std::endl;
 }
 	
 // =============== NS_OUTPUT::Rule ===============
@@ -152,18 +145,19 @@ Rule::Rule(Object* head, Object *body) : head_(head), body_(body)
 {
 }
 
-void Rule::print_plain(std::ostream &out)
+void Rule::print_plain(Output *o, std::ostream &out)
 {
-	head_->print_plain(out);
+	head_->print_plain(o, out);
 	out << " :- ";
-	body_->print_plain(out);
+	body_->print_plain(o, out);
 	out << "." << std::endl;
 }
 
-void Rule::print(std::ostream &out)
+void Rule::print(Output *o, std::ostream &out)
 {
-	head_->print(out);
-	body_->print(out);
+	uid_ = o->newUid();
+	head_->print(o, out);
+	body_->print(o, out);
 	out << 0x5 << " " << uid_ << " " << head_->getUid() << " " << body_->getUid() << std::endl;
 }
 
@@ -178,27 +172,21 @@ void Rule::addDomain(bool fact)
 	head_->addDomain(false);
 }
 
-void Rule::addUid(Output *o)
-{
-	uid_ = 0;
-	head_->addUid(o);
-	body_->addUid(o);
-}
-
 // =============== NS_OUTPUT::Fact ===============
 Fact::Fact(Object *head) : head_(head) 
 {
 }
 
-void Fact::print_plain(std::ostream &out)
+void Fact::print_plain(Output *o, std::ostream &out)
 {
-	head_->print_plain(out);
+	head_->print_plain(o, out);
 	out << "." << std::endl;
 }
 
-void Fact::print(std::ostream &out)
+void Fact::print(Output *o, std::ostream &out)
 {
-	head_->print(out);
+	uid_ = o->newUid();
+	head_->print(o, out);
 	out << 0x6 << " " << uid_ << " " << head_->getUid() << std::endl;
 }
 
@@ -212,39 +200,28 @@ void Fact::addDomain(bool fact)
 	head_->addDomain(fact);
 }
 
-void Fact::addUid(Output *o)
-{
-	uid_ = 0;
-	head_->addUid(o);
-}
-
 // =============== NS_OUTPUT::Integrity ===============
 Integrity::Integrity(Object *body) : body_(body) 
 {
 }
 
-void Integrity::print_plain(std::ostream &out)
+void Integrity::print_plain(Output *o, std::ostream &out)
 {
 	out << " :- ";
-	body_->print_plain(out);
+	body_->print_plain(o, out);
 	out << "." << std::endl;
 
 }
 
-void Integrity::print(std::ostream &out)
+void Integrity::print(Output *o, std::ostream &out)
 {
-	body_->print(out);
+	uid_ = o->newUid();
+	body_->print(o, out);
 	out << 0x7 << " " << uid_ << " " << body_->getUid() << std::endl;
 }
 
 void Integrity::addDomain(bool fact)
 {
-}
-
-void Integrity::addUid(Output *o)
-{
-	uid_ = 0;
-	body_->addUid(o);
 }
 
 Integrity::~Integrity()
@@ -262,7 +239,7 @@ Conjunction::Conjunction(ObjectVector &lits)
 	std::swap(lits, lits_);
 }
 
-void Conjunction::print_plain(std::ostream &out)
+void Conjunction::print_plain(Output *o, std::ostream &out)
 {
 	bool comma = false;
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
@@ -271,40 +248,81 @@ void Conjunction::print_plain(std::ostream &out)
 			out << ", ";
 		else
 			comma = true;
-		(*it)->print_plain(out);
+		(*it)->print_plain(o, out);
 	}
 }
 
-void Conjunction::print(std::ostream &out)
+void Conjunction::print(Output *o, std::ostream &out)
 {
+	uid_ = o->newUid();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-		(*it)->print(out);
+		(*it)->print(o, out);
 	out << 0x8 << " " << uid_ << " " << lits_.size();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
 	out << std::endl;
 }
+
+void Conjunction::addDomain(bool fact)
+{
+}
+
 Conjunction::~Conjunction()
 {
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		delete *it;
 }
-void Conjunction::addDomain(bool fact)
+
+// =============== NS_OUTPUT::Disjunction ===============
+Disjunction::Disjunction() 
 {
 }
 
-void Conjunction::addUid(Output *o)
+Disjunction::Disjunction(ObjectVector &lits) 
 {
-	uid_ = 0;
+	std::swap(lits, lits_);
+}
+
+void Disjunction::print_plain(Output *o, std::ostream &out)
+{
+	bool comma = false;
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-		(*it)->addUid(o);
+	{
+		if(comma)
+			out << " | ";
+		else
+			comma = true;
+		(*it)->print_plain(o, out);
+	}
+}
+
+void Disjunction::print(Output *o, std::ostream &out)
+{
+	uid_ = o->newUid();
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		(*it)->print(o, out);
+	out << 0x13 << " " << uid_ << " " << lits_.size();
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		out << " " << (*it)->getUid();
+	out << std::endl;
+}
+
+void Disjunction::addDomain(bool fact)
+{
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		(*it)->addDomain(false);
+}
+
+Disjunction::~Disjunction()
+{
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		delete *it;
 }
 
 // =============== NS_OUTPUT::Aggregate ===============
 Aggregate::Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights, int upper) : 
 	Object(neg), type_(type), bounds_(LU), lower_(lower), upper_(upper)
 {
-	assert(type_ != DISJUNCTION);
 	std::swap(lits, lits_);
 	std::swap(weights, weights_);
 }
@@ -312,7 +330,6 @@ Aggregate::Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVecto
 Aggregate::Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights) : 
 	Object(neg), type_(type), bounds_(L), lower_(lower), upper_(0)
 {
-	assert(type_ != DISJUNCTION);
 	std::swap(lits, lits_);
 	std::swap(weights, weights_);
 }
@@ -320,7 +337,6 @@ Aggregate::Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVecto
 Aggregate::Aggregate(bool neg, Type type, ObjectVector lits, IntVector weights, int upper) : 
 	Object(neg), type_(type), bounds_(U), lower_(0), upper_(upper)
 {
-	assert(type_ != DISJUNCTION);
 	std::swap(lits, lits_);
 	std::swap(weights, weights_);
 }
@@ -336,7 +352,7 @@ Aggregate::Aggregate(bool neg, Type type) : Object(neg), type_(type), bounds_(N)
 {
 }
 
-void Aggregate::print_plain(std::ostream &out)
+void Aggregate::print_plain(Output *o, std::ostream &out)
 {
 	if(neg_)
 		out << "not ";
@@ -360,38 +376,34 @@ void Aggregate::print_plain(std::ostream &out)
 		case TIMES:
 			out << " times {";
 			break;
-		case DISJUNCTION:
-			break;
 	}
 	IntVector::iterator itWeight = weights_.begin();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++, itWeight++)
 	{
 		if(comma)
-			out << (type_ == DISJUNCTION ? " | " : ", ");
+			out << ", ";
 		else
 			comma = true;
-		(*it)->print_plain(out);
-		if(type_ != COUNT && type_ != DISJUNCTION)
+		(*it)->print_plain(o, out);
+		if(type_ != COUNT)
 		{
 			out << " = ";
 			out << *itWeight;
 		}
 	}
-	if(type_ != DISJUNCTION)
-	{
-		if(type_ == SUM)
-			out << "] ";
-		else
-			out << "} ";
-	}
+	if(type_ == SUM)
+		out << "] ";
+	else
+		out << "} ";
 	if(bounds_ == U || bounds_ == LU)
 		out << upper_;
 }
 
-void Aggregate::print(std::ostream &out)
+void Aggregate::print(Output *o, std::ostream &out)
 {
+	uid_ = o->newUid();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-		(*it)->print(out);
+		(*it)->print(o, out);
 	out << type_ << " " << uid_ << " " << bounds_;
 	switch(bounds_)
 	{
@@ -410,7 +422,7 @@ void Aggregate::print(std::ostream &out)
 	out << " " << lits_.size();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
-	if(type_ != COUNT && type_ != DISJUNCTION)
+	if(type_ != COUNT)
 	{
 		out << " " << weights_.size();
 		for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++)
@@ -425,13 +437,6 @@ void Aggregate::addDomain(bool fact)
 		(*it)->addDomain(false);
 }
 
-void Aggregate::addUid(Output *o)
-{
-	uid_ = o->newUid();
-	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-		(*it)->addUid(o);
-}
-
 Aggregate::~Aggregate()
 {
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
@@ -444,7 +449,7 @@ Compute::Compute(ObjectVector &lits, int models) : models_(models)
 	std::swap(lits, lits_);
 }
 
-void Compute::print_plain(std::ostream &out)
+void Compute::print_plain(Output *o, std::ostream &out)
 {
 	out << "compute " << models_ << " { ";
 	bool comma = false;
@@ -454,15 +459,16 @@ void Compute::print_plain(std::ostream &out)
 			out << ", ";
 		else
 			comma = true;
-		(*it)->print_plain(out);
+		(*it)->print_plain(o, out);
 	}
 	out << " }." << std::endl;
 }
 
-void Compute::print(std::ostream &out)
+void Compute::print(Output *o, std::ostream &out)
 {
+	uid_ = o->newUid();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-		(*it)->print(out);
+		(*it)->print(o, out);
 	out << 0x42 << " " << uid_ << " " << lits_.size();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
@@ -479,14 +485,6 @@ void Compute::addDomain(bool fact)
 {
 }
 
-void Compute::addUid(Output *o)
-{
-	//uid_ = o->newUid();
-	uid_ = 0;
-	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-		(*it)->addUid(o);
-}
-		
 // =============== NS_OUTPUT::Optimize ===============
 Optimize::Optimize(Type type, ObjectVector &lits, IntVector &weights) : type_(type)
 {
@@ -494,7 +492,7 @@ Optimize::Optimize(Type type, ObjectVector &lits, IntVector &weights) : type_(ty
 	std::swap(weights, weights_);
 }
 
-void Optimize::print_plain(std::ostream &out)
+void Optimize::print_plain(Output *o, std::ostream &out)
 {
 	switch(type_)
 	{
@@ -513,14 +511,16 @@ void Optimize::print_plain(std::ostream &out)
 			out << ", ";
 		else
 			comma = true;
-		(*it)->print_plain(out);
+		(*it)->print_plain(o, out);
 		out << " = " << *itWeights;
 	}
 	out << " ]." << std::endl;
 }
 
-void Optimize::print(std::ostream &out)
+void Optimize::print(Output *o, std::ostream &out)
 {
+	uid_ = o->newUid();
+	// TODO:
 }
 
 Optimize::~Optimize()
@@ -531,13 +531,5 @@ Optimize::~Optimize()
 
 void Optimize::addDomain(bool fact)
 {
-}
-
-void Optimize::addUid(Output *o)
-{
-	uid_ = 0;
-	//uid_ = o->newUid();
-	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-		(*it)->addUid(o);
 }
 

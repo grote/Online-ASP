@@ -47,9 +47,8 @@ namespace NS_GRINGO
 		{
 			Object();
 			Object(bool neg);
-			virtual void print(std::ostream &out) = 0;
-			virtual void print_plain(std::ostream &out) = 0;
-			virtual void addUid(Output *o) = 0;
+			virtual void print(Output *o, std::ostream &out) = 0;
+			virtual void print_plain(Output *o, std::ostream &out) = 0;
 			virtual void addDomain(bool fact = true) = 0;
 			int getUid();
 			virtual ~Object();
@@ -64,26 +63,22 @@ namespace NS_GRINGO
 			Atom(bool neg, int predUid, const ValueVector &values);
 			Atom(bool neg, int predUid);
 			void addDomain(bool fact);
-			void addUid(Output *o);
-			void print_plain(std::ostream &out);
-			void print(std::ostream &out);
+			void print_plain(Output *o, std::ostream &out);
+			void print(Output *o, std::ostream &out);
 			
 			// TODO: change sth here!
 			Node *node_;
 			int  predUid_;
-			bool print_;
-			Output *output_;
 			ValueVector values_;
 		};
 
 		struct Rule : public Object
 		{
 			Rule(Object* head, Object *body);
-			void print_plain(std::ostream &out);
-			void print(std::ostream &out);
+			void print_plain(Output *o, std::ostream &out);
+			void print(Output *o, std::ostream &out);
 			~Rule();
 			void addDomain(bool fact);
-			void addUid(Output *o);
 
 			Object *head_;
 			Object *body_;
@@ -92,11 +87,10 @@ namespace NS_GRINGO
 		struct Fact : public Object
 		{
 			Fact(Object *head);
-			void print_plain(std::ostream &out);
-			void print(std::ostream &out);
+			void print_plain(Output *o, std::ostream &out);
+			void print(Output *o, std::ostream &out);
 			~Fact();
 			void addDomain(bool fact);
-			void addUid(Output *o);
 
 			Object *head_;
 		};
@@ -104,10 +98,9 @@ namespace NS_GRINGO
 		struct Integrity : public Object
 		{
 			Integrity(Object *body);
-			void print_plain(std::ostream &out);
-			void print(std::ostream &out);
+			void print_plain(Output *o, std::ostream &out);
+			void print(Output *o, std::ostream &out);
 			void addDomain(bool fact);
-			void addUid(Output *o);
 			~Integrity();
 
 			Object *body_;
@@ -117,28 +110,38 @@ namespace NS_GRINGO
 		{
 			Conjunction(ObjectVector &lits);
 			Conjunction();
-			void print_plain(std::ostream &out);
-			void print(std::ostream &out);
+			void print_plain(Output *o, std::ostream &out);
+			void print(Output *o, std::ostream &out);
 			~Conjunction();
 			void addDomain(bool fact);
-			void addUid(Output *o);
+
+			ObjectVector lits_;
+		};
+
+		struct Disjunction : public Object
+		{
+			Disjunction(ObjectVector &lits);
+			Disjunction();
+			void print_plain(Output *o, std::ostream &out);
+			void print(Output *o, std::ostream &out);
+			~Disjunction();
+			void addDomain(bool fact);
 
 			ObjectVector lits_;
 		};
 
 		struct Aggregate : public Object
 		{
-			enum Type   { SUM = 0xe, COUNT = 0xf, MAX = 0x10, MIN=0x11, TIMES=0x12, DISJUNCTION=0x13 };
+			enum Type   { SUM = 0xe, COUNT = 0xf, MAX = 0x10, MIN=0x11, TIMES=0x12 };
 			enum Bounds { LU = 3, U = 2, L = 1, N = 0 };
 			Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights, int upper);
 			Aggregate(bool neg, Type type, int lower, ObjectVector lits, IntVector weights);
 			Aggregate(bool neg, Type type, ObjectVector lits, IntVector weights, int upper);
 			Aggregate(bool neg, Type type, ObjectVector lits, IntVector weights);
 			Aggregate(bool neg, Type type);
-			void print_plain(std::ostream &out);
-			void print(std::ostream &out);
+			void print_plain(Output *o, std::ostream &out);
+			void print(Output *o, std::ostream &out);
 			void addDomain(bool fact);
-			void addUid(Output *o);
 			~Aggregate();
 
 			int          type_;
@@ -152,11 +155,10 @@ namespace NS_GRINGO
 		struct Compute : public Object
 		{
 			Compute(ObjectVector &lits, int models);
-			void print_plain(std::ostream &out);
-			void print(std::ostream &out);
+			void print_plain(Output *o, std::ostream &out);
+			void print(Output *o, std::ostream &out);
 			~Compute();
 			void addDomain(bool fact);
-			void addUid(Output *o);
 
 			ObjectVector lits_;
 			int models_;
@@ -166,11 +168,10 @@ namespace NS_GRINGO
 		{
 			enum Type { MINIMIZE, MAXIMIZE };
 			Optimize(Type type, ObjectVector &lits, IntVector &weights);
-			void print_plain(std::ostream &out);
-			void print(std::ostream &out);
+			void print_plain(Output *o, std::ostream &out);
+			void print(Output *o, std::ostream &out);
 			~Optimize();
 			void addDomain(bool fact);
-			void addUid(Output *o);
 
 			int          type_;
 			ObjectVector lits_;

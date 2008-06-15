@@ -23,13 +23,13 @@ typedef std::pair<Object*, int> WeightLit;
 
 Object *createDisjunction(Object *disj, Object *pred)
 {
-	if(dynamic_cast<Aggregate*>(disj))
+	if(dynamic_cast<Disjunction*>(disj))
 	{
-		static_cast<Aggregate*>(disj)->lits_.push_back(pred);
+		static_cast<Disjunction*>(disj)->lits_.push_back(pred);
 	}
 	else
 	{
-		Aggregate *a = new Aggregate(false, Aggregate::DISJUNCTION);
+		Disjunction *a = new Disjunction();
 		a->lits_.push_back(disj);
 		a->lits_.push_back(pred);
 		disj = a;
@@ -143,14 +143,14 @@ hide_predicate ::= neg_pred(id) LPARA variable_list(count) RPARA. { OUTPUT->setV
 variable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
 variable_list(res) ::= VARIABLE.                           { res = 1; }
 
-rule ::= head_atom(head) IF body(body). { Rule r(head, body); r.addUid(OUTPUT); OUTPUT->print(&r); }
-rule ::= head_atom(head) IF .           { Fact r(head); r.addUid(OUTPUT); OUTPUT->print(&r); }
-rule ::= head_atom(head).               { Fact r(head); r.addUid(OUTPUT); OUTPUT->print(&r); }
-rule ::= IF body(body).                 { Integrity r(body); r.addUid(OUTPUT); OUTPUT->print(&r); }
-rule ::= IF.                            { Integrity r(new Conjunction()); r.addUid(OUTPUT); OUTPUT->print(&r); }
-rule ::= maximize(r).                   { r->addUid(OUTPUT); OUTPUT->print(r); DELETE_PTR(r); }
-rule ::= minimize(r).                   { r->addUid(OUTPUT); OUTPUT->print(r); DELETE_PTR(r); }
-rule ::= compute(r).                    { r->addUid(OUTPUT); OUTPUT->print(r); DELETE_PTR(r); }
+rule ::= head_atom(head) IF body(body). { Rule r(head, body); OUTPUT->print(&r); }
+rule ::= head_atom(head) IF .           { Fact r(head); OUTPUT->print(&r); }
+rule ::= head_atom(head).               { Fact r(head); OUTPUT->print(&r); }
+rule ::= IF body(body).                 { Integrity r(body); OUTPUT->print(&r); }
+rule ::= IF.                            { Integrity r(new Conjunction()); OUTPUT->print(&r); }
+rule ::= maximize(r).                   { OUTPUT->print(r); DELETE_PTR(r); }
+rule ::= minimize(r).                   { OUTPUT->print(r); DELETE_PTR(r); }
+rule ::= compute(r).                    { OUTPUT->print(r); DELETE_PTR(r); }
 
 body(res) ::= body(body) COMMA body_literal(lit). { res = body; res->lits_.push_back(lit); }
 body(res) ::= body_literal(lit).                  { res = new Conjunction(); res->lits_.push_back(lit); }

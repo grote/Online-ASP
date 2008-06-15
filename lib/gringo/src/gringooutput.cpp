@@ -14,7 +14,7 @@ void GrinGoOutput::initialize(SignatureVector *pred)
 
 void GrinGoOutput::print(NS_OUTPUT::Object *r)
 {
-	r->print(*out_);
+	r->print(this, *out_);
 }
 
 void GrinGoOutput::finalize()

@@ -126,7 +126,6 @@ void BasicProgramEvaluator::evaluate()
 			{
 				NS_OUTPUT::Atom *a = new NS_OUTPUT::Atom(false, atoms_[it->second].node_, uid, it->first);
 				NS_OUTPUT::Fact f(a);
-				f.addUid(o_);
 				// we dont need to add the domain as fact
 				f.addDomain(false);
 				o_->print(&f);

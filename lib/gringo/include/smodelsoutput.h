@@ -15,24 +15,37 @@ namespace NS_GRINGO
 		public:
 			SmodelsOutput(std::ostream *out);
 			void initialize(SignatureVector *pred);
-			void print(NS_OUTPUT::Object *o);
+			void print(Object *o);
 			void finalize();
 			~SmodelsOutput();
+		protected:
+			void printBasicRule(int head, const IntVector &pos, const IntVector &neg);
+			void printConstraintRule(int head, int bound, const IntVector &pos, const IntVector &neg);
+			void printChoiceRule(const IntVector &head, const IntVector &pos, const IntVector &neg);
+			void printWeightRule(int head, int bound, const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg);
+			void printMinimizeRule(const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg);
+			void printDisjunctiveRule(const IntVector &head, const IntVector &pos, const IntVector &neg);
 		private:
-			void print(NS_OUTPUT::Fact *r);
-			void print(NS_OUTPUT::Rule *r);
-			void print(NS_OUTPUT::Integrity *r);
-			void print(NS_OUTPUT::Optimize *r);
-			void print(NS_OUTPUT::Compute *r);
-			void printBody(NS_OUTPUT::Aggregate *r);
-			void printHead(int B, NS_OUTPUT::Aggregate *r);
-			void printBody(int headId, NS_OUTPUT::ObjectVector &body);
-			void printWeightRule(int head, int bound, NS_OUTPUT::ObjectVector &lits, IntVector &weights);
-			void printDisjunction(NS_OUTPUT::ObjectVector &head, NS_OUTPUT::ObjectVector &body);
+			void print(Fact *r);
+			void print(Rule *r);
+			void print(Integrity *r);
+			void print(Optimize *r);
+			void print(Compute *r);
+			void printHead(Aggregate *a);
+			void printBody(Aggregate *a);
+			void handleHead(Object *o);
+			void handleBody(ObjectVector &body);
+			void handleAggregate(ObjectVector &lits);
+			void handleAggregate(ObjectVector &lits, IntVector &weights);
+			void handleCount(Aggregate *a, int &l, int &u);
+			void handleSum(Aggregate *a, int &l, int &u);
 		private:
 			int false_;
 			int models_;
 			IntVector compute_;
+			IntVector head_;
+			IntVector pos_, neg_, wPos_, wNeg_;
+			IntVector posA_, negA_, wPosA_, wNegA_;
 		};
 	}
 }
