@@ -343,8 +343,6 @@ void SmodelsConverter::print(Compute *r)
 
 void SmodelsConverter::print(Object *r)
 {
-	std::cerr << "===========> ";
-	r->print_plain(this, std::cerr);
 	pos_.clear();
 	neg_.clear();
 	head_.clear();
