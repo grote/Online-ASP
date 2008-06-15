@@ -110,34 +110,27 @@ void Grounder::preprocess()
 
 void Grounder::start()
 {
-	try
-	{
-		std::cerr << "preprocessing ... " << std::endl;
-		preprocess();
-		std::cerr << "done" << std::endl;
-		if(varMap_.size() == 0)
-			std::cerr << "got ground program i hope u have enough memory :)" << std::endl;
-		std::cerr << "adding domain predicates ... " << std::endl;
-		addDomains();
-		std::cerr << "done" << std::endl;
-		std::cerr << "buidling dependencygraph ... " << std::endl;
-		buildDepGraph();
-		reset(true);
-		depGraph_->calcSCCs();
-		std::cerr << "done" << std::endl;
-		std::cerr << "checking ... " << std::endl;
-		if(!depGraph_->check(this))
-			return;
-		reset(false);
-		std::cerr << "done" << std::endl;
-		std::cerr << "grounding ... " << std::endl;
-		ground();
-		std::cerr << "done" << std::endl;
-	}
-	catch(std::exception &e)
-	{
-		std::cerr << e.what() << std::endl;
-	}
+	std::cerr << "preprocessing ... " << std::endl;
+	preprocess();
+	std::cerr << "done" << std::endl;
+	if(varMap_.size() == 0)
+		std::cerr << "got ground program i hope u have enough memory :)" << std::endl;
+	std::cerr << "adding domain predicates ... " << std::endl;
+	addDomains();
+	std::cerr << "done" << std::endl;
+	std::cerr << "buidling dependencygraph ... " << std::endl;
+	buildDepGraph();
+	reset(true);
+	depGraph_->calcSCCs();
+	std::cerr << "done" << std::endl;
+	std::cerr << "checking ... " << std::endl;
+	if(!depGraph_->check(this))
+		return;
+	reset(false);
+	std::cerr << "done" << std::endl;
+	std::cerr << "grounding ... " << std::endl;
+	ground();
+	std::cerr << "done" << std::endl;
 }
 
 void Grounder::addSCC(SCC *scc)
