@@ -21,5 +21,3 @@ testing:
 - write tests for all allowed language constructs !!!
 - test conformance with lparse/gringo
 
-smodelsoutput:
-- handle min/max aggregates
