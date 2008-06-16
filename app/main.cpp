@@ -1,6 +1,7 @@
 #include <gringo.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <lparseparser.h>
 #include <lparseconverter.h>
 #include <grounder.h>
@@ -8,6 +9,7 @@
 #include <lparseoutput.h>
 #include <claspoutput.h>
 #include <gringooutput.h>
+#include <gringoexception.h>
 
 // evil hack :)
 NS_GRINGO::GrinGoParser* parser = 0;
@@ -37,96 +39,111 @@ void start_grounding()
 
 using namespace NS_GRINGO;
 
+
 int main(int argc, char *argv[])
 {
 	char *arg0 = argv[0];
-	bool smodels = false;
-	bool lparse  = false;
-	bool clasp   = false;
+	bool files = false;
+	enum Format {SMODELS, GRINGO, CLASP, LPARSE} format = SMODELS;
+	std::stringstream *ss = new std::stringstream();
 	std::vector<std::istream*> streams;
+	streams.push_back(ss);
 	try
 	{
 		while(argc > 1)
 		{
 			if(strcmp(argv[1], "--convert") == 0)
 			{
-				argc--;
-				argv++;
 				convert = true;
+			}
+			else if(strcmp(argv[1], "-g") == 0)
+			{
+				format = GRINGO;
 			}
 			else if(strcmp(argv[1], "-l") == 0)
 			{
-				argc--;
-				argv++;
-				smodels = true;
+				format = SMODELS;
 			}
 			else if(strcmp(argv[1], "-p") == 0)
 			{
-				argc--;
-				argv++;
-				lparse = true;
+				format = LPARSE;
 			}
 			else if(strcmp(argv[1], "-c") == 0)
 			{
+				format = CLASP;
+			}
+			else if(strcmp(argv[1], "--const") == 0)
+			{
+				if(argc == 2)
+					throw GrinGoException("error: constant missing");
 				argc--;
 				argv++;
-				clasp = true;
+				*ss << "#const " << argv[1] << "." << std::endl;
 			}
 			else if(strcmp(argv[1], "--help") == 0)
 			{
-				std::cerr << "Usage: " << arg0 << " [gringo options] [files] [--[ clasp options]] " << std::endl << std::endl;
+				std::cerr << "Usage: " << arg0 << " (gringo option|file)* [--[ clasp options]] " << std::endl << std::endl;
 				std::cerr << "gringo options are: " << std::endl;
-				std::cerr << "	--convert : convert already ground program" << std::endl;
-				std::cerr << "	-c        : Use internal interface to clasp" << std::endl;
-				std::cerr << "	-l        : Print smodels output" << std::endl;
-				std::cerr << "	-p        : Print plain lparse-like output" << std::endl;
-				std::cerr << "	The default output is something strange :)" << std::endl << std::endl;
+				std::cerr << "	--convert   : convert already ground program" << std::endl;
+				std::cerr << "	--const c=v : Pass constant c equal value v to grounder" << std::endl;
+				std::cerr << "	-c          : Use internal interface to clasp" << std::endl;
+				std::cerr << "	-l          : Print smodels output" << std::endl;
+				std::cerr << "	-p          : Print plain lparse-like output" << std::endl;
+				std::cerr << "	-g          : Print experimental output" << std::endl;
+				std::cerr << "	The default output is smodels output (-l)" << std::endl << std::endl;
 				std::cerr << "clasp options are: " << std::endl;
 				int   argc_c = 2;
 				char *argv_c[] = { arg0, argv[1] };
 				clasp_main(argc_c, argv_c);
+				for(std::vector<std::istream*>::iterator it = streams.begin(); it != streams.end(); it++)
+					delete *it;
 				return 0;
 			}
-			else
+			else if(strcmp(argv[1], "--") == 0)
+			{
 				break;
-		}
-		if(argc == 1)
-			streams.push_back(new std::istream(std::cin.rdbuf()));
-		else if(strcmp(argv[1], "--") == 0)
-		{
-			streams.push_back(new std::istream(std::cin.rdbuf()));
+			}
+			else if(strncmp(argv[1], "-", 1) == 0)
+			{
+				throw GrinGoException(std::string("error: unknown option: ") + argv[1]);
+			}
+			else
+			{
+				streams.push_back(new std::fstream(argv[1]));
+				if(streams.back()->fail())
+					throw GrinGoException(std::string("error: could not open file: ") + argv[1]);
+				files = true;
+			}
 			argc--;
 			argv++;
 		}
-		else
-			while(argc > 1)
-			{
-				argc--;
-				argv++;
-				if(strcmp(argv[0], "--") == 0)
-					break;
-				else
-					streams.push_back(new std::fstream(argv[0]));
-			}
+		if(!files)
+			streams.push_back(new std::istream(std::cin.rdbuf()));
 		argv[0] = arg0;
 		
 		if(convert)
 			parser = new LparseConverter(streams);
 		else
 			parser = new LparseParser(streams);
-
-		if(smodels)
-			output = new NS_OUTPUT::SmodelsOutput(&std::cout);
-		else if(lparse)
-			output = new NS_OUTPUT::LparseOutput(&std::cout);
-		else if(clasp)
-			clasp_main(argc, argv);
-		else
-			output = new NS_OUTPUT::GrinGoOutput(&std::cout);
-
-		if(!clasp)
-			start_grounding();
 		
+		switch(format)
+		{
+			case SMODELS:
+				output = new NS_OUTPUT::SmodelsOutput(&std::cout);
+				start_grounding();
+				break;
+			case LPARSE:
+				output = new NS_OUTPUT::LparseOutput(&std::cout);
+				start_grounding();
+				break;
+			case GRINGO:
+				output = new NS_OUTPUT::GrinGoOutput(&std::cout);
+				start_grounding();
+				break;
+			case CLASP:
+				clasp_main(argc, argv);
+				break;
+		}
 	}
 	catch(std::exception &e)
 	{
