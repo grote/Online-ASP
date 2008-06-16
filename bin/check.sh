@@ -92,11 +92,26 @@ lpeq compare.gringo.reduced compare.lparse.reduced > compare1.lp
 lpeq compare.lparse.reduced compare.gringo.reduced > compare2.lp
 
 echo "first comparison"
-clasp < compare1.lp
+if ! clasp < compare1.lp | grep "Models      : 0"; then
+	rm -f compare.lparse compare.lparse.reduced 
+	rm -f compare.gringo compare.gringo.reduced 
+	rm -f compare1.lp compare2.lp
+	echo False
+	exit 1
+fi
 echo "second comparison"
-clasp < compare2.lp
+if ! clasp < compare2.lp | grep "Models      : 0"; then
+	rm -f compare.lparse compare.lparse.reduced 
+	rm -f compare.gringo compare.gringo.reduced 
+	rm -f compare1.lp compare2.lp
+	echo False
+	exit 1
+fi
 
-#rm compare.lparse compare.lparse.reduced 
-#rm compare.gringo compare.gringo.reduced 
-#rm compare1.lp compare2.lp
+rm -f compare.lparse compare.lparse.reduced 
+rm -f compare.gringo compare.gringo.reduced 
+rm -f compare1.lp compare2.lp
+
+echo True
+exit 0
 
