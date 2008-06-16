@@ -22,7 +22,7 @@ void SmodelsOutput::printBasicRule(int head, const IntVector &pos, const IntVect
 		*out_ << " " << *it;
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
 		*out_ << " " << *it;
-	*out_ << std::endl;
+	*out_ << NL;
 }
 
 void SmodelsOutput::printConstraintRule(int head, int bound, const IntVector &pos, const IntVector &neg)
@@ -32,7 +32,7 @@ void SmodelsOutput::printConstraintRule(int head, int bound, const IntVector &po
 		*out_ << " " << *it;
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
 		*out_ << " " << *it;
-	*out_ << std::endl;
+	*out_ << NL;
 }
 
 void SmodelsOutput::printChoiceRule(const IntVector &head, const IntVector &pos, const IntVector &neg)
@@ -45,7 +45,7 @@ void SmodelsOutput::printChoiceRule(const IntVector &head, const IntVector &pos,
 		*out_ << " " << *it;
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
 		*out_ << " " << *it;
-	*out_ << std::endl;
+	*out_ << NL;
 }
 
 void SmodelsOutput::printWeightRule(int head, int bound, const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg)
@@ -59,7 +59,7 @@ void SmodelsOutput::printWeightRule(int head, int bound, const IntVector &pos, c
 		*out_ << " " << *it;
 	for(IntVector::const_iterator it = wPos.begin(); it != wPos.end(); it++)
 		*out_ << " " << *it;
-	*out_ << std::endl;
+	*out_ << NL;
 }
 
 void SmodelsOutput::printMinimizeRule(const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg)
@@ -73,7 +73,7 @@ void SmodelsOutput::printMinimizeRule(const IntVector &pos, const IntVector &neg
 		*out_ << " " << *it;
 	for(IntVector::const_iterator it = wPos.begin(); it != wPos.end(); it++)
 		*out_ << " " << *it;
-	*out_ << std::endl;
+	*out_ << NL;
 }
 
 void SmodelsOutput::printDisjunctiveRule(const IntVector &head, const IntVector &pos, const IntVector &neg)
@@ -86,7 +86,7 @@ void SmodelsOutput::printDisjunctiveRule(const IntVector &head, const IntVector 
 		*out_ << " " << *it;
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
 		*out_ << " " << *it;
-	*out_ << std::endl;
+	*out_ << NL;
 }
 
 void SmodelsOutput::printComputeRule(int models, const IntVector &pos, const IntVector &neg)
@@ -98,26 +98,27 @@ void SmodelsOutput::printComputeRule(int models, const IntVector &pos, const Int
 
 void SmodelsOutput::finalize()
 {
-	*out_ << 0 << std::endl;
+	*out_ << 0 << NL;
 	int uid = 0;
 	for(AtomLookUp::iterator it = atoms_.begin(); it != atoms_.end(); it++, uid++)
 		if(isVisible(uid))
 			for(AtomHash::iterator atom = it->begin(); atom != it->end(); atom++)
-				*out_ << atom->second << " " << atomToString(uid, atom->first) << std::endl;
-	*out_ << 0 << std::endl;
-	*out_ << "B+" << std::endl;
+				*out_ << atom->second << " " << atomToString(uid, atom->first) << NL;
+	*out_ << 0 << NL;
+	*out_ << "B+" << NL;
 	// compute +
 	for(IntSet::iterator it = compPos_.begin(); it != compPos_.end(); it++)
-		*out_ << *it << std::endl;
-	*out_ << 0 << std::endl;
-	*out_ << "B-" << std::endl;
+		*out_ << *it << NL;
+	*out_ << 0 << NL;
+	*out_ << "B-" << NL;
 	// compute -
-	*out_ << getFalse() << std::endl;
+	*out_ << getFalse() << NL;
 	for(IntSet::iterator it = compNeg_.begin(); it != compNeg_.end(); it++)
-		*out_ << *it << std::endl;
-	*out_ << 0 << std::endl;
+		*out_ << *it << NL;
+	*out_ << 0 << NL;
 	// number of models
-	*out_ << models_ << std::endl;
+	*out_ << models_ << NL;
+	out_->flush();
 }
 
 SmodelsOutput::~SmodelsOutput()

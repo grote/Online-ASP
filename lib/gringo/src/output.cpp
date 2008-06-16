@@ -137,7 +137,7 @@ void Atom::print_plain(Output *o, std::ostream &out)
 void Atom::print(Output *o, std::ostream &out)
 {
 	if(o->addAtom(this))
-		out << 0x4 << " " << uid_ << " " << o->atomToString(predUid_, values_) << " " << (o->isVisible(predUid_) ? "1 0" : "0") << std::endl;
+		out << 0x4 << " " << uid_ << " " << o->atomToString(predUid_, values_) << " " << (o->isVisible(predUid_) ? "1 0" : "0") << NL;
 }
 	
 // =============== NS_OUTPUT::Rule ===============
@@ -150,7 +150,7 @@ void Rule::print_plain(Output *o, std::ostream &out)
 	head_->print_plain(o, out);
 	out << " :- ";
 	body_->print_plain(o, out);
-	out << "." << std::endl;
+	out << "." << NL;
 }
 
 void Rule::print(Output *o, std::ostream &out)
@@ -158,7 +158,7 @@ void Rule::print(Output *o, std::ostream &out)
 	uid_ = o->newUid();
 	head_->print(o, out);
 	body_->print(o, out);
-	out << 0x5 << " " << uid_ << " " << head_->getUid() << " " << body_->getUid() << std::endl;
+	out << 0x5 << " " << uid_ << " " << head_->getUid() << " " << body_->getUid() << NL;
 }
 
 Rule::~Rule()
@@ -180,14 +180,14 @@ Fact::Fact(Object *head) : head_(head)
 void Fact::print_plain(Output *o, std::ostream &out)
 {
 	head_->print_plain(o, out);
-	out << "." << std::endl;
+	out << "." << NL;
 }
 
 void Fact::print(Output *o, std::ostream &out)
 {
 	uid_ = o->newUid();
 	head_->print(o, out);
-	out << 0x6 << " " << uid_ << " " << head_->getUid() << std::endl;
+	out << 0x6 << " " << uid_ << " " << head_->getUid() << NL;
 }
 
 Fact::~Fact()
@@ -209,7 +209,7 @@ void Integrity::print_plain(Output *o, std::ostream &out)
 {
 	out << " :- ";
 	body_->print_plain(o, out);
-	out << "." << std::endl;
+	out << "." << NL;
 
 }
 
@@ -217,7 +217,7 @@ void Integrity::print(Output *o, std::ostream &out)
 {
 	uid_ = o->newUid();
 	body_->print(o, out);
-	out << 0x7 << " " << uid_ << " " << body_->getUid() << std::endl;
+	out << 0x7 << " " << uid_ << " " << body_->getUid() << NL;
 }
 
 void Integrity::addDomain(bool fact)
@@ -260,7 +260,7 @@ void Conjunction::print(Output *o, std::ostream &out)
 	out << 0x8 << " " << uid_ << " " << lits_.size();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
-	out << std::endl;
+	out << NL;
 }
 
 void Conjunction::addDomain(bool fact)
@@ -304,7 +304,7 @@ void Disjunction::print(Output *o, std::ostream &out)
 	out << 0x13 << " " << uid_ << " " << lits_.size();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
-	out << std::endl;
+	out << NL;
 }
 
 void Disjunction::addDomain(bool fact)
@@ -428,7 +428,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 		for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++)
 			out << " " << *it;
 	}
-	out << std::endl;
+	out << NL;
 }
 
 void Aggregate::addDomain(bool fact)
@@ -461,7 +461,7 @@ void Compute::print_plain(Output *o, std::ostream &out)
 			comma = true;
 		(*it)->print_plain(o, out);
 	}
-	out << " }." << std::endl;
+	out << " }." << NL;
 }
 
 void Compute::print(Output *o, std::ostream &out)
@@ -472,7 +472,7 @@ void Compute::print(Output *o, std::ostream &out)
 	out << 0x42 << " " << uid_ << " " << lits_.size();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
-	out << std::endl;
+	out << NL;
 }
 
 Compute::~Compute()
@@ -514,7 +514,7 @@ void Optimize::print_plain(Output *o, std::ostream &out)
 		(*it)->print_plain(o, out);
 		out << " = " << *itWeights;
 	}
-	out << " ]." << std::endl;
+	out << " ]." << NL;
 }
 
 void Optimize::print(Output *o, std::ostream &out)

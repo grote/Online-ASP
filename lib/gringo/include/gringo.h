@@ -102,6 +102,8 @@ namespace NS_GRINGO
 	
 	class ConditionalLiteralTarget;
 
+	static const char *NL = "\n";
+
 	namespace NS_OUTPUT
 	{
 		class Output;
