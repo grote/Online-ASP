@@ -102,7 +102,10 @@ namespace NS_GRINGO
 	
 	class ConditionalLiteralTarget;
 
-	static const char *NL = "\n";
+	inline std::ostream& NL(std::ostream& os)
+	{ 
+		return os.put(os.widen('\n'));
+	}
 
 	namespace NS_OUTPUT
 	{
