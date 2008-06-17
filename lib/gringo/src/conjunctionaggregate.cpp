@@ -58,10 +58,8 @@ void ConjunctionAggregate::preprocess(Grounder *g, Expandable *e)
 	assert(literals_);
 	for(size_t i = 0; i < literals_->size(); i++)
 		(*literals_)[i]->preprocessDisjunction(g, this, e);
-	if(upper_)
-		upper_->preprocess(this, upper_, g, e);
-	if(lower_)
-		lower_->preprocess(this, lower_, g, e);
+	assert(!upper_);
+	assert(!lower_);
 }
 
 NS_OUTPUT::Object *ConjunctionAggregate::convert()
