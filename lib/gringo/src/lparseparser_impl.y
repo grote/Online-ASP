@@ -144,13 +144,16 @@ using namespace NS_GRINGO;
 
 %left SEMI.
 %left DOTS.
+%left OR.
+%left XOR.
+%left AND.
 %left PLUS MINUS.
 %left TIMES DIVIDE MOD.
-%left UMINUS.
+%left UMINUS TILDE.
 
 // this will define the symbols in the header 
 // even though they are not used in the rules
-%nonassoc ERROR EOI.
+%nonassoc ERROR EOI OR2.
 
 %start_symbol start
 
@@ -266,6 +269,10 @@ term(res) ::= term(a) PLUS term(b).    { res = new FunctionTerm(FunctionTerm::PL
 term(res) ::= term(a) TIMES term(b).   { res = new FunctionTerm(FunctionTerm::TIMES, a, b); }
 term(res) ::= term(a) MINUS term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
 term(res) ::= term(a) DIVIDE term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
+term(res) ::= term(a) XOR term(b).     { res = new FunctionTerm(FunctionTerm::BITXOR, a, b); }
+term(res) ::= term(a) AND term(b).     { res = new FunctionTerm(FunctionTerm::BITAND, a, b); }
+term(res) ::= term(a) OR term(b).      { res = new FunctionTerm(FunctionTerm::BITOR, a, b); }
+term(res) ::= TILDE term(a).           { res = new FunctionTerm(FunctionTerm::COMPLEMENT, a); }
 term(res) ::= term(l) DOTS term(u).    { res = new RangeTerm(l, u); }
 term(res) ::= MINUS term(b). [UMINUS]  { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(0), b); }
 term(res) ::= ABS LPARA term(a) RPARA. { res = new FunctionTerm(FunctionTerm::ABS, a); }

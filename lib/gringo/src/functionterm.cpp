@@ -29,6 +29,18 @@ void FunctionTerm::print(std::ostream &out)
 		case MOD:
 			out << "(" << a_ << " mod " << b_ << ")";
 			break;
+		case BITXOR:
+			out << "(" << a_ << " ^ " << b_ << ")";
+			break;
+		case BITOR:
+			out << "(" << a_ << " ? " << b_ << ")";
+			break;
+		case BITAND:
+			out << "(" << a_ << " & " << b_ << ")";
+			break;
+		case COMPLEMENT:
+			out << "(~" << a_ << ")";
+			break;
 	}
 }
 
@@ -67,6 +79,14 @@ Value FunctionTerm::getConstValue()
 			return Value(a_->getConstValue() / b_->getConstValue());
 		case MOD:
 			return Value(a_->getConstValue() % b_->getConstValue());
+		case BITXOR:
+			return Value(a_->getConstValue() ^ b_->getConstValue());
+		case BITOR:
+			return Value(a_->getConstValue() | b_->getConstValue());
+		case BITAND:
+			return Value(a_->getConstValue() & b_->getConstValue());
+		case COMPLEMENT:
+			return Value(~a_->getConstValue());
 	}
 	assert(false);
 }
@@ -87,6 +107,14 @@ Value FunctionTerm::getValue()
 			return Value(a_->getValue() / b_->getValue());
 		case MOD:
 			return Value(a_->getValue() % b_->getValue());
+		case BITXOR:
+			return Value(a_->getValue() ^ b_->getValue());
+		case BITOR:
+			return Value(a_->getValue() | b_->getValue());
+		case BITAND:
+			return Value(a_->getValue() & b_->getValue());
+		case COMPLEMENT:
+			return Value(~a_->getValue());
 	}
 	assert(false);
 }

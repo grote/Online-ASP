@@ -1,6 +1,6 @@
 #!/bin/bash
 
-lparse $* > compare.lparse
+lparse --true-negation $* > compare.lparse
 gringo2 -l $* > compare.gringo
 
 awk '

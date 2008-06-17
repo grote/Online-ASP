@@ -82,6 +82,10 @@ begin:
 		":"             { return LPARSEPARSER_DDOT; }
 		","             { return LPARSEPARSER_COMMA; }
 		"+"             { return LPARSEPARSER_PLUS; }
+		"~"             { return LPARSEPARSER_TILDE; }
+		"?"             { return LPARSEPARSER_OR; }
+		"&"             { return LPARSEPARSER_AND; }
+		"^"             { return LPARSEPARSER_XOR; }
 		"-"             { return LPARSEPARSER_MINUS; }
 		"*"             { return LPARSEPARSER_TIMES; }
 		"/"             { return LPARSEPARSER_DIVIDE; }
