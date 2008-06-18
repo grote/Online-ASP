@@ -101,6 +101,8 @@ int main(int argc, char *argv[])
 			}
 			else if(strcmp(argv[1], "--") == 0)
 			{
+				argc--;
+				argv++;
 				break;
 			}
 			else if(strncmp(argv[1], "-", 1) == 0)
