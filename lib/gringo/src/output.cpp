@@ -368,13 +368,13 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 			out << " {";
 			break;
 		case MAX:
-			out << " max {";
+			out << " max [";
 			break;
 		case MIN:
-			out << " min {";
+			out << " min [";
 			break;
 		case TIMES:
-			out << " times {";
+			out << " times [";
 			break;
 	}
 	IntVector::iterator itWeight = weights_.begin();
@@ -391,10 +391,10 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 			out << *itWeight;
 		}
 	}
-	if(type_ == SUM)
-		out << "] ";
-	else
+	if(type_ == COUNT)
 		out << "} ";
+	else
+		out << "] ";
 	if(bounds_ == U || bounds_ == LU)
 		out << upper_;
 }
