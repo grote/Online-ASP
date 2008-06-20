@@ -117,7 +117,8 @@ void WeightedStatement::grounded(Grounder *g)
 			ConditionalLiteral *p = *it;
 			for(p->start(); p->hasNext(); p->next())
 			{
-				if(!set.insert(std::make_pair(p->getNeg() ? -p->getUid() : p->getUid(), p->getValues())).second || p->isFact() || (type_ != COMPUTE && !p->match()))
+				// caution there is no -0
+				if(!set.insert(std::make_pair(p->getNeg() ? -1 - p->getUid() : p->getUid(), p->getValues())).second || p->isFact() || (type_ != COMPUTE && !p->match()))
 				{
 					p->remove();
 					continue;

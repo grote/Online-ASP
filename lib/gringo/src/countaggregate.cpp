@@ -44,7 +44,8 @@ void CountAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 		p->ground(g);
 		for(p->start(); p->hasNext(); p->next())
 		{
-			if(!set.insert(std::make_pair(p->getNeg() ? -p->getUid() : p->getUid(), p->getValues())).second)
+			// caution there is no -0
+			if(!set.insert(std::make_pair(p->getNeg() ? -1 - p->getUid() : p->getUid(), p->getValues())).second)
 			{
 				p->remove();
 				continue;
@@ -63,6 +64,7 @@ void CountAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 			}
 		}
 	}
+	std::cerr << "set: " << set.size() << std::endl;
 	lower+= fixed;
 	upper+= fixed;
 }
