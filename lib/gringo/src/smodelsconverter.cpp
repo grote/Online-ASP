@@ -4,7 +4,7 @@
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 
-SmodelsConverter::SmodelsConverter(std::ostream *out) : Output(out)
+SmodelsConverter::SmodelsConverter(std::ostream *out) : Output(out), negBoundsWarning_(false)
 {
 }
 
@@ -12,7 +12,7 @@ void SmodelsConverter::initialize(SignatureVector *pred)
 {
 	Output::initialize(pred);
 	// should get 1 here
-	false_  = newUid();
+	false_            = newUid();
 }
 
 int SmodelsConverter::getFalse() const
@@ -106,7 +106,7 @@ void SmodelsConverter::printHead(Aggregate *a)
 			handleCount(a, l, u);
 			break;
 		case Aggregate::SUM:
-			handleSum(a, l, u);
+			handleSum(false, a, l, u);
 			break;
 		case Aggregate::MAX:
 			assert(false);
@@ -171,78 +171,75 @@ void SmodelsConverter::handleAggregate(ObjectVector &lits, IntVector &weights)
 
 void SmodelsConverter::handleCount(Aggregate *a, int &l, int &u)
 {
-	switch(a->bounds_)
+	if(!(a->bounds_ & Aggregate::LU))
+		return;
+	handleAggregate(a->lits_);
+	if((a->bounds_ & Aggregate::L))
 	{
-		case Aggregate::LU:
-		{
-			handleAggregate(a->lits_);
-			l = newUid();
-			u = newUid();
-			printConstraintRule(l, a->lower_, posA_, negA_);
-			printConstraintRule(u, a->upper_ + 1, posA_, negA_);
-			break;
-		}
-		case Aggregate::L:
-		{
-			handleAggregate(a->lits_);
-			l = newUid();
-			u = 0;
-			printConstraintRule(l, a->lower_, posA_, negA_);
-			break;
-		}
-		case Aggregate::U:
-		{
-			handleAggregate(a->lits_);
-			l = 0;
-			u = newUid();
-			printConstraintRule(u, a->upper_ + 1, posA_, negA_);
-			break;
-		}
-		case Aggregate::N:
-		{
-			l = 0;
-			u = 0;
-			break;
-		}
+		l = newUid();
+		printConstraintRule(l, a->lower_, posA_, negA_);
 	}
+	else
+		l = 0;
+	if((a->bounds_ & Aggregate::U))
+	{
+		u = newUid();
+		printConstraintRule(u, a->upper_ + 1, posA_, negA_);
+	}
+	else
+		u = 0;	
 }
 
-void SmodelsConverter::handleSum(Aggregate *a, int &l, int &u)
+void SmodelsConverter::handleSum(bool body, Aggregate *a, int &l, int &u)
 {
-	switch(a->bounds_)
+	if(!(a->bounds_ & Aggregate::LU))
+		return;
+	IntVector::iterator wIt = a->weights_.begin();
+	for(ObjectVector::iterator it = a->lits_.begin(); it != a->lits_.end(); it++, wIt++)
 	{
-		case Aggregate::LU:
+		assert(dynamic_cast<Atom*>(*it));
+		Atom *atm = static_cast<Atom*>(*it);
+		addAtom(atm);
+		int uid = atm->getUid();
+		// transform away negative bounds
+		if(*wIt < 0)
 		{
-			handleAggregate(a->lits_, a->weights_);
-			l = newUid();
-			u = newUid();
-			printWeightRule(l, a->lower_, posA_, negA_, wPosA_, wNegA_);
-			printWeightRule(u, a->upper_ + 1, posA_, negA_, wPosA_, wNegA_);
-			break;
+			if(body && !negBoundsWarning_)
+			{
+				negBoundsWarning_ = false;
+				std::cerr << "warning: sum with negative bounds in the body of a rule" << std::endl;
+			}
+			if(uid < 0)
+				posA_.push_back(-uid), wPosA_.push_back(-*wIt);
+			else
+				negA_.push_back(uid), wNegA_.push_back(-*wIt);
+			if((a->bounds_ & Aggregate::L))
+				a->lower_-= *wIt;
+			if((a->bounds_ & Aggregate::U))
+				a->upper_-= *wIt;
 		}
-		case Aggregate::L:
+		else
 		{
-			handleAggregate(a->lits_, a->weights_);
-			l = newUid();
-			u = 0;
-			printWeightRule(l, a->lower_, posA_, negA_, wPosA_, wNegA_);
-			break;
+			if(uid > 0)
+				posA_.push_back(uid), wPosA_.push_back(*wIt);
+			else
+				negA_.push_back(-uid), wNegA_.push_back(*wIt);
 		}
-		case Aggregate::U:
-		{
-			handleAggregate(a->lits_, a->weights_);
-			l = 0;
-			u = newUid();
-			printWeightRule(u, a->upper_ + 1, posA_, negA_, wPosA_, wNegA_);
-			break;
-		}
-		case Aggregate::N:
-		{
-			l = 0;
-			u = 0;
-			break;
-		}
+	}	
+	if((a->bounds_ & Aggregate::L))
+	{
+		l = newUid();
+		printWeightRule(l, a->lower_, posA_, negA_, wPosA_, wNegA_);
 	}
+	else
+		l = 0;
+	if((a->bounds_ & Aggregate::U))
+	{
+		u = newUid();
+		printWeightRule(u, a->upper_ + 1, posA_, negA_, wPosA_, wNegA_);
+	}
+	else
+		u = 0;
 }
 
 void SmodelsConverter::handleMin(Aggregate *a, int &l, int &u)
@@ -286,7 +283,7 @@ void SmodelsConverter::printBody(Aggregate *a)
 			handleCount(a, l, u);
 			break;
 		case Aggregate::SUM:
-			handleSum(a, l, u);
+			handleSum(true, a, l, u);
 			break;
 		case Aggregate::MAX:
 			assert(false);
