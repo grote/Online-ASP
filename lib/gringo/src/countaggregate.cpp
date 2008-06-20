@@ -64,7 +64,6 @@ void CountAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 			}
 		}
 	}
-	std::cerr << "set: " << set.size() << std::endl;
 	lower+= fixed;
 	upper+= fixed;
 }
