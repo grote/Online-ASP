@@ -39,6 +39,7 @@ namespace NS_GRINGO
 			void handleCount(Aggregate *a, int &l, int &u);
 			void handleSum(bool body, Aggregate *a, int &l, int &u);
 			void handleMin(Aggregate *a, int &l, int &u);
+			void handleMax(Aggregate *a, int &l, int &u);
 		private:
 			bool negBoundsWarning_;
 			int false_;

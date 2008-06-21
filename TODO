@@ -7,6 +7,7 @@ performance:
 - dont use tons of small vectors in domains instead put all values into 1 big vector
   - domains
   - conditional literals
+- optimize memory consumtion/handling in output classes
 
 code:
 - write a better main app

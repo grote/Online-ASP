@@ -172,7 +172,10 @@ void SmodelsConverter::handleAggregate(ObjectVector &lits, IntVector &weights)
 void SmodelsConverter::handleCount(Aggregate *a, int &l, int &u)
 {
 	if(!(a->bounds_ & Aggregate::LU))
+	{
+		l = u = 0;
 		return;
+	}
 	handleAggregate(a->lits_);
 	if((a->bounds_ & Aggregate::L))
 	{
@@ -193,7 +196,10 @@ void SmodelsConverter::handleCount(Aggregate *a, int &l, int &u)
 void SmodelsConverter::handleSum(bool body, Aggregate *a, int &l, int &u)
 {
 	if(!(a->bounds_ & Aggregate::LU))
+	{
+		l = u = 0;
 		return;
+	}
 	IntVector::iterator wIt = a->weights_.begin();
 	for(ObjectVector::iterator it = a->lits_.begin(); it != a->lits_.end(); it++, wIt++)
 	{
@@ -242,13 +248,47 @@ void SmodelsConverter::handleSum(bool body, Aggregate *a, int &l, int &u)
 		u = 0;
 }
 
+void SmodelsConverter::handleMax(Aggregate *a, int &l, int &u)
+{
+	IntVector empty, lit(1);
+	if(!(a->bounds_ & Aggregate::LU))
+	{
+		l = u = 0;
+		return;
+	}
+	handleAggregate(a->lits_, a->weights_);
+	l = (a->bounds_ & Aggregate::L) ? newUid() : 0;
+	u = (a->bounds_ & Aggregate::U) ? newUid() : 0;
+	for(IntVector::iterator it = negA_.begin(), itW = wNegA_.begin(); it != negA_.end(); it++, itW++)
+	{
+		lit[0] = *it;
+		if((a->bounds_ & Aggregate::U) && (*itW > a->upper_))
+			printBasicRule(u, empty, lit);
+		if((a->bounds_ & Aggregate::L) && (*itW >= a->lower_))
+			printBasicRule(l, empty, lit);
+	}
+	for(IntVector::iterator it = posA_.begin(), itW = wPosA_.begin(); it != posA_.end(); it++, itW++)
+	{
+		lit[0] = *it;
+		// there may be no literal bigger than the upper bound
+		if((a->bounds_ & Aggregate::U) && (*itW > a->upper_))
+			printBasicRule(u, lit, empty);
+		// if there is a literal bigger than the lower bound the aggregate may be satisfied
+		if((a->bounds_ & Aggregate::L) && (*itW >= a->lower_))
+			printBasicRule(l, lit, empty);
+	}
+}
+
 void SmodelsConverter::handleMin(Aggregate *a, int &l, int &u)
 {
 	// l is the monotone part and u the inverted antimonotone part
 	// it has nothing to do with lower and upper bound anymore :)
 	IntVector empty, lit(1);
 	if(!(a->bounds_ & Aggregate::LU))
+	{
+		l = u = 0;
 		return;
+	}
 	handleAggregate(a->lits_, a->weights_);
 	l = (a->bounds_ & Aggregate::U) ? newUid() : 0;
 	u = (a->bounds_ & Aggregate::L) ? newUid() : 0;
@@ -263,8 +303,10 @@ void SmodelsConverter::handleMin(Aggregate *a, int &l, int &u)
 	for(IntVector::iterator it = posA_.begin(), itW = wPosA_.begin(); it != posA_.end(); it++, itW++)
 	{
 		lit[0] = *it;
+		// there may be no literal bigger than the upper bound the aggregate may be satisfied
 		if((a->bounds_ & Aggregate::U) && (*itW <= a->upper_))
 			printBasicRule(l, lit, empty);
+		// there may be no literal smaller than the lower bound
 		if((a->bounds_ & Aggregate::L) && (*itW < a->lower_))
 			printBasicRule(u, lit, empty);
 	}
@@ -292,7 +334,7 @@ void SmodelsConverter::printBody(Aggregate *a)
 			handleMin(a, l, u);
 			break;
 		default:
-			assert(false);
+			handleMin(a, l, u);
 			break;
 	}
 	if(l > 0)
