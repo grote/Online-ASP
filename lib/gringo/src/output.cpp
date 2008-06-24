@@ -21,7 +21,8 @@
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
-		
+
+const char* END_ENTRY = " 0";
 Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(false)
 {
 	
@@ -154,7 +155,7 @@ void Atom::print_plain(Output *o, std::ostream &out)
 void Atom::print(Output *o, std::ostream &out)
 {
 	if(o->addAtom(this))
-		out << 0x4 << " " << uid_ << " " << o->atomToString(predUid_, values_) << " " << (o->isVisible(predUid_) ? "1 0" : "0") << NL;
+		out << "4" << " " << uid_ << " " << o->atomToString(predUid_, values_) << " " << (o->isVisible(predUid_) ? "1" : "") << END_ENTRY << NL;
 }
 	
 // =============== NS_OUTPUT::Rule ===============
@@ -172,10 +173,10 @@ void Rule::print_plain(Output *o, std::ostream &out)
 
 void Rule::print(Output *o, std::ostream &out)
 {
-	uid_ = o->newUid();
 	head_->print(o, out);
 	body_->print(o, out);
-	out << 0x5 << " " << uid_ << " " << head_->getUid() << " " << body_->getUid() << NL;
+	uid_ = o->newUid();
+	out << "5" << " " << uid_ << " " << head_->getUid() << " " << body_->getUid() << END_ENTRY << NL;
 }
 
 Rule::~Rule()
@@ -202,9 +203,9 @@ void Fact::print_plain(Output *o, std::ostream &out)
 
 void Fact::print(Output *o, std::ostream &out)
 {
-	uid_ = o->newUid();
 	head_->print(o, out);
-	out << 0x6 << " " << uid_ << " " << head_->getUid() << NL;
+	uid_ = o->newUid();
+	out << "6" << " " << uid_ << " " << head_->getUid() << END_ENTRY << NL;
 }
 
 Fact::~Fact()
@@ -232,9 +233,9 @@ void Integrity::print_plain(Output *o, std::ostream &out)
 
 void Integrity::print(Output *o, std::ostream &out)
 {
-	uid_ = o->newUid();
 	body_->print(o, out);
-	out << 0x7 << " " << uid_ << " " << body_->getUid() << NL;
+	uid_ = o->newUid();
+	out << "7" << " " << uid_ << " " << body_->getUid() << END_ENTRY << NL;
 }
 
 void Integrity::addDomain(bool fact)
@@ -271,13 +272,13 @@ void Conjunction::print_plain(Output *o, std::ostream &out)
 
 void Conjunction::print(Output *o, std::ostream &out)
 {
-	uid_ = o->newUid();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		(*it)->print(o, out);
-	out << 0x8 << " " << uid_ << " " << lits_.size();
+	uid_ = o->newUid();
+	out << "8" << " " << uid_ << " " << lits_.size();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
-	out << NL;
+	out << END_ENTRY << NL;
 }
 
 void Conjunction::addDomain(bool fact)
@@ -315,13 +316,13 @@ void Disjunction::print_plain(Output *o, std::ostream &out)
 
 void Disjunction::print(Output *o, std::ostream &out)
 {
-	uid_ = o->newUid();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		(*it)->print(o, out);
-	out << 0x13 << " " << uid_ << " " << lits_.size();
+	uid_ = o->newUid();
+	out << "9" << " " << uid_ << " " << lits_.size();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
-	out << NL;
+	out << END_ENTRY << NL;
 }
 
 void Disjunction::addDomain(bool fact)
@@ -421,31 +422,81 @@ void Aggregate::print(Output *o, std::ostream &out)
 	uid_ = o->newUid();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		(*it)->print(o, out);
-	out << type_ << " " << uid_ << " " << bounds_;
+
+	// at first, create weighted literals for all weight using aggregates
+	IntVector uids;
+	if(type_ != COUNT)
+	{
+		ObjectVector::iterator lit = lits_.begin();
+		for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++, ++lit)
+		{
+			unsigned int id = o->newUid();
+			out << "d" << " " << id << " " << (*lit)->getUid() << " " << *it << END_ENTRY << NL;
+			uids.push_back(id);
+		}
+	}
+	else
+	{
+		for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+			uids.push_back((*it)->getUid());
+	}
+
+	switch (type_)
+	{
+		case COUNT:
+			{
+				out << "e";
+				break;
+			}
+		case SUM:
+			 {
+				out << "f";
+				break;
+			 }
+		case MAX:
+			 {
+				out << "10";
+				break;
+			 }
+		case MIN:
+			 {
+				out << "11";
+				break;
+			 }
+		case TIMES:
+			 {
+				out << "12";
+				break;
+			 }
+	}
+	out << " " << uid_ << " " << bounds_;
 	switch(bounds_)
 	{
 		case LU:
-			out << "" << lower_ << " " << upper_;
+			out << " " << lower_ << " " << upper_;
 			break;
 		case L:
-			out << "" << lower_;
+			out << " " << lower_;
 			break;
 		case U:
-			out << "" << upper_;
+			out << " " << upper_;
 			break;
 		case N:
 			break;
 	}
-	out << " " << lits_.size();
-	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-		out << " " << (*it)->getUid();
-	if(type_ != COUNT)
-	{
-		out << " " << weights_.size();
-		for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++)
-			out << " " << *it;
-	}
-	out << NL;
+	out << " " << uids.size();
+	//for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+	//	out << " " << (*it)->getUid();
+	//if(type_ != COUNT)
+	//{
+	//	out << " " << weights_.size();
+	//	for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++)
+	//		out << " " << *it;
+	//}
+	
+	for(IntVector::iterator it = uids.begin(); it != uids.end(); it++)
+		out << " " << *it;
+	out << END_ENTRY << NL;
 }
 
 void Aggregate::addDomain(bool fact)
@@ -483,13 +534,14 @@ void Compute::print_plain(Output *o, std::ostream &out)
 
 void Compute::print(Output *o, std::ostream &out)
 {
-	uid_ = o->newUid();
-	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-		(*it)->print(o, out);
-	out << 0x42 << " " << uid_ << " " << lits_.size();
-	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-		out << " " << (*it)->getUid();
-	out << NL;
+	std::cerr << "WARNING, No compute statement written to ASPils Output" << std::endl;
+//	uid_ = o->newUid();
+//	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+//		(*it)->print(o, out);
+//	out << 0x42 << " " << uid_ << " " << lits_.size();
+//	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+//		out << " " << (*it)->getUid();
+//	out << END_ENTRY << NL;
 }
 
 Compute::~Compute()
@@ -536,8 +588,27 @@ void Optimize::print_plain(Output *o, std::ostream &out)
 
 void Optimize::print(Output *o, std::ostream &out)
 {
+	IntVector uids;
+	ObjectVector::iterator lit = lits_.begin();
+	for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++, ++lit)
+	{
+		unsigned int id = o->newUid();
+		out << "d" << " " << id << " " << (*lit)->getUid() << " ";
+	        if(type_ == MAXIMIZE)
+			out << -*it;
+		else
+			out << *it;
+		out << END_ENTRY << NL;
+		uids.push_back(id);
+	}
+
 	uid_ = o->newUid();
-	// TODO:
+	out << "f" << " " << uid_ << " " << uids.size();
+	for (IntVector::const_iterator i = uids.begin(); i != uids.end(); ++i)
+	{
+		out << " " << *i;
+	}
+	out << END_ENTRY << NL;
 }
 
 Optimize::~Optimize()

@@ -24,9 +24,13 @@ GrinGoOutput::GrinGoOutput(std::ostream *out) : Output(out)
 {
 }
 
+const char* HEADER = "1";
+const char* VERSION = "1";
+
 void GrinGoOutput::initialize(SignatureVector *pred)
 {
 	Output::initialize(pred);
+	*out_ << HEADER << " " << VERSION << " " << "normalform" << " " << "0 0" << NL;
 }
 
 void GrinGoOutput::print(NS_OUTPUT::Object *r)
@@ -36,6 +40,8 @@ void GrinGoOutput::print(NS_OUTPUT::Object *r)
 
 void GrinGoOutput::finalize()
 {
+	//TODO: write the optimize statement for all added sums
+	*out_ << "0 0" << NL;
 }
 
 GrinGoOutput::~GrinGoOutput()
