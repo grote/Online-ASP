@@ -9,6 +9,7 @@ performance:
   - conditional literals
 - optimize memory consumtion/handling in output classes
 - dont create literaldependency graphs for ground rules
+- implement a bottom-up strategy to ground the rules!!!
 
 code:
 - write a better main app
