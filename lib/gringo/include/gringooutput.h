@@ -32,7 +32,10 @@ namespace NS_GRINGO
 			virtual void initialize(SignatureVector *pred);
 			virtual void print(NS_OUTPUT::Object *o);
 			virtual void finalize();
+			virtual void addOptimizedID(unsigned int id);
 			virtual ~GrinGoOutput();
+		protected:
+			IntVector optimizedIDs_;
 		};
 	}
 }

@@ -18,6 +18,7 @@
 #include "output.h"
 #include "node.h"
 #include "grounder.h"
+#include "gringooutput.h"
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
@@ -609,6 +610,7 @@ void Optimize::print(Output *o, std::ostream &out)
 		out << " " << *i;
 	}
 	out << END_ENTRY << NL;
+	static_cast<GrinGoOutput*>(o)->addOptimizedID(uid_);
 }
 
 Optimize::~Optimize()

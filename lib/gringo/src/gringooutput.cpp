@@ -40,8 +40,23 @@ void GrinGoOutput::print(NS_OUTPUT::Object *r)
 
 void GrinGoOutput::finalize()
 {
-	//TODO: write the optimize statement for all added sums
+	//write the optimize statement for all added sums
+	if (optimizedIDs_.size())
+	{
+		*out_ << "1d" << " " << newUid() << " " << "1e" << " " << optimizedIDs_.size();
+		for (IntVector::const_iterator i = optimizedIDs_.begin(); i != optimizedIDs_.end(); ++i)
+		{
+			*out_ << " " << *i;
+		}
+		*out_ << " 0" << NL;
+	}
+	// end of output
 	*out_ << "0 0" << NL;
+}
+
+void GrinGoOutput::addOptimizedID(unsigned int id)
+{
+	optimizedIDs_.push_back(id);
 }
 
 GrinGoOutput::~GrinGoOutput()
