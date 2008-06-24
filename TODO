@@ -8,6 +8,7 @@ performance:
   - domains
   - conditional literals
 - optimize memory consumtion/handling in output classes
+- dont create literaldependency graphs for ground rules
 
 code:
 - write a better main app
