@@ -15,30 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "gringooutput.h"
+#include "pilsoutput.h"
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 		
-GrinGoOutput::GrinGoOutput(std::ostream *out) : Output(out)
+PilsOutput::PilsOutput(std::ostream *out) : Output(out)
 {
 }
 
 const char* HEADER = "1";
 const char* VERSION = "1";
 
-void GrinGoOutput::initialize(SignatureVector *pred)
+void PilsOutput::initialize(SignatureVector *pred)
 {
 	Output::initialize(pred);
 	*out_ << HEADER << " " << VERSION << " " << "normalform" << " " << "0 0" << NL;
 }
 
-void GrinGoOutput::print(NS_OUTPUT::Object *r)
+void PilsOutput::print(NS_OUTPUT::Object *r)
 {
 	r->print(this, *out_);
 }
 
-void GrinGoOutput::finalize()
+void PilsOutput::finalize()
 {
 	//write the optimize statement for all added sums
 	if (optimizedIDs_.size())
@@ -54,12 +54,12 @@ void GrinGoOutput::finalize()
 	*out_ << "0 0" << NL;
 }
 
-void GrinGoOutput::addOptimizedID(unsigned int id)
+void PilsOutput::addOptimizedID(unsigned int id)
 {
 	optimizedIDs_.push_back(id);
 }
 
-GrinGoOutput::~GrinGoOutput()
+PilsOutput::~GrinGoOutput()
 {
 }
 
