@@ -59,7 +59,7 @@ void PilsOutput::addOptimizedID(unsigned int id)
 	optimizedIDs_.push_back(id);
 }
 
-PilsOutput::~GrinGoOutput()
+PilsOutput::~PilsOutput()
 {
 }
 

@@ -25,7 +25,7 @@
 #include <smodelsoutput.h>
 #include <lparseoutput.h>
 #include <claspoutput.h>
-#include <gringooutput.h>
+#include <pilsoutput.h>
 #include <gringoexception.h>
 
 // evil hack :)
@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 				std::cerr << "	-c          : Use internal interface to clasp" << std::endl;
 				std::cerr << "	-l          : Print smodels output" << std::endl;
 				std::cerr << "	-p          : Print plain lparse-like output" << std::endl;
-				std::cerr << "	-g          : Print experimental output" << std::endl;
+				std::cerr << "	-g          : Print experimental ASPils output" << std::endl;
 				std::cerr << "	The default output is smodels output (-l)" << std::endl << std::endl;
 				std::cerr << "clasp options are: " << std::endl;
 				int   argc_c = 2;
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 				start_grounding();
 				break;
 			case GRINGO:
-				output = new NS_OUTPUT::GrinGoOutput(&std::cout);
+				output = new NS_OUTPUT::PilsOutput(&std::cout);
 				start_grounding();
 				break;
 			case CLASP:
