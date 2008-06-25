@@ -1,3 +1,5 @@
 add_subdirectory (gringo)
-add_subdirectory (clasp)
+if(WITH_CLASP)
+	add_subdirectory (clasp)
+endif(WITH_CLASP)
 

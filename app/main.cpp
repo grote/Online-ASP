@@ -24,9 +24,12 @@
 #include <grounder.h>
 #include <smodelsoutput.h>
 #include <lparseoutput.h>
-#include <claspoutput.h>
 #include <pilsoutput.h>
 #include <gringoexception.h>
+
+#ifdef WITH_CLASP
+#	include <claspoutput.h>
+#endif
 
 // evil hack :)
 NS_GRINGO::GrinGoParser* parser = 0;
@@ -52,7 +55,9 @@ void start_grounding()
 	}
 }
 
-#include "clasp_main.h"
+#ifdef WITH_CLASP
+#	include "clasp_main.h"
+#endif
 
 using namespace NS_GRINGO;
 
@@ -61,7 +66,11 @@ int main(int argc, char *argv[])
 {
 	char *arg0 = argv[0];
 	bool files = false;
+#ifdef WITH_CLASP
 	enum Format {SMODELS, GRINGO, CLASP, LPARSE} format = SMODELS;
+#else
+	enum Format {SMODELS, GRINGO, LPARSE} format = SMODELS;
+#endif
 	std::stringstream *ss = new std::stringstream();
 	std::vector<std::istream*> streams;
 	streams.push_back(ss);
@@ -85,10 +94,12 @@ int main(int argc, char *argv[])
 			{
 				format = LPARSE;
 			}
+#ifdef WITH_CLASP
 			else if(strcmp(argv[1], "-c") == 0)
 			{
 				format = CLASP;
 			}
+#endif
 			else if(strcmp(argv[1], "--const") == 0)
 			{
 				if(argc == 2)
@@ -99,19 +110,27 @@ int main(int argc, char *argv[])
 			}
 			else if(strcmp(argv[1], "--help") == 0)
 			{
+#ifdef WITH_CLASP
 				std::cerr << "Usage: " << arg0 << " (gringo option|file)* [--[ clasp options]] " << std::endl << std::endl;
+#else
+				std::cerr << "Usage: " << arg0 << " (gringo option|file)*" << std::endl << std::endl;
+#endif
 				std::cerr << "gringo options are: " << std::endl;
 				std::cerr << "	--convert   : convert already ground program" << std::endl;
 				std::cerr << "	--const c=v : Pass constant c equal value v to grounder" << std::endl;
+#ifdef WITH_CLASP
 				std::cerr << "	-c          : Use internal interface to clasp" << std::endl;
+#endif
 				std::cerr << "	-l          : Print smodels output" << std::endl;
 				std::cerr << "	-p          : Print plain lparse-like output" << std::endl;
 				std::cerr << "	-g          : Print experimental ASPils output" << std::endl;
-				std::cerr << "	The default output is smodels output (-l)" << std::endl << std::endl;
-				std::cerr << "clasp options are: " << std::endl;
+				std::cerr << "	The default output is smodels output (-l)" << std::endl;
+#ifdef WITH_CLASP
 				int   argc_c = 2;
 				char *argv_c[] = { arg0, argv[1] };
+				std::cerr << std::endl << "clasp options are: " << std::endl;
 				clasp_main(argc_c, argv_c);
+#endif
 				for(std::vector<std::istream*>::iterator it = streams.begin(); it != streams.end(); it++)
 					delete *it;
 				return 0;
@@ -159,9 +178,11 @@ int main(int argc, char *argv[])
 				output = new NS_OUTPUT::PilsOutput(&std::cout);
 				start_grounding();
 				break;
+#ifdef WITH_CLASP
 			case CLASP:
 				clasp_main(argc, argv);
 				break;
+#endif
 		}
 	}
 	catch(std::exception &e)

@@ -41,7 +41,7 @@ RE2C(${GrinGo_SOURCE_DIR}/lib/gringo/src/plainlparselexer.re ${GrinGo_BINARY_DIR
 LEMON(lparseconverter_impl ${GrinGo_SOURCE_DIR}/lib/gringo/src ${GrinGo_BINARY_DIR}/lib/gringo)
 
 add_library(gringo-lib STATIC ${LIBGRINGO_SRC})
-target_link_libraries (gringo-lib clasp-lib)
+target_link_libraries (gringo-lib)
 set_target_properties(gringo-lib PROPERTIES OUTPUT_NAME gringo)
 
 IF(PCHSupport_FOUND)

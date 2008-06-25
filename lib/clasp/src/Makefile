@@ -1,5 +1,5 @@
 CC      = g++
-CFLAGS  = -O3 -Wall -I../.. -DNDEBUG
+CFLAGS  = -O3 -Wno-deprecated -I../.. -DNDEBUG
 #CFLAGS  = -O0 -Wall -g -I.
 LDFLAGS = 
 
@@ -15,7 +15,7 @@ all: ../../../bin/libclasp.a
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f $(OBJECTS)
+	rm -f $(OBJECTS) ../../../bin/libclasp.a
 
 depend: $(SOURCES) true
 	makedepend -Y -- $(CFLAGS) -- $(SOURCES) &> /dev/null

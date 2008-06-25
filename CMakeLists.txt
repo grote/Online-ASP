@@ -17,6 +17,11 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
+set(WITH_CLASP OFF CACHE BOOL "Enable this flag to build GrinGo with an internal clasp version.")
+if(WITH_CLASP)
+	add_definitions(-DWITH_CLASP)
+endif(WITH_CLASP)
+
 add_subdirectory (app)
 add_subdirectory (lib)
 
