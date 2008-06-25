@@ -1,8 +1,18 @@
 project (GrinGo)
 
-include(pch.cmake)
-
 cmake_minimum_required(VERSION 2.4)
+
+include (pch.cmake)
+
+SET(CPACK_PACKAGE_VERSION "2.0.0")
+SET(CPACK_PACKAGE_VERSION_MAJOR "2")
+SET(CPACK_PACKAGE_VERSION_MINOR "0")
+SET(CPACK_PACKAGE_VERSION_PATCH "0")
+# that sucks this is nowhere documented!!!
+SET(CPACK_SOURCE_IGNORE_FILES "/build/" "/examples/" "/bin/" "/\\\\.svn/")
+SET(CPACK_SOURCE_GENERATOR "TBZ2")
+include (CPack)
+
 
 set(EXECUTABLE_OUTPUT_PATH ${GrinGo_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables." FORCE)
 set(LIBRARY_OUTPUT_PATH ${GrinGo_BINARY_DIR}/lib CACHE PATH "Single output directory for building all libraries." FORCE)
