@@ -33,6 +33,7 @@ namespace NS_GRINGO
 		 * \param l The literal
 		 */
 		virtual void appendLiteral(Literal *l, ExpansionType type) = 0;
+		virtual ~Expandable(){};
 	};
 }
 

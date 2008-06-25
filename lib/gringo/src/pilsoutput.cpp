@@ -30,7 +30,8 @@ const char* VERSION = "1";
 void PilsOutput::initialize(SignatureVector *pred)
 {
 	Output::initialize(pred);
-	*out_ << HEADER << " " << VERSION << " " << "normalform" << " " << "0 0" << NL;
+	// can not determine real version, so comglomeration is assumed
+	*out_ << HEADER << " " << VERSION << " " << "7" << " " << "0 0" << NL;
 }
 
 void PilsOutput::print(NS_OUTPUT::Object *r)

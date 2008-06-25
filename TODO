@@ -13,9 +13,8 @@ performance:
 
 code:
 - write a better main app
-- if a conflicting integrity constraint is found grounding could be stopped (and not just exit(0))
+- find a better way (a. :- a. ? ) to state that no answer set exists
 - use more c++ exceptions
-- fix the preprocessing for functionsymbols
 
 documentation:
 - write doxygen doc

@@ -277,6 +277,7 @@ void Conjunction::print(Output *o, std::ostream &out)
 		(*it)->print(o, out);
 	uid_ = o->newUid();
 	out << "8" << " " << uid_ << " " << lits_.size();
+	//TODO: kann leer sein, für leeres integrity constraint
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
 	out << END_ENTRY << NL;

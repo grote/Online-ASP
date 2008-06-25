@@ -33,6 +33,8 @@ namespace NS_GRINGO
 		 * \param g Reference to the grounder
 		 */
 		virtual void grounded(Grounder *g) = 0;
+
+		virtual ~Groundable(){};
 	};
 }
 
