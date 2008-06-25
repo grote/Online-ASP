@@ -535,14 +535,12 @@ void Compute::print_plain(Output *o, std::ostream &out)
 
 void Compute::print(Output *o, std::ostream &out)
 {
-	std::cerr << "WARNING, No compute statement written to ASPils Output" << std::endl;
-//	uid_ = o->newUid();
-//	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-//		(*it)->print(o, out);
-//	out << 0x42 << " " << uid_ << " " << lits_.size();
-//	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-//		out << " " << (*it)->getUid();
-//	out << END_ENTRY << NL;
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+		(*it)->print(o, out);
+	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
+	{
+		out << "7" << " " << o->newUid() << " " << -(*it)->getUid() << END_ENTRY << NL;
+	}
 }
 
 Compute::~Compute()
