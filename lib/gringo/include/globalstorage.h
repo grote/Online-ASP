@@ -20,8 +20,6 @@
 
 #include <gringo.h>
 #include <funcsymbol.h>
-#include <ext/hash_set>
-#include <ext/hash_map>
 
 namespace NS_GRINGO
 {

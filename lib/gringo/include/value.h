@@ -19,9 +19,7 @@
 #define VALUE_H
 
 #include <gringo.h>
-#include <ext/hash_set>
-#include "funcsymbol.h"
-//#include <toolbox/allocator.h>
+#include <funcsymbol.h>
 
 namespace NS_GRINGO
 {

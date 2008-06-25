@@ -21,7 +21,6 @@
 #include <gringo.h>
 #include <evaluator.h>
 #include <output.h>
-#include <ext/hash_map>
 
 namespace NS_GRINGO
 {

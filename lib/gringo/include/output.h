@@ -20,7 +20,6 @@
 
 #include <gringo.h>
 #include <value.h>
-#include <ext/hash_map>
 
 namespace NS_GRINGO
 {

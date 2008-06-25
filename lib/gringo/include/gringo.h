@@ -36,6 +36,8 @@
 #include <cstdlib>
 #include <climits>
 #include <memory>
+#include <ext/hash_set>
+#include <ext/hash_map>
 
 namespace NS_GRINGO
 {
