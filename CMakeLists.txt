@@ -1,5 +1,7 @@
 project (GrinGo)
 
+include(pch.cmake)
+
 cmake_minimum_required(VERSION 2.4)
 
 set(EXECUTABLE_OUTPUT_PATH ${GrinGo_BINARY_DIR}/bin CACHE PATH "Single output directory for building all executables." FORCE)

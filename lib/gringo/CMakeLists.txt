@@ -8,7 +8,7 @@ SET(LIBGRINGO_SRC
 #SET_SOURCE_FILES_PROPERTIES(lparselexer.cpp GENERATED)
 #SET_SOURCE_FILES_PROPERTIES(lparseparser_impl.cpp GENERATED)
 
-include_directories(include ${GrinGo_BINARY_DIR}/lib/gringo ..)
+include_directories(${CMAKE_CURRENT_BINARY_DIR} include ${GrinGo_BINARY_DIR}/lib/gringo ..)
 
 ADD_EXECUTABLE(lemon src/lemon.c)
 
@@ -43,3 +43,8 @@ LEMON(lparseconverter_impl ${GrinGo_SOURCE_DIR}/lib/gringo/src ${GrinGo_BINARY_D
 add_library(gringo-lib STATIC ${LIBGRINGO_SRC})
 target_link_libraries (gringo-lib clasp-lib)
 set_target_properties(gringo-lib PROPERTIES OUTPUT_NAME gringo)
+
+IF(PCHSupport_FOUND)
+	add_precompiled_header(gringo-lib ${GrinGo_SOURCE_DIR}/lib/gringo/include/gringo.h)
+ENDIF(PCHSupport_FOUND)
+
