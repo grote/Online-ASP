@@ -230,7 +230,7 @@ void SmodelsConverter::handleSum(bool body, Aggregate *a, int &l, int &u)
 			if(body && !negBoundsWarning_)
 			{
 				negBoundsWarning_ = false;
-				std::cerr << "warning: sum with negative bounds in the body of a rule" << std::endl;
+				std::cerr << "Warning: sum with negative bounds in the body of a rule" << std::endl;
 			}
 			if(uid < 0)
 				posA_.push_back(-uid), wPosA_.push_back(-*wIt);

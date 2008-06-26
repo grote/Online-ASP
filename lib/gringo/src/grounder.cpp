@@ -111,7 +111,7 @@ void Grounder::reset(bool warn = false)
 			if(warn)
 			{
 				Signature &sig = (*getPred())[uid];
-				std::cerr << "Warning: " << *sig.first << "/" << sig.second << " is never defined" << std::endl;
+				std::cerr << "Warning: " << *sig.first << "/" << sig.second << " is never defined." << std::endl;
 			}
 			n->setSolved(true);
 		}
@@ -263,7 +263,7 @@ void Grounder::setConstValue(std::string *id, Term *t)
 	std::pair<ConstTerms::iterator, bool> res = constTerms_.insert(std::make_pair(id, std::make_pair(false, t)));
 	if(!res.second)
 	{
-		std::cerr << "warning: multiple definitions of #const " << *id << std::endl;
+		std::cerr << "Warning: multiple definitions of #const " << *id << std::endl;
 		delete t;
 	}
 }
