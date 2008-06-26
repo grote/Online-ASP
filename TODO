@@ -10,6 +10,26 @@ performance:
 - optimize memory consumtion/handling in output classes
 - dont create literaldependency graphs for ground rules
 - implement a bottom-up strategy to ground the rules!!!
+  - the dependency check has to stay as is
+    - the restriction could eventually be lifted slightly
+      if there are no arithmetic functions but i am not shure
+      if it is possible to detect this
+  - the ldg has to change
+    - for dependency checking use the old ldg
+    - to calculate the order of literals use a new ldg
+      where every positive predicate is complete
+  - every positive predicate is complete now
+  - negative predicates may still be incomplete 
+    if they are not yet evaluated
+  - domains are split into two parts now
+    - the first part contains all values that have already been grounded
+    - the second part stores the values that have been grounded 
+      during the current grounding step
+  - the indexed domains are splitted into two parts now too
+    - the instantiator may not produce the same rules if a new grounding step is started
+    - this can be ensured if there is a domain that binds some some new values
+  - after a step is completed the second part is merged into the first part
+    and a new grounding step is started if needed
 
 code:
 - write a better main app
