@@ -89,7 +89,9 @@ bool ConditionalLiteral::check(VarVector &free)
 	if(dg_)
 		delete dg_;
 	dg_ = new LDG();
-	LDGBuilder dgb(dg_);
+	// there is no difference if the ldgbuilder is created 
+	// with check = true or not cause all conditionals have solved domains
+	LDGBuilder dgb(dg_, false);
 	dgb.addHead(pred_);
 	if(conditionals_)
 		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
@@ -105,7 +107,7 @@ void ConditionalLiteral::createNode(LDGBuilder *dgb, bool head)
 	if(dg_)
 		delete dg_;
 	dg_ = new LDG();
-	LDGBuilder *subDg = new LDGBuilder(dg_);
+	LDGBuilder *subDg = new LDGBuilder(dg_, dgb->getCheck());
 	subDg->addHead(pred_);
 	if(conditionals_)
 		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)

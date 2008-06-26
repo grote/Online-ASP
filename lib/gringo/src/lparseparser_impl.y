@@ -29,6 +29,10 @@
 #include "relationliteral.h"
 #include "assignmentliteral.h"
 
+// miscellaneous literal
+#include "computeliteral.h"
+#include "optimizeliteral.h"
+
 // aggregates
 #include "sumaggregate.h"  
 #include "minaggregate.h"  
@@ -47,7 +51,7 @@
 
 // statements
 #include "normalrule.h"
-#include "weightedstatement.h"
+#include "literalstatement.h"
 
 // misc
 #include "grounder.h"
@@ -319,12 +323,12 @@ aggregate(res) ::= LBRAC constr_list(list) RBRAC.         { res = new CountAggre
 aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { res = new MinAggregate(list); }
 aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { res = new MaxAggregate(list); }
 
-compute(res)  ::= COMPUTE LBRAC  constr_list(list) RBRAC.           { res = new WeightedStatement(WeightedStatement::COMPUTE, list, true, 1); }
-compute(res)  ::= COMPUTE NUMBER(x) LBRAC  constr_list(list) RBRAC. { res = new WeightedStatement(WeightedStatement::COMPUTE, list, true, atol(x->c_str())); DELETE_PTR(x); }
-minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.          { res = new WeightedStatement(WeightedStatement::MINIMIZE, list, true); }
-minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new WeightedStatement(WeightedStatement::MINIMIZE, list, false); }
-maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.          { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list, true); }
-maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new WeightedStatement(WeightedStatement::MAXIMIZE, list, false); }
+compute(res)  ::= COMPUTE LBRAC  constr_list(list) RBRAC.           { res = new LiteralStatement(new ComputeLiteral(list, 1), false); }
+compute(res)  ::= COMPUTE NUMBER(x) LBRAC  constr_list(list) RBRAC. { res = new LiteralStatement(new ComputeLiteral(list, atol(x->c_str())), false); DELETE_PTR(x); }
+minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.          { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MINIMIZE, list, true), true); }
+minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MINIMIZE, list, false), true); }
+maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.          { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MAXIMIZE, list, true), true); }
+maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MAXIMIZE, list, false), true); }
 
 weight_list(res) ::= nweight_list(list). { res = list; }
 weight_list(res) ::= .                   { res = new ConditionalLiteralVector(); }

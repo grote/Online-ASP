@@ -96,12 +96,13 @@ namespace NS_GRINGO
 		};
 		typedef std::vector<GraphNode*> GraphNodeVector;
 	public:
-		LDGBuilder(LDG *dg);
+		LDGBuilder(LDG *dg, bool check);
 		void addHead(Literal *l);
 		void addToBody(Literal *l);
 		void addGraph(LDGBuilder *dg);
 
 		void create();
+		bool getCheck() const;
 
 		void createNode(Literal *l, bool head, const VarSet &needed, const VarSet &provided, bool graph = false);
 
@@ -113,6 +114,7 @@ namespace NS_GRINGO
 		void createSubGraph(LDGBuilder *parent, LDG::LiteralNode *l);
 
 	protected:
+		bool check_;
 		LDGBuilder *parent_;
 		LDG::LiteralNode *parentNode_;
 		LDG *dg_;

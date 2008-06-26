@@ -92,8 +92,6 @@ void LDG::check(VarVector &free)
 	{
 		if(!(*it)->done_)
 			free.push_back((*it)->var_);
-		else
-			globalVars_.push_back((*it)->var_);
 	}
 	if(free.size() == 0)
 		for(LiteralNodeVector::iterator it = litNodes_.begin(); it != litNodes_.end(); it++)
@@ -172,7 +170,7 @@ LDGBuilder::GraphNode::GraphNode(LDG::LiteralNode *n) : n_(n)
 {
 }
 
-LDGBuilder::LDGBuilder(LDG *dg) : parent_(0), parentNode_(0), dg_(dg)
+LDGBuilder::LDGBuilder(LDG *dg, bool check) : check_(check), parent_(0), parentNode_(0), dg_(dg)
 {
 }
 
@@ -242,6 +240,7 @@ LDG::VarNode *LDGBuilder::createVarNode(int var)
 	{
 		v = new LDG::VarNode(var);
 		dg_->varNodes_.push_back(v);
+		dg_->globalVars_.push_back(var);
 	}
 	return v;
 }
@@ -266,6 +265,11 @@ void LDGBuilder::createNode(Literal *l, bool head, const VarSet &needed, const V
 	}
 	if(graph)
 		graphNodes_.push_back(new GraphNode(n));
+}
+
+bool LDGBuilder::getCheck() const
+{
+	return check_;
 }
 
 LDGBuilder::~LDGBuilder()

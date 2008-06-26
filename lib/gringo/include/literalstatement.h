@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef NORMALRULE_H
-#define NORMALRULE_H
+#ifndef LITERALSTATEMENT_H
+#define LITERALSTATEMENT_H
 
 #include <gringo.h>
 #include <statement.h>
@@ -24,43 +24,35 @@
 
 namespace NS_GRINGO
 {
-	/// This class is used to represent normal rules including integrity constraints and facts
-	class NormalRule : public Statement, public Expandable
+	/**
+	 * \brief A statement that contains exactly one literal
+	 *
+	 * Includes compute, minimize and maximize statements.
+	 */
+	class LiteralStatement : public Statement
 	{
 	public:
-		/**
-		 * \brief Constructor
-		 * \param head The head of the rule
-		 * \param body The body of the rule
-		 */
-		NormalRule(Literal *head, LiteralVector *body);
-		/// Destructor
-		virtual ~NormalRule();
-		// implemented from base class or interface
-		virtual void getVars(VarSet &vars) const;
+		enum Type { COMPUTE, MINIMIZE, MAXIMIZE };
+	public:
+		/// Constructor
+		LiteralStatement(Literal *lit, bool preserveOrder);
 		virtual void buildDepGraph(DependencyGraph *dg);
-		virtual void print(std::ostream &out);
+		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual bool check(VarVector &free);
-		virtual void reset();
 		virtual void preprocess(Grounder *g);
-		virtual void appendLiteral(Literal *l, ExpansionType type);
+		virtual void reset();
 		virtual void finish();
 		virtual void evaluate();
-		virtual void grounded(Grounder *g);
 		virtual bool ground(Grounder *g);
 		virtual void addDomain(PredicateLiteral *pl);
-	private:
-		/**
-		 * \brief Calculate the relevant vars in the body
-		 * \param relevant The resulting set of relevant vars
-		 */
-		void getRelevantVars(LDG *dg, VarVector &relevant);
-	public:
-		/// The haed
-		Literal *head_;
-		/// The body
-		LiteralVector *body_;
+		virtual void print(std::ostream &out);
+		virtual void grounded(Grounder *g);
+		/// Destructor
+		virtual ~LiteralStatement();
+	protected:
+		Literal *lit_;
+		bool preserveOrder_;
 	};
 }
 

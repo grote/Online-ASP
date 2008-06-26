@@ -69,48 +69,6 @@ bool AggregateLiteral::checkO(LiteralVector &unsolved)
 	return true;
 }
 
-/*
-bool AggregateLiteral::matchTimes(Grounder *g, int &lower, int &upper, bool checkBounds)
-{
-	lower = 1;
-	upper = 1;
-	int fixed = 1;
-	bool hasZero = false;
-	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
-	{
-		ConditionalLiteral *p = *it;
-		p->ground(g);
-		for(p->start(); p->hasNext(); p->next())
-		{
-			if(!p->match(g))
-				continue;
-			int weight = p->getWeight();
-			if(p->isFact())
-				fixed*= weight;
-			else
-			{
-				if(weight == 0)
-					hasZero = true;
-				else if(weight > 0)
-					upper*= weight;
-				else
-					lower*= weight;
-			}
-		}
-	}
-	lower*= fixed;
-	upper*= fixed;
-	if(hasZero && lower > 0)
-		lower = 0;
-	if(hasZero && upper < 0)
-		upper = 0;
-	if(checkBounds)
-		return this->checkBounds(lower, upper);
-	else
-		return true;
-}
-*/
-
 bool AggregateLiteral::checkBounds(int lower, int upper)
 {
 	int lowerBound = lower_ ? (int)lower_->getValue() : lower;
@@ -296,15 +254,6 @@ void AggregateLiteral::appendLiteral(Literal *l, ExpansionType type)
 
 void AggregateLiteral::preprocess(Grounder *g, Expandable *e)
 {
-	/*
-	if(type_ == DISJUNCTION)
-	{
-		assert(literals_);
-		for(size_t i = 0; i < literals_->size(); i++)
-			(*literals_)[i]->preprocessDisjunction(g, this, e);
-	}
-	else 
-	*/
 	if(literals_)
 		for(size_t i = 0; i < literals_->size(); i++)
 			(*literals_)[i]->preprocess(g, this);

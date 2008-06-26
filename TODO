@@ -1,8 +1,5 @@
 performance:
-- i think there will be no anonymous variables
-  to implement binder spilitting i will simply create new predicateliterals with their own domains
-  if we have for example a predicate p(X,Y) where X is relevant and Y is irrelevant
-  ill create a new predicate p(X) matching all p(X,_) thats easier and fits better into the current design
+- to implement binder spilitting i will create new rules
 - literals in the body could be ordered by some heuristic see reference in dlv paper
 - dont use tons of small vectors in domains instead put all values into 1 big vector
   - domains

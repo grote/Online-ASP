@@ -15,47 +15,40 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef WEIGHTEDSTATEMENT_H
-#define WEIGHTEDSTATEMENT_H
+#ifndef COMPUTELITERAL_H
+#define COMPUTELITERAL_H
 
 #include <gringo.h>
-#include <statement.h>
+#include <literal.h>
 #include <expandable.h>
 
 namespace NS_GRINGO
 {
-	/**
-	 * \brief A generic class for statements with weights
-	 *
-	 * Includes compute, minimize and maximize statements. Weights in compute statements are ignored.
-	 */
-	class WeightedStatement : public Statement, public Expandable
+	class ComputeLiteral : public Literal, public Expandable
 	{
 	public:
-		enum Type { COMPUTE, MINIMIZE, MAXIMIZE };
-	public:
-		/// Constructor
-		WeightedStatement(Type type, ConditionalLiteralVector *literals, bool setSemantics, int number = 0);
-		virtual void buildDepGraph(DependencyGraph *dg);
+		ComputeLiteral(ConditionalLiteralVector *literals, int number);
+		ComputeLiteral(const ComputeLiteral &a);
+		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
+		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
-		virtual bool check(VarVector &free);
-		virtual void preprocess(Grounder *g);
+		virtual bool match(Grounder *g);
 		virtual void reset();
 		virtual void finish();
-		virtual void evaluate();
-		virtual bool ground(Grounder *g);
-		virtual void addDomain(PredicateLiteral *pl);
-		virtual void print(std::ostream &out);
-		virtual void grounded(Grounder *g);
+		virtual void preprocess(Grounder *g, Expandable *e);
+		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual void appendLiteral(Literal *l, ExpansionType type);
-		/// Destructor
-		virtual ~WeightedStatement();
+		virtual double heuristicValue();
+		virtual bool isFact();
+		virtual bool solved();
+		virtual Literal *clone() const;
+		virtual NS_OUTPUT::Object *convert();
+		virtual void print(std::ostream &out);
+		virtual ~ComputeLiteral();
 	protected:
-		Type type_;
-		bool setSemantics_;
 		int number_;
-		ConditionalLiteralVector literals_;
+		ConditionalLiteralVector *literals_;
 	};
 }
 
