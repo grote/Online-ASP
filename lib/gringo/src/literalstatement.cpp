@@ -53,7 +53,7 @@ bool LiteralStatement::check(VarVector &free)
 {
 	LDG dg;
 	free.clear();
-	LDGBuilder dgb(&dg, true);
+	LDGBuilder dgb(&dg);
 	dgb.addToBody(lit_);
 	dgb.create();
 	dg.check(free);
@@ -88,11 +88,6 @@ void LiteralStatement::grounded(Grounder *g)
 
 bool LiteralStatement::ground(Grounder *g)
 {
-	LDG dg;
-	LDGBuilder dgb(&dg, false);
-	dgb.addToBody(lit_);
-	dgb.create();
-
 	lit_->match(g);
 	grounded(g);
 	return true;

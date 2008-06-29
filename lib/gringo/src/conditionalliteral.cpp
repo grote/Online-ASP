@@ -84,30 +84,12 @@ Node *ConditionalLiteral::createNode(DependencyGraph *dg, Node *prev, Dependency
 	return n;
 }
 
-bool ConditionalLiteral::check(VarVector &free)
-{
-	if(dg_)
-		delete dg_;
-	dg_ = new LDG();
-	// there is no difference if the ldgbuilder is created 
-	// with check = true or not cause all conditionals have solved domains
-	LDGBuilder dgb(dg_, false);
-	dgb.addHead(pred_);
-	if(conditionals_)
-		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
-			dgb.addToBody(*it);
-	dgb.create();
-	dg_->check(free);
-	
-	return free.size() == 0;
-}
-
 void ConditionalLiteral::createNode(LDGBuilder *dgb, bool head)
 {
 	if(dg_)
 		delete dg_;
 	dg_ = new LDG();
-	LDGBuilder *subDg = new LDGBuilder(dg_, dgb->getCheck());
+	LDGBuilder *subDg = new LDGBuilder(dg_);
 	subDg->addHead(pred_);
 	if(conditionals_)
 		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)

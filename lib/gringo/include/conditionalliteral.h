@@ -52,7 +52,6 @@ namespace NS_GRINGO
 
 		bool hasConditionals();
 		PredicateLiteral *toPredicateLiteral();
-		bool check(VarVector &free);
 		int getUid();
 		
 		// functions to access all possible bindings of the conditional literal

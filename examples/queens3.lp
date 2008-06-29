@@ -1,7 +1,7 @@
 #hide.
 #show q(X,Y). 
 
-#const queens = 100.
+#const queens = 10.
 #const diags  = queens * 2 - 1.
 
 d(1..queens).

@@ -170,7 +170,7 @@ LDGBuilder::GraphNode::GraphNode(LDG::LiteralNode *n) : n_(n)
 {
 }
 
-LDGBuilder::LDGBuilder(LDG *dg, bool check) : check_(check), parent_(0), parentNode_(0), dg_(dg)
+LDGBuilder::LDGBuilder(LDG *dg) : parent_(0), parentNode_(0), dg_(dg)
 {
 }
 
@@ -265,11 +265,6 @@ void LDGBuilder::createNode(Literal *l, bool head, const VarSet &needed, const V
 	}
 	if(graph)
 		graphNodes_.push_back(new GraphNode(n));
-}
-
-bool LDGBuilder::getCheck() const
-{
-	return check_;
 }
 
 LDGBuilder::~LDGBuilder()

@@ -29,7 +29,7 @@
 
 using namespace NS_GRINGO;
 
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body)
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), dg_(0)
 {
 }
 
@@ -88,9 +88,11 @@ bool NormalRule::checkO(LiteralVector &unsolved)
 
 bool NormalRule::check(VarVector &free)
 {
-	LDG dg;
 	free.clear();
-	LDGBuilder dgb(&dg, true);
+	if(dg_)
+		delete dg_;
+	dg_ = new LDG();
+	LDGBuilder dgb(dg_);
 	if(head_)
 		dgb.addHead(head_);
 	if(body_)
@@ -98,7 +100,7 @@ bool NormalRule::check(VarVector &free)
 			dgb.addToBody(*it);
 	
 	dgb.create();
-	dg.check(free);
+	dg_->check(free);
 
 	return free.size() == 0;
 }
@@ -137,11 +139,11 @@ void NormalRule::evaluate()
 		head_->evaluate();
 }
 
-void NormalRule::getRelevantVars(LDG *dg, VarVector &relevant)
+void NormalRule::getRelevantVars(VarVector &relevant)
 {
 	// TODO: there must be a better way to do this!!!
 	VarSet global;
-	global.insert(dg->getGlobalVars().begin(), dg->getGlobalVars().end());
+	global.insert(dg_->getGlobalVars().begin(), dg_->getGlobalVars().end());
 	VarSet all;
 	if(head_)
 		head_->getVars(all);
@@ -160,16 +162,8 @@ bool NormalRule::ground(Grounder *g)
 {
 	if(body_)
 	{
-		// recreate the ldg
-		LDG dg;
-		LDGBuilder dgb(&dg, false);
-		if(head_)
-			dgb.addHead(head_);
-		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
-			dgb.addToBody(*it);
-		dgb.create();
 		// if there are no varnodes we can do sth simpler
-		if(!dg.hasVarNodes())
+		if(!dg_->hasVarNodes())
 		{
 			for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
 			{
@@ -182,8 +176,8 @@ bool NormalRule::ground(Grounder *g)
 		{
 			//std::cerr << "creating grounder for: " << this << std::endl;
 			VarVector relevant;
-			getRelevantVars(&dg, relevant);
-			DLVGrounder data(g, this, body_->size(), &dg, relevant);
+			getRelevantVars(relevant);
+			DLVGrounder data(g, this, body_->size(), dg_, relevant);
 			//data.debug();
 			data.ground();
 		}
@@ -325,6 +319,8 @@ void NormalRule::appendLiteral(Literal *l, ExpansionType type)
 
 NormalRule::~NormalRule()
 {
+	if(dg_)
+		delete dg_;
 	if(head_)
 		delete head_;
 	if(body_)
