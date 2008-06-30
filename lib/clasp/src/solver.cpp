@@ -102,10 +102,11 @@ SolverStrategies::SolverStrategies()
 	, postProp(new NoPostPropagator)
 	, search(use_learning)
 	, minimizer(0)
-	, cflMin(binary_preds)
+	, cflMin(beame_minimization)
+	, cflMinAntes(all_antes)
 	, randomWatches(false)
 	, saveProgress(false) 
-	, compress_(60) {
+	, compress_(250) {
 }
 PostPropagator* SolverStrategies::releasePostProp() {
 	PostPropagator* p = postProp.release();
@@ -128,7 +129,8 @@ Solver::Solver()
 	, randHeuristic_(0)
 	, shuffle_(false) {
 	addVar( Var_t::atom_body_var );
-	vars_[0].value = value_true;
+	vars_[0].value	= value_true;
+	vars_[0].seen		= 1;
 }
 
 Solver::~Solver() {
@@ -170,7 +172,7 @@ bool Solver::endAddConstraints(bool look) {
 	VarVec deps;
 	Var v = 0;
 	VarScores scores;
-	while (simplify(false) && look && failedLiteral(v, scores,Var_t::atom_var, true, deps)) {
+	while (simplify() && look && failedLiteral(v, scores,Var_t::atom_var, true, deps)) {
 		deps.clear();
 	}
 	stats.native[0] = numConstraints();
@@ -299,7 +301,7 @@ void Solver::initRandomHeuristic(double randProp) {
 
 // removes all satisfied binary and ternary clauses as well
 // as all constraints for which Constraint::simplify returned true.
-bool Solver::simplify(bool choose) {
+bool Solver::simplify() {
 	if (decisionLevel() != 0) return true;
 	if (trail_.empty()) strategy_.heuristic->simplify(*this, 0);
 	
@@ -312,7 +314,6 @@ bool Solver::simplify(bool choose) {
 		assert(lastSimplify_ == trail_.size());
 		strategy_.heuristic->simplify(*this, old);		
 	}
-	if (choose) strategy_.heuristic->select(*this);
 	return true;
 }
 
@@ -634,11 +635,11 @@ void Solver::undoLevel(bool sp) {
 uint32 Solver::analyzeConflict(ClauseCreator& outClause) {
 	// must be called here, because we unassign vars during analyzeConflict
 	strategy_.heuristic->undoUntil( *this, levels_.back().first );
-	outClause.reserve( conflict_.size() );
-	outClause.startAsserting(Constraint_t::learnt_conflict);
-	uint32 onLevel = 0;				// number of literals from the current DL in resolvent
+	uint32 onLevel	= 0;				// number of literals from the current DL in resolvent
+	uint32 abstr		= 0;				// abstraction of DLs in cc_
 	Literal p;
 	strategy_.heuristic->updateReason(*this, conflict_, p);
+	cc_.clear();
 	for (;;) {
 		for (LitVec::size_type i = 0; i != conflict_.size(); ++i) {
 			Literal& q = conflict_[i];
@@ -651,7 +652,8 @@ uint32 Solver::analyzeConflict(ClauseCreator& outClause) {
 					++onLevel;
 				}
 				else {
-					outClause.add(~q);
+					cc_.push_back(~q);
+					abstr |= (1 << (cl & 31));
 				}
 			}
 		}
@@ -670,56 +672,67 @@ uint32 Solver::analyzeConflict(ClauseCreator& outClause) {
 		reason(p.var()).reason(p, conflict_);
 		strategy_.heuristic->updateReason(*this, conflict_, p);
 	}
-	minimizeConflictClause(outClause);
+	outClause.reserve( cc_.size()+1 );
+	outClause.startAsserting(Constraint_t::learnt_conflict, ~p);	// store the 1-UIP
+	minimizeConflictClause(outClause, abstr);
 	// clear seen-flag of all literals that are not from the current dl.
-	for (LitVec::size_type i = 1; i < outClause.size(); ++i) {
-		vars_[outClause[i].var()].seen = 0;
+	for (LitVec::size_type i = 0; i != cc_.size(); ++i) {
+		vars_[cc_[i].var()].seen = 0;
 	}
-	outClause[0] = ~p;	// store the 1-UIP
+	cc_.clear();
 	assert( decisionLevel() == level(p.var()));
 	return outClause.size() != 1 
 		? level(outClause[outClause.secondWatch()].var())	
 		: 0;
 }
 
-// Conflict clause minimization as described in
-// P. Beame et al: "Understanding the power of clause learning"
-// restricted to binary and ternary antecedents.
-void Solver::minimizeConflictClause(ClauseCreator& outClause) {
-	if (strategy_.cflMin != SolverStrategies::no_minimization) {
-		LitVec removed, lits, anteLits;
-		uint32 idx = 1, maxDL = 1, k;
-		outClause.swap(lits);
-		uint32 typeMask = (uint32)strategy_.cflMin;
-		anteLits.reserve(typeMask);
-		for (uint32 i = 1; i < lits.size(); ++i) {
-			Literal x = lits[i];
-			const Antecedent& ante = reason(x.var());
-			bool remove = false;
-			if (!ante.isNull() && ((ante.type()+1) & typeMask) != 0) {
-				anteLits.clear();
-				ante.reason(~x, anteLits);
-				k = 0;
-				for (LitVec::size_type kEnd = anteLits.size(); k != kEnd && vars_[anteLits[k].var()].seen != 0; ++k)
-					; 
-				remove = k == anteLits.size();
-			}
-			if (!remove) {
-				if (level(x.var()) > level(lits[maxDL].var())) {
-					maxDL = idx;
-				}
-				lits[idx++] = x;
-			}
-			else {
-				removed.push_back(x);
-			}
+void Solver::minimizeConflictClause(ClauseCreator& outClause, uint32 abstr) {
+	uint32 m = strategy_.cflMinAntes;
+	LitVec::size_type t = trail_.size();
+	for (LitVec::size_type i = 0; i != cc_.size(); ++i) { 
+		if (reason(cc_[i].var()).isNull() || ((reason(cc_[i].var()).type()+1) & m) == 0  || !analyzeLitRedundant(cc_[i], abstr)) {
+			outClause.add(cc_[i]);
 		}
-		lits.erase(lits.begin()+idx, lits.end());
-		for (uint32 i = 0; i < removed.size(); ++i) {
-			vars_[removed[i].var()].seen = 0;
-		}
-		outClause.swap(lits, maxDL);
 	}
+	while (trail_.size() != t) {
+		vars_[trail_.back().var()].seen = 0;
+		trail_.pop_back();
+	}
+}
+
+bool Solver::analyzeLitRedundant(Literal p, uint32 abstr) {
+	if (strategy_.cflMin == SolverStrategies::beame_minimization) {
+		conflict_.clear(); reason(p.var()).reason(~p, conflict_);
+		for (LitVec::size_type i = 0; i != conflict_.size(); ++i) {
+			if (vars_[conflict_[i].var()].seen == 0) return false;
+		}
+		return true;
+	}
+	// else: een_minimization
+	LitVec::size_type start = trail_.size();
+	trail_.push_back(~p);
+	for (LitVec::size_type f = start; f != trail_.size(); ) {
+		p = trail_[f++];
+		conflict_.clear();
+		reason(p.var()).reason(p, conflict_);
+		for (LitVec::size_type i = 0; i != conflict_.size(); ++i) {
+			p = conflict_[i];
+			if (vars_[p.var()].seen == 0) {
+				if (!reason(p.var()).isNull() && ((1<<(level(p.var())&31)) & abstr) != 0) {
+					vars_[p.var()].seen = 1;
+					trail_.push_back(p);
+				}
+				else {
+					while (trail_.size() != start) {
+						vars_[trail_.back().var()].seen = 0;
+						trail_.pop_back();
+					}
+					return false;
+				}
+			}
+		}
+	}
+	return true;
 }
 
 // Selects next branching literal. Use user-supplied heuristic if rand() < randProp.
@@ -762,35 +775,27 @@ void Solver::reduceLearnts(float maxRem) {
 /////////////////////////////////////////////////////////////////////////////////////////
 // The basic DPLL-like search-function
 /////////////////////////////////////////////////////////////////////////////////////////
-ValueRep Solver::search(uint64 maxConflicts, double& maxLearnts, double inc, double randProp, bool localR) {
-	maxLearnts = std::min(maxLearnts, (double)std::numeric_limits<LitVec::size_type>::max());
+ValueRep Solver::search(uint64 maxConflicts, uint64 maxLearnts, double randProp, bool localR) {
 	initRandomHeuristic(randProp);
-	ValueRep res = value_false;
-	while (simplify(true)) {
-		if (propagate()) {
-			if (numLearntConstraints() > (uint32)maxLearnts) {
-				reduceLearnts(.75f);
-				maxLearnts = std::min(maxLearnts*inc, (double)std::numeric_limits<uint32>::max());
+	if (!simplify()) { return value_false; }
+	do {
+		while (!propagate()) {
+			if (!resolveConflict() || (decisionLevel() == 0 && !simplify())) {
+				return value_false;
 			}
-			if (!decideNextBranch()) {
-				assert(numFreeVars() == 0);
-				++stats.models;
-				updateModels(stats, decisionLevel());
-				if (strategy_.satPrePro.get()) {
-					strategy_.satPrePro->extendModel(vars_);
-				}
-				res = value_true;
-				break;
+			if ((!localR && --maxConflicts == 0) || (localR && localRestart(maxConflicts))) {
+				undoUntil(0);
+				return value_free;	
 			}
 		}
-		else if (!resolveConflict() || (!localR && --maxConflicts == 0) || (localR && localRestart(maxConflicts)) ) {
-			res = maxConflicts > 0 ? value_false : value_free;
-			break;
-		}
+		if (numLearntConstraints()>(uint32)maxLearnts) { reduceLearnts(.75f); }
+	} while (decideNextBranch());
+	assert(numFreeVars() == 0);
+	++stats.models;
+	updateModels(stats, decisionLevel());
+	if (strategy_.satPrePro.get()) {
+		strategy_.satPrePro->extendModel(vars_);
 	}
-	if (res == value_free) {
-		undoUntil( 0 );
-	}
-	return res;
+	return value_true;
 }
 }

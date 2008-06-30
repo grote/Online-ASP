@@ -32,7 +32,7 @@ static ModelPrinter noPrinter_s;
 // SolveParams
 /////////////////////////////////////////////////////////////////////////////////////////
 SolveParams::SolveParams() 
-	: reduceBase_(3.0), reduceRInc_(1.1), reduceDInc_(1.0)
+	: reduceBase_(3.0), reduceInc_(1.1), reduceMaxF_(3.0)
 	, restartInc_(1.5)
 	, randProp_(0.0)
 	, printer_(&noPrinter_s)
@@ -107,6 +107,8 @@ bool backtrackFromModel(Solver& s, const SolveParams& p) {
 }
 }
 
+//#define PRINT_SEARCH_PROGRESS
+
 bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
 	if (s.hasConflict()) return false;
 	// ASP-specific. A SAT-Solver typically uses a fraction of the initial number
@@ -119,8 +121,9 @@ bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
 	// plus the number of bodies as basis for maxLearnt. 
 	// Translated into clauses: From Clark's completion Clasp counts only the 
 	// clauses that are not necessarily binary.
-	double maxLearnts = p.reduceBase() != 0 ? (uint32)std::max(10.0, s.numVars() / p.reduceBase()) : -1.0;
-	if (maxLearnts != -1.0 && maxLearnts < 1.0) { maxLearnts = 1.0; }
+	double lBase				= std::min(s.numVars(), s.numConstraints());
+	double maxLearnts		= p.reduceBase() != 0 ? (uint32)std::max(10.0, lBase / p.reduceBase()) : -1.0;
+	double boundLearnts	= p.reduceMax() != 0 ? lBase * p.reduceMax() : std::numeric_limits<double>::max();
 	RestartStrategy rs(p.restartBase(), p.restartInc(), p.restartOuter());
 	uint32 asFound	= 0;
 	ValueRep result = value_free;
@@ -128,9 +131,18 @@ bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
 	double randProp	= randRuns == 0 ? p.randomPropability() : 1.0;
 	uint64 maxCfl		= randRuns == 0 ? rs.next() : p.randConflicts();
 	uint32 shuffle	= p.shuffleBase();
-	bool sp					= s.strategies().saveProgress;
 	while (result == value_free) {
-		result = s.search(maxCfl, maxLearnts, p.reduceDInc(), randProp, p.restartLocal());
+#ifdef PRINT_SEARCH_PROGRESS
+		printf("c V: %7u, C: %8u, L: %8u, ML: %8u (%6.2f%%), IL: %8u\n"
+			, s.numFreeVars()
+			, s.numConstraints()
+			, s.numLearntConstraints()
+			, (uint32)maxLearnts
+			, (maxLearnts/s.numConstraints())*100.0
+			, (uint32)maxCfl
+		);
+#endif
+		result = s.search(maxCfl, (uint64)maxLearnts, randProp, p.restartLocal());
 		if (result == value_true) {
 			if ( !backtrackFromModel(s, p) ) {
 				result = value_false;
@@ -143,25 +155,21 @@ bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
 				// or limit them to the current backtrack level. Full restarts are
 				// no longer possible - the solver does not record found models and
 				// therefore could recompute them after a complete restart.
-				maxCfl = p.restartBounded() 
-					? rs.next()
-					: static_cast<uint64>(-1);
+				if (!p.restartBounded()) maxCfl = static_cast<uint64>(-1);
 			}
 		}
 		else if (result == value_free){
 			if (randRuns == 0) {
-				if (maxLearnts != -1.0 && (p.reduceRInc() > 1.0 || s.numLearntConstraints() > (.5*maxLearnts))) {
-					if (p.reduceRestart()) {
-						s.reduceLearnts(.33f);
-					}
-					double inc = p.reduceRInc() > 1.0 ? p.reduceRInc() : p.reduceDInc();
-					maxLearnts = std::min(maxLearnts*inc, (double)std::numeric_limits<LitVec::size_type>::max());
+				maxCfl = rs.next();
+				if (p.reduceRestart()) { s.reduceLearnts(.33f); }
+				if (maxLearnts != -1.0 && maxLearnts < boundLearnts && (s.numLearntConstraints()+maxCfl) > maxLearnts) {
+					maxLearnts = std::min(maxLearnts*p.reduceInc(), (double)std::numeric_limits<LitVec::size_type>::max());
 				}
 				if (++s.stats.restarts == shuffle) {
 					shuffle += p.shuffleNext();
 					s.shuffleOnNextSimplify();
 				}
-				maxCfl = rs.next();				
+				
 			}
 			else if (--randRuns == 0) {
 				maxCfl = rs.next();
@@ -170,13 +178,12 @@ bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
 		}
 	}
 	s.undoUntil(0);
-	s.strategies().saveProgress = sp;
 	return result == value_true;
 }
 
 bool solve(Solver& s, const LitVec& assumptions, uint32 maxAs, const SolveParams& p) {
 	if (s.hasConflict()) return false;
-	if (!assumptions.empty() && !s.simplify(false)) {
+	if (!assumptions.empty() && !s.simplify()) {
 		return false;
 	}
 	for (LitVec::size_type i = 0; i != assumptions.size(); ++i) {

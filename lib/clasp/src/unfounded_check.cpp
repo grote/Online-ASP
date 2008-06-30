@@ -17,42 +17,236 @@
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
+#ifdef _MSC_VER
+#pragma warning(disable : 4996) // std::copy was declared deprecated
+#endif
 
 #include <clasp/include/unfounded_check.h>
 #include <clasp/include/clause.h>
 #include <algorithm>
-namespace Clasp {
 
+namespace Clasp { 
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// DefaultUnfoundedCheck - Body Nodes
+/////////////////////////////////////////////////////////////////////////////////////////
+// Body	object for handling normal/choice rules
+// Choice rules are handled like normal rules with one exception:
+//	Since BFA does not apply to choice rules, we manually trigger the removal of source pointers
+//	whenever an atom source by a choice rule becomes false.
+//
+class UfsNormal : public DefaultUnfoundedCheck::UfsBodyNode {
+public:
+	typedef DefaultUnfoundedCheck::UfsBodyNode UfsBodyNode;
+	typedef DefaultUnfoundedCheck::UfsAtomNode UfsAtomNode;
+	UfsNormal(PrgBodyNode* b, bool choice) : UfsBodyNode(b->literal(), b->scc()), circWeight_(b->posSize()), choice_(choice) {}
+	bool init(const PrgBodyNode&, const AtomList&, DefaultUnfoundedCheck& ufs, UfsAtomNode** initList, uint32 len) {
+		if (initList == preds) { circWeight_ = len; }
+		else if (choice_ == 1) {
+			// If a head of a choice rule becomes false, force removal of its source pointer.
+			for (uint32 i = 0; succs[i] != 0; ++i) {
+				ufs.addWatch(~succs[i]->lit, this, i);
+			}
+		}
+		return circWeight_ == 0;
+	}
+	void onWatch(DefaultUnfoundedCheck& ufs, Literal, uint32 data) {
+		assert(choice_ == 1);
+		if (succs[data]->hasSource() && succs[data]->watch() == this) {
+			assert(ufs.solver().isFalse(succs[data]->lit));
+			succs[data]->markSourceInvalid();
+			ufs.enqueueUnsourced(succs[data]);
+		}
+	}
+	bool canSource(const UfsAtomNode&)		{ return circWeight_ == 0; }
+	bool atomSourced(const UfsAtomNode&)	{ return --circWeight_ == 0; }
+	bool atomUnsourced(const UfsAtomNode&){ return ++circWeight_ == 1; }
+	void doAddIfReason(DefaultUnfoundedCheck& ufs) {
+		if (ufs.solver().isFalse(lit)) {
+			// body is only a reason if it does not depend on the atoms from the unfounded set
+			for (UfsAtomNode** it = preds; *it; ++it) {
+				if ( (*it)->typeOrUnfounded && !ufs.solver().isFalse((*it)->lit)) { return; }
+			}
+			ufs.addReasonLit(lit, this);
+		}
+	}
+private:
+	uint32	circWeight_ : 31;
+	uint32	choice_			: 1;
+};
+
+// Body	object for handling cardinality and weight rules.
+// Not the smartest implementation, but should work.
+// The major problems with card/weight-rules are:
+//	- subgoal false -> body false, does not hold
+//	- subgoals can circularly depend on the body
+// Consider: {x}. a:- 1{b,x}. b:-a. 
+// Since x is external to 1{b,x}, the body is a valid source for a. Therefore, {a} can source b.
+// Now, if we would simply count the number of subgoals with a source, 1{b,x} would have 2. Nevertheless,
+// as soon as x becomes false, b and a are unfounded, because the loop {a,b} no longer has external bodies.
+// 
+// The class maintains two counters:
+//	- trivWeight_ estimates the weight that is still achievable from subgoals not contained in the body's scc.
+//	- circWeight_ sum of weights from subgoals contained in the body's scc having a source.
+//	- trivWeight_ is reduced whenever an external subgoal becomes false.
+//	- circWeight_ is reduced whenever an internal subgoal loses its source.
+//	- As long as trivWeight_ >= bound, body is always a valid source.
+//	- As soon as trivWeight_ < bound, we can no longer count on circWeight_, because it may be an overestimation. 
+//		Hence, in that case, we temporarily assume the body to be an invalid source.
+//	- trivWeight_ is recomputed whenever canSource() is called.
+class UfsAggregate : public DefaultUnfoundedCheck::UfsBodyNode {
+public:
+	typedef DefaultUnfoundedCheck::UfsBodyNode UfsBodyNode;
+	typedef DefaultUnfoundedCheck::UfsAtomNode UfsAtomNode;
+	UfsAggregate(PrgBodyNode* b) : UfsBodyNode(b->literal(), b->scc()), ufs_(0), lits_(0), w_(0), sumW_(0), bound_(b->bound()), trivWeight_(0), circWeight_(0) {}
+	~UfsAggregate() { 
+		delete [] lits_;
+		w_->~Weights();
+		::operator delete(w_);
+	}
+	bool init(const PrgBodyNode& prgBody, const AtomList& prgAtoms, DefaultUnfoundedCheck& ufs, UfsAtomNode** initList, uint32 len) {
+		if (initList == preds) {
+			ufs_ = &ufs;
+			// compute and allocate necessary storage
+			uint32 otherScc = 0;
+			for (uint32 p = 0; p != prgBody.posSize(); ++p) {
+				PrgAtomNode* pred = prgAtoms[prgBody.pos(p)];
+				if (pred->scc() != prgBody.scc() && !ufs.solver().isFalse(pred->literal())) {
+					++otherScc;
+				}
+			}
+			for (uint32 n = 0; n != prgBody.negSize(); ++n) {
+				otherScc += !ufs.solver().isTrue(prgAtoms[prgBody.neg(n)]->literal());
+			}
+			lits_ = new Literal[otherScc+1];	// +1: terminating literal
+			if (prgBody.type() == WEIGHTRULE) {
+				void* m = ::operator new(sizeof(Weights) + ((len+otherScc)*sizeof(weight_t)));
+				w_ = new (m) Weights;
+				w_->numPos = (uint32)len;
+			}
+			// init 
+			uint32 idx = 0, wsIdx = 0;
+			for (uint32 p = 0; p != prgBody.posSize(); ++p) {
+				PrgAtomNode* pred = prgAtoms[prgBody.pos(p)];
+				if (!ufs.solver().isFalse(pred->literal())) {
+					weight_t w = prgBody.weight(p, true);
+					sumW_ += w;
+					if (pred->scc() != prgBody.scc()) {
+						trivWeight_ += w;
+						lits_[idx]	= pred->literal();
+						if (w_) { w_->weights_[w_->numPos+idx] = w; }
+						++idx;
+					}
+					else if (w_) { w_->weights_[wsIdx++] = w;  }
+					ufs.addWatch( ~pred->literal(), this, (static_cast<uint32>(w)<<1)+(pred->scc() != prgBody.scc()));
+				}
+			}
+			for (uint32 n = 0; n != prgBody.negSize(); ++n) {
+				PrgAtomNode* pred = prgAtoms[prgBody.neg(n)];
+				if (pred->hasVar() && !ufs.solver().isTrue(pred->literal())) {
+					weight_t w = prgBody.weight(n, false);
+					sumW_ += w;
+					trivWeight_ += w;
+					ufs.addWatch( pred->literal(), this, static_cast<uint32>(w) );
+					lits_[idx] = ~pred->literal();
+					if (w_) { w_->weights_[w_->numPos+idx] = w; }
+					++idx;
+				}
+			}
+			lits_[idx] = posLit(0);
+			bound_			= prgBody.bound();
+			circWeight_ = 0;
+		}
+		return weight() >= bound_;
+	}
+	void onWatch(DefaultUnfoundedCheck& ufs, Literal, uint32 data) {
+		if ((data & 1) == 1) { trivWeight_	-= (weight_t)data>>1; }
+		if (watches > 0 && trivWeight_ < bound_) {
+			ufs.enqueueInvalid(this);
+		}
+	}
+	bool atomSourced(const UfsAtomNode& a)		{ 
+		weight_t w = getSccWeight(a);
+		circWeight_ += w;
+		return (weight()-w) < bound_ && weight() >= bound_;
+	}
+	bool atomUnsourced(const UfsAtomNode& a)	{ 
+		weight_t w = getSccWeight(a);
+		circWeight_ -= w;
+		return ((weight()+w) >= bound_ && weight() < bound_) || trivWeight_ < bound_;
+	}
+	bool canSource(const UfsAtomNode&) {
+		trivWeight_ = computeTrivWeight();
+		return weight() >= bound_;
+	}
+	void doAddIfReason(DefaultUnfoundedCheck& ufs) {
+		if (ufs.solver().isFalse(lit)) {
+			weight_t sumTemp = sumW_;
+			for (uint32 i = 0; preds[i] != 0; ++i) {
+				if ( preds[i]->typeOrUnfounded && !ufs.solver().isFalse(preds[i]->lit)) { 
+					sumTemp -= getSccWeight(i);
+					if (sumTemp < bound_) { return; }
+				}
+			}
+			ufs.addReasonLit(lit, this);
+		}
+		else {	// body is not false but not a valid source either - add all false lits to reason set
+			for (LitVec::size_type i = 0; !isSentinel(lits_[i]); ++i) {
+				if (ufs.solver().isFalse(lits_[i])) {  ufs.addReasonLit(lits_[i], this); }
+			}		
+			for (UfsAtomNode** z = preds; *z; ++z) {
+				if (ufs.solver().isFalse((*z)->lit)) { ufs.addReasonLit((*z)->lit,this); }
+			}
+		}
+	}
+private:
+	weight_t weight()														const { return trivWeight_ + circWeight_; }
+	weight_t getSccWeight(uint32 idx)						const { return w_ == 0 ? 1 : w_->weights_[idx]; }
+	weight_t getSccWeight(const UfsAtomNode& a) const {
+		if (w_ == 0) return 1;
+		uint32 i; 
+		for (i = 0; preds[i] != &a; ++i) { ; }	// Intentionally empty - a *must* be there.
+		return w_->weights_[i];									// Otherwise something is horribly wrong!
+	}
+	weight_t computeTrivWeight() const {
+		weight_t res = 0;
+		for (LitVec::size_type i = 0; !isSentinel(lits_[i]); ++i) {
+			if (!ufs_->solver().isFalse(lits_[i])) { 
+				res += w_ ? w_->weights_[w_->numPos + i] : 1;
+			}
+		}
+		return res;	
+	}
+	DefaultUnfoundedCheck* ufs_;// Our unfounded set checker
+	Literal*	lits_;						// Array terminated with sentinel literal
+	struct Weights {						// 
+		uint32		numPos;					// Number of lits from same scc
+		weight_t	weights_[0];		// All weights: same scc, other scc
+	}*				w_;								// Only used for weight rules, otherwise 0
+	weight_t	sumW_;						// maximal achievable weight
+	weight_t	bound_;						// weight needed to satisfy body
+	weight_t	trivWeight_;			// approximate weight still achievable from lits outside of body's scc; never overestimates
+	weight_t	circWeight_;			// sum of weights from lits in same scc having a source
+};
 /////////////////////////////////////////////////////////////////////////////////////////
 // DefaultUnfoundedCheck - Construction/Destruction
 /////////////////////////////////////////////////////////////////////////////////////////
 DefaultUnfoundedCheck::DefaultUnfoundedCheck(ReasonStrategy r)
 	: solver_(0) 
 	, activeClause_(0)
-	, strategy_(r) {
-	reasons_ = 0;
+	, strategy_(r)
+	, reasons_(0) {
 }
-DefaultUnfoundedCheck::~DefaultUnfoundedCheck() {
-	clear();
-}
-
-void DefaultUnfoundedCheck::UfsBodyNode::destroy() {
-	if (!extended())	{ delete this; }
-	else							{ delete static_cast<ExtendedBody*>(this); }
-}
-
+DefaultUnfoundedCheck::~DefaultUnfoundedCheck() { clear(); }
 
 void DefaultUnfoundedCheck::clear() {
-	for (BodyVec::iterator it = bodies_.begin(); it != bodies_.end(); ++it) {
-		(*it)->destroy();
-	}
-	for (AtomVec::iterator it = atoms_.begin(); it != atoms_.end(); ++it) {
-		delete *it;
-	}
+	std::for_each( bodies_.begin(), bodies_.end(), DeleteObject());
+	std::for_each( atoms_.begin(), atoms_.end(), DeleteObject() );
+
 	atoms_.clear();
 	bodies_.clear();
 	invalid_.clear();
-	extWatches_.clear();
+	watches_.clear();
 	delete activeClause_;
 	delete [] reasons_;
 	reasons_ = 0;
@@ -72,7 +266,7 @@ void DefaultUnfoundedCheck::reset() {
 		unfounded_.pop_back();
 	}
 	while (!sourceQueue_.empty()) {
-		sourceQueue_.back()->source = sourceQueue_.back()->watch;
+		sourceQueue_.back()->resurrectSource();
 		sourceQueue_.pop_back();
 	}
 	invalid_.clear();
@@ -94,14 +288,14 @@ Constraint::PropResult DefaultUnfoundedCheck::propagate(const Literal& p, uint32
 	uint32 index	= data >> 1;
 	uint32 type		= data & 1;
 	if (type == 0) {
-		// a normal bodies became false - mark as invalid if necessary
+		// a normal body became false - mark as invalid if necessary
 		assert(index < bodies_.size());
 		if (bodies_[index]->watches > 0) { invalid_.push_back(bodies_[index]); }
 	}
 	else {
-		// literal is associated with an ExtendedWatch - notify it 
-		assert(index < extWatches_.size());
-		extWatches_[index].notify(p, this);
+		// literal is associated with a watch - notify the object 
+		assert(index < watches_.size());
+		watches_[index].notify(p, this);
 	}
 	return PropResult(true, true);	// always keep the watch
 }
@@ -135,27 +329,14 @@ bool DefaultUnfoundedCheck::init(Solver& s, const AtomList& prgAtoms, const Body
 	for (AtomList::const_iterator h = prgAtoms.begin()+startAtom; h != atomsEnd; ++h) {
 		if (relevantPrgAtom(*h)) {
 			UfsAtomNode* hn = addAtom(*h);
-			VarVec::iterator bodiesEnd = (*h)->preds.end();
-			for (VarVec::iterator b = (*h)->preds.begin(); b != bodiesEnd; ++b) {
-				PrgBodyNode* prgBody = prgBodies[*b];
-				if (relevantPrgBody(prgBody)) {
-					UfsBodyNode* bn = addBody(prgBody, prgAtoms);
-					addEdges(bn, hn);
-					if (prgBody->type() == CHOICERULE) {
-						// Since b is a choice rule, setting the atom hn to false will not automatically
-						// falsify b and thus will not trigger the removal of hn's source if hn.source == bn.
-						// We therefore add a watch and check if hn is sourced by bn whenever hn becomes false.
-						addExtendedWatch(~hn->lit, ExtendedWatch(bn, &UfsBodyNode::triggerRemSource, (uint32)bn->succs.size()-1));
-					}
-				}
-			}
+			initAtom(*hn, **h, prgAtoms, prgBodies);
 		}
 	}
 	propagateSource();
 	// check for initially unfounded atoms
 	for (AtomVec::iterator it = atoms_.begin()+oldAt; it != atoms_.end(); ++it) {
 		if (!solver_->isFalse((*it)->lit)
-			&& (*it)->source == 0
+			&& !(*it)->hasSource()
 			&& !solver_->force(~(*it)->lit, 0)) {
 			return false;
 		}
@@ -174,115 +355,80 @@ DefaultUnfoundedCheck::UfsAtomNode* DefaultUnfoundedCheck::addAtom(PrgAtomNode* 
 	return atoms_[ h->root() ];	
 }
 
+void DefaultUnfoundedCheck::initAtom(UfsAtomNode& an, const PrgAtomNode& a, const AtomList& prgAtoms, const BodyList& prgBodies) {
+	BodyVec bodies;
+	for (VarVec::const_iterator it = a.preds.begin(), end = a.preds.end(); it != end; ++it) {
+		PrgBodyNode* prgBody = prgBodies[*it];
+		if (relevantPrgBody(prgBody)) {
+			UfsBodyNode* bn = addBody(prgBody, prgAtoms);
+			BodyVec::iterator insPos = bn->scc == an.scc ? bodies.end() : bodies.begin();
+			bodies.insert(insPos, bn);
+		}
+	}
+	an.preds = new UfsBodyNode*[bodies.size()+1];
+	std::copy(bodies.begin(), bodies.end(), an.preds);
+	an.preds[bodies.size()] = 0;
+	bodies.clear();
+	for (VarVec::const_iterator it = a.posDep.begin(), end = a.posDep.end(); it != end; ++it) {
+		PrgBodyNode* prgBody = prgBodies[*it];
+		if (prgBody->scc() == a.scc() && relevantPrgBody(prgBody)) {
+			bodies.push_back(addBody(prgBody, prgAtoms));
+		}
+	}
+	an.succs = new UfsBodyNode*[bodies.size()+1];
+	std::copy(bodies.begin(), bodies.end(), an.succs);
+	an.succs[bodies.size()] = 0;
+	bodies.clear();
+}
+
 // if necessary, creates and initializes a new body node and adds it to the PBADG
 DefaultUnfoundedCheck::UfsBodyNode* DefaultUnfoundedCheck::addBody(PrgBodyNode* b, const AtomList& prgAtoms) {
-	if (b->visited() == 1) {	// first time we see this body - create node
-		RuleType rt = b->type();
-		solver_->setFrozen(b->var(), true);
-		if (b->scc() != PrgNode::noScc && (rt == CONSTRAINTRULE || rt == WEIGHTRULE)) {
-			return addExtendedBody(b, prgAtoms);
+	if (b->visited() == 1) {	// first time we see this body - 
+		b->setVisited(0);				// mark as visited and create node of
+		RuleType rt = b->type();// suitable type
+		UfsBodyNode* bn;
+		if (b->scc() == PrgNode::noScc || rt == BASICRULE || rt == CHOICERULE) {
+			bn = new UfsNormal(b, rt == CHOICERULE);
 		}
-		b->setVisited(0);
-		UfsBodyNode* bn = new UfsBodyNode(b->literal(), b->scc());	
+		else if (rt == CONSTRAINTRULE || rt == WEIGHTRULE)	{ 
+			bn = new UfsAggregate(b); 
+		}
+		else { assert(false && "Unknown body type!"); bn = 0; }
 		bodies_.push_back( bn );
 		b->setRoot( (uint32)bodies_.size() - 1 );
 		solver_->addWatch(~b->literal(), this, ((uint32)bodies_.size() - 1)<<1);
+		// Init node
+		AtomVec atoms;
 		for (uint32 p = 0; p != b->posSize(); ++p) {
 			PrgAtomNode* pred = prgAtoms[b->pos(p)];
 			if (relevantPrgAtom(pred) && pred->scc() == bn->scc) {
-				UfsAtomNode* hn = addAtom(pred);
-				addEdges(hn, bn, 1);
+				atoms.push_back( addAtom(pred) );
 			}
 		}
+		atoms.push_back(0);
+		bn->preds				= new UfsAtomNode*[atoms.size()];
+		std::copy(atoms.begin(), atoms.end(), bn->preds);
+		bool ext = bn->init(*b, prgAtoms, *this, bn->preds, (uint32)atoms.size()-1);	// init preds
+		atoms.clear();
+		for (VarVec::const_iterator it = b->heads.begin(), end = b->heads.end(); it != end; ++it) {
+			PrgAtomNode* a = prgAtoms[*it];
+			if (relevantPrgAtom(a)) {
+				UfsAtomNode* an = addAtom(a);
+				atoms.push_back(an);
+				if (!an->hasSource() && (a->scc() != b->scc() || ext) ) {
+					an->updateSource(bn);
+					sourceQueue_.push_back(an);
+				}
+			}
+		}
+		atoms.push_back(0);
+		bn->succs				= new UfsAtomNode*[atoms.size()];
+		std::copy(atoms.begin(), atoms.end(), bn->succs);
+		bn->init(*b, prgAtoms, *this, bn->succs, (uint32)atoms.size()-1);	// init succs
+		// exclude body from SAT-based preprocessing
+		solver_->setFrozen(b->var(), true);
 	}
 	return bodies_[ b->root() ];
-}
-
-// The body b is the body of a CONSTRAINT or WEIGHTRULE. Creates an extended body node
-// and adds it to PBADG.
-DefaultUnfoundedCheck::UfsBodyNode* DefaultUnfoundedCheck::addExtendedBody(PrgBodyNode* b, const AtomList& prgAtoms) {
-	assert(b->visited() == 1);
-	b->setVisited(0);
-	b->setRoot((uint32)bodies_.size());
-	solver_->addWatch(~b->literal(), this, ((uint32)bodies_.size())<<1);
-	ExtendedBody* bn = new ExtendedBody(b->literal(), b->scc(), b->bound());
-	bodies_.push_back( bn );
-	WeightVec sccWeights, otherWeights;
-	ExtendedWatch watch(bn, &UfsBodyNode::triggerCheckInvalid, 0);
-	for (uint32 p = 0; p != b->posSize(); ++p) {
-		PrgAtomNode* pred = prgAtoms[b->pos(p)];
-		if (pred->hasVar() && !solver_->isFalse(pred->literal())) {
-			weight_t w = b->weight(p, true);
-			if (pred->scc() == b->scc()) {
-				UfsAtomNode* hn = addAtom(pred);
-				addEdges(hn, bn, w);
-				addExtendedWatch(~pred->literal(), watch);
-				if (b->type() == WEIGHTRULE) { sccWeights.push_back(w); }
-			}
-			else {
-				bn->trivWeight += w;
-				watch.setData( (static_cast<uint32>(bn->lits.size())<<1) + 1 );
-				bn->lits.push_back(pred->literal());
-				addExtendedWatch(~pred->literal(), watch);
-				if (b->type() == WEIGHTRULE) { otherWeights.push_back(w); }
-			}
-		}
-	}
-	for (uint32 n = 0; n != b->negSize(); ++n) {
-		PrgAtomNode* pred = prgAtoms[b->neg(n)];
-		if (pred->hasVar() && !solver_->isTrue(pred->literal())) {
-			weight_t w = b->weight(n, false);
-			bn->trivWeight += w;
-			watch.setData( (static_cast<uint32>(bn->lits.size())<<1) + 1 );
-			bn->lits.push_back(~pred->literal());
-			addExtendedWatch(pred->literal(), watch);
-			if (b->type() == WEIGHTRULE) { otherWeights.push_back(w); }
-		}
-	}
-	bn->circWeight = b->bound() - bn->trivWeight;
-	bn->trivWeight -= b->bound();
-	if (b->type() == WEIGHTRULE && (sccWeights.size() + otherWeights.size()) != 0) {
-		// +1 to store sum of weights
-		weight_t sumW = 0;
-		bn->weights = new weight_t[(sccWeights.size()+otherWeights.size()) + 1];
-		for (LitVec::size_type i = 0; i != sccWeights.size(); ++i) { 
-			bn->weights[i] = sccWeights[i];
-			sumW					+= sccWeights[i];
-		}
-		for (LitVec::size_type i = 0; i != otherWeights.size(); ++i) {
-			bn->weights[i+sccWeights.size()] = otherWeights[i];
-			sumW += otherWeights[i];
-		}
-		bn->weights[ sccWeights.size() + otherWeights.size() ] = sumW;
-	}
-	return bn;
-}
-
-// Adds a bidirectional (unlabeled) edge between b and h.
-// Note:
-//	A bodies unlabeled edges are partitioned in such a way, that successors
-//	from the same scc precede those from other sccs.
-//	
-//	An atoms unlabeled edges are partitioned the other way round, i.e. bodies
-//	from other sccs precede those that are in the same scc as the head.
-// 
-void DefaultUnfoundedCheck::addEdges(UfsBodyNode* b, UfsAtomNode* h) {
-	h->addPredecessor(b);
-	b->addSuccessor(h);
-	if (h->source == 0 && (b->scc != h->scc || (b->extended() && b->circWeight <= 0)) ) {
-		h->source = h->watch = b;
-		++b->watches;
-		sourceQueue_.push_back(h);
-	}
-}
-
-// Adds a bidirectional zero-edge between b and h, iff b and h are in the same scc.
-void DefaultUnfoundedCheck::addEdges(UfsAtomNode* h, UfsBodyNode* b, weight_t w) {
-	if (h->scc == b->scc) {
-		b->addPredecessor(h);
-		h->addSuccessor(b);
-		b->circWeight += w;
-	}
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -300,7 +446,7 @@ bool DefaultUnfoundedCheck::findUnfoundedSet() {
 	while (!todo_.empty()) {
 		UfsAtomNode* head = dequeueTodo();
 		assert(head->scc != PrgNode::noScc );
-		if (head->source == 0 && !solver_->isFalse(head->lit) && !findSource(head)) {
+		if (!head->hasSource() && !solver_->isFalse(head->lit) && !findSource(head)) {
 			return true;	// found an unfounded set - contained in unfounded_
 		}
 		assert(sourceQueue_.empty());
@@ -311,7 +457,7 @@ bool DefaultUnfoundedCheck::findUnfoundedSet() {
 // searches a new source for the atom node head.
 // If a new source is found the function returns true.
 // Otherwise the function returns false and unfounded_ contains head
-// as well as all atoms with no source that circularily depend on head.
+// as well as atoms with no source that circularly depend on head.
 bool DefaultUnfoundedCheck::findSource(UfsAtomNode* head) {
 	assert(unfounded_.empty());
 	enqueueUnfounded(head);				// unfounded, unless we find a new source
@@ -319,19 +465,28 @@ bool DefaultUnfoundedCheck::findSource(UfsAtomNode* head) {
 	bool changed = false;
 	while (!unfounded_.empty()) {
 		head = unfounded_.front();
-		if (head->source == 0) {	// no source
+		if (!head->hasSource()) {	// no source
 			unfounded_.pop_front();	// note: current atom is still marked	
-			BodyVec::const_iterator it	= head->preds.begin();
-			BodyVec::const_iterator end = head->preds.end();
-			for (; it != end && !(*it)->canBeSource(head, this); ++it) 
-				;	// find source, add un-sourced atoms to unfounded-queue
-			if (it != end) {
-				head->typeOrUnfounded = 0;	// found a new source,
-				setSource(*it, head);				// set the new source
-				propagateSource();					// and propagate it forward
-				changed = true;							// may source atoms in noSourceYet!
+			UfsBodyNode** it	= head->preds;
+			for (; *it != 0; ++it) {
+				if (!solver_->isFalse((*it)->lit )) {
+					if ((*it)->scc != head->scc || (*it)->canSource(*head)) {
+						head->typeOrUnfounded = 0;	// found a new source,		
+						setSource(*it, head);				// set the new source
+						propagateSource();					// and propagate it forward
+						changed = true;							// may source atoms in noSourceYet!
+						break;
+					}
+					else {
+						for (UfsAtomNode** z = (*it)->preds; *z; ++z) {
+							if (!(*z)->hasSource() && !solver_->isFalse((*z)->lit)) {
+								enqueueUnfounded(*z);
+							}	
+						}
+					}
+				}
 			}
-			else {
+			if (!head->hasSource()) {
 				noSourceYet.push_back(head);// no source found
 			}
 		}
@@ -344,7 +499,7 @@ bool DefaultUnfoundedCheck::findSource(UfsAtomNode* head) {
 		// remove all atoms that have a source as they are not unfounded
 		Queue::iterator it, j = unfounded_.begin();
 		for (it = unfounded_.begin(); it != unfounded_.end(); ++it) {
-			if ( (*it)->source != 0 )		{ (*it)->typeOrUnfounded = 0; }
+			if ( (*it)->hasSource() )		{ (*it)->typeOrUnfounded = 0; }
 			else												{	*j++ = *it; }
 		}
 		unfounded_.erase(j, unfounded_.end());
@@ -357,13 +512,8 @@ bool DefaultUnfoundedCheck::findSource(UfsAtomNode* head) {
 // POST: source(head) != 0
 void DefaultUnfoundedCheck::setSource(UfsBodyNode* body, UfsAtomNode* head) {
 	assert(!solver_->isFalse(body->lit));
-	if (head->source == 0) {
-		head->source = body;
-		++body->watches;
-		if (head->watch) {
-			--head->watch->watches;
-		}
-		head->watch = body;
+	if (!head->hasSource()) {
+		head->updateSource(body);
 		sourceQueue_.push_back(head);
 	}
 }
@@ -372,16 +522,14 @@ void DefaultUnfoundedCheck::setSource(UfsBodyNode* body, UfsAtomNode* head) {
 // If source(h) == 0, adds h to the todo-Queue.
 // This function is called for each body that became invalid during propagation.
 void DefaultUnfoundedCheck::removeSource(UfsBodyNode* body) {
-	for (AtomVec::const_iterator it = body->succs.begin(); it != body->succs.end(); ++it) {
+	for (UfsAtomNode** it = body->succs; *it; ++it) {
 		UfsAtomNode* head = *it;
-		if (head->source == body) {
-			assert(head->watch == body);
-			head->source = 0;
-			sourceQueue_.push_back(head);
-		}
-		if (head->source == 0) {
+		if (head->watch() == body) {
+			if (head->hasSource()) {
+				head->markSourceInvalid();
+				sourceQueue_.push_back(head);
+			}
 			enqueueTodo(head);
-			assert(head->watch != 0);
 		}
 	}
 	propagateSource();
@@ -391,13 +539,12 @@ void DefaultUnfoundedCheck::removeSource(UfsBodyNode* body) {
 void DefaultUnfoundedCheck::propagateSource() {
 	for (LitVec::size_type i = 0; i < sourceQueue_.size(); ++i) {
 		UfsAtomNode* head = sourceQueue_[i];
-		BodyVec::const_iterator it = head->succs.begin();
-		if (head->source != 0) {
+		UfsBodyNode** it	= head->succs;
+		if (head->hasSource()) {
 			// propagate a newly added source-pointer
-			for (; it != head->succs.end(); ++it) {
-				if ((*it)->addSource(head) && !solver_->isFalse((*it)->lit)) {
-					AtomVec::const_iterator aIt, aEnd;
-					for (aIt = (*it)->succs.begin(), aEnd = (*it)->succs.end(); aIt != aEnd; ++aIt) {
+			for (; *it; ++it) {
+				if ((*it)->atomSourced(*head) && !solver_->isFalse((*it)->lit)) {
+					for (UfsAtomNode** aIt = (*it)->succs; *aIt; ++aIt) {
 						setSource(*it, *aIt);
 					}
 				}
@@ -405,13 +552,11 @@ void DefaultUnfoundedCheck::propagateSource() {
 		}
 		else {
 			// propagate the removal of a source-pointer within this scc
-			for (; it != head->succs.end(); ++it) {
-				if ((*it)->removeSource(head)) {
-					AtomVec::const_iterator aIt = (*it)->succs.begin();
-					AtomVec::const_iterator aEnd = (*it)->succs.end();
-					for (; aIt != aEnd && (*aIt)->scc == (*it)->scc; ++aIt) {
-						if ((*aIt)->source == (*it)) {
-							(*aIt)->source = 0;
+			for (; *it; ++it) {
+				if ((*it)->atomUnsourced(*head)) {
+					for (UfsAtomNode** aIt = (*it)->succs; *aIt && (*aIt)->scc == (*it)->scc; ++aIt) {
+						if ((*aIt)->hasSource() && (*aIt)->watch() == *it) {
+							(*aIt)->markSourceInvalid();
 							sourceQueue_.push_back(*aIt);
 						}
 					}
@@ -423,41 +568,6 @@ void DefaultUnfoundedCheck::propagateSource() {
 }
 
 
-// checks whether an extended body can be a source and adds un-sourced atoms
-// to unfounded queue if not.
-bool DefaultUnfoundedCheck::ExtendedBody::canBeSourceExt(UfsAtomNode*, DefaultUnfoundedCheck* ufs) {
-	trivWeight = 0;
-	circWeight = 0;
-	weight_t triv = 0;
-	for (LitVec::size_type i = 0; i != lits.size(); ++i) {
-		if (!ufs->solver().isFalse(lits[i])) { 
-			triv += weights ? weights[preds.size()+i] : 1;
-		}
-	}
-	trivWeight = triv - bound;
-	circWeight = bound - triv;
-	uint32 unfounded = 0;
-	for (AtomVec::const_iterator it = preds.begin(); it != preds.end(); ++it) {
-		if ( (*it)->source != 0 ) {
-			assert(!ufs->solver().isFalse((*it)->lit));
-			circWeight -= weights ? weights[it-preds.begin()] : 1;
-		}
-		else if (!ufs->solver().isFalse((*it)->lit) && !(*it)->inUnfoundedQueue() && triv < bound) {
-			++unfounded;
-			ufs->enqueueUnfounded(*it);
-		}
-	}
-	if (circWeight <= 0) {
-		// since this body is a source, remove from unfounded queue all those atoms
-		// that were added in the preceding for-loop.
-		while (unfounded--) {
-			ufs->unfounded_.back()->typeOrUnfounded = 0;
-			ufs->unfounded_.pop_back();
-		}
-		return true;
-	}
-	return false;
-}
 /////////////////////////////////////////////////////////////////////////////////////////
 // DefaultUnfoundedCheck - Propagating unfounded sets
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -502,7 +612,8 @@ bool DefaultUnfoundedCheck::assertAtom(Literal a) {
 	if (strategy_ == distinct_reason || activeClause_->empty()) {
 		// first atom of unfounded set or distinct reason for each atom requested.
 		activeClause_->startAsserting(Constraint_t::learnt_loop, conflict ? a : ~a);
-		computeReason(conflict || strategy_ == only_reason);
+		invSign_ = conflict || strategy_ == only_reason;
+		computeReason();
 		if (conflict) {
 			LitVec cfl;
 			activeClause_->swap(cfl);
@@ -591,23 +702,25 @@ void DefaultUnfoundedCheck::createLoopFormula() {
 
 
 // computes the reason why a set of atoms is unfounded
-void DefaultUnfoundedCheck::computeReason(bool invSign) {
+void DefaultUnfoundedCheck::computeReason() {
 	uint32 ufsScc = unfounded_[0]->scc;
-	(void)ufsScc;
 	for (LitVec::size_type i = 0; i < unfounded_.size(); ++i) {
 		assert(ufsScc == unfounded_[i]->scc);
 		if (!solver_->isFalse(unfounded_[i]->lit)) {
 			UfsAtomNode* a = unfounded_[i];
-			for (BodyVec::iterator it = a->preds.begin(), end = a->preds.end(); it != end; ++it) {
-				if ((*it)->pickedOrTodo == 0 && !inReason((*it)->lit)) {
+			for (UfsBodyNode** it = a->preds; *it != 0; ++it) {
+				if ((*it)->pickedOrTodo == 0) {
 					picked_.push_back(*it);
 					(*it)->pickedOrTodo = 1;
-					(*it)->computeReason(this, invSign);
+					(*it)->addIfReason(*this, ufsScc);
 				}
 			}
 		}
 	}	
-	assert(solver_->decisionLevel() == 0 || solver_->level((*activeClause_)[activeClause_->secondWatch()].var()) == solver_->decisionLevel());
+	assert( solver_->level( activeClause_->size() > 1 
+		? (*activeClause_)[activeClause_->secondWatch()].var()
+		: (*activeClause_)[0].var()
+		) == solver_->decisionLevel() && "Loop nogood must contain a literal from current DL!");
 	for (BodyVec::iterator it = picked_.begin(); it != picked_.end(); ++it) {
 		(*it)->pickedOrTodo = false;
 		solver_->data((*it)->lit.var()) &= ~3u;
@@ -619,64 +732,22 @@ void DefaultUnfoundedCheck::computeReason(bool invSign) {
 	pickedAtoms_.clear();
 }
 
-void DefaultUnfoundedCheck::UfsBodyNode::computeReason(DefaultUnfoundedCheck* ufs, bool invSign) {
-	if (ufs->solver().isFalse(lit)) {
-		if (ufs->solver().level(lit.var()) == 0) return;	// Skip level 0 reason
-		if (scc == ufs->unfounded_[0]->scc) {
-			if (!extended()) {
-				// body is only a reason if it does not depend on the atoms from the unfounded set
-				for (AtomVec::const_iterator it = preds.begin(); it != preds.end(); ++it) {
-					if ( (*it)->typeOrUnfounded && !ufs->solver().isFalse((*it)->lit)) { return; }
-				}
-			}
-			else {
-				ExtendedBody* self	= static_cast<ExtendedBody*>(this);
-				weight_t sumW				= self->weights ? self->weights[ preds.size() + self->lits.size() ] : (weight_t) (preds.size() + self->lits.size());
-				weight_t lb					= self->bound;
-				for (AtomVec::const_iterator it = preds.begin(); it != preds.end(); ++it) {
-					if ( (*it)->typeOrUnfounded && !ufs->solver().isFalse((*it)->lit)) { 
-						sumW -= self->weights ? self->weights[std::find(preds.begin(), preds.end(), *it) - preds.begin()] : 1;
-						if (sumW < lb) { return; }
-					}
-				}
-			}	
-		}
-		Literal bl = lit;
-		if (!invSign || (bl = ~bl) != ufs->activeClause_->lits().front()) {
-			assert(ufs->inReason(bl) == false);
-			ufs->activeClause_->add(bl);
-			ufs->markBodyLitInReason(bl);
-		}
-	}
-	else if (extended() && !canBeSource()) {
-		ExtendedBody* self = static_cast<ExtendedBody*>(this);
-		Literal a = ufs->activeClause_->lits().front();
-		for (LitVec::size_type i = 0, end = self->lits.size(); i != end; ++i) {
-			Literal x = self->lits[i];
-			if (ufs->solver().isFalse(x) && ufs->solver().level(x.var()) > 0) {
-				if ((!invSign || (x = ~x) != a) && !ufs->inReason(x)) { 
-					ufs->activeClause_->add(x); 
-					ufs->markAtomLitInReason(x);
-				}
-			}
-		}
-		for (AtomVec::const_iterator z = preds.begin(); z != preds.end(); ++z) {
-			Literal x = (*z)->lit;
-			if (ufs->solver().isFalse(x) && ufs->solver().level(x.var()) > 0) {
-				if ((!invSign || (x = ~x) != a) && !ufs->inReason(x)) { 
-					ufs->activeClause_->add(x); 
-					ufs->markAtomLitInReason(x);
-				}
-			}
-		}
-	}
-}
 /////////////////////////////////////////////////////////////////////////////////////////
 // DefaultUnfoundedCheck - Helpers
 /////////////////////////////////////////////////////////////////////////////////////////
-void DefaultUnfoundedCheck::addExtendedWatch(Literal p, const ExtendedWatch& w) {
-	uint32 d = (static_cast<uint32>(extWatches_.size())<<1) + 1;
-	extWatches_.push_back(w);
+void DefaultUnfoundedCheck::addWatch(Literal p, UfsBodyNode* b, uint32 data) {
+	uint32 d = (static_cast<uint32>(watches_.size())<<1) + 1;
+	watches_.push_back(Watch(b, data));
 	solver_->addWatch(p, this, d);
+}
+
+void DefaultUnfoundedCheck::addReasonLit(Literal p, const UfsBodyNode* reason) {
+	if (solver_->data(p.var()) == 0 && solver_->level(p.var()) > 0) {
+		solver_->data(p.var()) |= 1;
+		if (p != reason->lit) { pickedAtoms_.push_back(p); }
+		if (!invSign_ || (p = ~p) != activeClause_->lits().front()) {
+			activeClause_->add(p);
+		}
+	}
 }
 }

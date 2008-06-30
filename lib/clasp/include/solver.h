@@ -73,12 +73,17 @@ struct SolverStrategies {
 	
 	//! Strategy to use during conflict clause minimization
 	enum CflMinStrategy {
-		no_minimization				= 0,	/*!< Don't minimize first-uip-clauses */
-		binary_preds					= 2,	/*!< Consider only binary-antecedents */
-		binary_ternary_preds	= 6,	/*!< Consider binary- and ternary-antecedents */
-		all_preds							= 7		/*!< Consider all antecedents */
+		beame_minimization		= 1,	/*!< minimization as described in P. Beame et al: "Understanding the power of clause learning"		*/
+		een_minimization			= 2		/*!< minimization as described in N. Eén et al: "A SAT Solver with conflict-clause minimization"	*/
 	};
-	
+	//! Antecedents to consider during conflict clause minimization
+	enum CflMinAntes {
+		no_antes							= 0,	/*!< Don't minimize first-uip-clauses */
+		binary_antes					= 2,	/*!< Consider only binary antecedents					*/
+		binary_ternary_antes	= 6,	/*!< Consider binary- and ternary antecedents */
+		all_antes							= 7		/*!< Consider all antecedents									*/
+	};
+
 	//! creates a default-initialized object.
 	/*!
 	 * The following parameters are used:
@@ -86,7 +91,8 @@ struct SolverStrategies {
 	 *  - heuristic				:	none (choose the first free literal)
 	 *	-	postProp				: none (compute supported models)
 	 *  - search					: use_learning
-	 *  - cflMin					: binary_preds
+	 *  - cflMin					: beame_minimization
+	 *	- cflMinAntes			: all_antes
 	 *	- minimizer				: none
 	 *  - compression			: 60
 	 *	- randomWatches		: false
@@ -101,6 +107,7 @@ struct SolverStrategies {
 	SearchStrategy			search;
 	MinimizeConstraint*	minimizer;
 	CflMinStrategy			cflMin;
+	CflMinAntes					cflMinAntes;
 	bool								randomWatches;
 	bool								saveProgress;
 	void setCompressionStrategy(uint32 len) {
@@ -527,18 +534,16 @@ public:
 			}
 		}
 		impliedLits_.clear();
-		return simplify(false);
+		return simplify();
 	}
 
 	//! If called on top-level removes SAT-clauses + Constraints for which Constraint::simplify returned true
 	/*!
 	 * \note if this method is called on a decision-level > 0 it is a noop and will
 	 * simply return true.
-	 * \param choose if true, the installed heuristic is used to select the first
-	 * decision.
 	 * \return If a top-level conflict is detected false, otherwise true.
 	 */
-	bool simplify(bool choose);
+	bool simplify();
 
 	//! sets the literal p to true and schedules p for propagation.
 	/*!
@@ -697,8 +702,8 @@ public:
 	 * \pre decisionLevel() == 0 || simplify was called on top-level.
 	 * \param maxConflict stop search after maxConflict (-1 means: infinite)
 	 * \param maxLearnts reduce learnt constraints after maxLearnts constraints have been learnt (-1 means: never reduce learnt constraints).
-	 * \param learntInc set maxLearnts to maxLearnts*learntInc after each reduction of the learnt db
 	 * \param randProp pick next decision variable randomly with a propability of randProp
+	 * \param localR if true, stop after maxConflict in current branch
 	 * \return
 	 *  - value_true: if a model was found.
 	 *  - value_false: if the problem is unsatisfiable (under assumptions, if any)
@@ -708,7 +713,7 @@ public:
 	 * \note search treats the root level as top-level, i.e. it
 	 * will never backtrack below that level.
 	 */
-	ValueRep search(uint64 maxConflict, double& maxLearnts, double inc, double randProp = 0.0, bool localR = false);
+	ValueRep search(uint64 maxConflict, uint64 maxLearnts, double randProp = 0.0, bool localR = false);
 
 	//! number of (unprocessed) literals in the propagation queue
 	uint32 queueSize() const { return (uint32) trail_.size() - front_; }
@@ -753,7 +758,8 @@ private:
 	void		simplifyDB(ConstraintDB& db);
 	bool		unitPropagate();
 	void		undoLevel(bool sp);
-	void		minimizeConflictClause(ClauseCreator& outClause);
+	void		minimizeConflictClause(ClauseCreator& outClause, uint32 abstr);
+	bool		analyzeLitRedundant(Literal p, uint32 abstr);
 	uint32	analyzeConflict(ClauseCreator& outClause);
 	bool		localRestart(uint64& mCfl) {
 		if (decisionLevel() > 0 && (stats.conflicts - levConflicts_[decisionLevel()-1]) > mCfl) {
@@ -768,6 +774,7 @@ private:
 	ConstraintDB			learnts_;			// learnt constraints
 	ImpliedLits				impliedLits_;	// Lits that were asserted on current dl but are logically implied earlier
 	LitVec						conflict_;		// stores conflict-literals for later analysis
+	LitVec						cc_;					// temporary: stores conflict clause within analyzeConflict
 	LitVec						trail_;				// Assignment stack; stores assigments in the order they were made
 	TrailLevels				levels_;			// Stores start-position in trail of every decision level
 	VarVec						levConflicts_;// For a DL d, levConflicts_[d-1] stores num conflicts when d was started

@@ -76,11 +76,11 @@ bool mapCflMinimize(const std::string& s, int& i, int*) {
 	std::string temp = toLower(s);
 	bool b = temp == "all";
 	if (b || parseValue(s, b, 1)) {
-		i = b ? SolverStrategies::all_preds : SolverStrategies::no_minimization;
+		i = b ? SolverStrategies::all_antes : SolverStrategies::no_antes;
 		return true;
 	}
-	else if	(temp == "bin")		{ i = SolverStrategies::binary_preds; return true; }
-	else if (temp == "tern")	{ i = SolverStrategies::binary_ternary_preds; return true; }
+	else if	(temp == "bin")		{ i = SolverStrategies::binary_antes; return true; }
+	else if (temp == "tern")	{ i = SolverStrategies::binary_ternary_antes; return true; }
 	return false;
 }
 bool mapLoops(const std::string& s, int& i, int*) {
@@ -150,6 +150,7 @@ void Options::setDefaults() {
 	stats							= false;
 	dimacs						= false;
 	optimizeAll				= false;
+	ccmExp						= false;
 }
 
 void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::OptionGroup& hidden) {
@@ -244,22 +245,23 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"\t  n1=0  : Do not shuffle program", "n1,n2")
 		("deletion,d", value<vector<double> >()->defaultValue(delDefault())->parser(mapVec), 
 			"Set size and grow factor of learnt database\n"
-			"\tDefault: 3,1.1,1.0\n"
-			"\tValid: no or <n1[,n2,n3]> with 0 <= n1; 1.0 <= n2 <= n3\n"
-			"\t  n1,n2,n3 : Size = problem size/n1. Size *= n2 after restart,\n"
-			"\t             Size *= n3 after deletion\n"
+			"\tDefault: 3,1.1,3.0\n"
+			"\tValid: no or <n1[,n2,n3]> with 0 <= n1 <= n3; 1.0 <= n2\n"
+			"\t  n1,n2,n3 : Size = problem size/n1. MaxSize = Size*n3\n"
+			"\t             Size = min(Size*n2,MaxSize) after restart\n"
 			"\t  no       : Never delete learnt nogoods")
 		("reduce-on-restart", bool_switch(), "Delete some learnt nogoods after each restart")
-		("minimize,m", value<int>()->defaultValue(SolverStrategies::all_preds)->parser(mapCflMinimize),
+		("minimize,m", value<int>()->defaultValue(SolverStrategies::all_antes)->parser(mapCflMinimize),
 			"Minimize learnt conflict-nogoods\n"
 			"\tDefault: all\n"
 			"\t  bin  : Check only binary antecedents\n"
 			"\t  tern : Check binary and ternary antecedents\n"
 			"\t  all  : Check all antecedents\n"
 			"\t  no   : Do not minimize conflict-nogoods")
-		("contraction,c", value<int>()->defaultValue(60),
+		("expensiveccm", bool_switch(&ccmExp), "enhanced conflict clause minimization\n")
+		("contraction,c", value<int>()->defaultValue(250),
 			"Temporarily omit literals from long learnt nogoods\n"
-			"\tDefault: 60 | Valid: [0...maxInt), 0 means disabled")
+			"\tDefault: 250 | Valid: [0...maxInt), 0 means disabled")
 		("loops,l", value<int>(&loopRep)->parser(mapLoops),
 			"Use <arg> as strategy when creating loop formuals\n"
 			"\tDefault: common | Valid: common, shared, distinct, no\n"
@@ -336,13 +338,14 @@ bool Options::setSolverStrategies(Solver& s, const OptionValues& vm) {
 		if (!vm["contraction"].isDefaulted()||!vm["minimize"].isDefaulted()) {
 			warning_ += "Warning: lookback-options ignored because lookback strategy is not used!\n";
 		}
-		s.strategies().cflMin = SolverStrategies::no_minimization;
+		s.strategies().cflMinAntes = SolverStrategies::no_antes;
 		s.strategies().setCompressionStrategy(0);
 		s.strategies().saveProgress = false;
 		loopRep = DefaultUnfoundedCheck::no_reason;
 	}
 	else {
-		s.strategies().cflMin		= (SolverStrategies::CflMinStrategy)value_cast<int>(vm["minimize"]);
+		s.strategies().cflMinAntes	= (SolverStrategies::CflMinAntes)value_cast<int>(vm["minimize"]);
+		s.strategies().cflMin				= ccmExp ? SolverStrategies::een_minimization : SolverStrategies::beame_minimization;
 		s.strategies().setCompressionStrategy(value_cast<int>(vm["contraction"]));
 		s.strategies().saveProgress = vm.count("save-progress") != 0 && value_cast<bool>(vm["save-progress"]);
 	}
@@ -392,8 +395,8 @@ void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
 			<< "  clasp 1 --trans-ext=no --eq=-1 \n"
 			<< "          --lookahead=no --lookback=yes --heuristic=Berkmin\n"
 			<< "          --rand-prop=0.0 --randomize=no --rand-watches=yes\n"
-			<< "          --restarts=100,1.5 --deletion=3,1.1,1.0\n"
-			<< "          --minimize=all --contraction=60 --loops=common"
+			<< "          --restarts=100,1.5 --deletion=3,1.1,3.0\n"
+			<< "          --minimize=all --contraction=250 --loops=common"
 			<< endl;
 }
 void Options::printVersion(std::ostream& os) const {

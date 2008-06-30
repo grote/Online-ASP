@@ -35,11 +35,11 @@
 
 using namespace NS_GRINGO;
 		
-PredicateLiteral::PredicateLiteral(Grounder *g, std::string *id, TermVector *variables) : Literal(), predNode_(0), id_(id), variables_(variables), uid_(g->createPred(id, variables->size())), matchValues_(variables ? variables->size() : 0)
+PredicateLiteral::PredicateLiteral(Grounder *g, std::string *id, TermVector *variables) : Literal(), predNode_(0), id_(id), variables_(variables), uid_(g->createPred(id, variables->size())), values_(variables ? variables->size() : 0)
 {
 }
 
-PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : predNode_(p.predNode_), id_(p.id_), uid_(p.uid_), matchValues_(p.matchValues_.size()), values_(p.values_.size())
+PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : predNode_(p.predNode_), id_(p.id_), uid_(p.uid_), values_(p.values_.size())
 {
         if(p.variables_)
         {
@@ -161,9 +161,8 @@ bool PredicateLiteral::isFact()
 	// a precondition for this method is that the predicate is not false!
 	if(predNode_->solved())
 		return true;
-	values_.clear();
-	for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
-		values_.push_back((*it)->getValue());
+	for(int i = 0; i < (int)variables_->size(); i++)
+		values_[i] = (*variables_)[i]->getValue();
 	if(getNeg())
 	{
 		assert(!predNode_->isFact(values_));
@@ -211,8 +210,8 @@ bool PredicateLiteral::match(Grounder *g)
 		if(getNeg() && predNode_->hasFacts())
 		{
 			for(int i = 0; i < (int)variables_->size(); i++)
-				matchValues_[i] = (*variables_)[i]->getValue();
-			return !predNode_->isFact(matchValues_);
+				values_[i] = (*variables_)[i]->getValue();
+			return !predNode_->isFact(values_);
 		}
 		else
 			return true;
@@ -222,12 +221,12 @@ bool PredicateLiteral::match(Grounder *g)
 	if(variables_)
 	{
 		for(int i = 0; i < (int)variables_->size(); i++)
-			matchValues_[i] = (*variables_)[i]->getValue();
+			values_[i] = (*variables_)[i]->getValue();
 	}
-	match = predNode_->inDomain(matchValues_);
+	match = predNode_->inDomain(values_);
 	if(getNeg())
 	{
-		return !(match && (predNode_->solved() || predNode_->isFact(matchValues_)));
+		return !(match && (predNode_->solved() || predNode_->isFact(values_)));
 	}
 	else
 	{
@@ -243,11 +242,6 @@ NS_OUTPUT::Object * PredicateLiteral::convert(const ValueVector &values)
 NS_OUTPUT::Object *PredicateLiteral::convert()
 {
 	// the method isFact has to be called before this method
-	/*
-	values_.clear();
-	for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
-		values_.push_back((*it)->getValue());
-	*/
 	return convert(values_);
 }
 

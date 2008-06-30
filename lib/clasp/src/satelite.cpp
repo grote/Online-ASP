@@ -226,7 +226,7 @@ bool SatElite::preprocess() {
 	clauses_.erase(clauses_.begin()+j, clauses_.end());
 	assert(facts_ == solver_->numAssignedVars());
 	// simplify other constraints w.r.t new derived top-level facts
-	if (!solver_->simplify(false)) return false;
+	if (!solver_->simplify()) return false;
 
 	// 2. remove subsumed clauses, eliminate vars by clause distribution
 	std::time_t timeOut = options.maxTime != uint32(-1) ? time(0) + options.maxTime : std::numeric_limits<std::time_t>::max();
@@ -260,7 +260,7 @@ bool SatElite::preprocess() {
 	}
 	assert( facts_ == solver_->numAssignedVars() );
 	// simplify other constraints w.r.t new derived top-level facts
-	if (!solver_->simplify(false)) return false;
+	if (!solver_->simplify()) return false;
 	// 3. Transfer simplified clausal problem to solver
 	ClauseCreator nc(solver_);
 	for (ClauseList::size_type i = 0; i != clauses_.size(); ++i) {

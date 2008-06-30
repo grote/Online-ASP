@@ -224,7 +224,7 @@ void Clause::initWatches(Solver& s) {
 	if (s.strategies().randomWatches) {
 		uint32 fw = irand(size_);
 		uint32 sw;
-		while ( (sw = irand(size_)) == fw);
+		while ( (sw = irand(size_)) == fw) {/*intentionally empty*/}
 		initWatches(s, fw, sw);
 	}
 	else {
@@ -285,7 +285,7 @@ Constraint::PropResult Clause::propagate(const Literal&, uint32& data, Solver& s
 	int		dir		= ((data & 1) << 1) - 1;			// either +1 or -1
 	int		bounds= 0;													// number of array bounds seen - 2 means clause is active
 	for (;;) {
-		for (run+=dir;s.isFalse(lits_[run]);run+=dir);	// search non-false literal - sentinels guarantee termination
+		for (run+=dir;s.isFalse(lits_[run]);run+=dir) ;	// search non-false literal - sentinels guarantee termination
 		if (!lits_[run].watched()) {										// found a new watchable literal
 			lits_[data>>1].clearWatch();									// remove old watch
 			lits_[run].watch();														// and add the new one

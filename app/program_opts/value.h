@@ -18,13 +18,13 @@
 #include "program_options.h"
 #include "value_base.h"
 #include "errors.h"
+#include <typeinfo>
 #include <string>
 #include <memory>
 #include <sstream>
 #include <vector>
 #include <map>
 #include <stdexcept>
-#include <typeinfo>
 namespace ProgramOptions {
 
 //! typed value of an option

@@ -31,40 +31,86 @@ private:
 	const BodyList* bodies_;
 };
 }
+
 /////////////////////////////////////////////////////////////////////////////////////////
-// simple preprocessing (no equivalence checking)
+// simple preprocessing
 //
-// Simplifies the program by computing max consequences and adds
-// a variable for each supported atom and body
+// Simplifies the program by computing max consequences.
+// If bodyEq == false, adds a variable for each supported atom and body
+// Otherwise: Adds a variable for each supported atom and each body not equivalent to 
+// some atom.
 /////////////////////////////////////////////////////////////////////////////////////////
-bool Preprocessor::preprocessSimple() {
-	if (prg_->incData_) {
-		updatePreviouslyDefinedAtoms(prg_->incData_->startAtom_, false);
+bool Preprocessor::preprocessSimple(bool bodyEq) {
+	if (prg_->incData_) { updatePreviouslyDefinedAtoms(prg_->incData_->startAtom_, false); }
+	Literal marked = negLit(0); marked.watch();
+	if (bodyEq) {
+		std::stable_sort(prg_->initialSupp_.begin(), prg_->initialSupp_.end(), LessBodySize(prg_->bodies_));
+		for (VarVec::size_type i = 0; i != prg_->initialSupp_.size(); ++i) {
+			prg_->bodies_[prg_->initialSupp_[i]]->setLiteral(marked);
+		}
 	}
 	for (VarVec::size_type i = 0; i < prg_->initialSupp_.size(); ++i) {
 		PrgBodyNode* b = prg_->bodies_[prg_->initialSupp_[i]];
 		b->buildHeadSet();
-		b->setLiteral(posLit(prg_->vars_.add(Var_t::body_var)));
+		if (!bodyEq) b->setLiteral(posLit(prg_->vars_.add(Var_t::body_var)));
 		for (VarVec::const_iterator h = b->heads.begin(); h != b->heads.end(); ++h) {
 			if ( !prg_->atoms_[*h]->hasVar() ) {
 				prg_->atoms_[*h]->preds.clear();
-				prg_->atoms_[*h]->setLiteral(posLit(prg_->vars_.add(Var_t::atom_var)));
+				bool m = bodyEq && b->size() == 0 && b->type() != CHOICERULE;
+				if (m) {
+					prg_->atoms_[*h]->setLiteral(posLit(0));
+					prg_->atoms_[*h]->setValue(value_true);
+					m = true;
+				}
+				else {
+					prg_->atoms_[*h]->setLiteral(posLit(prg_->vars_.add(Var_t::atom_var)));
+				}
 				if (*h < prg_->stats.index.size()) prg_->stats.index[*h].lit = prg_->atoms_[*h]->literal();
 				const VarVec& bl = prg_->atoms_[*h]->posDep;
 				for (VarVec::const_iterator it = bl.begin(); it != bl.end(); ++it) {
 					PrgBodyNode* nb = prg_->bodies_[*it];
-					if (!nb->isSupported() && nb->onPosPredSupported(*h)) {
-						prg_->initialSupp_.push_back( *it );
-					}
+					if (m) { nb->setLiteral(marked); }
+					if (!nb->isSupported() && nb->onPosPredSupported(*h)) { prg_->initialSupp_.push_back( *it ); }
 				}
 			}
 			prg_->atoms_[*h]->preds.push_back(prg_->initialSupp_[i]);
 		}
 	}
+	if (bodyEq) {
+		std::pair<uint32, uint32> ignore;
+		for (VarVec::size_type i = 0; i < prg_->initialSupp_.size(); ++i) {
+			uint32 bodyId		= prg_->initialSupp_[i];
+			PrgBodyNode* b	= prg_->bodies_[bodyId];
+			if (b->literal().watched() && !b->simplifyBody(*prg_, bodyId, ignore, *this, true)) {
+				return false;
+			}
+			Literal l; l.watch();
+			if			(b->ignore())			{	l = negLit(0); }	
+			else if	(b->size() == 0)	{ l = posLit(0); }
+			else if (b->size() == 1)	{ 
+				l = b->posSize() == 1 ? prg_->atoms_[b->pos(0)]->literal() : ~prg_->atoms_[b->neg(0)]->literal(); 
+				prg_->vars_.setAtomBody(l.var());
+				prg_->stats.incBAEqs();
+			}
+			else {
+				if (b->type() != CHOICERULE) {
+					for (VarVec::size_type i = 0; i != b->heads.size(); ++i) {
+						PrgAtomNode* a = prg_->atoms_[b->heads[i]];
+						if (a->preds.size() == 1) {
+							l = a->literal();
+							prg_->stats.incBAEqs();
+							break;
+						}
+					}
+				}
+				if (l.watched()) l = posLit(prg_->vars_.add(Var_t::body_var));
+			}
+			b->setLiteral(l);
+		}
+	}
 	return true;
 }
 
-// If the program is defined incrementally, mark atoms from previous steps as supported
 // If the program is defined incrementally, mark atoms from previous steps as supported
 void Preprocessor::updatePreviouslyDefinedAtoms(Var startAtom, bool strong) {
 	for (VarVec::size_type i = 0; i != startAtom; ++i) {
@@ -139,7 +185,6 @@ bool Preprocessor::preprocessEq(uint32 maxIters) {
 			it->first = Literal(prg_->getEqAtom(it->first.var()), it->first.sign());
 		}
 	}
-	printf("Finished after %u iterations\n", pass_);
 	return true;
 }
 
@@ -258,7 +303,7 @@ bool Preprocessor::simplifyClassifiedProgram(uint32 startAtom, uint32& stopAtom)
 				return false;
 			}
 			nodes_[i].asBody = 0; nodes_[i].aSeen = 0;
-			if (stopAtom != prg_->atoms_.size() || (pass_ != maxPass_ && stopAt(a, i, r.second))) {
+			if (stopAtom != prg_->atoms_.size() || (pass_ != maxPass_ && reclassify(a, i, r.second))) {
 				stopAtom = std::min(stopAtom,i);
 				a->clearVar(false);
 				if (i < prg_->stats.index.size()) { prg_->stats.index[i].lit = negLit(0); }
@@ -289,11 +334,11 @@ bool Preprocessor::newFactBody(PrgBodyNode* body, uint32 id, uint32 oldHash) {
 				other->heads.push_back( body->heads[i] );
 				setSimplifyBodies( body->heads[i] );
 			}
-			body->heads.clear();
 			if (nodes_[ra.first->second].sHead == 0) {
 				other->simplifyHeads(*prg_, *this, true);
 			}
 			// and remove this body from Program.
+			body->heads.clear();
 			body->setIgnore(true);
 			body->clearVar(true);
 			nodes_[id].bSeen	= 1;
@@ -309,6 +354,7 @@ bool Preprocessor::newFactBody(PrgBodyNode* body, uint32 id, uint32 oldHash) {
 	return body->type() != CHOICERULE;
 }
 
+// body became false after it was used to derived its heads.
 void Preprocessor::newFalseBody(PrgBodyNode* body, uint32 id, uint32 oldHash) {
 	body->clearVar(true); body->setIgnore(true);
 	nodes_[id].bSeen = 1;
@@ -322,7 +368,8 @@ void Preprocessor::newFalseBody(PrgBodyNode* body, uint32 id, uint32 oldHash) {
 	if (ra.first != ra.second) prg_->bodyIndex_.erase(ra.first);
 }
 
-bool Preprocessor::stopAt(PrgAtomNode* a, uint32 atomId, uint32 diffLits) const {
+// check if atom has a distinct var although it is eq to some body
+bool Preprocessor::reclassify(PrgAtomNode* a, uint32 atomId, uint32 diffLits) const {
 	if ((a->preds.empty() && a->hasVar()) || 
 		(a->preds.size() == 1
 		&& prg_->bodies_[a->preds[0]]->type() != CHOICERULE

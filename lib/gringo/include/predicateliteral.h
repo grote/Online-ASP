@@ -64,7 +64,6 @@ namespace NS_GRINGO
 		TermVector    *variables_;
 		int           uid_;
 
-		ValueVector matchValues_;
 		ValueVector values_;
 	};
 }

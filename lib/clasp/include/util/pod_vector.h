@@ -21,10 +21,10 @@
 #define BK_LIB_POD_VECTOR_H_INCLUDED
 #include <iterator>
 #include <memory>
+#include <cstring>
 #include <algorithm>
 #include <cassert>
 #include <stdexcept>
-#include <cstring>
 namespace bk_lib { namespace detail {
 	
 	struct MemCpyRange {

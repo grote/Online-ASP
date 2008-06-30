@@ -67,9 +67,10 @@ public:
 	bool					optimizeAll;			// Default: false
 	bool					suppModels;				// Default: false
 	bool					initialLookahead;	// Default: false
+	bool					ccmExp;						// Default: false
 private:
 	std::vector<double> delDefault() const {
-		std::vector<double> v; v.push_back(3.0); v.push_back(1.1); v.push_back(1.0);
+		std::vector<double> v; v.push_back(3.0); v.push_back(1.1); v.push_back(3.0);
 		return v;
 	}
 	std::vector<double> restartDefault() const {

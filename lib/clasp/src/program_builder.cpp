@@ -729,6 +729,7 @@ void ProgramBuilder::addRuleImpl(const PrgRule& r, const PrgRule::RData& rd) {
 		assert(r.heads.empty());
 		ProgramBuilder::MinimizeRule* mr = new ProgramBuilder::MinimizeRule;
 		for (WeightLitVec::const_iterator it = r.body.begin(), bEnd = r.body.end(); it != bEnd; ++it) { 
+			resize(it->first.var());
 			ruleState_.popFromRule(it->first.var());
 		}	
 		mr->lits_ = r.body;
@@ -796,7 +797,7 @@ bool ProgramBuilder::endProgram(Solver& solver, bool initialLookahead) {
 		frozen_ = true;
 		if (atoms_[0]->value() == value_true || !applyCompute()) { return false; }
 		Preprocessor p;
-		if (!p.preprocess(*this, eqIters_ != 0, eqIters_, solver.strategies().satPrePro.get() == 0)) {
+		if (!p.preprocess(*this, eqIters_ != 0 ? Preprocessor::full_eq : Preprocessor::no_eq, eqIters_, solver.strategies().satPrePro.get() == 0)) {
 			return false;
 		}
 		vars_.addTo(solver, incData_ ? incData_->startVar_ : 1);
@@ -883,6 +884,7 @@ bool ProgramBuilder::applyCompute() {
 				}
 				else {
 					b->heads.erase(std::find(b->heads.begin(), b->heads.end(), computeFalse_[i]));
+					if (b->heads.empty() && b->value() != value_false) b->setIgnore(true);
 				}
 			}
 		}

@@ -44,23 +44,30 @@ class PrgAtomNode;
 class Preprocessor {
 public:
 	Preprocessor() : prg_(0), dfs_(true) {}
-	
+	//! Possible eq-preprocessing types
+	enum EqType {
+		no_eq,		/*!< no eq-preprocessing, associate a new var with each supported atom and body */
+		body_eq,	/*!< associate vars to atoms, then check which bodies are equivalent to atoms		*/
+		full_eq		/*!< check for all kinds of equivalences between atoms and bodies								*/
+	};
+
 	//! starts preprocessing of the logic program
 	/*!
 	 * Computes the maximum consequences of prg and associates a variable 
 	 * with each supported atom and body.
 	 * \param prg The logic program to preprocess
-	 * \param strong If true, searches and removes equivalent atoms and bodies
-	 * \param maxIters If strong is true, maximal number of iterations during eq preprocessing
+	 * \param t		Type of eq-preprocessing
+	 * \param maxIters If t == full_eq, maximal number of iterations during eq preprocessing
+	 * \param dfs	If t == full_eq, classify in df-order (true) or bf-order (false)
 	 */
-	bool preprocess(ProgramBuilder& prg, bool strong, uint32 maxIters, bool dfs = true) {
+	bool preprocess(ProgramBuilder& prg, EqType t, uint32 maxIters, bool dfs = true) {
 		prg_	= &prg;
 		dfs_	= dfs;
-		return strong
+		return t == full_eq
 			? preprocessEq(maxIters)
-			: preprocessSimple();
+			: preprocessSimple(t == body_eq);
 	}
-
+	
 	//! returns the id of the body that is equivalent to the body with the id bodyId
 	/*!
 	 * \pre preprocess() was called with strong set to true
@@ -81,18 +88,20 @@ public:
 	 * \pre preprocess() was called with strong set to true
 	 */
 	void		setSimplifyBodies(uint32 atomId) {
-		nodes_[atomId].asBody = 1;
+		if (atomId < nodes_.size()) nodes_[atomId].asBody = 1;
 	}
 	//! Marks the body with the id bodyId for head-simplification
 	/*!
 	 * \pre preprocess() was called with strong set to true
 	 */
-	void		setSimplifyHeads(uint32 bodyId)		{ nodes_[bodyId].sHead = 1; }
+	void		setSimplifyHeads(uint32 bodyId)		{ 
+		if (bodyId < nodes_.size()) nodes_[bodyId].sHead = 1; 
+	}
 private:
 	Preprocessor(const Preprocessor&);
 	Preprocessor& operator=(const Preprocessor&);
 	void		updatePreviouslyDefinedAtoms(Var startAtom, bool strong);
-	bool		preprocessSimple();
+	bool		preprocessSimple(bool bodyEq);
 	// ------------------------------------------------------------------------
 	// Eq-Preprocessing
 	struct NodeInfo {
@@ -139,7 +148,7 @@ private:
 	}
 	bool		mergeBodies(PrgBodyNode* body, Var bodyId, Var bodyRoot);
 	bool		mergeAtoms(Var atomId, Var atomEqId);
-	bool		stopAt(PrgAtomNode* a, uint32 atomId, uint32 diffLits) const;
+	bool		reclassify(PrgAtomNode* a, uint32 atomId, uint32 diffLits) const;
 	bool		newFactBody(PrgBodyNode* b, uint32 id, uint32 oldHash);
 	void		newFalseBody(PrgBodyNode* b, uint32 id, uint32 oldHash);
 	// ------------------------------------------------------------------------

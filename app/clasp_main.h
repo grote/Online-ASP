@@ -231,7 +231,7 @@ void ClaspApp::printLpStats() const {
 	}
 	cout << ")" << "\n";
 	cout << left << setw(12) << "Bodies" << ": " << ps.bodies << "\n";
-	if (o.eqIters != 0) {
+	if (ps.numEqs() != 0) {
 		cout << left << setw(12) << "Equivalences" << ": " << setw(6) << ps.numEqs() << " (Atom=Atom: " << ps.numEqs(Var_t::atom_var)
 				 << " Body=Body: "	 << ps.numEqs(Var_t::body_var)
 				 << " Other: " << (ps.numEqs() - ps.numEqs(Var_t::body_var) - ps.numEqs(Var_t::atom_var))

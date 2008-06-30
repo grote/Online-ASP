@@ -61,14 +61,14 @@ struct SolveParams {
 	 * The following parameters are used:
 	 * restart			: quadratic: 100*1.5^k / no restarts after first solution
 	 * shuffle			: disabled
-	 * deletion			: initial size: vars()/3, grow factor on restart: 1.1, grow factor on reduce: 1.0, do not reduce on restart
+	 * deletion			: initial size: vars()/3, grow factor: 1.1, max factor: 3.0, do not reduce on restart
 	 * randomization: disabled
 	 * randomProp		: 0.0 (disabled)
 	 * model printer: not used (i.e. models are ignored)
 	 */
 	SolveParams();
 	
-	//! call p.printModel(solver) whenever a model is found.
+	//! calls p.printModel(solver) whenever a model is found.
 	void setModelPrinter(ModelPrinter& p) { printer_ = &p; }
 	
 	//! sets the restart-parameters to use during search.
@@ -111,21 +111,16 @@ struct SolveParams {
 	//! sets the deletion-parameters to use during search.
 	/*!
 	 * \param base initial size is vars()/base
-	 * \param rInc Grow factor applied after each restart
-	 * \param dInc Grow factor applied after each reduction
+	 * \param inc Grow factor applied after each restart
+	 * \param maxF Max factor, i.e. stop growth if db >= maxF*vars()
 	 * \param redOnRestart true if learnt db should be reduced after restart
 	 * \note if base is equal to 0, the solver won't remove any learnt nogood.
+	 * \note if maxF is equal to 0, growth is not limited.
 	 */
-	void setReduceParams(double base, double rInc, double dInc, bool redOnRestart) {
-		if (base >= 0) {
-			reduceBase_	= base;
-		}
-		if (rInc >= 1.0) {
-			reduceRInc_	= rInc;
-		}
-		if (dInc >= 1.0) {
-			reduceDInc_ = dInc;
-		}
+	void setReduceParams(double base, double inc, double maxF, bool redOnRestart) {
+		if (base >= 0)		{	reduceBase_	= base; }
+		if (inc >= 1.0)		{ reduceInc_	= inc; }
+		if (maxF >= 0.0)	{ reduceMaxF_ = maxF; }
 		reduceOnRestart_ = redOnRestart;
 	}
 
@@ -149,8 +144,8 @@ struct SolveParams {
 	}
 	// accessors
 	double	reduceBase()		const { return reduceBase_; }
-	double	reduceRInc()		const { return reduceRInc_; }
-	double	reduceDInc()		const { return reduceDInc_; }
+	double	reduceInc()			const { return reduceInc_; }
+	double	reduceMax()			const { return reduceMaxF_; }
 	bool		reduceRestart() const { return reduceOnRestart_; }
 	uint32	restartBase()		const { return restartBase_; }
 	uint32	restartOuter()	const { return restartOuter_; }
@@ -167,8 +162,8 @@ struct SolveParams {
 	ModelPrinter* printer() const { return printer_;}
 private:
 	double				reduceBase_;
-	double				reduceRInc_;
-	double				reduceDInc_;
+	double				reduceInc_;
+	double				reduceMaxF_;
 	double				restartInc_; 
 	double				randProp_;
 	ModelPrinter*	printer_;

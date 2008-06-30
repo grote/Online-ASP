@@ -340,7 +340,7 @@ Literal ClaspBerkmin::selectVsids(Solver& s) {
 	for (; s.value( front_ ) != value_free; ++front_);	// Pre: At least one unassigned var!
 	Var var = front_;
 #if defined(BERK_TOP_LEVEL_MOMS) && BERK_TOP_LEVEL_MOMS == 1
-	if (s.stats.conflicts != 0) {		// populate cache with most active vars
+	if (s.stats.conflicts != 0 || (numVsids_>50&&s.numFreeVars()>9999)) {		// populate cache with most active vars
 #endif
 		if (!cache_.empty() && cacheSize_ < s.numFreeVars()/10) {
 			cacheSize_ = static_cast<uint32>( (cacheSize_*BERK_CACHE_GROW) + .5 );
