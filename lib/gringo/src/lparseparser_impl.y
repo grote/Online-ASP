@@ -180,7 +180,8 @@ using namespace NS_GRINGO;
 
 start ::= program.
 
-program ::= program rule(rule) DOT. { if(rule) pParser->getGrounder()->addStatement(rule); }
+program ::= program rule(rule) DOT. { if(rule) pParser->getGrounder()->addStatement(rule);
+                                      if(rule) pParser->getStatistic()->rules++;	}
 program ::= program SHOW show_list DOT.
 program ::= program HIDE hide_list DOT.
 program ::= program DOMAIN domain_list DOT.
@@ -220,10 +221,10 @@ domain_var(res) ::= domain_var(list) SEMI VARIABLE(var). { res = list; res->push
 domain_list(res) ::= domain_list(list) COMMA domain_var(var). { res = list; res->push_back(var); }
 domain_list(res) ::= domain_var(var).                         { res = new std::vector<StringVector*>(); res->push_back(var); }
 
-rule(res) ::= head_atom(head) IF body(body). { res = new NormalRule(head, body); }
-rule(res) ::= head_atom(head) IF .           { res = new NormalRule(head, 0); }
-rule(res) ::= head_atom(head).               { res = new NormalRule(head, 0); }
-rule(res) ::= IF body(body).                 { res = new NormalRule(0, body); }
+rule(res) ::= head_atom(head) IF body(body). { res = new NormalRule(head, body);}
+rule(res) ::= head_atom(head) IF .           { res = new NormalRule(head, 0); pParser->getStatistic()->facts++;}
+rule(res) ::= head_atom(head).               { res = new NormalRule(head, 0); pParser->getStatistic()->facts++;}
+rule(res) ::= IF body(body).                 { res = new NormalRule(0, body); pParser->getStatistic()->integrityConstraints++;}
 rule(res) ::= IF.                            { res = new NormalRule(0, 0); }
 rule(res) ::= maximize(min).                 { res = min; }
 rule(res) ::= minimize(max).                 { res = max; }
@@ -249,7 +250,7 @@ constraint_literal(res) ::= NOT constraint_atom(atom). { res = atom; res->setNeg
 
 body_atom(res) ::= predicate(pred) conditional_list(list). { res = ConjunctionAggregate::createBody(pred, list); }
 
-// assignment literals are not realy relation literals but they rae used like them
+// assignment literals are not realy relation literals but they are used like them
 relation_literal(res) ::= VARIABLE(a) ASSIGN term(b). { res = new AssignmentLiteral(new Constant(Constant::VAR, GROUNDER, STRING(a)), b); }
 relation_literal(res) ::= term(a) EQ term(b).         { res = new RelationLiteral(RelationLiteral::EQ, a, b); }
 relation_literal(res) ::= term(a) NE term(b).         { res = new RelationLiteral(RelationLiteral::NE, a, b); }
@@ -262,7 +263,7 @@ head_atom(res) ::= aggregate_atom(atom). { res = atom; }
 head_atom(res) ::= disjunction(disj).    { res = disj; }
 
 disjunction(res) ::= disj_list(list). { res = DisjunctionAggregate::createHead(list); }
-disj_list(res) ::= disj_list(list) DISJUNCTION constraint_atom(term). { res = list; res->push_back(term); }
+disj_list(res) ::= disj_list(list) DISJUNCTION constraint_atom(term). { res = list; res->push_back(term); pParser->getStatistic()->disjunctions++;}
 disj_list(res) ::= constraint_atom(term).                             { res = new ConditionalLiteralVector(); res->push_back(term); }
 
 constraint_atom(res) ::= predicate(pred) conditional_list(list). { res = new ConditionalLiteral(pred, list); }
@@ -272,15 +273,16 @@ predicate(res) ::= IDENTIFIER(id).                            { res = new Predic
 predicate(res) ::= MINUS IDENTIFIER(id) LPARA termlist(list) RPARA. { id->insert(id->begin(), '-'); res = new PredicateLiteral(GROUNDER, STRING(id), list); }
 predicate(res) ::= MINUS IDENTIFIER(id).                            { id->insert(id->begin(), '-'); res = new PredicateLiteral(GROUNDER, STRING(id), new TermVector()); }
 
-aggregate_atom(res) ::= term(l) aggregate(aggr) term(u). { res = aggr; aggr->setBounds(l, u); }
-aggregate_atom(res) ::= aggregate(aggr) term(u).         { res = aggr; aggr->setBounds(0, u); }
-aggregate_atom(res) ::= term(l) aggregate(aggr).         { res = aggr; aggr->setBounds(l, 0); }
+aggregate_atom(res) ::= term(l) aggregate(aggr) term(u). { res = aggr; aggr->setBounds(l, u); pParser->getStatistic()->lowerBounds = true;
+                                                                                              pParser->getStatistic()->upperBounds = true;}
+aggregate_atom(res) ::= aggregate(aggr) term(u).         { res = aggr; aggr->setBounds(0, u); pParser->getStatistic()->upperBounds = true;}
+aggregate_atom(res) ::= term(l) aggregate(aggr).         { res = aggr; aggr->setBounds(l, 0); pParser->getStatistic()->lowerBounds = true;}
 aggregate_atom(res) ::= aggregate(aggr).                 { res = aggr; aggr->setBounds(0, 0); }
 
 termlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(term); }
 termlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }
 
-term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, GROUNDER, STRING(x)); }
+term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, GROUNDER, STRING(x)); pParser->getStatistic()->possibleNegativeVariable(); }
 term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }
 term(res) ::= STRING(x).     { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }
 term(res) ::= NUMBER(x).     { res = new Constant(atol(x->c_str())); DELETE_PTR(x); }
@@ -288,14 +290,14 @@ term(res) ::= LPARA term(a) RPARA.     { res = a; }
 term(res) ::= term(a) MOD term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
 term(res) ::= term(a) PLUS term(b).    { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
 term(res) ::= term(a) TIMES term(b).   { res = new FunctionTerm(FunctionTerm::TIMES, a, b); }
-term(res) ::= term(a) MINUS term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
+term(res) ::= term(a) MINUS term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); pParser->getStatistic()->possibleNegative();}
 term(res) ::= term(a) DIVIDE term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
 term(res) ::= term(a) XOR term(b).     { res = new FunctionTerm(FunctionTerm::BITXOR, a, b); }
 term(res) ::= term(a) AND term(b).     { res = new FunctionTerm(FunctionTerm::BITAND, a, b); }
 term(res) ::= term(a) OR term(b).      { res = new FunctionTerm(FunctionTerm::BITOR, a, b); }
 term(res) ::= TILDE term(a).           { res = new FunctionTerm(FunctionTerm::COMPLEMENT, a); }
 term(res) ::= term(l) DOTS term(u).    { res = new RangeTerm(l, u); }
-term(res) ::= MINUS term(b). [UMINUS]  { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(0), b); }
+term(res) ::= MINUS term(b). [UMINUS]  { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(0), b); pParser->getStatistic()->possibleNegative();}
 term(res) ::= ABS LPARA term(a) RPARA. { res = new FunctionTerm(FunctionTerm::ABS, a); }
 term(res) ::= term(a) SEMI term(b).    { res = new MultipleArgsTerm(a, b); }
 term(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new FuncSymbolTerm(GROUNDER, STRING(id), list); }
@@ -310,30 +312,33 @@ const_term(res) ::= LPARA const_term(a) RPARA.           { res = a; }
 const_term(res) ::= const_term(a) MOD const_term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
 const_term(res) ::= const_term(a) PLUS const_term(b).    { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
 const_term(res) ::= const_term(a) TIMES const_term(b).   { res = new FunctionTerm(FunctionTerm::TIMES, a, b); }
-const_term(res) ::= const_term(a) MINUS const_term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
+const_term(res) ::= const_term(a) MINUS const_term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b);
+                                                           pParser->getStatistic()->possibleNegative();}
 const_term(res) ::= const_term(a) DIVIDE const_term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
-const_term(res) ::= MINUS const_term(b). [UMINUS]        { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(0), b); }
+const_term(res) ::= MINUS const_term(b). [UMINUS]        { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(0), b); 
+                                                           pParser->getStatistic()->possibleNegative();}
 const_term(res) ::= ABS LPARA const_term(a) RPARA.       { res = new FunctionTerm(FunctionTerm::ABS, a); }
 const_term(res) ::= IDENTIFIER(id) LPARA const_termlist(list) RPARA. { res = new FuncSymbolTerm(GROUNDER, STRING(id), list); }
 
-aggregate(res) ::= SUM LSBRAC weight_list(list) RSBRAC.   { res = new SumAggregate(list); }
-aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.       { res = new SumAggregate(list); }
-aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC.   { res = new CountAggregate(list); }
-aggregate(res) ::= LBRAC constr_list(list) RBRAC.         { res = new CountAggregate(list); }
-aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { res = new MinAggregate(list); }
-aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { res = new MaxAggregate(list); }
+aggregate(res) ::= SUM LSBRAC weight_list(list) RSBRAC.   { res = new SumAggregate(list); pParser->getStatistic()->sum++;}
+aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.       { res = new SumAggregate(list); pParser->getStatistic()->sum++;}
+aggregate(res) ::= COUNT LBRAC constr_list(list) RBRAC.   { res = new CountAggregate(list); pParser->getStatistic()->count++;}
+aggregate(res) ::= LBRAC constr_list(list) RBRAC.         { res = new CountAggregate(list); pParser->getStatistic()->count++;}
+aggregate(res) ::= MIN LSBRAC weight_list(list) RSBRAC.   { res = new MinAggregate(list); pParser->getStatistic()->min++;}
+aggregate(res) ::= MAX LSBRAC weight_list(list) RSBRAC.   { res = new MaxAggregate(list); pParser->getStatistic()->max++;}
 
 compute(res)  ::= COMPUTE LBRAC  constr_list(list) RBRAC.           { res = new LiteralStatement(new ComputeLiteral(list, 1), false); }
 compute(res)  ::= COMPUTE NUMBER(x) LBRAC  constr_list(list) RBRAC. { res = new LiteralStatement(new ComputeLiteral(list, atol(x->c_str())), false); DELETE_PTR(x); }
-minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.          { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MINIMIZE, list, true), true); }
-minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MINIMIZE, list, false), true); }
-maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.          { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MAXIMIZE, list, true), true); }
-maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MAXIMIZE, list, false), true); }
+minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.          { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MINIMIZE, list, true), true); pParser->getStatistic()->minimize++;}
+minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MINIMIZE, list, false), true); pParser->getStatistic()->minimize++;}
+maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.          { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MAXIMIZE, list, true), true); pParser->getStatistic()->maximize++;}
+maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MAXIMIZE, list, false), true); pParser->getStatistic()->maximize++;}
 
-weight_list(res) ::= nweight_list(list). { res = list; }
-weight_list(res) ::= .                   { res = new ConditionalLiteralVector(); }
+weight_list(res) ::= nweight_list(list). { res = list; pParser->getStatistic()->endWeightList();}
+weight_list(res) ::= .                   { res = new ConditionalLiteralVector();}
 nweight_list(res) ::= nweight_list(list) COMMA weight_term(term). { res = list; res->push_back(term); }
-nweight_list(res) ::= weight_term(term).                          { res = new ConditionalLiteralVector(); res->push_back(term); }
+nweight_list(res) ::= weight_term(term) intern_start_weight_list.                          { res = new ConditionalLiteralVector(); res->push_back(term);}
+intern_start_weight_list ::= . {pParser->getStatistic()->startWeightList();}
 
 weight_term(res) ::= constraint_literal(literal) ASSIGN term(term). { res = literal; res->setWeight(term); }
 weight_term(res) ::= constraint_literal(literal).                   { res = literal; res->setWeight(new Constant(1)); }

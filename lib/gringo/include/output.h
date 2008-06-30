@@ -20,6 +20,7 @@
 
 #include <gringo.h>
 #include <value.h>
+#include <statistic.h>
 
 namespace NS_GRINGO
 {
@@ -34,6 +35,7 @@ namespace NS_GRINGO
 			typedef std::vector<AtomHash> AtomLookUp;
 		public:
 			Output(std::ostream *out);
+			virtual void setStatistic(Statistic* stats);
 			virtual void initialize(SignatureVector *pred);
 			virtual void print(NS_OUTPUT::Object *o) = 0;
 			virtual void finalize() = 0;
@@ -57,6 +59,7 @@ namespace NS_GRINGO
 			bool hideAll_;
 			std::map<Signature, bool> hide_;
 			std::vector<bool> visible_;
+			Statistic stats_;
 		};
 	
 		struct Object

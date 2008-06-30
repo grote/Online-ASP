@@ -39,8 +39,10 @@ bool convert = false;
 void start_grounding()
 {
 	bool success = parser->parse(output);
+	output->setStatistic(parser->getStatistic());
 	if(success)
 	{
+		//parser->getStatistic()->print(&std::cout);
 		std::cerr << "Parsing successful" << std::endl;
 		if(!convert)
 		{
@@ -175,6 +177,7 @@ int main(int argc, char *argv[])
 				start_grounding();
 				break;
 			case GRINGO:
+				parser->getStatistic()->print(&std::cout);
 				output = new NS_OUTPUT::PilsOutput(&std::cout);
 				start_grounding();
 				break;

@@ -20,6 +20,7 @@
 
 #include <gringo.h>
 #include <output.h>
+#include <statistic.h>
 
 namespace NS_GRINGO
 {

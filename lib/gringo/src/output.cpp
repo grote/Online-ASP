@@ -29,6 +29,11 @@ Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(fals
 	
 }
 
+void Output::setStatistic(Statistic* stats)
+{
+	stats_ = *stats;
+}
+
 void Output::initialize(SignatureVector *pred)
 {
 	pred_ = pred;

@@ -35,3 +35,7 @@ bool GrinGoParser::getError()
 	return error_;
 }
 
+Statistic* GrinGoParser::getStatistic()
+{
+	return &stats_;
+}
