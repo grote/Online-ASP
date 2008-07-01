@@ -1,0 +1,502 @@
+\documentclass[a4paper,10pt,titlepage]{article}
+
+\usepackage[latin1]{inputenc}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage[all]{xy}
+\usepackage{longtable}
+\usepackage{multirow}
+
+\author{Max Ostrowski}
+\title{Gringo 2.0}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\section{Introduction}
+Answer Set Programming (ASP) \cite{baral02a} is a declarative approach for modeling and solving search problems, represented as logic programs.
+An ASP system usually consists of a grounder and a solver.
+First, a grounder translates a non-ground problem description into a propositional program, which can be processed by the second component of the system, the solver. This is illustrated in figure (\ref{fig:ASP}).
+\begin{figure}[h]
+\[
+\xymatrix{*+[F]\txt{Problem\\representation}\ar[rr]^{Grounder}&&
+		*+[F]\txt{Intermediate\\ representation} \ar[rr]^{Solver}&&
+		*+[F]\txt{Variable\\ assignment}}
+\]
+\caption{Architecture of an ASP System}
+\label{fig:ASP}
+\end{figure}
+Gringo2.0 is a state of the art and has many features that makes writing logic programs easy.
+It was developed by Roland Kaminski and is orientated on the ideas of gringo1.0.
+The goal of this work is to give an overview of the features supported by gringo2.0. First, the general restrictions to the input language are stated. A broad set of potentialities for writing encodings for logic programs exists. Currently, no other grounder support such a rich featured, less restricted input language.
+There exist several output formats which can be used be different grounders and even a human readable format for debugging purposes.
+Gringo also has an internal interface to the solver clasp \cite{gekanesc07b}, so the output can directly by parsed to the solver and answersets can be computed.
+The syntax of gringo2.0 can be found in the appendix \ref{appendix}.
+
+\section{Interface}
+Gringo can be started on the command line and has some parameters that can be useful.
+The first parameters are gringo parameters and and arbritary number of filenames of the logic program.
+\paragraph{--help}
+Gives a short overview of all parameters.
+\paragraph{--const}
+You can set the value of constants defined in you logic program via the command line of gringo.
+After the parameter ``--const'' you have to give the name of the constant you want to set followed by a ``='' and the value of that constant. The integer value can even be an arithmetic expression. For example:
+\begin{verbatim}
+ gringo --const n=5*2
+\end{verbatim}
+the atom $n$ is replaced by $10$ in the logic program.
+
+\paragraph{--convert}
+If this parameter is used, the grounder expects an already grounded program as input.
+For converting an already grounded logic program into an output format supported by gringo this is the right option. This mode saves a lot of memory but does not ground the program.
+\paragraph{-l}
+This mode prints smodels conform output. For a definition of the output format see \cite{lparseManual}.
+Since some features of gringo are not natively supported for this output language, new atoms are introduced to create an equivalent program.\newline
+This is the current default output format of gringo.
+Sum aggregates with negative weights are handled like weight constraint in lparse for this output format. So a transformation as explaned in \cite{lparseManual} is used to get rid of the negative weights.
+\paragraph{-c}
+In this mode, the output is directly parsed to clasp, an ASP solver. For solving logic programs, no intermediate files are produced and the answersets are printed directly.
+With this option enabled, all parameters for clasp are valid and can be declared in the command line. Therefore adouble minus ``--'' must be given after all gringo related parameters are set. After them die clasp parameters follow.
+For example:
+\begin{verbatim}
+ gringo -c --const n=5 -- --supp-models 3
+\end{verbatim}
+Furthermore all restriction on smodels output al hold as clasps internal interface currently reads smodels format.
+\paragraph{-p}
+Parameter ``p'' invokes the plain output method, so the output is printed in human readable format, which is also the input format for gringo.
+\paragraph{-g}
+This parameter invokes the new output format for intermediate languages ASPils \cite{atleastthisreferenceishouldgive}. Currently only the ``Conglomeration'' normal form is supported.
+\paragraph{default parameters}
+The default parameter is ``-l'' for smodels output.
+\section{Language Constructs}
+The basic elements of a logic program are atoms, constants, variables and rules.
+\paragraph{Constant}
+A constant is a representation of an entity in the problem domain.
+A constant is either a name, starting with a lower case letter or an underscore, or a positive integer.
+It also can be encompassed by double quotation marks. When using quotation marks, which is sometimes helpful when using constants with spaces, it has to be remarked that a constant with quotation marks is never equal to a constant without, so ``$a$'' is not $a$.
+\paragraph{Variable}
+A variable is programming construct to simplify writing logic programs.
+It always starts with a capitalized letter and can contain digits and letters.
+In the grounding process a variable is replaced by one or more constants.
+Each variable occurring in a rule must be domain restricted as described in section \ref{domainrestricted}.
+\paragraph{Atom}
+
+An atom is a predicate with a name. The name can consist of letters, digits and the underscore.
+It has to start with a lower case letter or an underscore.
+An atom can have several parameters, encapsulated by parenthesis and separated with commas.
+The parameters are either constants, variables or function symbols.
+A function symbols do have the same syntax as atoms. This way they can be finitely nested.
+As an example, an atom with three parameters is given:
+The first parameter being a constant, the others being function symbols.
+\begin{verbatim}
+ p(a,f(b,X), g(f(X),Y)).
+\end{verbatim}
+
+\paragraph{Rule}
+A rule normally consists of a head and a body and ands with a dot.
+The body is separated from the using ``\:\-'' as in
+\begin{verbatim}
+ head :- body.
+\end{verbatim}
+The body is a comma separated conjunction of expressions.
+The supported expressions are introduced in the next section.
+The variables used in the head must be restricted to a domain in the body.
+Check (\ref{domainrestricted}) to see the restrictions on domains.
+\newline
+A rule can occur without a body as a fact, therefore the body is omitted.
+\begin{verbatim}
+ head.
+\end{verbatim}
+The same can be done with the body to express an integrity constraint.
+\begin{verbatim}
+ :- body.
+\end{verbatim}
+
+
+
+\paragraph{Comments}
+Comments included in the input are line based.
+Every line starting with ``\%'' is a comment. The whole line is omitted and not to be handled by the grounder.
+\paragraph{Warnings}
+Several warnings are produced by gringo to give hints on common mistakes.
+They are all printed to standard error output.
+
+\begin{itemize}
+ \item 
+\begin{verbatim}
+ "Warning: sum with negative bounds in the body of a rule"
+\end{verbatim}
+This warning occurs if a sum aggregate with negative weights has been found and the output format smodels is used or the output is redirected to clasp.
+ \item 
+\begin{verbatim}
+ "Warning: multiple definitions of #const n"
+\end{verbatim}
+This warning is printed if more than one \#const statement is used to set the same constant.
+The last attached value is used for grounding.
+\item
+\begin{verbatim}
+ "Warning: p/3 is never defined"
+\end{verbatim}
+This warnings states that an atom is used in the body of a rule that never occurs in the head.
+``p'' is the name of the atom and ``3'' is the arity.
+\item
+\begin{verbatim}
+ "got ground program i hope u have enough memory :)"
+\end{verbatim}
+Use the command line option ``--convert'' to convert a ground program into another format.
+
+\end{itemize}
+Furthermore all warnings from clasp are included.
+
+\paragraph{Errors}
+Gringo2.0 stops the execution and prints an error mesaage to standard error output.
+\begin{itemize}
+ \item 
+\begin{verbatim}
+ "the following rule cannot not be grounded,
+  non domain predicates : { ... }"
+\end{verbatim}
+This error message gives a list of atoms that are not omega restricted.
+ \item 
+\begin{verbatim}
+ "the following rule cannot not be grounded,
+  weakly restricted varibles: { ... }"
+\end{verbatim}
+This error message gives a list of atoms that are not lambda restricted. 
+\item
+\begin{verbatim}
+ "syntax error on line Y column Z unexpected token: X"
+\end{verbatim}
+The parser can not read the input format.
+\end{itemize}
+
+
+\subsection{Meta Constructs}
+The ``\#'' sign in front of all meta expressions is optional and can therefore be omitted.
+\paragraph{hide}
+The hide construct is used to hide atoms from the output of the ASP solver.
+Two different syntaxes are supported by gringo.
+The first 
+\begin{verbatim}
+ #hide name/arity.
+\end{verbatim}
+and the second
+\begin{verbatim}
+ #hide name(X1, ... , Xn).
+\end{verbatim}
+Both variants hide the predicate ``name''.
+The arity of the predicate can be given explicit or implicit with a list of variables.
+The variables are just placeholder and do not unify. The second syntax is implemented for compatibility reasons only.
+If the predicate that has to be hidden has arity zero, meaning it is an atom, the syntax is
+\begin{verbatim}
+ #hide name.
+\end{verbatim}
+Not to give explicitly all predicates that are hidden, only the ones which are visible the statement
+\begin{verbatim}
+ #hide.
+\end{verbatim}
+in conjunction with the ``show'' statement is used.
+The ``show'' statement has the same syntax as ``hide'' but uses the keyword ``show''.
+\begin{verbatim}
+ #hide.
+ #show p/3.
+\end{verbatim}
+The example hides all atoms except the predicate $p$ with arity $3$.
+\paragraph{const}
+Within the ``const'' statement, a default value for constants can be defined.
+Constants are atoms used in the logic program and are normally defined via the command line options.
+A default value for a constant $n$ can be easily be set.
+\begin{verbatim}
+ #const n=5.
+\end{verbatim}
+\paragraph{domain}
+A domain statement states that a specific variable has a global domain restriction.
+The statement
+\begin{verbatim}
+ #domain time(T).
+\end{verbatim}
+makes sure that the variable ``T'' is always bound to the domain of ``time''.
+This has the same effect as adding the domain ``time(T)'' to every rule the variable occurs in.
+\paragraph{compute}
+The compute statement is a hint for the solver which models to compute.
+Is has the syntax
+\begin{verbatim}
+ #compute number {a1, ..., aN, not aN+1, ..., not aM}.
+\end{verbatim}
+$number$ is the number of models that shall be computed by the answerset solver and can be omitted. If it is zero, no restriction to the number of models is applied.
+All positive atoms in the compute statement must be in the computed models, and all negative atoms do not have to be in the models of the program.
+The compute statement is solver dependent and supported by every solver.
+\subsection{Features}
+\paragraph{Expanding Terms}
+\subparagraph{Range Operator}
+To define several atoms that stretch on one or more parameters over a certain range, two dots can used to express an increasing integer range.
+Using the range operator in the head of a rule, it works as a conjunction of all the members in the range, so for every number the rule is duplicated.
+\begin{verbatim}
+ times(1..3, 1..2).
+\end{verbatim}
+will result in the facts
+\begin{verbatim}
+ times(1,1). times(2,1). times(3,1).
+ times(1,2). times(2,2). times(3,2).
+\end{verbatim}
+
+Using the range operator in the body of a rule, a disjunction of all members in the range is created. So the rules will be duplicated for every member.
+\begin{verbatim}
+ a :- p(1..3).
+\end{verbatim}
+will result in the rules
+\begin{verbatim}
+ a :- p(1).
+ a :- p(2).
+ a :- p(3).
+\end{verbatim}
+If the range operator is used in an aggregate, it creates a a comma separated list of atoms, so
+\begin{verbatim}
+ a :- {b(1..3)}.
+\end{verbatim}
+results in
+\begin{verbatim}
+ a :- {b(1), b(2), b(3)}.
+\end{verbatim}
+
+
+\paragraph{Conjunctor ;}
+The conjunctor ``;'' will create a conjunction of the its elements.
+If used in the head of a rule this means that the rule is duplicated.
+If used in the body instead, the atoms will be logically combined using a conjunction.
+\begin{verbatim}
+ a(X;1..2) :- b(X;a;b).
+ b(foo). b(bar).
+\end{verbatim}
+will results in the rules
+\begin{verbatim}
+ a(foo,1) :- b(foo), b(a), b(b).
+ a(foo,2) :- b(foo), b(a), b(b).
+ a(bar,1) :- b(bar), b(a), b(b).
+ a(bar,2) :- b(bar), b(a), b(b).
+\end{verbatim}
+The conjunctor can not be used directly in aggregates, but for example in combination with the expander.
+\begin{verbatim}
+ { a(X,Y) : p(X;Y) }.
+ p(1..2).
+\end{verbatim}
+Results in
+\begin{verbatim}
+ {a(1,1), a(1,2), a(2,1), a(2,2)}.
+ p(1).
+ p(2).
+\end{verbatim}
+
+\paragraph{Expander :}
+With the expander ``:'' a domain for an atom can be set.
+On the left side of the operator an atom with variables is expected and on the right side the domain for that variables is given.
+In the head, the atoms get connected via a disjunction, in the body they get connected via a conjunction, so no new rules are created with this operator.
+\begin{verbatim}
+ a(X,Y) : b(X) : c(Y) :- d(X) : e(X).
+ b(1..2).
+ c(3).
+ e(a;b;c).
+\end{verbatim}
+would become
+\begin{verbatim}
+ a(1,3) | a(2,3) :- d(a), d(b), d(c).
+\end{verbatim}
+This operator can be used in aggregates to create a comma separated list of atoms.
+
+\paragraph{Arithmetic Expressions}
+The build in arithmetics can be used for integer arithmetic.
+As operators addition (+), subtraction (-), multiplication (*), division (/), modulo (mod) and the absolute value operator (abs) can be used.
+Furthermore the bitwise operators and(\&), or(?), xor(\textasciicircum) and invert($\sim$) are supported.
+Arithmetic expressions can occur everywhere in head and in the body, even in complex constructs.
+As parameters, integer constants or expressions that evaluate to integers are used.
+The simple example of using operators and range terms
+\begin{verbatim}
+ a(X-1 .. X+1) :- b(X,Y), c(abs(Y * 2 * -X)).
+ b(1,2).
+ c(4).
+\end{verbatim}
+would result in the grounded program\footnote{gringo would simplify the grounded rule to fact, since all literals in the body are facts}
+\begin{verbatim}
+ a(0) :- b(1,2), c(4).
+ a(1) :- b(1,2), c(4).
+ a(2) :- b(1,2), c(4).
+ b(1,2).
+ c(4).
+\end{verbatim}
+
+TODO: Bitwise operators !!!!
+
+\subparagraph{Relational Operators}
+The relational operators are ``less than'' ($<$),\\ ``greater than'' ($>$), ``less equal'' ($<=$), ``greater equal'' ($>=$) , ``equal'' ($==$) and ``not equal'' ($!=$).
+They can be used to constrain certain variables.
+For example, some rule is only generated for all unifications where X is greater than Y-1.
+\begin{verbatim}
+ a(X) :- b(X,Y), X >= Y-1.
+ b(0,2).
+ b(4,2).
+\end{verbatim}
+This would let $b(4,2)$ a valid substitution, since $4 >= 2-1$ but $b(0,2)$ not, so the grounded program could be:
+\begin{verbatim}
+ a(4) :- b(4,2).
+ b(0,2).
+ b(4,2).
+\end{verbatim}
+
+\subparagraph{Assignment Operator}
+As assignment operator ``$=$'' is used.
+The variable on the left side is set to the value of the right side.
+\begin{verbatim}
+ a(X) :- X=Y*2, b(Y).
+ b(1..2).
+\end{verbatim}
+becomes
+\begin{verbatim}
+ a(2) :- b(1).
+ a(4) :- b(2).
+ b(1..2).
+\end{verbatim}
+A cyclic assignment that results in an unbound variable is not allowed and is rejected with an error . For example
+\begin{verbatim}
+ a(X) :- X=Y, Y=X.
+\end{verbatim}
+
+\paragraph{True Negation}
+True negation can be used. Therefore the atom is preceded by a minus sign.
+\begin{verbatim}
+ -a :- not  a.
+  a :- not -a. 
+\end{verbatim}
+\paragraph{Disjunction}
+A disjunction can be expressed using the pipe symbol ``$\mid$''.
+A disjunction can only occur in the head of a rule.
+\begin{verbatim}
+ red | green | blue :- colored.
+\end{verbatim}
+Using disjunctions in logic programs increase expressiveness and complexity of the logic program.
+A solver for disjunctive logic programs such as claspD \cite{claspD} or cmodels \cite{cmodels} is needed to solve such programs.
+
+\paragraph{Aggregates}
+An aggregate is a set or a multiset of atoms and has a lower and an upper bound.
+The general syntax is
+\begin{verbatim}
+ lower aggregate_name [atom1=w1, ..., atomN=wN] upper
+\end{verbatim}
+If squared brackets are used, the atom list is interpretated as a set, otherwise, for curly brackets, as a multiset of atoms.
+The lower and upper bound is optional, and can be omitted.
+
+\subparagraph{Count}
+A ``count'' aggregate is a set of atoms and has an optional lower and upper bound.
+It evaluates to true if the number of true atoms in the set is between the lower and upper bound. Only curly brackets may be used for a count aggregate as it represents a set of atoms.
+Weights are not allowed in the count aggregate.
+For this aggregate a shorthand syntax exists
+\begin{verbatim}
+ lower {atom1, ..., atomN} upper
+\end{verbatim}
+The count aggregate is equal to the cardinality constraint known from smodels \cite{smodels}.
+\subparagraph{Sum}
+The ``sum'' aggregate is a multiset of atoms with weight and has an optional lower and upper bound. It evaluates to true if the sum of the weights of all true atoms in the multiset is between the lower an upper bound.
+The sum aggregate is equal to the weight constraints known from smodels, and has therefore a shorthand syntax
+\begin{verbatim}
+ lower sum [atom1=w1, ..., atomN=wN] upper
+\end{verbatim}
+If the command line option ``-l'' is used the semantic may change if negative weights exist in the aggregate. The transformation used is described in \cite{lparseManual}.
+
+\subparagraph{Min}
+The ``min'' aggregate is determined by the minimum of all weights of atoms that evaluate to true.
+For the minimum aggregate a multiset with weighted atoms is used. It has no shorthand syntax.
+\subparagraph{Max}
+The ``max'' aggregate is similiar to the minimum aggregate but considers the maximum of the weights.
+
+\paragraph{Optimize Statements}
+
+\subparagraph{Minimize/Maximize}
+An optimize statement is used to find a minimal or maximal answerset of the logic program.
+The statement can be weighted or not, therefore weights can be omitted in the following syntax.
+\begin{verbatim}
+ minimize [atom1 = w1, ..., atomN = wN].
+\end{verbatim}
+The maximize statement uses the keyword ``maximize'' instead.
+
+\section{$\Pi$-Restrictiveness (or something else)}
+\label{domainrestricted}
+\section{Examples}
+In this section come encodings for common problems are presented and explained.
+\paragraph{Fastfood}
+This example needs a proper instance to work.
+\begin{verbatim}
+#hide.
+#show altdepot/2.
+#show costs/1.
+
+% calculate the number of depots
+depots(X) :- X = { depot(DN, DK) :  depot(DN, DK) }.
+
+% calculate the costs for the initial depots
+% (the grounder can calculate this on its own)
+costs(C) :- C = [ serves(RN, Dist) : restaurant(RN, RK) : dist(Dist) = Dist ].
+
+% choose the closest depot for a restaurant
+% (the grounder can calculate this on its own)
+serves(Rname,Dist) :- restaurant(Rname,RK),
+   Dist = min [ depot(DN1, DK1) : depot(DN1, DK1) = abs(DK1-RK) ].
+
+dist(abs(X-Y)) :- restaurant(A, X), restaurant(B, Y).
+
+% Each restaurant may be an alternative depot or not.
+X { altdepot(R,K) : restaurant(R,K) } X :- depots(X).
+
+% choose the closest depot for a restaurant
+altserves(Rname,Dist) :- restaurant(Rname,RK),
+   Dist = min [ altdepot(DN1, DK1) : restaurant(DN1, DK1) = abs(DK1-RK) ].
+
+% fail if we havnt found a better solution
+ :- costs(C), C [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
+
+% thats the easiest way to show the calculated costs
+minimize [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
+\end{verbatim}
+
+\paragraph{Queens}
+\begin{verbatim}
+#hide.
+#show q(X,Y).
+
+#const queens = 200.
+#const diags  = queens * 2 - 1.
+
+d(1..queens).
+diag(1..diags).
+
+% enumerate the diagonals
+diagX(X,Y,X - Y + queens) :- d(X), d(Y).
+diagY(X,Y,X + Y - 1) :- d(X), d(Y).
+
+% exactly 1 queen in each row/col
+1 { q(X,Y) : d(Y) } 1 :- d(X).
+1 { q(X,Y) : d(X) } 1 :- d(Y).
+
+% at most 1 queen on each diagonal
+{ q(X,Y) : diagX(X,Y,D) } 1 :- diag(D).
+{ q(X,Y) : diagY(X,Y,D) } 1 :- diag(D).
+
+\end{verbatim}
+
+\section{Benchmarks}
+TODO: run on what machine, give reference to encodings.
+
+\input{benchmark2.result}
+\appendixname
+\begin{appendix}
+\label{appendix}
+\input{appendix}
+\end{appendix}
+
+\bibliographystyle{plain}
+\bibliography{bibtex}
+\appendix
+%todo: input grammar in EBNF
+\end{document}
