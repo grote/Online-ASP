@@ -35,15 +35,17 @@ void Statistic::print(std::ostream* out) const
 
 void Statistic::possibleNegativeVariable()
 {
-	std::cout << "possNegativeVar" << std::endl;
-	if (weightList_)
+	if (weight_)
+	{
+		std::cout << "possNegativeVar" << std::endl;
 		varInWeight_ = true;
+	}
 }
 
 void Statistic::possibleNegative()
 {
 	std::cout << "possNegative" << std::endl;
-	if (weightList_)
+	if (weight_)
 	{
 		negative_ = true;
 	}
@@ -52,16 +54,28 @@ void Statistic::possibleNegative()
 }
 
 
-void Statistic::startWeightList()
+void Statistic::startWeight()
 {
 	std::cout << "startWeightList" << std::endl;
-	weightList_ = true;
+	weight_ = true;
 }
 
-void Statistic::endWeightList()
+void Statistic::endWeight()
 {
 	std::cout << "EndWeightList" << std::endl;
-	weightList_ = false;
+	weight_ = false;
+}
+
+void Statistic::startBound()
+{
+	std::cout << "startBound" << std::endl;
+	bound_ = true;
+}
+
+void Statistic::endBound()
+{
+	std::cout << "endBound" << std::endl;
+	bound_ = false;
 }
 
 Statistic::~Statistic()

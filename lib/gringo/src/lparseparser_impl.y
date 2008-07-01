@@ -273,11 +273,16 @@ predicate(res) ::= IDENTIFIER(id).                            { res = new Predic
 predicate(res) ::= MINUS IDENTIFIER(id) LPARA termlist(list) RPARA. { id->insert(id->begin(), '-'); res = new PredicateLiteral(GROUNDER, STRING(id), list); }
 predicate(res) ::= MINUS IDENTIFIER(id).                            { id->insert(id->begin(), '-'); res = new PredicateLiteral(GROUNDER, STRING(id), new TermVector()); }
 
-aggregate_atom(res) ::= term(l) aggregate(aggr) term(u). { res = aggr; aggr->setBounds(l, u); pParser->getStatistic()->lowerBounds = true;
-                                                                                              pParser->getStatistic()->upperBounds = true;}
-aggregate_atom(res) ::= aggregate(aggr) term(u).         { res = aggr; aggr->setBounds(0, u); pParser->getStatistic()->upperBounds = true;}
-aggregate_atom(res) ::= term(l) aggregate(aggr).         { res = aggr; aggr->setBounds(l, 0); pParser->getStatistic()->lowerBounds = true;}
-aggregate_atom(res) ::= aggregate(aggr).                 { res = aggr; aggr->setBounds(0, 0); }
+aggregate_atom(res) ::= term(l) aggregate(aggr) intern_start_bound term(u) intern_end_bound. { res = aggr; aggr->setBounds(l, u);}
+
+aggregate_atom(res) ::= aggregate(aggr) intern_start_bound term(u) intern_end_bound.         { res = aggr; aggr->setBounds(0, u);}
+aggregate_atom(res) ::= term(l) aggregate(aggr).         { res = aggr; aggr->setBounds(l, 0);}
+aggregate_atom(res) ::= aggregate(aggr).                 { res = aggr; aggr->setBounds(0, 0);}
+
+intern_start_bound ::= . {pParser->getStatistic()->startBound();}
+intern_end_bound ::= . {pParser->getStatistic()->endBound();}
+
+
 
 termlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(term); }
 termlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }
@@ -334,14 +339,16 @@ minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new 
 maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.          { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MAXIMIZE, list, true), true); pParser->getStatistic()->maximize++;}
 maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC.         { res = new LiteralStatement(new OptimizeLiteral(OptimizeLiteral::MAXIMIZE, list, false), true); pParser->getStatistic()->maximize++;}
 
-weight_list(res) ::= nweight_list(list). { res = list; pParser->getStatistic()->endWeightList();}
+weight_list(res) ::= nweight_list(list). { res = list;}
 weight_list(res) ::= .                   { res = new ConditionalLiteralVector();}
 nweight_list(res) ::= nweight_list(list) COMMA weight_term(term). { res = list; res->push_back(term); }
-nweight_list(res) ::= weight_term(term) intern_start_weight_list.                          { res = new ConditionalLiteralVector(); res->push_back(term);}
-intern_start_weight_list ::= . {pParser->getStatistic()->startWeightList();}
+nweight_list(res) ::= weight_term(term). { res = new ConditionalLiteralVector(); res->push_back(term);}
 
-weight_term(res) ::= constraint_literal(literal) ASSIGN term(term). { res = literal; res->setWeight(term); }
+weight_term(res) ::= constraint_literal(literal) ASSIGN intern_start_weight term(term) intern_end_weight. { res = literal; res->setWeight(term); }
 weight_term(res) ::= constraint_literal(literal).                   { res = literal; res->setWeight(new Constant(1)); }
+
+intern_start_weight ::= . {pParser->getStatistic()->startWeight();}
+intern_end_weight ::= . {pParser->getStatistic()->endWeight();}
 
 constr_list(res) ::= nconstr_list(list). { res = list; }
 constr_list(res) ::= .                   { res = new ConditionalLiteralVector(); }

@@ -31,8 +31,10 @@ namespace NS_GRINGO
 		/// Constructor
 		Statistic();
 		virtual void print(std::ostream* out) const;
-		void startWeightList();
-		void endWeightList();
+		void startWeight();
+		void endWeight();
+		void startBound();
+		void endBound();
 		void possibleNegativeVariable();
 		void possibleNegative();
 		/// Destructor
@@ -59,7 +61,8 @@ namespace NS_GRINGO
 		// true if a variable exists in a weight
 		bool varInWeight_;
 	private:
-		bool weightList_;
+		bool weight_;
+		bool bound_;
 	};
 }
 
