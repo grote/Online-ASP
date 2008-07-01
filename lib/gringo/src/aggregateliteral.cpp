@@ -69,24 +69,30 @@ bool AggregateLiteral::checkO(LiteralVector &unsolved)
 	return true;
 }
 
+void AggregateLiteral::setEqual(int bound)
+{
+	lowerBound_ = bound;
+	upperBound_ = bound;
+}
+
 bool AggregateLiteral::checkBounds(int lower, int upper)
 {
-	int lowerBound = lower_ ? (int)lower_->getValue() : lower;
-	int upperBound = upper_ ? (int)upper_->getValue() : upper;
+	lowerBound_ = lower_ ? std::max((int)lower_->getValue(), lower) : lower;
+	upperBound_ = upper_ ? std::min((int)upper_->getValue(), upper) : upper;
 	// stupid bounds
-	if(lowerBound > upperBound)
+	if(lowerBound_ > upperBound_)
 		return getNeg();
 	// the aggregate lies completely in the intervall
 	// ---|         |--- <- Bounds
 	// ------|   |------ <- Aggregate
-	if(lower >= lowerBound && upper <= upperBound)
+	if(lower >= lowerBound_ && upper <= upperBound_)
 	{
 		return !getNeg();
 	}
 	// the intervals dont intersect
 	// ----------|   |--- <- Bounds
 	// ---|   |---------- <- Aggregate
-	if(upper < lowerBound || lower > upperBound)
+	if(upper < lowerBound_ || lower > upperBound_)
 		return getNeg();
 	// the intervalls intersect
 	return true;
@@ -191,6 +197,7 @@ namespace
 		if(current_ <= upper_)
 		{
 			g->g_->setValue(var_, Value(current_), binder);
+			l_->setEqual(current_); 
 			status = SuccessfulMatch;
 		}
 		else
@@ -203,6 +210,7 @@ namespace
 		{
 			current_++;
 			g->g_->setValue(var_, Value(current_), binder);
+			l_->setEqual(current_); 
 			status = SuccessfulMatch;
 		}
 		else

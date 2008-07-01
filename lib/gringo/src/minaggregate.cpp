@@ -37,6 +37,8 @@ void MinAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 	lower = INT_MAX;
 	upper = INT_MIN;
 	fixed = INT_MAX;
+	maxUpperBound_ = INT_MAX;
+	minLowerBound_ = INT_MIN;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -57,6 +59,8 @@ void MinAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 				lower = std::min(lower, weight);
 				upper = std::max(upper, weight);
 			}
+			maxUpperBound_ = std::max(maxUpperBound_, weight);
+			minLowerBound_ = std::min(minLowerBound_, weight);
 		}
 	}
 
@@ -109,6 +113,7 @@ namespace
 
 		current_ = set_.begin();
 		g->g_->setValue(var_, Value(*current_), binder);
+		l_->setEqual(*current_); 
 		status = SuccessfulMatch;
 	}
 
@@ -119,6 +124,7 @@ namespace
 		if(current_ != set_.end())
 		{
 			g->g_->setValue(var_, Value(*current_), binder);
+			l_->setEqual(*current_); 
 			status = SuccessfulMatch;
 		}
 		else
@@ -184,15 +190,17 @@ NS_OUTPUT::Object *MinAggregate::convert()
 		}
 	}
 	NS_OUTPUT::Aggregate *a;
-	if(lower_ && upper_)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lower_->getValue(), lits, weights, upper_->getValue());
-	else if(lower_)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lower_->getValue(), lits, weights);
-	else if(upper_)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lits, weights, upper_->getValue());
+	bool hasUpper = upperBound_ < maxUpperBound_;
+	bool hasLower = lowerBound_ > minLowerBound_;
+
+	if(hasLower && hasUpper)
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lowerBound_, lits, weights, upperBound_);
+	else if(hasLower)
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lowerBound_, lits, weights);
+	else if(hasUpper)
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lits, weights, upperBound_);
 	else
 		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::MIN, lits, weights);
-
 	return a;
 }
 

@@ -33,6 +33,8 @@ void SumAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 	lower = 0;
 	upper = 0;
 	fixed = 0;
+	maxUpperBound_ = 0;
+	minLowerBound_ = 0;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
@@ -55,6 +57,10 @@ void SumAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 				else
 					lower+= weight;
 			}
+			if(weight > 0)
+				maxUpperBound_+= weight;
+			else
+				minLowerBound_+= weight;
 		}
 	}
 	lower+= fixed;
@@ -98,12 +104,15 @@ NS_OUTPUT::Object *SumAggregate::convert()
 		}
 	}
 	NS_OUTPUT::Aggregate *a;
-	if(lower_ && upper_)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::SUM, lower_->getValue(), lits, weights, upper_->getValue());
-	else if(lower_)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::SUM, lower_->getValue(), lits, weights);
-	else if(upper_)
-		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::SUM, lits, weights, upper_->getValue());
+	bool hasUpper = upper_ && (upperBound_ < maxUpperBound_);
+	bool hasLower = lower_ && (lowerBound_ > minLowerBound_);
+
+	if(hasLower && hasUpper)
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::SUM, lowerBound_, lits, weights, upperBound_);
+	else if(hasLower)
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::SUM, lowerBound_, lits, weights);
+	else if(hasUpper)
+		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::SUM, lits, weights, upperBound_);
 	else
 		a = new NS_OUTPUT::Aggregate(getNeg(), NS_OUTPUT::Aggregate::SUM, lits, weights);
 

@@ -43,6 +43,7 @@ namespace NS_GRINGO
 		virtual double heuristicValue();
 		virtual void setBounds(Term *lower, Term *upper);
 		virtual void setEqual(Constant *equal);
+		virtual void setEqual(int bound);
 		virtual bool checkBounds(int lower, int upper);
 		/**
 		 * \brief This function returns if the aggregate is a fact
@@ -62,6 +63,11 @@ namespace NS_GRINGO
 		Term *upper_;
 		Constant *equal_;
 		bool fact_;
+	public:
+		int lowerBound_;
+		int upperBound_;
+		int minLowerBound_;
+		int maxUpperBound_;
 	};
 }
 
