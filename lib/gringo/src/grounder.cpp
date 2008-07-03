@@ -135,7 +135,7 @@ void Grounder::start()
 	std::cerr << "adding domain predicates ... " << std::endl;
 	addDomains();
 	std::cerr << "done" << std::endl;
-	std::cerr << "buidling dependencygraph ... " << std::endl;
+	std::cerr << "building dependencygraph ... " << std::endl;
 	buildDepGraph();
 	reset(true);
 	depGraph_->calcSCCs();
