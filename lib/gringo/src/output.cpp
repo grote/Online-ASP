@@ -19,6 +19,7 @@
 #include "node.h"
 #include "grounder.h"
 #include "pilsoutput.h"
+#include <gringoexception.h>
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
@@ -27,11 +28,6 @@ const char* END_ENTRY = " 0";
 Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(false)
 {
 	
-}
-
-void Output::setStatistic(Statistic* stats)
-{
-	stats_ = *stats;
 }
 
 void Output::initialize(SignatureVector *pred)
@@ -323,6 +319,12 @@ void Disjunction::print_plain(Output *o, std::ostream &out)
 
 void Disjunction::print(Output *o, std::ostream &out)
 {
+	
+	unsigned int normalForm = static_cast<PilsOutput*>(o)->getNormalForm();
+	if (normalForm == 1 || normalForm == 3)
+		throw GrinGoException("Disjunction not allowed on this normalform, please choose another output.");
+
+	static_cast<PilsOutput*>(o)->addOptimizedID(uid_);
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		(*it)->print(o, out);
 	uid_ = o->newUid();
@@ -426,6 +428,8 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 
 void Aggregate::print(Output *o, std::ostream &out)
 {
+	unsigned int normalForm = static_cast<PilsOutput*>(o)->getNormalForm();
+	bool negativeWeights = false;
 	uid_ = o->newUid();
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		(*it)->print(o, out);
@@ -437,6 +441,8 @@ void Aggregate::print(Output *o, std::ostream &out)
 		ObjectVector::iterator lit = lits_.begin();
 		for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++, ++lit)
 		{
+			if (*it < 0)
+				negativeWeights = true;
 			unsigned int id = o->newUid();
 			out << "d" << " " << id << " " << (*lit)->getUid() << " " << *it << END_ENTRY << NL;
 			uids.push_back(id);
@@ -448,30 +454,67 @@ void Aggregate::print(Output *o, std::ostream &out)
 			uids.push_back((*it)->getUid());
 	}
 
+
+
 	switch (type_)
 	{
 		case COUNT:
 			{
+				if (normalForm == 1 || normalForm == 2)
+					throw GrinGoException("Count aggregate/cardinality constraint not allowed in this normalform, please choose another output.");
+				if (normalForm == 3 || normalForm == 4)
+				{
+					if (bounds_ == U || bounds_ == LU)
+						throw GrinGoException("Count aggregate/cardinality constraint not allowed with non trivial upper bound in this normalform, please choose another output.");
+					if (lower_ < 0)
+						throw GrinGoException("Count aggregate/cardinality constraint not allowed with negative lower bound in this normalform, please choose another output.");
+
+				}
 				out << "e";
 				break;
 			}
 		case SUM:
 			 {
+				if (normalForm == 1 || normalForm == 2)
+					throw GrinGoException("Sum aggregate/weight constraint not allowed in this normalform, please choose another output.");
+				if (normalForm == 3 || normalForm == 4)
+				{
+					if (bounds_ == U || bounds_ == LU)
+						throw GrinGoException("Sum aggregate/weight constraint not allowed with non trivial upper bound in this normalform, please choose another output.");
+					if (lower_ < 0)
+						throw GrinGoException("Sum aggregate/weight constraint not allowed with negative lower bound in this normalform, please choose another output.");
+					if (negativeWeights)
+						throw GrinGoException("Sum aggregate/weight constraint not allowed with negative weights in this normalform, please choose another output.");
+				}
+				if (normalForm == 6 && negativeWeights)
+					throw GrinGoException("Sum aggregate/weight constraint not allowed with negative weights in this normalform, please choose another output.");
 				out << "f";
 				break;
 			 }
 		case MAX:
 			 {
+				if (normalForm >=1 && normalForm <= 5)
+					throw GrinGoException("Max aggregate not allowed in this normalform, please choose another output.");
+				if (normalForm == 6 && negativeWeights)
+					throw GrinGoException("Max aggregate not allowed with negative weights in this normalform, please choose another output.");
 				out << "10";
 				break;
 			 }
 		case MIN:
 			 {
+				if (normalForm >=1 && normalForm <= 5)
+					throw GrinGoException("Min aggregate not allowed in this normalform, please choose another output.");
+				if (normalForm == 6 && negativeWeights)
+					throw GrinGoException("Min aggregate not allowed with negative weights in this normalform, please choose another output.");
 				out << "11";
 				break;
 			 }
 		case TIMES:
 			 {
+				if (normalForm >=1 && normalForm <= 5)
+					throw GrinGoException("Times aggregate not allowed in this normalform, please choose another output.");
+				if (normalForm == 6 && negativeWeights)
+					throw GrinGoException("Times aggregate not allowed with negative weights in this normalform, please choose another output.");
 				out << "12";
 				break;
 			 }
@@ -593,6 +636,9 @@ void Optimize::print_plain(Output *o, std::ostream &out)
 
 void Optimize::print(Output *o, std::ostream &out)
 {
+	unsigned int normalForm = static_cast<PilsOutput*>(o)->getNormalForm();
+	if (normalForm == 1 || normalForm == 2)
+		throw GrinGoException("Optimize statement not allowed in this normalform, please choose another output.");
 	IntVector uids;
 	ObjectVector::iterator lit = lits_.begin();
 	for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++, ++lit)

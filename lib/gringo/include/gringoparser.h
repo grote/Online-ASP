@@ -19,7 +19,6 @@
 #define GRINGOPARSER_H
 
 #include <gringo.h>
-#include <statistic.h>
 
 namespace NS_GRINGO
 {
@@ -32,10 +31,8 @@ namespace NS_GRINGO
 		virtual bool parse(NS_OUTPUT::Output *output) = 0;
 		virtual void handleError();
 		virtual bool getError();
-		virtual Statistic* getStatistic();
 	protected:
 		bool error_;
-		Statistic stats_;
 	};
 }
 

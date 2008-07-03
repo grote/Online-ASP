@@ -20,7 +20,7 @@
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 		
-PilsOutput::PilsOutput(std::ostream *out) : Output(out)
+PilsOutput::PilsOutput(std::ostream *out, unsigned int normalForm) : Output(out), normalForm_(normalForm)
 {
 }
 
@@ -31,9 +31,7 @@ void PilsOutput::initialize(SignatureVector *pred)
 {
 	Output::initialize(pred);
 
-
-	// can not determine real version, so comglomeration is assumed
-	*out_ << HEADER << " " << VERSION << " " << "7" << " " << "0 0" << NL;
+	*out_ << HEADER << " " << VERSION << " " << normalForm_ << " " << "0 0" << NL;
 }
 
 void PilsOutput::print(NS_OUTPUT::Object *r)
@@ -60,6 +58,11 @@ void PilsOutput::finalize()
 void PilsOutput::addOptimizedID(unsigned int id)
 {
 	optimizedIDs_.push_back(id);
+}
+
+unsigned int PilsOutput::getNormalForm() const
+{
+	return normalForm_;
 }
 
 PilsOutput::~PilsOutput()

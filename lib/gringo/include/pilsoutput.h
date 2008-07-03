@@ -20,7 +20,6 @@
 
 #include <gringo.h>
 #include <output.h>
-#include <statistic.h>
 
 namespace NS_GRINGO
 {
@@ -29,14 +28,16 @@ namespace NS_GRINGO
 		class PilsOutput : public Output
 		{
 		public:
-			PilsOutput(std::ostream *out);
+			PilsOutput(std::ostream *out, unsigned int normalForm);
 			virtual void initialize(SignatureVector *pred);
 			virtual void print(NS_OUTPUT::Object *o);
 			virtual void finalize();
 			virtual void addOptimizedID(unsigned int id);
+			virtual unsigned int getNormalForm() const;
 			virtual ~PilsOutput();
 		protected:
 			IntVector optimizedIDs_;
+			unsigned int normalForm_;
 		};
 	}
 }

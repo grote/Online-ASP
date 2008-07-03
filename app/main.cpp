@@ -39,10 +39,8 @@ bool convert = false;
 void start_grounding()
 {
 	bool success = parser->parse(output);
-	output->setStatistic(parser->getStatistic());
 	if(success)
 	{
-		//parser->getStatistic()->print(&std::cout);
 		std::cerr << "Parsing successful" << std::endl;
 		if(!convert)
 		{
@@ -76,6 +74,7 @@ int main(int argc, char *argv[])
 	std::stringstream *ss = new std::stringstream();
 	std::vector<std::istream*> streams;
 	streams.push_back(ss);
+	unsigned int normalForm = 7;
 	try
 	{
 		while(argc > 1)
@@ -87,6 +86,18 @@ int main(int argc, char *argv[])
 			else if(strcmp(argv[1], "-g") == 0)
 			{
 				format = GRINGO;
+				if(argc > 2)
+				{
+					std::istringstream isst;
+					isst.str( argv[2] );
+					char t;
+					if(isst >> normalForm && !isst.get(t))
+						if (normalForm >= 1 && normalForm <= 7)
+						{
+							argc--;
+							argv++;
+						}
+				}
 			}
 			else if(strcmp(argv[1], "-l") == 0)
 			{
@@ -125,7 +136,8 @@ int main(int argc, char *argv[])
 #endif
 				std::cerr << "	-l          : Print smodels output" << std::endl;
 				std::cerr << "	-p          : Print plain lparse-like output" << std::endl;
-				std::cerr << "	-g          : Print experimental ASPils output" << std::endl;
+				std::cerr << "	-g [1-7]    : Print experimental ASPils output" << std::endl;
+			        std::cerr << "                      Give an optional normalform number from 1 to 7 (7 if none)" << std::endl;
 				std::cerr << "	The default output is smodels output (-l)" << std::endl;
 #ifdef WITH_CLASP
 				int   argc_c = 2;
@@ -177,8 +189,7 @@ int main(int argc, char *argv[])
 				start_grounding();
 				break;
 			case GRINGO:
-				parser->getStatistic()->print(&std::cout);
-				output = new NS_OUTPUT::PilsOutput(&std::cout);
+				output = new NS_OUTPUT::PilsOutput(&std::cout, normalForm);
 				start_grounding();
 				break;
 #ifdef WITH_CLASP
