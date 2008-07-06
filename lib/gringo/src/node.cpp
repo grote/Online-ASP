@@ -17,27 +17,46 @@
 
 #include "node.h"
 #include "scc.h"
-#include "value.h"
 
 using namespace NS_GRINGO;
 
-Node::Node(Statement *rule) : defines_(0), lowlink_(-1), index_(-1), stacked_(false), done_(false), scc_(0), rule_(rule), solved_(false)
+Node::Node(Domain *domain) : lowlink_(-1), index_(-1), type_(PREDICATENODE), stacked_(0), done_(0), scc_(0), dom_(domain)
 {
 }
 
-NodeVector *Node::getNegDependency()
+Node::Node(Statement *rule) : lowlink_(-1), index_(-1), type_(STATEMENTNODE), stacked_(0), done_(0), scc_(0), rule_(rule)
 {
-	return &negDependency_;
 }
 
-NodeVector *Node::getDependency()
+NodeVector *Node::getNegDependency() const
 {
-	return &dependency_;
+	return const_cast<NodeVector *>(&negDependency_);
 }
 
-Statement* Node::getStatement() 
+NodeVector *Node::getDependency() const
+{
+	return const_cast<NodeVector *>(&dependency_);
+}
+
+Domain* Node::getDomain() const
+{
+	if(type_ == PREDICATENODE)
+		return dom_; 
+	else
+		return 0;
+}
+
+Statement* Node::getStatement() const
 { 
-	return rule_; 
+	if(type_ == STATEMENTNODE)
+		return rule_; 
+	else
+		return 0;
+}
+
+Node::Type Node::getType() const
+{
+	return static_cast<Node::Type>(type_);
 }
 
 void Node::addDependency(Node *n, bool neg)
@@ -46,89 +65,6 @@ void Node::addDependency(Node *n, bool neg)
 	if(neg)
 		negDependency_.push_back(n);
 	dependency_.push_back(n);
-}
-
-bool Node::complete()
-{
-	return defines_ == 0;
-}
-
-bool Node::solved()
-{
-	return solved_;
-}
-
-void Node::setSolved(bool solved)
-{
-	solved_ = solved;
-	// when a domain is solved all of its entries are facts
-	if(solved_)
-	{
-		facts_.clear();
-		ValueVectorSet facts;
-		std::swap(facts, facts_);
-	}
-}
-
-void Node::evaluate()
-{
-	setSolved(complete() && (scc_->getType() == SCC::FACT  || scc_->getType() == SCC::BASIC));
-}
-
-void Node::reset()
-{
-	defines_++;
-	solved_ = false;
-}
-
-void Node::finish()
-{
-	defines_--;
-}
-
-bool Node::isFact(const ValueVector &values)
-{
-	return facts_.find(values) != facts_.end();
-}
-
-void Node::addFact(const ValueVector &values)
-{
-	// fact programs dont need to store their facts seperatly cause 
-	// directly after grounding all values in their domain are facts
-	// and there cant be any cycles through fact programs
-	// examples:
-	// a(1).
-	// a(X) :- b(X)
-	// b(X) :- a(X)
-	// here a(1) is a fact but the rest is a basic program and a/1 is
-	// not yet complete
-	if(scc_->getType() != SCC::FACT)
-		facts_.insert(values);
-}
-
-bool Node::inDomain(const ValueVector &values)
-{
-	return domain_.find(values) != domain_.end();
-}
-
-void Node::removeDomain(const ValueVector &values)
-{
-	domain_.erase(values);
-}
-
-void Node::addDomain(const ValueVector &values)
-{
-	domain_.insert(values);
-}
-
-bool Node::hasFacts()
-{
-	return facts_.size() > 0;
-}
-
-ValueVectorSet &Node::getDomain()
-{
-	return domain_;
 }
 
 Node::~Node() 

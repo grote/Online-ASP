@@ -24,6 +24,7 @@
 #include "constant.h"
 #include "term.h"
 #include "node.h"
+#include "domain.h"
 #include "rangeterm.h"
 #include "rangeliteral.h"
 #include "indexeddomain.h"
@@ -35,11 +36,11 @@
 
 using namespace NS_GRINGO;
 		
-PredicateLiteral::PredicateLiteral(Grounder *g, std::string *id, TermVector *variables) : Literal(), predNode_(0), id_(id), variables_(variables), uid_(g->createPred(id, variables->size())), values_(variables ? variables->size() : 0)
+PredicateLiteral::PredicateLiteral(Grounder *g, std::string *id, TermVector *variables) : Literal(), uid_(g->createPred(id, variables->size())), predNode_(g->getDomain(uid_)), id_(id), variables_(variables), values_(variables ? variables->size() : 0)
 {
 }
 
-PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : predNode_(p.predNode_), id_(p.id_), uid_(p.uid_), values_(p.values_.size())
+PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : uid_(p.uid_), predNode_(p.predNode_), id_(p.id_), values_(p.values_.size())
 {
         if(p.variables_)
         {
@@ -58,19 +59,20 @@ bool PredicateLiteral::checkO(LiteralVector &unsolved)
 
 Node *PredicateLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
 {
-	predNode_ = dg->createPredicateNode(this);
+	Node *n = dg->createPredicateNode(this);
+	predNode_ = n->getDomain();
 	switch(todo)
 	{
 		case ADD_BODY_DEP:
-			prev->addDependency(predNode_, getNeg());
+			prev->addDependency(n, getNeg());
 			break;
 		case ADD_HEAD_DEP:
-			predNode_->addDependency(prev);
+			n->addDependency(prev);
 			break;
 		case ADD_NOTHING:
 			break;
 	}
-	return predNode_;
+	return n;
 }
 
 void PredicateLiteral::createNode(LDGBuilder *dg, bool head)
@@ -288,6 +290,11 @@ PredicateLiteral::~PredicateLiteral()
 		}
 		delete variables_;
 	}
+}
+
+Domain *PredicateLiteral::getDomain() const
+{
+	return predNode_;
 }
 
 void PredicateLiteral::preprocess(Grounder *g, Expandable *e)

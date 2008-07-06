@@ -75,7 +75,7 @@ namespace NS_GRINGO
 
 		struct Atom : public Object
 		{
-			Atom(bool neg, Node *node, int predUid, const ValueVector &values);
+			Atom(bool neg, Domain *node, int predUid, const ValueVector &values);
 			Atom(bool neg, int predUid, const ValueVector &values);
 			Atom(bool neg, int predUid);
 			void addDomain(bool fact);
@@ -83,7 +83,7 @@ namespace NS_GRINGO
 			void print(Output *o, std::ostream &out);
 			
 			// TODO: change sth here!
-			Node *node_;
+			Domain *node_;
 			int  predUid_;
 			ValueVector values_;
 		};

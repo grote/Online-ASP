@@ -27,7 +27,7 @@ namespace NS_GRINGO
 	{
 		friend class DependencyGraph;
 	public:
-		enum SCCType { FACT, BASIC, NORMAL};
+		enum SCCType {FACT=0, BASIC=1, NORMAL=2};
 	public:
 		SCC();
 		void print(std::ostream &out);

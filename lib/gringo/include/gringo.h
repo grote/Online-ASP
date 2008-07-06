@@ -126,6 +126,9 @@ namespace NS_GRINGO
 		return os.put(os.widen('\n'));
 	}
 
+	class Domain;
+	typedef std::vector<Domain*> DomainVector;
+
 	namespace NS_OUTPUT
 	{
 		class Output;

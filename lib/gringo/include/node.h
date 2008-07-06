@@ -27,38 +27,32 @@ namespace NS_GRINGO
 	{
 		friend class DependencyGraph;
 	public:
-		Node(Statement *rule = 0);
-		NodeVector *getDependency();
-		NodeVector *getNegDependency();
-		Statement* getStatement();
+		enum Type {STATEMENTNODE = 0, PREDICATENODE = 1};
+	public:
+		Node(Statement *rule);
+		Node(Domain *dom);
+		NodeVector *getDependency() const;
+		NodeVector *getNegDependency() const;
+		Statement *getStatement() const;
+		Domain *getDomain() const;
+		Type getType() const;
+
 		void addDependency(Node *n, bool neg = false);
-		bool complete();
-		bool solved();
-		void setSolved(bool solved);
-		void reset();
-		void finish();
-		void evaluate();
-		bool hasFacts();
-		void addFact(const ValueVector &values);
-		bool isFact(const ValueVector &values);
-		bool inDomain(const ValueVector &values);
-		void addDomain(const ValueVector &values);
-		void removeDomain(const ValueVector &values);
-		ValueVectorSet &getDomain();
-		virtual ~Node();
-	protected:
-		int defines_;
+		~Node();
+	private:
 		int lowlink_;
 		int index_;
-		bool stacked_;
-		bool done_;
+		unsigned int type_ : 1;
+		unsigned int stacked_ : 1;
+		unsigned int done_ : 1;
 		SCC *scc_;
-		Statement  *rule_;
+		union
+		{
+			Statement  *rule_;
+			Domain     *dom_;
+		};
 		NodeVector dependency_;
 		NodeVector negDependency_;
-		ValueVectorSet facts_;
-		ValueVectorSet domain_;
-		bool solved_;
 	};
 }
 

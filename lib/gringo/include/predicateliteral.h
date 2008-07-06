@@ -56,13 +56,14 @@ namespace NS_GRINGO
 		int getUid();
 		int getArity();
 		void addDomain(ValueVector &values);
+		Domain *getDomain() const;
 		const ValueVector &getValues();
 		virtual ~PredicateLiteral();
 	protected:
-		Node          *predNode_;
+		int           uid_;
+		Domain        *predNode_;
 		std::string   *id_;
 		TermVector    *variables_;
-		int           uid_;
 
 		ValueVector values_;
 	};

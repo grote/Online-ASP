@@ -16,11 +16,22 @@
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <globalstorage.h>
+#include <domain.h>
 
 using namespace NS_GRINGO;
 
 GlobalStorage::GlobalStorage()
 {
+}
+
+Domain *GlobalStorage::getDomain(int uid) const
+{
+	return domains_[uid];
+}
+
+DomainVector *GlobalStorage::getDomains() const
+{
+	return const_cast<DomainVector*>(&domains_);
 }
 
 GlobalStorage::~GlobalStorage()
@@ -33,6 +44,8 @@ GlobalStorage::~GlobalStorage()
 	FuncSymbolVector x(funcHash_.begin(), funcHash_.end());
 	funcHash_.clear();
 	for(FuncSymbolVector::iterator it = x.begin(); it != x.end(); it++)
+		delete *it;
+	for(DomainVector::iterator it = domains_.begin(); it != domains_.end(); it++)
 		delete *it;
 }
 
@@ -61,7 +74,10 @@ int GlobalStorage::createPred(std::string *id, int arity)
 {
 	std::pair<SignatureHash::iterator, bool> res = predHash_.insert(std::make_pair(Signature(id, arity), (int)pred_.size()));
 	if(res.second)
+	{
 		pred_.push_back(Signature(id, arity));
+		domains_.push_back(new Domain());
+	}
 	return res.first->second;
 }
 

@@ -16,7 +16,7 @@
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "output.h"
-#include "node.h"
+#include "domain.h"
 #include "grounder.h"
 #include "pilsoutput.h"
 #include <gringoexception.h>
@@ -130,7 +130,7 @@ Object::~Object()
 }
 
 // =============== NS_OUTPUT::Atom ===============
-Atom::Atom(bool neg, Node *node, int predUid, const ValueVector &values) : Object(neg), node_(node), predUid_(predUid), values_(values)
+Atom::Atom(bool neg, Domain *node, int predUid, const ValueVector &values) : Object(neg), node_(node), predUid_(predUid), values_(values)
 {
 }
 

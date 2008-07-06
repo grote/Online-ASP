@@ -24,7 +24,7 @@
 #include "scc.h"
 #include "value.h"
 #include "evaluator.h"
-#include "node.h"
+#include "domain.h"
 #include "gringoexception.h"
 
 using namespace NS_GRINGO;
@@ -103,9 +103,9 @@ void Grounder::reset(bool warn = false)
 	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
 		(*it)->reset();
 	// all nodes with zero defines have to be false
-	for(int uid = 0; uid < (int)depGraph_->getPredNodes().size(); uid++)
+	for(int uid = 0; uid < (int)getDomains()->size(); uid++)
 	{
-		Node *n = depGraph_->getPredNodes()[uid];
+		Domain *n = (*getDomains())[uid];
 		if(n->complete())
 		{
 			if(warn)

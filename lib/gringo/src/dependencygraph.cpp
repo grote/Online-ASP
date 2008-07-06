@@ -18,6 +18,7 @@
 #include "dependencygraph.h"
 #include "predicateliteral.h"
 #include "node.h"
+#include "domain.h"
 #include "grounder.h"
 #include "scc.h"
 
@@ -46,7 +47,7 @@ Node *DependencyGraph::createPredicateNode(PredicateLiteral *pred)
 		predicateNodes_.resize(pred->getUid() + 1);
 	Node *&n = predicateNodes_[pred->getUid()];
 	if(!n)
-		n = new Node();
+		n = new Node(pred->getDomain());
 	return n;
 }
 
@@ -91,8 +92,6 @@ void DependencyGraph::tarjan(Node *v1, std::stack<Node*> &s, int &index)
 		}
 		while(v1 != v2);
 		// initialize with fact or basic program
-		// TODO: as long as basic programs are not solved by the grounder
-		//       they are assumed to be normal programs and the solver has to :)
 		scc->type_ = nodes == 1 ? SCC::FACT : SCC::BASIC;
 		//scc->type_ = nodes == 1 ? SCC::FACT : SCC::NORMAL;
 		sccs_.push_back(scc);
@@ -192,6 +191,8 @@ void DependencyGraph::calcSCCs()
 			std::stack<Node*> stack;
 			tarjan(v, stack, index);
 		}
+		// set the type of the domain
+		v->getDomain()->setType(static_cast<Domain::Type>(v->scc_->getType()));
 	}
 }
 

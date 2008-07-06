@@ -56,6 +56,8 @@ namespace NS_GRINGO
 		std::string *createString(const std::string &s);
 		FuncSymbol* createFuncSymbol(FuncSymbol* fn);
 		int createPred(std::string *id, int arity);
+		Domain *getDomain(int uid) const;
+		DomainVector *getDomains() const;
 
 		SignatureVector *getPred();
 
@@ -65,6 +67,7 @@ namespace NS_GRINGO
 		FuncSymbolHash funcHash_;
 		SignatureHash predHash_;
 		SignatureVector pred_;
+		DomainVector domains_;
 
 	};
 	

@@ -17,12 +17,12 @@
 
 #include "basicprogramevaluator.h"
 #include "grounder.h"
-#include "node.h"
+#include "domain.h"
 #include "output.h"
 
 using namespace NS_GRINGO;
 		
-BasicProgramEvaluator::AtomNode::AtomNode(Node *node) : status_(NONE), node_(node)
+BasicProgramEvaluator::AtomNode::AtomNode(Domain *node) : status_(NONE), node_(node)
 {
 }
 

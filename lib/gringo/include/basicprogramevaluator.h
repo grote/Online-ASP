@@ -38,10 +38,10 @@ namespace NS_GRINGO
 		enum Status { NONE = 0, FACT = 1, QUEUED = 2};
 		struct AtomNode
 		{
-			AtomNode(Node *node);
+			AtomNode(Domain *node);
 
 			Status status_;
-			Node *node_;
+			Domain *node_;
 			IntVector inBody_;
 		};
 		typedef std::vector<std::pair<int, int> > Rules;
