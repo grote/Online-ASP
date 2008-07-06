@@ -33,10 +33,10 @@ namespace NS_GRINGO
 		/// Constructor
 		Statement();
 		/**
-		 * \brief Adds the needed dependencies to the DependencyGraph
-		 * \param dg The DependencyGraph
+		 * \brief Adds the needed dependencies to the SDG
+		 * \param dg The SDG
 		 */
-		virtual void buildDepGraph(DependencyGraph *dg) = 0;
+		virtual void buildDepGraph(SDG *dg) = 0;
 		/**
 		 * \brief Returns all variables occuring in the Statement
 		 * \param vars Reference to the result

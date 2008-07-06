@@ -31,7 +31,7 @@ AssignmentLiteral::AssignmentLiteral(Constant *c, Term *t) : Literal(), c_(c), t
 
 }
 
-Node *AssignmentLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
+SDGNode *AssignmentLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
 {
 	return 0;
 }

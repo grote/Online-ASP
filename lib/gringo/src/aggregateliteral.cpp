@@ -19,10 +19,9 @@
 #include "predicateliteral.h"
 #include "conditionalliteral.h"
 #include "term.h"
-#include "node.h"
 #include "value.h"
 #include "grounder.h"
-#include "dependencygraph.h"
+#include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
 #include "indexeddomain.h"
 #include "output.h"
@@ -117,7 +116,7 @@ void AggregateLiteral::getVars(VarSet &vars) const
 		(*it)->getVars(vars);
 }
 
-Node *AggregateLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
+SDGNode *AggregateLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
 {
 	// TODO: this is only needed as long as the truth value of aggregates is not determined
 	if(todo == ADD_BODY_DEP)
@@ -125,7 +124,7 @@ Node *AggregateLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAd
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		// aggregate literals always depend negativly on its literals 
-		Node *p = (*it)->createNode(dg, prev, ADD_NOTHING);
+		SDGNode *p = (*it)->createNode(dg, prev, ADD_NOTHING);
 		assert(p);
 		prev->addDependency(p, true);
 		// if used in the head they it also depends cyclically on its literals

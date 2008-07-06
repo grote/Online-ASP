@@ -137,7 +137,7 @@ namespace NS_GRINGO
 		 * \param todo The type of dependencies that still have to be added
 		 * \return Returns the node that was created if any otherwise zero
 		 */
-		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo) = 0;
+		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo) = 0;
 		virtual void createNode(LDGBuilder *dg, bool head) = 0;
 		virtual double heuristicValue() = 0;
 		/// Destructor

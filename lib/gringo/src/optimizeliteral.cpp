@@ -17,10 +17,9 @@
 
 #include "optimizeliteral.h"
 #include "conditionalliteral.h"
-#include "node.h"
 #include "value.h"
 #include "grounder.h"
-#include "dependencygraph.h"
+#include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
 #include "output.h"
 
@@ -130,14 +129,14 @@ void OptimizeLiteral::getVars(VarSet &vars) const
 		(*it)->getVars(vars);
 }
 
-Node *OptimizeLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
+SDGNode *OptimizeLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
 {
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		// since there cant be any cycles through these statements 
 		// its ok to add only positive dependencies
 		// even though negative dependencies wont hurt
-		Node *p = (*it)->createNode(dg, prev, ADD_NOTHING);
+		SDGNode *p = (*it)->createNode(dg, prev, ADD_NOTHING);
 		assert(p);
 		prev->addDependency(p);
 	}

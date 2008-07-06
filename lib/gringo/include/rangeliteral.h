@@ -28,7 +28,7 @@ namespace NS_GRINGO
 	public:
 		RangeLiteral(Constant *var, Term *lower, Term *upper);
 		RangeLiteral(const RangeLiteral &r);
-		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
+		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);

@@ -18,9 +18,8 @@
 #include "normalrule.h"
 #include "literal.h"
 #include "predicateliteral.h"
-#include "dependencygraph.h"
+#include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
-#include "node.h"
 #include "grounder.h"
 #include "output.h"
 #include "dlvgrounder.h"
@@ -33,9 +32,9 @@ NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(
 {
 }
 
-void NormalRule::buildDepGraph(DependencyGraph *dg)
+void NormalRule::buildDepGraph(SDG *dg)
 {
-	Node *rn = dg->createStatementNode(this);
+	SDGNode *rn = dg->createStatementNode(this);
 	if(head_)
 		head_->createNode(dg, rn, Literal::ADD_HEAD_DEP);
 	else

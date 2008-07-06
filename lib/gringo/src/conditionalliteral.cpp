@@ -19,7 +19,6 @@
 #include "predicateliteral.h"
 #include "grounder.h"
 #include "term.h"
-#include "node.h"
 #include "indexeddomain.h"
 #include "dlvgrounder.h"
 #include "value.h"
@@ -73,9 +72,9 @@ bool ConditionalLiteral::checkO(LiteralVector &unsolved)
 	return unsolved.size() == 0;
 }
 
-Node *ConditionalLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
+SDGNode *ConditionalLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
 {
-	Node *n = pred_->createNode(dg, prev, todo);
+	SDGNode *n = pred_->createNode(dg, prev, todo);
 	if(conditionals_)
 	{
 		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)

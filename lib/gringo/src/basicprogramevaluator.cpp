@@ -21,7 +21,7 @@
 #include "output.h"
 
 using namespace NS_GRINGO;
-		
+
 BasicProgramEvaluator::AtomNode::AtomNode(Domain *node) : status_(NONE), node_(node)
 {
 }

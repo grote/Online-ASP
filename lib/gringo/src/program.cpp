@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "scc.h"
+#include "program.h"
 #include "statement.h"
 #include "grounder.h"
 #include "literal.h"
@@ -24,23 +24,24 @@
 
 using namespace NS_GRINGO;
 
-SCC::SCC() : type_(FACT), edges_(0), eval_(0)
+Program::Program(Type type, StatementVector &rules) : type_(type), eval_(0)
 {
+	std::swap(rules, rules_);
 }
 
-Evaluator *SCC::getEvaluator()
+Evaluator *Program::getEvaluator()
 {
 	if(!eval_)
 	{
 		switch(type_)
 		{
-			case SCC::FACT:
+			case Program::FACT:
 				eval_ = new Evaluator();
 				break;
-			case SCC::BASIC:
+			case Program::BASIC:
 				eval_ = new BasicProgramEvaluator();
 				break;
-			case SCC::NORMAL:
+			case Program::NORMAL:
 				eval_ = new Evaluator();
 				break;
 		}
@@ -48,19 +49,19 @@ Evaluator *SCC::getEvaluator()
 	return eval_;
 }
 
-void SCC::print(std::ostream &out)
+void Program::print(std::ostream &out)
 {
 	if(rules_.size() > 0)
 	{
 		switch(type_)
 		{
-			case SCC::FACT:
+			case Program::FACT:
 				out << "% fact program:" << std::endl;
 				break;
-			case SCC::BASIC:
+			case Program::BASIC:
 				out << "% basic program:" << std::endl;
 				break;
-			case SCC::NORMAL:
+			case Program::NORMAL:
 				out << "% normal program:" << std::endl;
 				break;
 		}
@@ -71,7 +72,7 @@ void SCC::print(std::ostream &out)
 	}
 }
 
-bool SCC::check(Grounder *g)
+bool Program::check(Grounder *g)
 {
 	VarVector free;
 	LiteralVector unsolved;
@@ -141,17 +142,17 @@ bool SCC::check(Grounder *g)
 	return true;
 }
 
-StatementVector *SCC::getStatements()
+StatementVector *Program::getStatements()
 {
 	return &rules_;
 }
 
-SCC::SCCType SCC::getType()
+Program::Type Program::getType()
 {
 	return type_;
 }
 
-SCC::~SCC()
+Program::~Program()
 {
 	if(eval_)
 		delete eval_;

@@ -80,13 +80,9 @@ namespace NS_GRINGO
 	typedef std::vector<std::string*> StringVector;
 	typedef std::vector<Constant*> ConstantVector;
 
-	class SCC;
-	typedef std::vector<SCC*> SCCVector;
-	typedef std::set<SCC*> SCCSet;
-
 	class AggregateLiteral;
 
-	class DependencyGraph;
+	class SDG;
 
 	class GrinGoParser;
 	class LparseParser;
@@ -101,8 +97,8 @@ namespace NS_GRINGO
 	typedef std::vector<Literal*> LiteralVector;
 	typedef std::set<Literal*> LiteralSet;
 
-	class Node;
-	typedef std::vector<Node*> NodeVector;
+	class SDGNode;
+	typedef std::vector<SDGNode*> SDGNodeVector;
 
 	class Statement;
 	typedef std::vector<Statement*> StatementVector;
@@ -125,6 +121,9 @@ namespace NS_GRINGO
 	{ 
 		return os.put(os.widen('\n'));
 	}
+
+	class Program;
+	typedef std::vector<Program*> ProgramVector;
 
 	class Domain;
 	typedef std::vector<Domain*> DomainVector;

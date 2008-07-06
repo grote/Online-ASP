@@ -20,8 +20,8 @@
 #include "constant.h"
 #include "predicateliteral.h"
 #include "normalrule.h"
-#include "dependencygraph.h"
-#include "scc.h"
+#include "statementdependencygraph.h"
+#include "program.h"
 #include "value.h"
 #include "evaluator.h"
 #include "domain.h"
@@ -29,7 +29,7 @@
 
 using namespace NS_GRINGO;
 
-Grounder::Grounder(NS_OUTPUT::Output *output) : internalVars_(0), depGraph_(new DependencyGraph()), output_(output), eval_(0)
+Grounder::Grounder(NS_OUTPUT::Output *output) : internalVars_(0), output_(output), eval_(0)
 {
 }
 
@@ -65,10 +65,19 @@ void Grounder::addDomains(std::string *id, std::vector<StringVector*>* list)
 
 void Grounder::buildDepGraph()
 {
+	SDG dg;
 	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
-	{
-		(*it)->buildDepGraph(depGraph_);
-	}
+		(*it)->buildDepGraph(&dg);
+	reset(true);
+	dg.calcSCCs(this);
+}
+
+bool Grounder::check()
+{
+	for(ProgramVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
+		if(!(*it)->check(this))
+			return false;
+	return true;
 }
 
 void Grounder::addDomains()
@@ -137,12 +146,10 @@ void Grounder::start()
 	std::cerr << "done" << std::endl;
 	std::cerr << "building dependencygraph ... " << std::endl;
 	buildDepGraph();
-	reset(true);
-	depGraph_->calcSCCs();
 	std::cerr << "done" << std::endl;
 	std::cerr << "checking ... " << std::endl;
-	if(!depGraph_->check(this))
-		return;
+	if(!check())
+		throw GrinGoException("Error: the program is not groundable.");
 	reset(false);
 	std::cerr << "done" << std::endl;
 	std::cerr << "grounding ... " << std::endl;
@@ -150,7 +157,7 @@ void Grounder::start()
 	std::cerr << "done" << std::endl;
 }
 
-void Grounder::addSCC(SCC *scc)
+void Grounder::addProgram(Program *scc)
 {
 	sccs_.push_back(scc);
 }
@@ -160,10 +167,10 @@ void Grounder::ground()
 	output_->initialize(getPred());
 	substitution_.resize(varMap_.size() + 2);
 	binder_.resize(varMap_.size() + 2, -1);
-	for(SCCVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
+	for(ProgramVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
 	{
-		SCC *scc = *it;
-		//std::cerr << scc << std::endl;
+		Program *scc = *it;
+		std::cerr << scc << std::endl;
 		eval_ = scc->getEvaluator();
 		eval_->initialize(this);
 		StatementVector *rules = scc->getStatements();
@@ -227,14 +234,14 @@ int Grounder::registerVar(std::string *var)
 
 Grounder::~Grounder()
 {
-	delete depGraph_;
 	for(DomainVector::iterator it = domains_.begin(); it != domains_.end(); it++)
 		delete (*it).second;
 	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
 		delete *it;
 	for(ConstTerms::iterator it = constTerms_.begin(); it != constTerms_.end(); it++)
 		delete it->second.second;
-
+	for(ProgramVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
+		delete *it;
 }
 
 Value Grounder::getValue(int var)
@@ -274,7 +281,7 @@ Value Grounder::getConstValue(std::string *id)
 	if(it != constTerms_.end())
 	{
 		if(it->second.first)
-			throw GrinGoException("error cyclic constant definition");
+			throw GrinGoException("Error: cyclic constant definition.");
 		it->second.first = true;
 		Value v = it->second.second->getConstValue();
 		it->second.first = false;

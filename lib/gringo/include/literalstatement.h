@@ -36,7 +36,7 @@ namespace NS_GRINGO
 	public:
 		/// Constructor
 		LiteralStatement(Literal *lit, bool preserveOrder);
-		virtual void buildDepGraph(DependencyGraph *dg);
+		virtual void buildDepGraph(SDG *dg);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual bool check(VarVector &free);

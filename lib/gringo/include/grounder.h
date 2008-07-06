@@ -39,8 +39,9 @@ namespace NS_GRINGO
 		void start();
 		void addDomains();
 		void reset(bool warn);
+		bool check();
 		void ground();
-		void addSCC(SCC *scc);
+		void addProgram(Program *scc);
 		void addTrueNegation(std::string *id, int arity);
 		int getVar(std::string *var);
 		std::string *createUniqueVar();
@@ -62,11 +63,10 @@ namespace NS_GRINGO
 		void addDomains(std::string *id, std::vector<StringVector*>::iterator pos, std::vector<StringVector*>::iterator end, StringVector &list);
 	protected:
 		int internalVars_;
-		SCCVector sccs_;
+		ProgramVector sccs_;
 		VariableMap varMap_;
 		DomainVector domains_;
 		StatementVector rules_;
-		DependencyGraph *depGraph_;
 		NS_OUTPUT::Output *output_;
 		Evaluator *eval_;
 		ConstTerms constTerms_;

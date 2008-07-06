@@ -28,7 +28,7 @@ RangeLiteral::RangeLiteral(Constant *var, Term *lower, Term *upper) : Literal(),
 {
 }
 
-Node *RangeLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
+SDGNode *RangeLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
 {
 	return 0;
 }

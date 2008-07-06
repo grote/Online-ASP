@@ -28,7 +28,7 @@ RelationLiteral::RelationLiteral(RelationType type, Term *a, Term *b) : Literal(
 
 }
 
-Node *RelationLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
+SDGNode *RelationLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
 {
 	return 0;
 }

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "dependencygraph.h"
+#include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
 #include "predicateliteral.h"
 #include "assignmentliteral.h"
@@ -23,7 +23,6 @@
 #include "grounder.h"
 #include "constant.h"
 #include "term.h"
-#include "node.h"
 #include "domain.h"
 #include "rangeterm.h"
 #include "rangeliteral.h"
@@ -57,10 +56,9 @@ bool PredicateLiteral::checkO(LiteralVector &unsolved)
 	return true;
 }
 
-Node *PredicateLiteral::createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo)
+SDGNode *PredicateLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
 {
-	Node *n = dg->createPredicateNode(this);
-	predNode_ = n->getDomain();
+	SDGNode *n = dg->createPredicateNode(this);
 	switch(todo)
 	{
 		case ADD_BODY_DEP:

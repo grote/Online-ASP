@@ -38,7 +38,7 @@ namespace NS_GRINGO
 		virtual ~NormalRule();
 		// implemented from base class or interface
 		virtual void getVars(VarSet &vars) const;
-		virtual void buildDepGraph(DependencyGraph *dg);
+		virtual void buildDepGraph(SDG *dg);
 		virtual void print(std::ostream &out);
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual bool check(VarVector &free);

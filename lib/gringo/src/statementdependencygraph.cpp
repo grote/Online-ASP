@@ -15,22 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "dependencygraph.h"
+#include "statementdependencygraph.h"
 #include "predicateliteral.h"
-#include "node.h"
 #include "domain.h"
 #include "grounder.h"
-#include "scc.h"
+#include "program.h"
 
 using namespace NS_GRINGO;
 		
-DependencyGraph::DependencyGraph() : last_(0)
+// ==================== SDG::SCC ============================
+SDG::SCC::SCC() : type_(FACT), edges_(0)
 {
 }
 
-Node *DependencyGraph::createStatementNode(Statement *r, bool preserveOrder)
+// ======================= SDG ==============================
+
+SDG::SDG() : last_(0)
 {
-	Node *n = new Node(r);
+}
+
+SDGNode *SDG::createStatementNode(Statement *r, bool preserveOrder)
+{
+	SDGNode *n = new SDGNode(r);
 	ruleNodes_.push_back(n);
 	if(preserveOrder)
 	{
@@ -41,17 +47,17 @@ Node *DependencyGraph::createStatementNode(Statement *r, bool preserveOrder)
 	return n;
 }
 
-Node *DependencyGraph::createPredicateNode(PredicateLiteral *pred)
+SDGNode *SDG::createPredicateNode(PredicateLiteral *pred)
 {
 	if((int)predicateNodes_.size() < pred->getUid() + 1)
 		predicateNodes_.resize(pred->getUid() + 1);
-	Node *&n = predicateNodes_[pred->getUid()];
+	SDGNode *&n = predicateNodes_[pred->getUid()];
 	if(!n)
-		n = new Node(pred->getDomain());
+		n = new SDGNode(pred->getDomain());
 	return n;
 }
 
-void DependencyGraph::tarjan(Node *v1, std::stack<Node*> &s, int &index)
+void SDG::tarjan(SDGNode *v1, std::stack<SDGNode*> &s, int &index)
 {
 	// do a depth first search to find the sccs
 	v1->index_ = index;
@@ -59,10 +65,10 @@ void DependencyGraph::tarjan(Node *v1, std::stack<Node*> &s, int &index)
 	index = index + 1;
 	s.push(v1);
 	v1->stacked_ = true;
-	NodeVector *dep = v1->getDependency();
-	for(NodeVector::iterator it = dep->begin(); it != dep->end(); it++)
+	SDGNodeVector *dep = v1->getDependency();
+	for(SDGNodeVector::iterator it = dep->begin(); it != dep->end(); it++)
 	{
-		Node *v2 = *it;
+		SDGNode *v2 = *it;
 		if(v2->done_)
 			continue;
 		if(v2->index_ == -1)
@@ -79,7 +85,7 @@ void DependencyGraph::tarjan(Node *v1, std::stack<Node*> &s, int &index)
 	{
 		SCC *scc = new SCC();
 		int nodes = 0;
-		Node *v2;
+		SDGNode *v2;
 		do
 		{
 			v2 = s.top();
@@ -103,15 +109,15 @@ void DependencyGraph::tarjan(Node *v1, std::stack<Node*> &s, int &index)
 	}
 }
 
-void DependencyGraph::calcSCCDep(Node *v1, SCC *scc, bool &root)
+void SDG::calcSCCDep(SDGNode *v1, SCC *scc, bool &root)
 {
 	// do a depth first search limited to the scc to build a tree of sccs
 	v1->done_ = true;
-	NodeVector *dep = v1->getDependency();
+	SDGNodeVector *dep = v1->getDependency();
 	// build tree of sccs
-	for(NodeVector::iterator it = dep->begin(); it != dep->end(); it++)
+	for(SDGNodeVector::iterator it = dep->begin(); it != dep->end(); it++)
 	{
-		Node *v2 = *it;
+		SDGNode *v2 = *it;
 		assert(v2->scc_);
 		if(v2->scc_ == scc && !v2->done_)
 			calcSCCDep(v2, scc, root);
@@ -127,10 +133,10 @@ void DependencyGraph::calcSCCDep(Node *v1, SCC *scc, bool &root)
 	// try to find neg dep in scc
 	if(scc->type_ != SCC::NORMAL)
 	{
-		NodeVector *negDep = v1->getNegDependency();
-		for(NodeVector::iterator it = negDep->begin(); it != negDep->end(); it++)
+		SDGNodeVector *negDep = v1->getNegDependency();
+		for(SDGNodeVector::iterator it = negDep->begin(); it != negDep->end(); it++)
 		{
-			Node *v2 = *it;
+			SDGNode *v2 = *it;
 			if(v2->scc_ == scc)
 			{
 				scc->type_ = SCC::NORMAL;
@@ -140,8 +146,31 @@ void DependencyGraph::calcSCCDep(Node *v1, SCC *scc, bool &root)
 	}
 }
 
-bool DependencyGraph::check(Grounder *g)
+void SDG::calcSCCs(Grounder *g)
 {
+	for(SDGNodeVector::iterator it = ruleNodes_.begin(); it != ruleNodes_.end(); it++)
+	{
+		SDGNode *v = *it;
+		if(!v->done_)
+		{
+			int index = 0;
+			std::stack<SDGNode*> stack;
+			tarjan(v, stack, index);
+		}
+	}
+	for(SDGNodeVector::iterator it = predicateNodes_.begin(); it != predicateNodes_.end(); it++)
+	{
+		SDGNode *v = *it;
+		if(!v->done_)
+		{
+			int index = 0;
+			std::stack<SDGNode*> stack;
+			tarjan(v, stack, index);
+		}
+		// set the type of the domain
+		v->getDomain()->setType(static_cast<Domain::Type>(v->scc_->type_));
+	}
+
 	// do a topological sort
 	std::queue<SCC*> bf;
 	for(SCCSet::iterator it = sccRoots_.begin(); it != sccRoots_.end(); it++)
@@ -153,12 +182,12 @@ bool DependencyGraph::check(Grounder *g)
 	{
 		SCC *top = bf.front();
 		assert(top->edges_ == 0);
-		if(!top->check(g))
-			return false;
 		bf.pop();
 		// if there is something to ground add it to the grounder
 		if(top->rules_.size() > 0)
-			g->addSCC(top);
+		{
+			g->addProgram(new Program(static_cast<Program::Type>(top->type_), top->rules_));
+		}
 		for(SCCSet::iterator it = top->sccs_.begin(); it != top->sccs_.end(); it++)
 		{
 			SCC *scc = *it;
@@ -167,47 +196,67 @@ bool DependencyGraph::check(Grounder *g)
 				bf.push(scc);
 		}
 	}
-	return true;
 }
 
-void DependencyGraph::calcSCCs()
-{
-	for(NodeVector::iterator it = ruleNodes_.begin(); it != ruleNodes_.end(); it++)
-	{
-		Node *v = *it;
-		if(!v->done_)
-		{
-			int index = 0;
-			std::stack<Node*> stack;
-			tarjan(v, stack, index);
-		}
-	}
-	for(NodeVector::iterator it = predicateNodes_.begin(); it != predicateNodes_.end(); it++)
-	{
-		Node *v = *it;
-		if(!v->done_)
-		{
-			int index = 0;
-			std::stack<Node*> stack;
-			tarjan(v, stack, index);
-		}
-		// set the type of the domain
-		v->getDomain()->setType(static_cast<Domain::Type>(v->scc_->getType()));
-	}
-}
-
-NodeVector &DependencyGraph::getPredNodes()
-{
-	return predicateNodes_;
-}
-
-DependencyGraph::~DependencyGraph()
+SDG::~SDG()
 {
 	for(SCCVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
 		delete *it;
-	for(NodeVector::iterator it = ruleNodes_.begin(); it != ruleNodes_.end(); it++)
+	for(SDGNodeVector::iterator it = ruleNodes_.begin(); it != ruleNodes_.end(); it++)
 		delete *it;
-	for(NodeVector::iterator it = predicateNodes_.begin(); it != predicateNodes_.end(); it++)
+	for(SDGNodeVector::iterator it = predicateNodes_.begin(); it != predicateNodes_.end(); it++)
 		delete *it;
 }
 
+// =================================== SDGNode ===========================================
+
+SDGNode::SDGNode(Domain *domain) : lowlink_(-1), index_(-1), type_(PREDICATENODE), stacked_(0), done_(0), scc_(0), dom_(domain)
+{
+}
+
+SDGNode::SDGNode(Statement *rule) : lowlink_(-1), index_(-1), type_(STATEMENTNODE), stacked_(0), done_(0), scc_(0), rule_(rule)
+{
+}
+
+SDGNodeVector *SDGNode::getNegDependency() const
+{
+	return const_cast<SDGNodeVector *>(&negDependency_);
+}
+
+SDGNodeVector *SDGNode::getDependency() const
+{
+	return const_cast<SDGNodeVector *>(&dependency_);
+}
+
+Domain* SDGNode::getDomain() const
+{
+	if(type_ == PREDICATENODE)
+		return dom_; 
+	else
+		return 0;
+}
+
+Statement* SDGNode::getStatement() const
+{ 
+	if(type_ == STATEMENTNODE)
+		return rule_; 
+	else
+		return 0;
+}
+
+SDGNode::Type SDGNode::getType() const
+{
+	return static_cast<SDGNode::Type>(type_);
+}
+
+void SDGNode::addDependency(SDGNode *n, bool neg)
+{
+	assert(n);
+	if(neg)
+		negDependency_.push_back(n);
+	dependency_.push_back(n);
+}
+
+SDGNode::~SDGNode() 
+{
+}

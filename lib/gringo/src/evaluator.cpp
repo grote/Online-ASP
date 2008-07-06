@@ -18,7 +18,6 @@
 #include "evaluator.h"
 #include "grounder.h"
 #include "output.h"
-#include "node.h"
 
 using namespace NS_GRINGO;
 		

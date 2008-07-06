@@ -29,7 +29,7 @@ namespace NS_GRINGO
 	public:
 		AggregateLiteral(ConditionalLiteralVector *literals);
 		AggregateLiteral(const AggregateLiteral &a);
-		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
+		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);

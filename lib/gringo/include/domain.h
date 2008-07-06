@@ -15,34 +15,43 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef SCC_H
-#define SCC_H
+#ifndef DOMAIN_H
+#define DOMAIN_H
 
 #include <gringo.h>
-#include <printable.h>
+#include <value.h>
 
 namespace NS_GRINGO
 {
-	class SCC : public Printable
+	class Domain
 	{
-		friend class DependencyGraph;
 	public:
-		enum SCCType {FACT=0, BASIC=1, NORMAL=2};
+		enum Type {UNDEFINED = 3, FACT = 0, BASIC = 1, NORMAL = 2};
 	public:
-		SCC();
-		void print(std::ostream &out);
-		Evaluator *getEvaluator();
-		bool check(Grounder *g);
-		StatementVector *getStatements();
-		SCCType getType();
-		virtual ~SCC();
-	protected:
-		SCCType type_;
-		int edges_;
-		StatementVector rules_;
-		SCCSet sccs_;
-		Evaluator *eval_;
+		Domain();
+		bool complete() const;
+		bool solved() const;
+		void setSolved(bool solved);
+		void reset();
+		void finish();
+		void evaluate();
+		bool hasFacts() const;
+		void addFact(const ValueVector &values);
+		bool isFact(const ValueVector &values) const;
+		bool inDomain(const ValueVector &values) const;
+		void addDomain(const ValueVector &values);
+		void removeDomain(const ValueVector &values);
+		void setType(Type type_);
+		ValueVectorSet &getDomain() const;
+		~Domain();
+	private:
+		enum Type type_;
+		int defines_;
+		ValueVectorSet facts_;
+		ValueVectorSet domain_;
+		bool solved_;
 	};
 }
 
 #endif
+

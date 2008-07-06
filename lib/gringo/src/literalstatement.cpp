@@ -16,10 +16,9 @@
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "literalstatement.h"
-#include "dependencygraph.h"
+#include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
 #include "conditionalliteral.h"
-#include "node.h"
 #include "output.h"
 #include "grounder.h"
 #include "evaluator.h"
@@ -30,10 +29,10 @@ LiteralStatement::LiteralStatement(Literal *lit, bool preserveOrder) : lit_(lit)
 {
 }
 
-void LiteralStatement::buildDepGraph(DependencyGraph *dg)
+void LiteralStatement::buildDepGraph(SDG *dg)
 {
 	// the order of optimize statements is important
-	Node *prev = dg->createStatementNode(this, preserveOrder_);
+	SDGNode *prev = dg->createStatementNode(this, preserveOrder_);
 	lit_->createNode(dg, prev, Literal::ADD_NOTHING);
 }
 

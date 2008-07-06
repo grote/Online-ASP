@@ -33,7 +33,7 @@ namespace NS_GRINGO
 		PredicateLiteral(const PredicateLiteral &p);
 		virtual Literal* clone() const;
 		void setWeight(Term *w);
-		virtual Node *createNode(DependencyGraph *dg, Node *prev, DependencyAdd todo);
+		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void print(std::ostream &out);
 		virtual void getVars(VarSet &vars) const;

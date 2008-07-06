@@ -97,6 +97,9 @@ PrgRule::RData PrgRule::simplify(RuleState& rs) {
 	if (type_ != CONSTRAINTRULE && type_ != WEIGHTRULE) bound_ = (weight_t)body.size();
 	if (bound_ <= 0) {
 		body.clear();	// body is satisfied - ignore contained lits
+		if (type_ == CONSTRAINTRULE || type_ == WEIGHTRULE) {
+			type_ = BASICRULE;
+		}
 		r.value_ = value_true;
 	}
 	if (bound_ > r.sumWeight) {
@@ -260,6 +263,12 @@ uint32 PrgRule::transformAggregate(ProgramBuilder& prg, TransformationMode m) {
 uint32 PrgRule::transformAggregateQuad(ProgramBuilder& prg, const WeightVec& sumWeights) {
 	typedef std::pair<uint32, weight_t> Key;
 	typedef std::deque<Key> KeyQueue;
+	if (bound_ == 0) {
+		PrgRule r(BASICRULE);
+		r.addHead(heads[0]);
+		prg.addRule(r);
+		return 1;
+	}
 	VarVec atoms(body.size() * bound_, varMax);
 	atoms[bound_-1] = heads[0];
 	KeyQueue todo;
@@ -317,6 +326,7 @@ uint32 PrgRule::transformAggregateExp(ProgramBuilder& prg, const WeightVec& sumW
 	uint32		end		= (uint32)body.size();
 	weight_t	cw		= 0;
 	uint32		next	= 0;
+	if (next == end) { prg.addRule(r); return 1; }
 	while (next != end) {
 		r.addToBody(body[next].first.var(), body[next].first.sign() == false);
 		weights.push_back( body[next].second );

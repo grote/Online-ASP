@@ -15,34 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef DEPENDENCYGRAPH_H
-#define DEPENDENCYGRAPH_H
+#ifndef PROGRAM_H
+#define PROGRAM_H
 
 #include <gringo.h>
 #include <printable.h>
 
 namespace NS_GRINGO
 {
-	class DependencyGraph
+	class Program : public Printable
 	{
 	public:
-		DependencyGraph();
-		Node *createStatementNode(Statement *r, bool preserveOrder = false);
-		Node *createPredicateNode(PredicateLiteral *pred);
-		NodeVector &getPredNodes();
-		void calcSCCs();
+		enum Type {FACT=0, BASIC=1, NORMAL=2};
+	public:
+		Program(Type type, StatementVector &rules);
+		void print(std::ostream &out);
+		Evaluator *getEvaluator();
 		bool check(Grounder *g);
-		virtual ~DependencyGraph();
-	protected:
-		void calcSCCDep(Node *v1, SCC *scc, bool &root);
-		void tarjan(Node *v1, std::stack<Node*> &stack, int &index);
-	protected:
-		int uids_;
-		NodeVector ruleNodes_;
-		NodeVector predicateNodes_;
-		SCCVector sccs_;
-		SCCSet sccRoots_;
-		Node *last_;
+		StatementVector *getStatements();
+		Type getType();
+		~Program();
+	private:
+		Type type_;
+		StatementVector rules_;
+		Evaluator *eval_;
 	};
 }
 
