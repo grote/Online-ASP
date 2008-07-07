@@ -1,4 +1,4 @@
-\documentclass[a4paper,10pt,titlepage]{article}
+\documentclass[a4paper,10pt]{article}
 
 \usepackage[latin1]{inputenc}
 \usepackage{amsfonts}
@@ -68,8 +68,9 @@ For example:
 Furthermore all restriction on smodels output al hold as clasps internal interface currently reads smodels format.
 \paragraph{-p}
 Parameter ``p'' invokes the plain output method, so the output is printed in human readable format, which is also the input format for gringo.
-\paragraph{-g}
-This parameter invokes the new output format for intermediate languages ASPils \cite{atleastthisreferenceishouldgive}. Currently only the ``Conglomeration'' normal form is supported.
+\paragraph{-g X}
+This parameter invokes the new output format for the intermediate languages ASPils \cite{atleastthisreferenceishouldgive}. The X can be any number from $1$ to $7$ to refer to one of the following normalforms (Simple=1, SModels=2, DisjunctiveLogicProgram=3, CModels=4, CModelsExtended=5, DLV=6, Conglomeration=7). If no normalform is specified, conglomeration(7)  is assumed.
+
 \paragraph{default parameters}
 The default parameter is ``-l'' for smodels output.
 \section{Language Constructs}
@@ -115,8 +116,6 @@ The same can be done with the body to express an integrity constraint.
 \begin{verbatim}
  :- body.
 \end{verbatim}
-
-
 
 \paragraph{Comments}
 Comments included in the input are line based.
@@ -172,8 +171,39 @@ This error message gives a list of atoms that are not lambda restricted.
  "syntax error on line Y column Z unexpected token: X"
 \end{verbatim}
 The parser can not read the input format.
+\begin{verbatim}
+ "Disjunction not allowed on this normalform."
+ "Count aggregate/cardinality constraint not allowed
+  in this normalform."
+ "Count aggregate/cardinality constraint not allowed 
+  with non trivial upper bound in this normalform."
+ "Count aggregate/cardinality constraint not allowed 
+  with negative lower bound in this normalform."
+ "Sum aggregate/weight constraint not allowed
+  in this normalform."
+ "Sum aggregate/weight constraint not allowed 
+  with non trivial upper bound in this normalform."
+ "Sum aggregate/weight constraint not allowed 
+  with negative lower bound in this normalform."
+ "Sum aggregate/weight constraint not allowed
+  with negative weights in this normalform."
+ "Sum aggregate/weight constraint not allowed
+  with negative weights in this normalform."
+ "Max aggregate not allowed in this normalform."
+ "Max aggregate not allowed
+  with negative weights in this normalform."
+ "Min aggregate not allowed in this normalform."
+ "Min aggregate not allowed 
+  with negative weights in this normalform."
+ "Optimize statement not allowed in this normalform."
+\end{verbatim}
+%\begin{verbatim}
+% "Times aggregate not allowed in this normalform."
+% "Times aggregate not allowed
+%  with negative weights in this normalform."
+%\end{verbatim}
+These errors belong to the ASPils output format. Another normal form as to be chosen.
 \end{itemize}
-
 
 \subsection{Meta Constructs}
 The ``\#'' sign in front of all meta expressions is optional and can therefore be omitted.
@@ -310,7 +340,7 @@ This operator can be used in aggregates to create a comma separated list of atom
 \paragraph{Arithmetic Expressions}
 The build in arithmetics can be used for integer arithmetic.
 As operators addition (+), subtraction (-), multiplication (*), division (/), modulo (mod) and the absolute value operator (abs) can be used.
-Furthermore the bitwise operators and(\&), or(?), xor(\textasciicircum) and invert($\sim$) are supported.
+Furthermore the bitwise operators and(\&), or(?), xor(\textasciicircum) and invert($\sim$) are supported. The bitwise operators are executed on signed integers using the binary complement for negative numbers.
 Arithmetic expressions can occur everywhere in head and in the body, even in complex constructs.
 As parameters, integer constants or expressions that evaluate to integers are used.
 The simple example of using operators and range terms
@@ -319,7 +349,7 @@ The simple example of using operators and range terms
  b(1,2).
  c(4).
 \end{verbatim}
-would result in the grounded program\footnote{gringo would simplify the grounded rule to fact, since all literals in the body are facts}
+would result in the grounded program\footnote{gringo would simplify the grounded rules to facts, since all literals in the body are facts}
 \begin{verbatim}
  a(0) :- b(1,2), c(4).
  a(1) :- b(1,2), c(4).
@@ -327,8 +357,6 @@ would result in the grounded program\footnote{gringo would simplify the grounded
  b(1,2).
  c(4).
 \end{verbatim}
-
-TODO: Bitwise operators !!!!
 
 \subparagraph{Relational Operators}
 The relational operators are ``less than'' ($<$),\\ ``greater than'' ($>$), ``less equal'' ($<=$), ``greater equal'' ($>=$) , ``equal'' ($==$) and ``not equal'' ($!=$).
@@ -486,7 +514,8 @@ diagY(X,Y,X + Y - 1) :- d(X), d(Y).
 \end{verbatim}
 
 \section{Benchmarks}
-TODO: run on what machine, give reference to encodings.
+The benchmarks were run on an Athlon XP 1700+ with 1GB of RAM.
+TODO: Official (non internal wiki) link to the instances.
 
 \input{benchmark2.result}
 \appendixname
