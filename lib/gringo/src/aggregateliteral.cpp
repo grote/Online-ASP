@@ -127,8 +127,9 @@ SDGNode *AggregateLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo
 		SDGNode *p = (*it)->createNode(dg, prev, ADD_NOTHING);
 		assert(p);
 		prev->addDependency(p, true);
-		// if used in the head they it also depends cyclically on its literals
-		if(todo == ADD_HEAD_DEP)
+		// if used in the head it also depends cyclically on its literals
+		// but not if the literal is negative
+		if(todo == ADD_HEAD_DEP && !(*it)->getNeg())
 			p->addDependency(prev);
 	}
 	return 0;

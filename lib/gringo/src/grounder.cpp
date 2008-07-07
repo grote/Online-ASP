@@ -68,7 +68,7 @@ void Grounder::buildDepGraph()
 	SDG dg;
 	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
 		(*it)->buildDepGraph(&dg);
-	reset(true);
+	reset();
 	dg.calcSCCs(this);
 }
 
@@ -87,7 +87,7 @@ void Grounder::addDomains()
 		Statement *rule = *it;
 		VarSet vars;
 		rule->getVars(vars);
-		for(DomainVector::iterator it = domains_.begin(); it != domains_.end(); it++)
+		for(DomainPredicateVector::iterator it = domains_.begin(); it != domains_.end(); it++)
 		{
 			DomainPredicate &dp = *it;
 			for(StringVector::iterator it = dp.second->begin(); it != dp.second->end(); it++)
@@ -107,24 +107,24 @@ void Grounder::addDomains()
 	}
 }
 
-void Grounder::reset(bool warn = false)
+void Grounder::addZeroDomain(Domain *d)
+{
+	d->setSolved(true);
+	for(int uid = 0; uid < (int)getDomains()->size(); uid++)
+	{
+		if(d == (*getDomains())[uid])
+		{
+			Signature &sig = (*getPred())[uid];
+			std::cerr << "Warning: " << *sig.first << "/" << sig.second << " is never defined." << std::endl;
+			break;
+		}
+	}
+}
+
+void Grounder::reset()
 {
 	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
 		(*it)->reset();
-	// all nodes with zero defines have to be false
-	for(int uid = 0; uid < (int)getDomains()->size(); uid++)
-	{
-		Domain *n = (*getDomains())[uid];
-		if(n->complete())
-		{
-			if(warn)
-			{
-				Signature &sig = (*getPred())[uid];
-				std::cerr << "Warning: " << *sig.first << "/" << sig.second << " is never defined." << std::endl;
-			}
-			n->setSolved(true);
-		}
-	}
 }
 
 void Grounder::preprocess()
@@ -150,7 +150,7 @@ void Grounder::start()
 	std::cerr << "checking ... " << std::endl;
 	if(!check())
 		throw GrinGoException("Error: the program is not groundable.");
-	reset(false);
+	reset();
 	std::cerr << "done" << std::endl;
 	std::cerr << "grounding ... " << std::endl;
 	ground();
@@ -170,7 +170,9 @@ void Grounder::ground()
 	for(ProgramVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
 	{
 		Program *scc = *it;
+#ifndef NDEBUG
 		std::cerr << scc << std::endl;
+#endif
 		eval_ = scc->getEvaluator();
 		eval_->initialize(this);
 		StatementVector *rules = scc->getStatements();
@@ -234,7 +236,7 @@ int Grounder::registerVar(std::string *var)
 
 Grounder::~Grounder()
 {
-	for(DomainVector::iterator it = domains_.begin(); it != domains_.end(); it++)
+	for(DomainPredicateVector::iterator it = domains_.begin(); it != domains_.end(); it++)
 		delete (*it).second;
 	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
 		delete *it;

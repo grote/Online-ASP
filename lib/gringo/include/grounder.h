@@ -28,7 +28,7 @@ namespace NS_GRINGO
 	{
 	protected:
 		typedef std::pair<std::string*, StringVector*> DomainPredicate;
-		typedef std::vector<DomainPredicate> DomainVector;
+		typedef std::vector<DomainPredicate> DomainPredicateVector;
 		typedef std::map<std::string*, int> VariableMap;
 		typedef std::map<std::string*, std::pair<bool, Term*> > ConstTerms;
 	public:
@@ -38,7 +38,7 @@ namespace NS_GRINGO
 		void buildDepGraph();
 		void start();
 		void addDomains();
-		void reset(bool warn);
+		void reset();
 		bool check();
 		void ground();
 		void addProgram(Program *scc);
@@ -58,6 +58,8 @@ namespace NS_GRINGO
 		void preprocess();
 		NS_OUTPUT::Output *getOutput();
 		Evaluator *getEvaluator();
+		/// Adds a domain that never occurs in any head
+		void addZeroDomain(Domain *d);
 		virtual ~Grounder();
 	protected:
 		void addDomains(std::string *id, std::vector<StringVector*>::iterator pos, std::vector<StringVector*>::iterator end, StringVector &list);
@@ -65,7 +67,7 @@ namespace NS_GRINGO
 		int internalVars_;
 		ProgramVector sccs_;
 		VariableMap varMap_;
-		DomainVector domains_;
+		DomainPredicateVector domains_;
 		StatementVector rules_;
 		NS_OUTPUT::Output *output_;
 		Evaluator *eval_;

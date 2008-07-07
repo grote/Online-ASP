@@ -169,6 +169,8 @@ void SDG::calcSCCs(Grounder *g)
 		}
 		// set the type of the domain
 		v->getDomain()->setType(static_cast<Domain::Type>(v->scc_->type_));
+		if(v->dependency_.size() == 0)
+			g->addZeroDomain(v->getDomain());
 	}
 
 	// do a topological sort

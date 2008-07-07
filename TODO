@@ -40,3 +40,5 @@ testing:
 - write tests for all allowed language constructs !!!
 - test conformance with lparse/gringo
 
+bugs:
+- zero weights in the head are not working
