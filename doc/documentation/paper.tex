@@ -449,8 +449,12 @@ The statement can be weighted or not, therefore weights can be omitted in the fo
 \end{verbatim}
 The maximize statement uses the keyword ``maximize'' instead.
 
-\section{$\Pi$-Restrictiveness (or something else)}
+\section{$\lambda$-Restriction}
 \label{domainrestricted}
+Gringo verifies that the input program is $\lambda$-
+restricted \cite{gringopaper}, so that the existence of a finite equivalent ground instantiation is guaranteed.
+
+
 \section{Examples}
 In this section come encodings for common problems are presented and explained.
 \paragraph{Fastfood}
