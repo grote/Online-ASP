@@ -144,9 +144,14 @@ Atom::Atom(bool neg, int predUid) : Object(neg), node_(0), predUid_(predUid)
 
 void Atom::addDomain(bool fact)
 {
-	if(fact)
-		node_->addFact(values_);
-	node_->addDomain(values_);
+	// atoms may occur negatively in aggregates
+	// no domain has to be added if the atom is negative
+	if(!neg_)
+	{
+		if(fact)
+			node_->addFact(values_);
+		node_->addDomain(values_);
+	}
 }
 
 void Atom::print_plain(Output *o, std::ostream &out)

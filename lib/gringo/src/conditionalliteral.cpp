@@ -170,12 +170,14 @@ int ConditionalLiteral::count()
 
 void ConditionalLiteral::reset()
 {
-	pred_->reset();
+	if(!getNeg())
+		pred_->reset();
 }
 
 void ConditionalLiteral::finish()
 {
-	pred_->finish();
+	if(!getNeg())
+		pred_->finish();
 }
 
 bool ConditionalLiteral::solved()
@@ -194,8 +196,8 @@ void ConditionalLiteral::ground(Grounder *g)
 			//std::cerr << "creating grounder for: " << this << std::endl;
 			grounder_ = new DLVGrounder(g, this, conditionals_->size(), dg_, dg_->getGlobalVars());
 		}
-		
 		grounder_->ground();
+
 	}
 	else
 	{
