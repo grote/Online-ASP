@@ -19,7 +19,7 @@
 #include "domain.h"
 #include "grounder.h"
 #include "pilsoutput.h"
-#include <gringoexception.h>
+#include "gringoexception.h"
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
@@ -38,6 +38,13 @@ void Output::initialize(SignatureVector *pred)
 		visible_.push_back(isVisible(it->first, it->second));
 	atoms_.resize(pred_->size());
 }
+
+#ifdef WITH_ICLASP
+void Output::reinitialize()
+{
+	throw GrinGoException("Error: output does not support reinitialization.");
+}
+#endif
 
 std::string Output::atomToString(int id, const ValueVector &values) const
 {

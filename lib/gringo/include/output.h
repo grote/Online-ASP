@@ -35,6 +35,9 @@ namespace NS_GRINGO
 		public:
 			Output(std::ostream *out);
 			virtual void initialize(SignatureVector *pred);
+#ifdef WITH_ICLASP
+			virtual void reinitialize();
+#endif
 			virtual void print(NS_OUTPUT::Object *o) = 0;
 			virtual void finalize() = 0;
 			std::string atomToString(int id, const ValueVector &values) const;

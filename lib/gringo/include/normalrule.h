@@ -50,6 +50,9 @@ namespace NS_GRINGO
 		virtual void grounded(Grounder *g);
 		virtual bool ground(Grounder *g);
 		virtual void addDomain(PredicateLiteral *pl);
+#ifdef WITH_ICLASP
+		virtual void setIncPart(Grounder *g, IncPart part, std::string *var);
+#endif
 	private:
 		/**
 		 * \brief Calculate the relevant vars in the body
@@ -61,6 +64,9 @@ namespace NS_GRINGO
 		Literal *head_;
 		/// The body
 		LiteralVector *body_;
+#ifdef WITH_ICLASP
+		int ground_;
+#endif
 		LDG *dg_;
 	};
 }

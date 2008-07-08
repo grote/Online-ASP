@@ -32,6 +32,14 @@ if(WITH_CLASP)
 	add_definitions(-DWITH_CLASP)
 endif(WITH_CLASP)
 
+set(WITH_ICLASP OFF CACHE BOOL "Enable this flag to build GrinGo with an incremental clasp interface.")
+if(WITH_ICLASP)
+	if(NOT WITH_ICLASP)
+		add_definitions(-DWITH_CLASP)
+	endif(NOT WITH_ICLASP)
+	add_definitions(-DWITH_ICLASP)
+endif(WITH_ICLASP)
+
 add_subdirectory (app)
 add_subdirectory (lib)
 

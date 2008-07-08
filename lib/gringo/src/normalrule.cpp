@@ -25,10 +25,15 @@
 #include "dlvgrounder.h"
 #include "evaluator.h"
 #include "output.h"
+#include "gringoexception.h"
 
 using namespace NS_GRINGO;
 
+#ifdef WITH_ICLASP
 NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), dg_(0)
+#else
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), dg_(0), ground_(1)
+#endif
 {
 }
 
@@ -159,6 +164,10 @@ void NormalRule::getRelevantVars(VarVector &relevant)
 
 bool NormalRule::ground(Grounder *g)
 {
+#ifdef WITH_ICLASP
+	if(!ground_)
+		return true;
+#endif
 	if(body_)
 	{
 		// if there are no varnodes we can do sth simpler
@@ -185,6 +194,10 @@ bool NormalRule::ground(Grounder *g)
 	{
 		grounded(g);
 	}
+#ifdef WITH_ICLASP
+	if(ground_ == 2)
+		ground_ = 0;
+#endif
 	return true;
 }
 
@@ -315,6 +328,26 @@ void NormalRule::appendLiteral(Literal *l, ExpansionType type)
 		body_ = new LiteralVector();	
 	body_->push_back(l);
 }
+
+#ifdef WITH_ICLASP
+void NormalRule::setIncPart(Grounder *g, IncPart part, std::string *var)
+{
+	switch(part)
+	{
+		case BASE:
+			ground_ = 2;
+			break;
+		case LAMBDA:
+			throw GrinGoException("ToDo: implement me!");
+			break;
+		case DELTA:
+			throw GrinGoException("ToDo: implement me!");
+			break;
+		default:
+			break;
+	}
+}
+#endif
 
 NormalRule::~NormalRule()
 {

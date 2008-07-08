@@ -29,12 +29,25 @@
 
 using namespace NS_GRINGO;
 
-Grounder::Grounder(NS_OUTPUT::Output *output) : internalVars_(0), output_(output), eval_(0)
+#ifdef WITH_ICLASP
+Grounder::Grounder() : inc_(false), incStep_(0), internalVars_(0), output_(0), eval_(0)
+#else
+Grounder::Grounder() : internalVars_(0), output_(0), eval_(0)
+#endif
 {
+}
+
+void Grounder::setOutput(NS_OUTPUT::Output *output)
+{
+	output_ = output;
 }
 
 void Grounder::addStatement(Statement *rule)
 {
+#ifdef WITH_ICLASP
+	if(incParts_.size() > 0)
+		incParts_.back().second++;
+#endif
 	rules_.push_back(rule);
 }
 
@@ -72,12 +85,13 @@ void Grounder::buildDepGraph()
 	dg.calcSCCs(this);
 }
 
-bool Grounder::check()
+void Grounder::check()
 {
 	for(ProgramVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
 		if(!(*it)->check(this))
-			return false;
-	return true;
+			throw GrinGoException("Error: the program is not groundable.");
+	substitution_.resize(varMap_.size() + 2);
+	binder_.resize(varMap_.size() + 2, -1);
 }
 
 void Grounder::addDomains()
@@ -129,6 +143,12 @@ void Grounder::reset()
 
 void Grounder::preprocess()
 {
+#ifdef WITH_ICLASP
+	StatementVector::iterator r = rules_.begin();
+	for(IncParts::iterator it = incParts_.begin(); it != incParts_.end(); it++)
+		for(int j = 0; j < it->second; j++, r++)
+			(*r)->setIncPart(this, it->first.first, it->first.second);
+#endif
 	// the size of rules_ may increase during preprocessing make shure the newly inserted rules are preprocessed too
 	for(size_t i = 0; i < rules_.size(); i++)
 		rules_[i]->preprocess(this);
@@ -136,6 +156,10 @@ void Grounder::preprocess()
 
 void Grounder::start()
 {
+#ifdef WITH_ICLASP
+	if(inc_)
+		throw GrinGoException("Error: Use the option -i to ground an incremental program.");
+#endif
 	std::cerr << "preprocessing ... " << std::endl;
 	preprocess();
 	std::cerr << "done" << std::endl;
@@ -148,14 +172,54 @@ void Grounder::start()
 	buildDepGraph();
 	std::cerr << "done" << std::endl;
 	std::cerr << "checking ... " << std::endl;
-	if(!check())
-		throw GrinGoException("Error: the program is not groundable.");
+	check();
 	reset();
 	std::cerr << "done" << std::endl;
 	std::cerr << "grounding ... " << std::endl;
+	output_->initialize(getPred());
+	substitution_.resize(varMap_.size() + 2);
+	binder_.resize(varMap_.size() + 2, -1);
 	ground();
 	std::cerr << "done" << std::endl;
 }
+
+#ifdef WITH_ICLASP
+void Grounder::iground()
+{
+	if(incStep_ == 0)
+	{
+		std::cerr << "preprocessing ... " << std::endl;
+		preprocess();
+		std::cerr << "done" << std::endl;
+		if(varMap_.size() == 0)
+			std::cerr << "got ground program i hope u have enough memory :)" << std::endl;
+		std::cerr << "adding domain predicates ... " << std::endl;
+		addDomains();
+		std::cerr << "done" << std::endl;
+		std::cerr << "building dependencygraph ... " << std::endl;
+		buildDepGraph();
+		std::cerr << "done" << std::endl;
+		std::cerr << "checking ... " << std::endl;
+		check();
+		std::cerr << "done" << std::endl;
+	}
+	std::cerr << "grounding step: " << incStep_ << "... " << std::endl;
+	reset();
+	ground();
+	std::cerr << "done" << std::endl;
+}
+#endif
+
+void Grounder::setIncPart(IncPart part, std::string *var)
+{
+#ifdef WITH_ICLASP
+	inc_     = true;
+	incParts_.push_back(make_pair(std::make_pair(part, var), 0));
+#else
+	throw GrinGoException("Error: GrinGo has not been compiled with incremental clasp interface.");
+#endif
+}
+
 
 void Grounder::addProgram(Program *scc)
 {
@@ -164,9 +228,14 @@ void Grounder::addProgram(Program *scc)
 
 void Grounder::ground()
 {
+#ifdef WITH_ICLASP
+	if(incStep_ == 0 || !inc_)
+		output_->initialize(getPred());
+	else
+		output_->reinitialize();
+#else
 	output_->initialize(getPred());
-	substitution_.resize(varMap_.size() + 2);
-	binder_.resize(varMap_.size() + 2, -1);
+#endif
 	for(ProgramVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
 	{
 		Program *scc = *it;

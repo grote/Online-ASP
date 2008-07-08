@@ -1,8 +1,14 @@
 mingw=0
 clasp=0
+iclasp=0
 options=""
 while [[ $# > 0 ]]; do
 	case $1 in
+		"--iclasp")
+			options=" -D WITH_CLASP:BOOL=ON -D WITH_ICLASP:BOOL=ON"
+			clasp=1
+			iclasp=1
+			;;
 		"--clasp")
 			options=" -D WITH_CLASP:BOOL=ON"
 			clasp=1
@@ -13,10 +19,11 @@ while [[ $# > 0 ]]; do
 		"--help")
 			echo "$0 [options]"
 			echo
-			echo "--help :  show this help"
-			echo "--mingw : crosscompile for windows"
-			echo "          Note: u may have to change the file \"mingw.cmake\""
-			echo "--clasp : enable build-in clasp version" 
+			echo "--help :   show this help"
+			echo "--mingw :  crosscompile for windows"
+			echo "           Note: u may have to change the file \"mingw.cmake\""
+			echo "--clasp :  enable build-in clasp version"
+			echo "--iclasp : enable incremental clasp interface "
 			exit 0
 			;;
 		*)
@@ -25,6 +32,8 @@ while [[ $# > 0 ]]; do
 	esac
 	shift
 done
+
+
 
 mkdir -p build
 cd build
@@ -51,6 +60,11 @@ echo
 echo "To compile the project simply change to folder build/{debug,release,win32} and type \"make\"."
 echo "Note: You can always change the cmake options by modifying the file \"CMakeCache.txt\"."
 echo 
+if [[ $iclasp == 1 ]]; then
+	echo "incremental clasp interface: yes"
+else
+	echo "incremental clasp interface: no (enable with --iclasp)"
+fi
 if [[ $clasp == 1 ]]; then
 	echo "internal clasp support: yes"
 else

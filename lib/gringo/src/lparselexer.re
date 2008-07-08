@@ -63,6 +63,9 @@ begin:
 		MINIMIZE        = "#"? 'minimize';
 		MAXIMIZE        = "#"? 'maximize';
 		COMPUTE         = "#"? 'compute';
+		LAMBDA          = "#lambda";
+		BASE            = "#base";
+		DELTA           = "#delta";
 
 		CONST           { return LPARSEPARSER_CONST; }
 		SHOW            { return LPARSEPARSER_SHOW; }
@@ -76,6 +79,9 @@ begin:
 		MINIMIZE        { return LPARSEPARSER_MINIMIZE; }
 		MAXIMIZE        { return LPARSEPARSER_MAXIMIZE; }
 		COMPUTE         { return LPARSEPARSER_COMPUTE; }
+		LAMBDA          { return LPARSEPARSER_LAMBDA; }
+		BASE            { return LPARSEPARSER_BASE; }
+		DELTA           { return LPARSEPARSER_DELTA; }
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"sum"           { return LPARSEPARSER_SUM; }

@@ -26,21 +26,23 @@ namespace NS_GRINGO
 {
 	class Grounder : public GlobalStorage
 	{
-	protected:
+	private:
 		typedef std::pair<std::string*, StringVector*> DomainPredicate;
 		typedef std::vector<DomainPredicate> DomainPredicateVector;
 		typedef std::map<std::string*, int> VariableMap;
 		typedef std::map<std::string*, std::pair<bool, Term*> > ConstTerms;
+#ifdef WITH_ICLASP
+		typedef std::vector<std::pair<std::pair<IncPart, std::string*>, int> > IncParts;
+#endif
 	public:
-		Grounder(NS_OUTPUT::Output *output);
+		Grounder();
+		void setOutput(NS_OUTPUT::Output *output);
 		void addStatement(Statement *rule);
 		void addDomains(std::string *id, std::vector<StringVector*>* list);
-		void buildDepGraph();
 		void start();
-		void addDomains();
-		void reset();
-		bool check();
-		void ground();
+#ifdef WITH_ICLASP
+		void iground();
+#endif
 		void addProgram(Program *scc);
 		void addTrueNegation(std::string *id, int arity);
 		int getVar(std::string *var);
@@ -60,10 +62,21 @@ namespace NS_GRINGO
 		Evaluator *getEvaluator();
 		/// Adds a domain that never occurs in any head
 		void addZeroDomain(Domain *d);
-		virtual ~Grounder();
-	protected:
+		void setIncPart(IncPart part, std::string *var);
+		~Grounder();
+	private:
+		void buildDepGraph();
+		void addDomains();
+		void reset();
+		void check();
+		void ground();
 		void addDomains(std::string *id, std::vector<StringVector*>::iterator pos, std::vector<StringVector*>::iterator end, StringVector &list);
-	protected:
+	private:
+#ifdef WITH_ICLASP
+		bool inc_;
+		IncParts incParts_;
+		int incStep_;
+#endif
 		int internalVars_;
 		ProgramVector sccs_;
 		VariableMap varMap_;

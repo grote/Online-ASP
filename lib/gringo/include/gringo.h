@@ -64,6 +64,7 @@ namespace NS_GRINGO
 	typedef std::vector<Value> ValueVector;
 
 	enum MatchStatus { SuccessfulMatch, FailureOnNextMatch, FailureOnFirstMatch };
+	enum IncPart {NONE, BASE, LAMBDA, DELTA};
 	
 	class DLVGrounder;
 

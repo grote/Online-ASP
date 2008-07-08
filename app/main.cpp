@@ -34,6 +34,7 @@
 // evil hack :)
 NS_GRINGO::GrinGoParser* parser = 0;
 NS_GRINGO::NS_OUTPUT::Output* output = 0;
+NS_GRINGO::Grounder *grounder = 0;
 
 bool convert = false;
 void start_grounding()
@@ -44,8 +45,6 @@ void start_grounding()
 		std::cerr << "Parsing successful" << std::endl;
 		if(!convert)
 		{
-			NS_GRINGO::Grounder *grounder = static_cast<NS_GRINGO::LparseParser*>(parser)->getGrounder();
-			std::auto_ptr<NS_GRINGO::Grounder> grounderM(grounder);
 			grounder->start();
 		}
 	}
@@ -176,7 +175,10 @@ int main(int argc, char *argv[])
 		if(convert)
 			parser = new LparseConverter(streams);
 		else
-			parser = new LparseParser(streams);
+		{
+			grounder = new Grounder();
+			parser   = new LparseParser(grounder, streams);
+		}
 		
 		switch(format)
 		{
@@ -203,6 +205,8 @@ int main(int argc, char *argv[])
 	{
 		std::cerr << e.what() << std::endl;
 	}
+	if(grounder)
+		delete grounder;
 	if(output)
 		delete output;
 	if(parser)

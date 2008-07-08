@@ -22,6 +22,7 @@
 #include "output.h"
 #include "grounder.h"
 #include "evaluator.h"
+#include "gringoexception.h"
 
 using namespace NS_GRINGO;
 		
@@ -106,4 +107,12 @@ LiteralStatement::~LiteralStatement()
 {
 	delete lit_;
 }
+
+#ifdef WITH_ICLASP
+void LiteralStatement::setIncPart(Grounder *g, IncPart part, std::string *var)
+{
+	std::cerr << "The following statement cant be used with the incremental interface: " << std::endl << "\t" << this << std::endl;
+	throw GrinGoException("Error: unsupported statement.");
+}
+#endif
 
