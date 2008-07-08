@@ -42,7 +42,7 @@ void SumAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 		for(p->start(); p->hasNext(); p->next())
 		{
 			int weight = p->getWeight();
-			if(!p->match() || weight == 0)
+			if(!p->match())
 			{
 				p->remove();
 				continue;
