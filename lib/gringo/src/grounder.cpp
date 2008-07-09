@@ -29,7 +29,7 @@
 
 using namespace NS_GRINGO;
 
-Grounder::Grounder() : inc_(false), incStep_(0), internalVars_(0), output_(0), eval_(0)
+Grounder::Grounder() : inc_(false), incStep_(1), internalVars_(0), output_(0), eval_(0)
 {
 }
 
@@ -190,7 +190,7 @@ int Grounder::getIncStep() const
 
 void Grounder::iground()
 {
-	if(incStep_ == 0)
+	if(incStep_ == 1)
 	{
 		std::cerr << "preprocessing ... " << std::endl;
 		preprocess();
@@ -236,7 +236,7 @@ void Grounder::addProgram(Program *scc)
 void Grounder::ground()
 {
 #ifdef WITH_ICLASP
-	if(incStep_ == 0 || !inc_)
+	if(incStep_ == 1 || !inc_)
 		output_->initialize(getPred());
 	else
 		output_->reinitialize();
@@ -254,7 +254,7 @@ void Grounder::ground()
 		{
 			Statement *rule = *it;
 #ifdef WITH_ICLASP
-			if(incStep_ == 0 || !inc_)
+			if(incStep_ == 1 || !inc_)
 				rule->ground(this, PREPARE);
 			else
 				rule->ground(this, REINIT);

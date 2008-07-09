@@ -13,7 +13,7 @@ block(1..blocks).
 loc(X) :- block(X).
 
 % initial situation the blocks are stacked
-on(X, X - 1, -1) :- block(X).
+on(X, X - 1, 0) :- block(X).
 
 #lambda(T).
 
