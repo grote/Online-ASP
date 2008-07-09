@@ -184,6 +184,11 @@ void Grounder::start()
 }
 
 #ifdef WITH_ICLASP
+int Grounder::getIncStep() const
+{
+	return incStep_;
+}
+
 void Grounder::iground()
 {
 	if(incStep_ == 0)
@@ -203,10 +208,11 @@ void Grounder::iground()
 		check();
 		std::cerr << "done" << std::endl;
 	}
-	std::cerr << "grounding step: " << incStep_ << "... " << std::endl;
+	std::cerr << "grounding step: " << incStep_ << " ... " << std::endl;
 	reset();
 	ground();
 	std::cerr << "done" << std::endl;
+	incStep_++;
 }
 #endif
 
@@ -239,9 +245,7 @@ void Grounder::ground()
 	for(ProgramVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
 	{
 		Program *scc = *it;
-#ifndef NDEBUG
-		std::cerr << scc << std::endl;
-#endif
+		//std::cerr << scc << std::endl;
 		eval_ = scc->getEvaluator();
 		eval_->initialize(this);
 		StatementVector *rules = scc->getStatements();
@@ -374,6 +378,19 @@ NS_OUTPUT::Output *Grounder::getOutput()
 
 void Grounder::addTrueNegation(std::string *id, int arity)
 {
+#ifdef WITH_ICLASP
+	// TODO: this is ugly
+	if(inc_)
+	{
+		static bool warn = true;
+		if(!warn)
+			return;
+		warn = false;
+		std::cerr << "Warning: Classical negation is not handled correctly in combination with the icremental output." << std::endl;
+		std::cerr << "         You have to add rules like: :- a, -a. on your own! (at least for now)" << std::endl;
+		return;
+	}
+#endif
 	if(trueNegPred_.insert(Signature(id, arity)).second)
 	{
 		TermVector *tp = new TermVector();

@@ -125,11 +125,6 @@ void ClaspOutput::printComputeRule(int models, const IntVector &pos, const IntVe
 
 void ClaspOutput::finalize()
 {
-	int uid = 0;
-	for(AtomLookUp::iterator it = atoms_.begin(); it != atoms_.end(); it++, uid++)
-		if(isVisible(uid))
-			for(AtomHash::iterator atom = it->begin(); atom != it->end(); atom++)
-				b_->setAtomName(atom->second, atomToString(uid, atom->first).c_str());
 	stats_.atoms[0] = uids_ - 1;
 	stats_.atoms[1] = b_->numAtoms() - uids_;
 }
@@ -145,8 +140,60 @@ Clasp::LparseStats &ClaspOutput::getStats()
 	return stats_;
 }
 
+bool ClaspOutput::addAtom(NS_OUTPUT::Atom *r)
+{
+	bool ret = Output::addAtom(r);
+	if(ret && isVisible(r->predUid_))
+		b_->setAtomName(r->uid_, atomToString(r->predUid_, r->values_).c_str());
+	return ret;
+}
+
 ClaspOutput::~ClaspOutput()
 {
 }
 
 #endif
+
+#ifdef WITH_ICLASP
+
+IClaspOutput::IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf) : ClaspOutput(b, tf), incUid_(0)
+{
+}
+
+void IClaspOutput::initialize(SignatureVector *pred)
+{
+	ClaspOutput::initialize(pred);
+	incUid_ = 0;
+	reinitialize();
+}
+
+void IClaspOutput::reinitialize()
+{
+	// set the previous incUid to false
+	if(incUid_)
+		b_->setCompute(incUid_, false);
+	// create a new uid
+	incUid_ = newUid();
+	IntVector empty, head;
+	head.push_back(incUid_);
+	printChoiceRule(head, empty, empty);
+}
+
+void IClaspOutput::finalize()
+{
+	ClaspOutput::finalize();
+}
+
+int IClaspOutput::getIncUid()
+{
+	return incUid_;
+}
+
+void IClaspOutput::print(NS_OUTPUT::Object *o)
+{
+	o->print_plain(this, std::cout);
+	SmodelsConverter::print(o);
+}
+
+#endif
+

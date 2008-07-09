@@ -424,6 +424,53 @@ bool ClaspApp::parseLparse() {
 	// ******************* NOTE: modify here *********************
 }
 bool ClaspApp::solveAsp() {
+#ifdef WITH_ICLASP
+	if(incremental)
+	{
+		lpStats_.reset(new LparseStats());
+		preStats_.reset(new PreproStats());
+
+		ProgramBuilder api;
+		api.startProgram(options.suppModels
+			? 0
+			: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.loopRep))
+			, 0
+		);
+		output = new NS_GRINGO::NS_OUTPUT::IClaspOutput(&api, LparseReader::TransformMode(options.transExt));
+		if(parser->parse(output))
+			std::cerr << "Parsing successful" << std::endl;
+		else
+			throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
+		setState(start_solve);
+		bool more = false;
+		bool ret  = false;
+		do
+		{
+			api.updateProgram();
+			grounder->iground();
+			ret = api.endProgram(solver, options.initialLookahead);
+			solver.undoUntil(0);
+			if(ret)
+			{
+				StdOutPrinter printer;
+				if (!options.quiet) {
+					printer.index = &api.stats.index;
+					options.solveParams.setModelPrinter(printer);
+				}
+				LitVec assumptions;
+				assumptions.push_back(api.stats.index[static_cast<NS_GRINGO::NS_OUTPUT::IClaspOutput*>(output)->getIncUid()].lit);
+
+				more = solve(solver, assumptions, options.numModels, options.solveParams);
+				ret = solver.stats.models > 0;
+			}
+		}
+		while(!ret);
+		setState(end_solve);
+
+		*lpStats_ = static_cast<NS_GRINGO::NS_OUTPUT::ClaspOutput*>(output)->getStats();
+		return more;
+	}
+#endif
 	bool res = parseLparse();
 	if (res) {
 		StdOutPrinter printer;

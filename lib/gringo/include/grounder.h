@@ -42,6 +42,7 @@ namespace NS_GRINGO
 		void start();
 #ifdef WITH_ICLASP
 		void iground();
+		int getIncStep() const;
 #endif
 		void addProgram(Program *scc);
 		void addTrueNegation(std::string *id, int arity);

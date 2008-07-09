@@ -25,9 +25,9 @@
 
 using namespace NS_GRINGO;
 
-DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, int lits, LDG *dg, const VarVector &relevant) :
-	g_(g), r_(r), lit_(lits), dom_(lits), var_(lits), dep_(lits), 
-	closestBinderVar_(lits), closestBinderDep_(lits), closestBinderRel_(lits + 1), 
+DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, LiteralVector *lits, LDG *dg, const VarVector &relevant) :
+	g_(g), r_(r), lit_(*lits), dom_(lits->size()), var_(lits->size()), dep_(lits->size()), 
+	closestBinderVar_(lits->size()), closestBinderDep_(lits->size()), closestBinderRel_(lits->size() + 1), 
 	global_(dg->getGlobalVars()), 
 	relevant_(relevant)
 {
@@ -41,41 +41,21 @@ DLVGrounder::~DLVGrounder()
 		delete *it;
 }
 
-namespace
-{
-	struct LiteralCmp
-	{
-		bool operator()(Literal *a, Literal *b)
-		{
-			return a->heuristicValue() < b->heuristicValue();
-		}
-	};
-}
-
 void DLVGrounder::sortLiterals(LDG *dg)
 {
 	VarSet index(dg->getParentVars().begin(), dg->getParentVars().end());
-	LiteralSet list;
-	dg->start(list);
-
 	for(size_t i = 0; i < lit_.size(); i++)
 	{
-		assert(list.size() > 0);
-		// choose the literal with the least heuristic value
-		LiteralCmp cmp;
-		Literal *l = *std::min_element(list.begin(), list.end(), cmp);
-		dg->propagate(l, list);
+		Literal *l = lit_[i];
 		const VarVector &provided = dg->getProvidedVars(l);
 		const VarVector &needed   = dg->getNeededVars(l);
 		VarSet global;
 		global.insert(needed.begin(), needed.end());
 		global.insert(provided.begin(), provided.end());
-		lit_[i] = l;
 		dom_[i] = l->createIndexedDomain(index);
 		var_[i].insert(var_[i].end(), global.begin(), global.end());
 		index.insert(provided.begin(), provided.end());
 	}
-	assert(list.size() == 0);
 }
 
 void DLVGrounder::debug()

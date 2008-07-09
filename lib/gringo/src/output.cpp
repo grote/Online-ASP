@@ -44,6 +44,11 @@ void Output::reinitialize()
 {
 	throw GrinGoException("Error: output does not support reinitialization.");
 }
+
+int Output::getIncUid()
+{
+	throw GrinGoException("Error: output does not support getIncUid.");
+}
 #endif
 
 std::string Output::atomToString(int id, const ValueVector &values) const
@@ -684,4 +689,30 @@ Optimize::~Optimize()
 void Optimize::addDomain(bool fact)
 {
 }
+
+#ifdef WITH_ICLASP
+// =============== NS_OUTPUT::DeltaObject ===============
+DeltaObject::DeltaObject()
+{
+}
+
+void DeltaObject::print(NS_OUTPUT::Output *o, std::ostream &out)
+{
+	assert(false);
+}
+
+void DeltaObject::print_plain(NS_OUTPUT::Output *o, std::ostream &out)
+{
+	out << "delta";
+}
+
+void DeltaObject::addDomain(bool fact)
+{
+	assert(false);
+}
+
+DeltaObject::~DeltaObject()
+{
+}
+#endif
 

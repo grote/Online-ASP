@@ -31,7 +31,7 @@ namespace NS_GRINGO
 
 		typedef std::vector<VarNode*>     VarNodeVector;
 		typedef std::vector<LiteralNode*> LiteralNodeVector;
-		
+
 		struct LiteralNode
 		{
 			LiteralNode(Literal *l, bool head);
@@ -68,6 +68,8 @@ namespace NS_GRINGO
 		void start(LiteralSet &list);
 		void propagate(Literal *l, LiteralSet &list);
 
+		void sortLiterals(LiteralVector *lits);
+
 		const VarVector &getNeededVars(Literal *l) const;
 		const VarVector &getProvidedVars(Literal *l) const;
 		
@@ -80,6 +82,7 @@ namespace NS_GRINGO
 		LiteralNodeVector litNodes_;
 		VarNodeVector     varNodes_;
 		LiteralDataMap    litMap_;
+		bool              sorted_;
 	};
 
 	class LDGBuilder

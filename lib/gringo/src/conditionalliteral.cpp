@@ -194,7 +194,8 @@ void ConditionalLiteral::ground(Grounder *g)
 		if(!grounder_)
 		{
 			//std::cerr << "creating grounder for: " << this << std::endl;
-			grounder_ = new DLVGrounder(g, this, conditionals_->size(), dg_, dg_->getGlobalVars());
+			dg_->sortLiterals(conditionals_);
+			grounder_ = new DLVGrounder(g, this, conditionals_, dg_, dg_->getGlobalVars());
 		}
 		grounder_->ground();
 

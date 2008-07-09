@@ -40,7 +40,7 @@ LDG::LiteralData::LiteralData(LiteralNode *n) : n_(n)
 
 ///////////////////////////////////// LiteralDependencyGraph ///////////////////////////////////////////
 
-LDG::LDG()
+LDG::LDG() : sorted_(false)
 {
 }
 
@@ -152,6 +152,37 @@ const VarVector &LDG::getNeededVars(Literal *l) const
 const VarVector &LDG::getProvidedVars(Literal *l) const
 {
 	return litMap_.find(l)->second->provided_;
+}
+
+namespace
+{
+	struct LiteralCmp
+	{
+		bool operator()(Literal *a, Literal *b)
+		{
+			return a->heuristicValue() < b->heuristicValue();
+		}
+	};
+}
+
+void LDG::sortLiterals(LiteralVector *lits)
+{
+	if(sorted_)
+		return;
+	LiteralSet list;
+	start(list);
+
+	for(size_t i = 0; i < lits->size(); i++)
+	{
+		assert(list.size() > 0);
+		// choose the literal with the least heuristic value
+		LiteralCmp cmp;
+		Literal *l = *std::min_element(list.begin(), list.end(), cmp);
+		propagate(l, list);
+		(*lits)[i] = l;
+	}
+	sorted_ = true;
+	assert(list.size() == 0);
 }
 
 LDG::~LDG()

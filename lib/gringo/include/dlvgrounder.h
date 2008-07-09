@@ -25,7 +25,7 @@ namespace NS_GRINGO
 	class DLVGrounder
 	{
 	public:
-		DLVGrounder(Grounder *g, Groundable *r, int lits, LDG *dg, const VarVector &relevant);
+		DLVGrounder(Grounder *g, Groundable *r, LiteralVector *lits, LDG *dg, const VarVector &relevant);
 		void ground();
 		void debug();
 		~DLVGrounder();

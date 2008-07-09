@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifdef WITH_CLASP
 #ifndef CLASPOUTPUT_H
 #define CLASPOUTPUT_H
 
+#ifdef WITH_CLASP
 #include <gringo.h>
 #include <smodelsconverter.h>
 #include <clasp/include/lparse_reader.h>
@@ -36,8 +36,9 @@ namespace NS_GRINGO
 		{
 		public:
 			ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf);
-			void initialize(SignatureVector *pred);
-			void finalize();
+			virtual void initialize(SignatureVector *pred);
+			virtual void finalize();
+			bool addAtom(NS_OUTPUT::Atom *r);
 			int newUid();
 			Clasp::LparseStats &getStats();
 			~ClaspOutput();
@@ -49,14 +50,35 @@ namespace NS_GRINGO
 			void printMinimizeRule(const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg);
 			void printDisjunctiveRule(const IntVector &head, const IntVector &pos, const IntVector &neg);
 			void printComputeRule(int models, const IntVector &pos, const IntVector &neg);
-		private:
+		protected:
 			Clasp::LparseStats stats_;
 			Clasp::ProgramBuilder *b_;
 			Clasp::LparseReader::TransformMode tf_;
 		};
 	}
 }
-
 #endif
+
+#ifdef WITH_ICLASP
+namespace NS_GRINGO
+{
+	namespace NS_OUTPUT
+	{
+		class IClaspOutput : public ClaspOutput
+		{
+		public:
+			IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf);
+			void print(NS_OUTPUT::Object *o);
+			void initialize(SignatureVector *pred);
+			void finalize();
+			void reinitialize();
+			int getIncUid();
+		private:
+			int incUid_;
+		};
+	}
+}
+#endif
+
 #endif
 

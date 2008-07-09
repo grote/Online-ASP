@@ -37,11 +37,12 @@ namespace NS_GRINGO
 			virtual void initialize(SignatureVector *pred);
 #ifdef WITH_ICLASP
 			virtual void reinitialize();
+			virtual int getIncUid();
 #endif
 			virtual void print(NS_OUTPUT::Object *o) = 0;
 			virtual void finalize() = 0;
 			std::string atomToString(int id, const ValueVector &values) const;
-			bool addAtom(NS_OUTPUT::Atom *r);
+			virtual bool addAtom(NS_OUTPUT::Atom *r);
 			virtual int newUid();
 			virtual ~Output();
 
@@ -195,7 +196,18 @@ namespace NS_GRINGO
 			int          type_;
 			ObjectVector lits_;
 			IntVector    weights_;
-		};	
+		};
+
+#ifdef WITH_ICLASP
+		struct DeltaObject : public NS_OUTPUT::Object
+		{
+			DeltaObject();
+			void print(NS_OUTPUT::Output *o, std::ostream &out);
+			void print_plain(NS_OUTPUT::Output *o, std::ostream &out);
+			void addDomain(bool fact = true);
+			virtual ~DeltaObject();
+		};
+#endif
 	}
 }
 

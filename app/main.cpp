@@ -36,7 +36,9 @@ NS_GRINGO::GrinGoParser* parser = 0;
 NS_GRINGO::NS_OUTPUT::Output* output = 0;
 NS_GRINGO::Grounder *grounder = 0;
 
-bool convert = false;
+bool convert     = false;
+bool incremental = false;
+
 void start_grounding()
 {
 	bool success = parser->parse(output);
@@ -50,7 +52,7 @@ void start_grounding()
 	}
 	else
 	{
-		std::cerr << "Parsing failed" << std::endl;
+		throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
 	}
 }
 
@@ -65,7 +67,9 @@ int main(int argc, char *argv[])
 {
 	char *arg0 = argv[0];
 	bool files = false;
-#ifdef WITH_CLASP
+#ifdef WITH_ICLASP
+	enum Format {SMODELS, GRINGO, CLASP, LPARSE, ICLASP} format = SMODELS;
+#elif WITH_CLASP
 	enum Format {SMODELS, GRINGO, CLASP, LPARSE} format = SMODELS;
 #else
 	enum Format {SMODELS, GRINGO, LPARSE} format = SMODELS;
@@ -106,6 +110,12 @@ int main(int argc, char *argv[])
 			{
 				format = LPARSE;
 			}
+#ifdef WITH_ICLASP
+			else if(strcmp(argv[1], "-i") == 0)
+			{
+				format = ICLASP;
+			}
+#endif
 #ifdef WITH_CLASP
 			else if(strcmp(argv[1], "-c") == 0)
 			{
@@ -132,6 +142,9 @@ int main(int argc, char *argv[])
 				std::cerr << "	--const c=v : Pass constant c equal value v to grounder" << std::endl;
 #ifdef WITH_CLASP
 				std::cerr << "	-c          : Use internal interface to clasp" << std::endl;
+#endif
+#ifdef WITH_ICLASP
+				std::cerr << "  -i          : Ground an incremental program" << std::endl;
 #endif
 				std::cerr << "	-l          : Print smodels output" << std::endl;
 				std::cerr << "	-p          : Print plain lparse-like output" << std::endl;
@@ -171,6 +184,8 @@ int main(int argc, char *argv[])
 		if(!files)
 			streams.push_back(new std::istream(std::cin.rdbuf()));
 		argv[0] = arg0;
+		if(convert && incremental)
+			throw GrinGoException("Error: cannot use both -i and -c.");
 		
 		if(convert)
 			parser = new LparseConverter(streams);
@@ -194,6 +209,12 @@ int main(int argc, char *argv[])
 				output = new NS_OUTPUT::PilsOutput(&std::cout, normalForm);
 				start_grounding();
 				break;
+#ifdef WITH_ICLASP
+			case ICLASP:
+				incremental = true;
+				clasp_main(argc, argv);
+				break;
+#endif
 #ifdef WITH_CLASP
 			case CLASP:
 				clasp_main(argc, argv);

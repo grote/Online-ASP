@@ -26,13 +26,15 @@
 #include "evaluator.h"
 #include "output.h"
 #include "gringoexception.h"
+#include "indexeddomain.h"
+#include "constant.h"
 
 using namespace NS_GRINGO;
 
 #ifdef WITH_ICLASP
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), dg_(0)
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), ground_(1), dg_(0)
 #else
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), dg_(0), ground_(1)
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), dg_(0)
 #endif
 {
 }
@@ -173,6 +175,7 @@ bool NormalRule::ground(Grounder *g)
 		// if there are no varnodes we can do sth simpler
 		if(!dg_->hasVarNodes())
 		{
+			//std::cerr << "ground rule: " << this << std::endl;
 			for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
 			{
 				if(!(*it)->match(g))
@@ -185,7 +188,8 @@ bool NormalRule::ground(Grounder *g)
 			//std::cerr << "creating grounder for: " << this << std::endl;
 			VarVector relevant;
 			getRelevantVars(relevant);
-			DLVGrounder data(g, this, body_->size(), dg_, relevant);
+			dg_->sortLiterals(body_);
+			DLVGrounder data(g, this, body_, dg_, relevant);
 			//data.debug();
 			data.ground();
 		}
@@ -330,6 +334,220 @@ void NormalRule::appendLiteral(Literal *l, ExpansionType type)
 }
 
 #ifdef WITH_ICLASP
+
+namespace
+{
+	class IndexedDomainInc : public IndexedDomain
+	{
+	public:
+		IndexedDomainInc(int uid) : uid_(uid)
+		{
+		}
+		void firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
+		{
+			//std::cerr << "matching with: " << Value(g->g_->getIncStep()) << std::endl;
+			g->g_->setValue(uid_, Value(g->g_->getIncStep()), binder);
+			status = SuccessfulMatch;
+		}
+		void nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
+		{
+			status = FailureOnNextMatch;
+		}
+		virtual ~IndexedDomainInc()
+		{
+		}
+	private:
+		int uid_;
+	};
+	
+	class LambdaLiteral : public Literal
+	{
+	public:
+		LambdaLiteral(Constant *c) : c_(c)
+		{
+		}
+		LambdaLiteral(const LambdaLiteral &l) : c_(static_cast<Constant*>(l.c_->clone()))
+		{
+		}
+		void getVars(VarSet &vars) const
+		{
+			c_->getVars(vars);
+		}
+		bool checkO(LiteralVector &unsolved)
+		{
+			return true;
+		}
+		void preprocess(Grounder *g, Expandable *e)
+		{
+		}
+		void reset()
+		{
+			assert(false);
+		}
+		void finish()
+		{
+			assert(false);
+		}
+		void evaluate()
+		{
+			assert(false);
+		}
+		bool solved()
+		{
+			return true;
+		}
+		bool isFact()
+		{
+			return true;
+		}
+		Literal* clone() const
+		{
+			return new LambdaLiteral(*this);
+		}
+		IndexedDomain *createIndexedDomain(VarSet &index)
+		{
+			if(index.find(c_->getUID()) != index.end())
+			{
+				return new IndexedDomainMatchOnly(this);
+			}
+			else
+			{
+				return new IndexedDomainInc(c_->getUID());
+			}
+		}
+		bool match(Grounder *g)
+		{
+			return (int)c_->getValue() == g->getIncStep();
+		}
+		NS_OUTPUT::Object *convert()
+		{
+			assert(false);
+		}
+		SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
+		{
+			// a rule with a lambda predicate is a normal logic program
+			// cause otherwise ill get problems with the basicprogram evaluater
+			assert(todo == ADD_BODY_DEP);
+			prev->addDependency(prev, true);
+			return 0;
+		}
+		void createNode(LDGBuilder *dg, bool head)
+		{
+			assert(!head);
+			VarSet needed, provided;
+			c_->getVars(provided);
+			dg->createNode(this, head, needed, provided);
+		}
+		double heuristicValue()
+		{
+			return 0;
+		}
+		void print(std::ostream &out)
+		{
+			out << "lambda(" << c_ << ")";
+		}
+ 		virtual ~LambdaLiteral()
+		{
+			delete c_;
+		}
+	private:
+		Constant *c_;
+	};
+
+	class DeltaLiteral : public Literal
+	{
+	public:
+		DeltaLiteral(Constant *c) : c_(c)
+		{
+		}
+		DeltaLiteral(const DeltaLiteral &l) : c_(static_cast<Constant*>(l.c_->clone()))
+		{
+		}
+		void getVars(VarSet &vars) const
+		{
+			c_->getVars(vars);
+		}
+		bool checkO(LiteralVector &unsolved)
+		{
+			return true;
+		}
+		void preprocess(Grounder *g, Expandable *e)
+		{
+		}
+		void reset()
+		{
+			assert(false);
+		}
+		void finish()
+		{
+			assert(false);
+		}
+		void evaluate()
+		{
+			assert(false);
+		}
+		bool solved()
+		{
+			return false;
+		}
+		bool isFact()
+		{
+			return false;
+		}
+		Literal* clone() const
+		{
+			return new DeltaLiteral(*this);
+		}
+		IndexedDomain *createIndexedDomain(VarSet &index)
+		{
+			if(index.find(c_->getUID()) != index.end())
+			{
+				return new IndexedDomainMatchOnly(this);
+			}
+			else
+			{
+				return new IndexedDomainInc(c_->getUID());
+			}
+		}
+		bool match(Grounder *g)
+		{
+			return (int)c_->getValue() == g->getIncStep();
+		}
+		NS_OUTPUT::Object *convert()
+		{
+			return new NS_OUTPUT::DeltaObject();
+		}
+		SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
+		{
+			// a rule with a goal is always a normal logic program
+			assert(todo == ADD_BODY_DEP);
+			prev->addDependency(prev, true);
+			return 0;
+		}
+		void createNode(LDGBuilder *dg, bool head)
+		{
+			assert(!head);
+			VarSet needed, provided;
+			c_->getVars(provided);
+			dg->createNode(this, head, needed, provided);
+		}
+		double heuristicValue()
+		{
+			return 0;
+		}
+		void print(std::ostream &out)
+		{
+			out << "delta(" << c_ << ")";
+		}
+ 		virtual ~DeltaLiteral()
+		{
+			delete c_;
+		}
+	private:
+		Constant *c_;
+	};
+}
+
 void NormalRule::setIncPart(Grounder *g, IncPart part, std::string *var)
 {
 	switch(part)
@@ -338,10 +556,10 @@ void NormalRule::setIncPart(Grounder *g, IncPart part, std::string *var)
 			ground_ = 2;
 			break;
 		case LAMBDA:
-			throw GrinGoException("ToDo: implement me!");
+			appendLiteral(new LambdaLiteral(new Constant(Constant::VAR, g, var)), Expandable::COMPLEXTERM);
 			break;
 		case DELTA:
-			throw GrinGoException("ToDo: implement me!");
+			appendLiteral(new DeltaLiteral(new Constant(Constant::VAR, g, var)), Expandable::COMPLEXTERM);
 			break;
 		default:
 			break;

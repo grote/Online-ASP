@@ -44,7 +44,7 @@ bool LparseParser::parse(NS_OUTPUT::Output *output)
 {
 	int token;
 	std::string *lval;
-	grounder_->setOutput(0);
+	grounder_->setOutput(output);
 	for(std::vector<std::istream*>::iterator it = streams_.begin(); it != streams_.end(); it++)
 	{
 		lexer_->reset(*it);
