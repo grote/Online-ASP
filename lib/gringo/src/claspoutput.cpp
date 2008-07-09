@@ -192,7 +192,7 @@ int IClaspOutput::getIncUid()
 
 void IClaspOutput::print(NS_OUTPUT::Object *o)
 {
-	o->print_plain(this, std::cout);
+	//o->print_plain(this, std::cout);
 	SmodelsConverter::print(o);
 }
 

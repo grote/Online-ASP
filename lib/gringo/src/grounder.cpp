@@ -218,6 +218,12 @@ void Grounder::iground()
 void Grounder::setIncPart(IncPart part, std::string *var)
 {
 	inc_     = true;
+	if(incParts_.size() == 0 && rules_.size() > 0)
+	{
+		incParts_.push_back(make_pair(std::make_pair(BASE, static_cast<std::string*>(0)), rules_.size()));
+		std::cerr << "Warning: There are statements not within a #base, #lambda or #delta section." << std::endl;
+		std::cerr << "         These Statements are put into the #base section." << std::endl;
+	}
 	incParts_.push_back(make_pair(std::make_pair(part, var), 0));
 }
 

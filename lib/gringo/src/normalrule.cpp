@@ -166,6 +166,7 @@ void NormalRule::getRelevantVars(VarVector &relevant)
 
 bool NormalRule::ground(Grounder *g, GroundStep step)
 {
+	//std::cerr << "grounding: " << this << "(" << step << ")"<< std::endl;
 #ifdef WITH_ICLASP
 	if(!ground_)
 		return true;
@@ -191,7 +192,10 @@ bool NormalRule::ground(Grounder *g, GroundStep step)
 			break;
 		case GROUND:
 			if(grounder_)
+			{
+				//std::cerr << "grounding: " << this << std::endl;
 				grounder_->ground();
+			}
 			else
 			{
 				if(body_)

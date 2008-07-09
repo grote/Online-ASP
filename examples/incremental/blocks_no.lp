@@ -2,16 +2,16 @@
 #show moved(X,Y).
 
 #const blocks=10.
-#const timesteps=blocks-1.
+#const timesteps=blocks-2.
 
 % the objects
-time(1..timesteps).
+time(0..timesteps).
 loc(0).
 block(1..blocks).
 loc(X) :- block(X).
 
 % initial situation
-on(X, X - 1, 0) :- block(X).
+on(X, X - 1, -1) :- block(X).
 
 % select 1 move per timestep
 1 { mv(X,Y,T) : block(X) : loc(Y) : X != Y } 1 :- time(T).

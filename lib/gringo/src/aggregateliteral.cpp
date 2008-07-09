@@ -288,6 +288,7 @@ Term *AggregateLiteral::getUpper() const
 
 void AggregateLiteral::ground(Grounder *g, GroundStep step)
 {
+	//std::cerr << "grounding " << this << " (" << step << ")" << std::endl;
 	if(literals_)
 		for(ConditionalLiteralVector::const_iterator it = literals_->begin(); it != literals_->end(); it++)
 			(*it)->ground(g, step);

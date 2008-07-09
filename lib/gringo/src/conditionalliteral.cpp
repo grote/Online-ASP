@@ -209,6 +209,7 @@ void ConditionalLiteral::ground(Grounder *g, GroundStep step)
 				grounder_->ground();
 			else
 				grounded(g);
+			break;
 		case RELEASE:
 #ifdef WITH_ICLASP
 			if(grounder_)
