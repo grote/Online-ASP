@@ -28,6 +28,8 @@ namespace NS_GRINGO
 		DLVGrounder(Grounder *g, Groundable *r, LiteralVector *lits, LDG *dg, const VarVector &relevant);
 		void ground();
 		void debug();
+		void reinit(LDG *dg);
+		void release();
 		~DLVGrounder();
 	private:
 		int closestBinder(int l, VarVector &vars, std::map<int,int> &firstBinder);

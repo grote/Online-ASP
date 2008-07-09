@@ -93,10 +93,15 @@ NS_OUTPUT::Object *ComputeLiteral::convert()
 	return new NS_OUTPUT::Compute(lits, number_);
 }
 
-bool ComputeLiteral::match(Grounder *g)
+void ComputeLiteral::ground(Grounder *g, GroundStep step)
 {
 	for(ConditionalLiteralVector::const_iterator it = literals_->begin(); it != literals_->end(); it++)
-		(*it)->ground(g);
+		(*it)->ground(g, step);
+}
+
+bool ComputeLiteral::match(Grounder *g)
+{
+	ground(g, GROUND);
 	return true;
 }
 

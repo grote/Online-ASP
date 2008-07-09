@@ -286,6 +286,13 @@ Term *AggregateLiteral::getUpper() const
 	return upper_;
 }
 
+void AggregateLiteral::ground(Grounder *g, GroundStep step)
+{
+	if(literals_)
+		for(ConditionalLiteralVector::const_iterator it = literals_->begin(); it != literals_->end(); it++)
+			(*it)->ground(g, step);
+}
+
 double AggregateLiteral::heuristicValue()
 {
 	return DBL_MAX;

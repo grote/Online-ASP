@@ -42,13 +42,17 @@ bool Domain::solved() const
 void Domain::setSolved(bool solved)
 {
 	solved_ = solved;
+// incremental grounding may fail cause of that
+// since this is only a very small optimization
+// i simply turn it off in iclingo
+#ifndef WITH_ICLASP
 	// when a domain is solved all of its entries are facts
 	if(solved_)
 	{
-		facts_.clear();
 		ValueVectorSet facts;
 		std::swap(facts, facts_);
 	}
+#endif
 }
 
 void Domain::evaluate()

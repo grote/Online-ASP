@@ -42,7 +42,7 @@ void MaxAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		ConditionalLiteral *p = *it;
-		p->ground(g);
+		p->ground(g, GROUND);
 		for(p->start(); p->hasNext(); p->next())
 		{
 			if(!p->match())

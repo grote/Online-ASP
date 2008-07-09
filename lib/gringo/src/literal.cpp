@@ -37,6 +37,10 @@ void Literal::evaluate()
 {
 }
 
+void Literal::ground(Grounder *g, GroundStep step)
+{
+}
+
 Literal::~Literal()
 {
 

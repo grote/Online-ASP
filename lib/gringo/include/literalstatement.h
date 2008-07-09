@@ -44,7 +44,7 @@ namespace NS_GRINGO
 		virtual void reset();
 		virtual void finish();
 		virtual void evaluate();
-		virtual bool ground(Grounder *g);
+		virtual bool ground(Grounder *g, GroundStep step);
 		virtual void addDomain(PredicateLiteral *pl);
 		virtual void print(std::ostream &out);
 		virtual void grounded(Grounder *g);

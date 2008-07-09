@@ -252,7 +252,16 @@ void Grounder::ground()
 		for(StatementVector::iterator it = rules->begin(); it !=rules->end(); it++)
 		{
 			Statement *rule = *it;
-			rule->ground(this);
+#ifdef WITH_ICLASP
+			if(incStep_ == 0 || !inc_)
+				rule->ground(this, PREPARE);
+			else
+				rule->ground(this, REINIT);
+#else
+			rule->ground(this, PREPARE);
+#endif
+			rule->ground(this, GROUND);
+			rule->ground(this, RELEASE);
 			rule->finish();
 		}
 		// this solves the domains

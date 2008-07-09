@@ -86,10 +86,15 @@ void LiteralStatement::grounded(Grounder *g)
 	g->getEvaluator()->add(lit_->convert());
 }
 
-bool LiteralStatement::ground(Grounder *g)
+bool LiteralStatement::ground(Grounder *g, GroundStep step)
 {
-	lit_->match(g);
-	grounded(g);
+	if(step == GROUND)
+	{
+		lit_->match(g);
+		grounded(g);
+	}
+	else
+		lit_->ground(g, step);
 	return true;
 }
 

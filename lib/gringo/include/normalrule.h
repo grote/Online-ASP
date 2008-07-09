@@ -48,7 +48,7 @@ namespace NS_GRINGO
 		virtual void finish();
 		virtual void evaluate();
 		virtual void grounded(Grounder *g);
-		virtual bool ground(Grounder *g);
+		virtual bool ground(Grounder *g, GroundStep step);
 		virtual void addDomain(PredicateLiteral *pl);
 #ifdef WITH_ICLASP
 		virtual void setIncPart(Grounder *g, IncPart part, std::string *var);
@@ -68,6 +68,7 @@ namespace NS_GRINGO
 		int ground_;
 #endif
 		LDG *dg_;
+		DLVGrounder *grounder_;
 	};
 }
 

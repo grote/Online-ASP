@@ -143,8 +143,13 @@ void BasicProgramEvaluator::evaluate()
 			{
 				NS_OUTPUT::Atom *a = new NS_OUTPUT::Atom(false, atoms_[it->second].node_, uid, it->first);
 				NS_OUTPUT::Fact f(a);
+#ifdef WITH_ICLINGO
+				// keep the facts for later
+				f.addDomain(true);
+#else
 				// we dont need to add the domain as fact
 				f.addDomain(false);
+#endif
 				o_->print(&f);
 			}
 			else

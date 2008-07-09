@@ -116,10 +116,16 @@ NS_OUTPUT::Object *OptimizeLiteral::convert()
 	return new NS_OUTPUT::Optimize(type_ == MINIMIZE ? NS_OUTPUT::Optimize::MINIMIZE : NS_OUTPUT::Optimize::MAXIMIZE, lits, weights);
 }
 
-bool OptimizeLiteral::match(Grounder *g)
+void OptimizeLiteral::ground(Grounder *g, GroundStep step)
 {
 	for(ConditionalLiteralVector::const_iterator it = literals_->begin(); it != literals_->end(); it++)
-		(*it)->ground(g);
+		(*it)->ground(g, step);
+}
+
+
+bool OptimizeLiteral::match(Grounder *g)
+{
+	ground(g, GROUND);
 	return true;
 }
 

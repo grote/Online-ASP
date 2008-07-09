@@ -125,6 +125,7 @@ namespace NS_GRINGO
 		 * \return returns true if the literal matches.
 		 */
 		virtual bool match(Grounder *g) = 0;
+		virtual void ground(Grounder *g, GroundStep step);
 		/**
 		 * \brief Converts the literal into a representation that can be hadled by the evaluator/output classes.
 		 * \return Returns the representation 

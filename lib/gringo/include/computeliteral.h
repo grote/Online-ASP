@@ -33,6 +33,7 @@ namespace NS_GRINGO
 		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
+		void ground(Grounder *g, GroundStep step);
 		virtual bool match(Grounder *g);
 		virtual void reset();
 		virtual void finish();

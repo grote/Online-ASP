@@ -185,24 +185,47 @@ bool ConditionalLiteral::solved()
 	return pred_->solved();
 }
 
-void ConditionalLiteral::ground(Grounder *g)
+void ConditionalLiteral::ground(Grounder *g, GroundStep step)
 {
-	weights_.clear();
-	values_.clear();
-	if(conditionals_)
+	switch(step)
 	{
-		if(!grounder_)
-		{
-			//std::cerr << "creating grounder for: " << this << std::endl;
-			dg_->sortLiterals(conditionals_);
-			grounder_ = new DLVGrounder(g, this, conditionals_, dg_, dg_->getGlobalVars());
-		}
-		grounder_->ground();
-
-	}
-	else
-	{
-		grounded(g);
+		case PREPARE:
+			if(conditionals_)
+			{
+				dg_->sortLiterals(conditionals_);
+				grounder_ = new DLVGrounder(g, this, conditionals_, dg_, dg_->getGlobalVars());
+			}
+			else
+				grounder_ = 0;
+			break;
+		case REINIT:
+			if(grounder_)
+				grounder_->reinit(dg_);
+			break;
+		case GROUND:
+			weights_.clear();
+			values_.clear();
+			if(grounder_)
+				grounder_->ground();
+			else
+				grounded(g);
+		case RELEASE:
+#ifdef WITH_ICLASP
+			if(grounder_)
+				grounder_->release();
+#else
+			if(dg_)
+			{
+				delete dg_;
+				dg_ = 0;
+			}
+			if(grounder_)
+			{
+				delete grounder_;
+				grounder_ = 0;
+			}
+#endif
+			break;
 	}
 }
 

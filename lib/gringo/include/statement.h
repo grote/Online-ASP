@@ -89,7 +89,7 @@ namespace NS_GRINGO
 		 * \todo Make use of the return value (if inconsistency found)
 		 * \return Currently the returnvalue isn't used
 		 */
-		virtual bool ground(Grounder *g) = 0;
+		virtual bool ground(Grounder *g, GroundStep step) = 0;
 		/**
 		 * \brief Adds lparse domain statements to the statement
 		 * \param pl The domain predicate

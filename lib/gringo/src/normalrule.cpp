@@ -32,9 +32,9 @@
 using namespace NS_GRINGO;
 
 #ifdef WITH_ICLASP
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), ground_(1), dg_(0)
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), ground_(1), dg_(0), grounder_(0)
 #else
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), dg_(0)
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), dg_(0), grounder_(0)
 #endif
 {
 }
@@ -164,44 +164,73 @@ void NormalRule::getRelevantVars(VarVector &relevant)
 			relevant.push_back(*it);
 }
 
-bool NormalRule::ground(Grounder *g)
+bool NormalRule::ground(Grounder *g, GroundStep step)
 {
 #ifdef WITH_ICLASP
 	if(!ground_)
 		return true;
 #endif
-	if(body_)
+	switch(step)
 	{
-		// if there are no varnodes we can do sth simpler
-		if(!dg_->hasVarNodes())
-		{
-			//std::cerr << "ground rule: " << this << std::endl;
-			for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
+		case PREPARE:
+			// if there are no varnodes we can do sth simpler
+			if(body_ && dg_->hasVarNodes())
 			{
-				if(!(*it)->match(g))
-					return true;
+				//std::cerr << "creating grounder for: " << this << std::endl;
+				VarVector relevant;
+				getRelevantVars(relevant);
+				dg_->sortLiterals(body_);
+				grounder_ = new DLVGrounder(g, this, body_, dg_, relevant);
 			}
-			grounded(g);
-		}
-		else
-		{
-			//std::cerr << "creating grounder for: " << this << std::endl;
-			VarVector relevant;
-			getRelevantVars(relevant);
-			dg_->sortLiterals(body_);
-			DLVGrounder data(g, this, body_, dg_, relevant);
-			//data.debug();
-			data.ground();
-		}
-	}
-	else
-	{
-		grounded(g);
-	}
+			else
+				grounder_ = 0;
+			break;
+		case REINIT:
+			if(grounder_)
+				grounder_->reinit(dg_);
+			break;
+		case GROUND:
+			if(grounder_)
+				grounder_->ground();
+			else
+			{
+				if(body_)
+					for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
+						if(!(*it)->match(g))
+							return true;
+				grounded(g);
+			}
 #ifdef WITH_ICLASP
-	if(ground_ == 2)
-		ground_ = 0;
+			if(ground_ == 2)
+				ground_ = 0;
 #endif
+			break;
+		case RELEASE:
+#ifdef WITH_ICLASP
+			if(grounder_)
+				grounder_->release();
+#else
+			if(dg_)
+			{
+				delete dg_;
+				dg_ = 0;
+			}
+			if(grounder_)
+			{
+				delete grounder_;
+				grounder_ = 0;
+			}
+#endif
+			break;
+	}
+	if(step != GROUND)
+	{
+		if(head_)
+			head_->ground(g, step);
+		if(body_)
+			for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
+				(*it)->ground(g, step);
+	}
 	return true;
 }
 
@@ -427,8 +456,10 @@ namespace
 		{
 			// a rule with a lambda predicate is a normal logic program
 			// cause otherwise ill get problems with the basicprogram evaluater
+			/*
 			assert(todo == ADD_BODY_DEP);
 			prev->addDependency(prev, true);
+			*/
 			return 0;
 		}
 		void createNode(LDGBuilder *dg, bool head)
@@ -569,6 +600,8 @@ void NormalRule::setIncPart(Grounder *g, IncPart part, std::string *var)
 
 NormalRule::~NormalRule()
 {
+	if(grounder_)
+		delete grounder_;
 	if(dg_)
 		delete dg_;
 	if(head_)

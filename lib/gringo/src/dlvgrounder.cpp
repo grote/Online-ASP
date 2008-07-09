@@ -37,8 +37,7 @@ DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, LiteralVector *lits, LDG *d
 
 DLVGrounder::~DLVGrounder()
 {
-	for(IndexedDomainVector::iterator it = dom_.begin(); it != dom_.end(); it++)
-		delete *it;
+	release();
 }
 
 void DLVGrounder::sortLiterals(LDG *dg)
@@ -56,6 +55,31 @@ void DLVGrounder::sortLiterals(LDG *dg)
 		var_[i].insert(var_[i].end(), global.begin(), global.end());
 		index.insert(provided.begin(), provided.end());
 	}
+}
+
+void DLVGrounder::reinit(LDG *dg)
+{
+	VarSet index(dg->getParentVars().begin(), dg->getParentVars().end());
+	for(size_t i = 0; i < lit_.size(); i++)
+	{
+		Literal *l = lit_[i];
+		const VarVector &provided = dg->getProvidedVars(l);
+		dom_[i] = l->createIndexedDomain(index);
+		index.insert(provided.begin(), provided.end());
+	}
+}
+
+void DLVGrounder::release()
+{
+	for(IndexedDomainVector::iterator it = dom_.begin(); it != dom_.end(); it++)
+	{
+		if(*it)
+		{
+			delete *it;
+			*it = 0;
+		}
+	}
+	
 }
 
 void DLVGrounder::debug()
