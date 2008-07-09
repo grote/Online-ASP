@@ -18,8 +18,9 @@
 #ifndef CLASPOUTPUT_H
 #define CLASPOUTPUT_H
 
-#ifdef WITH_CLASP
 #include <gringo.h>
+
+#ifdef WITH_CLASP
 #include <smodelsconverter.h>
 #include <clasp/include/lparse_reader.h>
 

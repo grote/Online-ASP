@@ -3,10 +3,6 @@ CFLAGS  = -O3 -Wno-deprecated -I../include -I../.. -DNDEBUG
 #CFLAGS  = -O0 -Wall -g -I.
 LDFLAGS = 
 
-ifeq ($(WITH_CLASP), 1)
-CFLAGS+= -DWITH_CLASP
-endif
-
 SOURCES = $(wildcard *.cpp) lparselexer.cpp lparseconverter_impl.cpp plainlparselexer.cpp lparseparser_impl.cpp
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
@@ -17,6 +13,17 @@ all: ../../../bin/libgringo.a
 
 %.o: %.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+../include/gringo.h: ../include/gringo.h.in
+ifeq ($(WITH_ICLASP), 1)
+	cat ../include/gringo.h.in | sed -e "s/#cmakedefine WITH_CLASP/#define WITH_CLASP/" -e "s/#cmakedefine WITH_ICLASP/#define WITH_ICLASP/" > $@
+else 
+ifeq ($(WITH_CLASP), 1)
+	cat ../include/gringo.h.in | sed -e "s/#cmakedefine WITH_CLASP/#define WITH_CLASP/" -e "s/#cmakedefine WITH_ICLASP//" > $@
+else
+	cat ../include/gringo.h.in | sed -e "s/#cmakedefine WITH_CLASP//" -e "s/#cmakedefine WITH_ICLASP//" > $@
+endif
+endif
 
 plainlparselexer.cpp: plainlparselexer.re
 	re2c -o $@ $<
@@ -40,9 +47,9 @@ lparseparser_impl.cpp lparseparser_impl.h: lparseparser_impl.y lemon lempar.c
 	touch lparseparser_impl.h lparseparser_impl.cpp
 
 clean:
-	rm -f $(OBJECTS) lparseparser_impl.h lparseparser_impl.cpp lparseconverter_impl.h lparseconverter_impl.cpp lparselexer.cpp lemon plainlparselexer.cpp ../../../bin/libgringo.a
+	rm -f $(OBJECTS) lparseparser_impl.h lparseparser_impl.cpp lparseconverter_impl.h lparseconverter_impl.cpp lparselexer.cpp lemon plainlparselexer.cpp ../../../bin/libgringo.a ../include/gringo.h
 
-depend: $(SOURCES) true
+depend: ../include/gringo.h $(SOURCES) true
 	makedepend -Y -- $(CFLAGS) -- $(SOURCES) &> /dev/null
 	rm Makefile.bak
 true:
@@ -54,9 +61,9 @@ aggregateliteral.o: ../include/literal.h ../include/printable.h
 aggregateliteral.o: ../include/expandable.h ../include/predicateliteral.h
 aggregateliteral.o: ../include/groundable.h ../include/value.h
 aggregateliteral.o: ../include/funcsymbol.h ../include/conditionalliteral.h
-aggregateliteral.o: ../include/term.h ../include/node.h ../include/grounder.h
+aggregateliteral.o: ../include/term.h ../include/grounder.h
 aggregateliteral.o: ../include/output.h ../include/globalstorage.h
-aggregateliteral.o: ../include/dependencygraph.h
+aggregateliteral.o: ../include/statementdependencygraph.h
 aggregateliteral.o: ../include/literaldependencygraph.h
 aggregateliteral.o: ../include/indexeddomain.h ../include/evaluator.h
 aggregateliteral.o: ../include/constant.h ../include/dlvgrounder.h
@@ -72,7 +79,7 @@ basicprogramevaluator.o: ../include/basicprogramevaluator.h
 basicprogramevaluator.o: ../include/gringo.h ../include/evaluator.h
 basicprogramevaluator.o: ../include/output.h ../include/value.h
 basicprogramevaluator.o: ../include/funcsymbol.h ../include/grounder.h
-basicprogramevaluator.o: ../include/globalstorage.h ../include/node.h
+basicprogramevaluator.o: ../include/globalstorage.h ../include/domain.h
 claspoutput.o: ../include/claspoutput.h ../include/gringo.h
 claspoutput.o: ../include/smodelsconverter.h ../include/output.h
 claspoutput.o: ../include/value.h ../include/funcsymbol.h
@@ -88,14 +95,22 @@ claspoutput.o: ../../clasp/include/program_rule.h
 claspoutput.o: ../../clasp/include/util/misc_types.h
 claspoutput.o: ../include/gringoexception.h ../include/grounder.h
 claspoutput.o: ../include/globalstorage.h
+computeliteral.o: ../include/computeliteral.h ../include/gringo.h
+computeliteral.o: ../include/literal.h ../include/printable.h
+computeliteral.o: ../include/expandable.h ../include/conditionalliteral.h
+computeliteral.o: ../include/groundable.h ../include/value.h
+computeliteral.o: ../include/funcsymbol.h ../include/grounder.h
+computeliteral.o: ../include/output.h ../include/globalstorage.h
+computeliteral.o: ../include/statementdependencygraph.h
+computeliteral.o: ../include/literaldependencygraph.h
 conditionalliteral.o: ../include/conditionalliteral.h ../include/gringo.h
 conditionalliteral.o: ../include/literal.h ../include/printable.h
 conditionalliteral.o: ../include/groundable.h ../include/expandable.h
 conditionalliteral.o: ../include/predicateliteral.h ../include/value.h
 conditionalliteral.o: ../include/funcsymbol.h ../include/grounder.h
 conditionalliteral.o: ../include/output.h ../include/globalstorage.h
-conditionalliteral.o: ../include/term.h ../include/node.h
-conditionalliteral.o: ../include/indexeddomain.h ../include/dlvgrounder.h
+conditionalliteral.o: ../include/term.h ../include/indexeddomain.h
+conditionalliteral.o: ../include/dlvgrounder.h
 conditionalliteral.o: ../include/literaldependencygraph.h
 conditionalliteral.o: ../include/aggregateliteral.h
 conjunctionaggregate.o: ../include/conjunctionaggregate.h ../include/gringo.h
@@ -115,13 +130,6 @@ countaggregate.o: ../include/printable.h ../include/expandable.h
 countaggregate.o: ../include/conditionalliteral.h ../include/groundable.h
 countaggregate.o: ../include/term.h ../include/value.h
 countaggregate.o: ../include/funcsymbol.h ../include/output.h
-dependencygraph.o: ../include/dependencygraph.h ../include/gringo.h
-dependencygraph.o: ../include/printable.h ../include/predicateliteral.h
-dependencygraph.o: ../include/literal.h ../include/groundable.h
-dependencygraph.o: ../include/expandable.h ../include/value.h
-dependencygraph.o: ../include/funcsymbol.h ../include/node.h
-dependencygraph.o: ../include/grounder.h ../include/output.h
-dependencygraph.o: ../include/globalstorage.h ../include/scc.h
 disjunctionaggregate.o: ../include/disjunctionaggregate.h ../include/gringo.h
 disjunctionaggregate.o: ../include/aggregateliteral.h ../include/literal.h
 disjunctionaggregate.o: ../include/printable.h ../include/expandable.h
@@ -135,9 +143,11 @@ dlvgrounder.o: ../include/funcsymbol.h ../include/globalstorage.h
 dlvgrounder.o: ../include/groundable.h ../include/literal.h
 dlvgrounder.o: ../include/printable.h ../include/indexeddomain.h
 dlvgrounder.o: ../include/literaldependencygraph.h
+domain.o: ../include/domain.h ../include/gringo.h ../include/value.h
+domain.o: ../include/funcsymbol.h
 evaluator.o: ../include/evaluator.h ../include/gringo.h ../include/grounder.h
 evaluator.o: ../include/output.h ../include/value.h ../include/funcsymbol.h
-evaluator.o: ../include/globalstorage.h ../include/node.h
+evaluator.o: ../include/globalstorage.h
 funcsymbol.o: ../include/funcsymbol.h ../include/gringo.h ../include/value.h
 funcsymbolterm.o: ../include/funcsymbolterm.h ../include/gringo.h
 funcsymbolterm.o: ../include/term.h ../include/printable.h ../include/value.h
@@ -149,7 +159,8 @@ functionterm.o: ../include/functionterm.h ../include/gringo.h
 functionterm.o: ../include/term.h ../include/printable.h ../include/value.h
 functionterm.o: ../include/funcsymbol.h
 globalstorage.o: ../include/globalstorage.h ../include/gringo.h
-globalstorage.o: ../include/funcsymbol.h
+globalstorage.o: ../include/funcsymbol.h ../include/domain.h
+globalstorage.o: ../include/value.h
 gringolexer.o: ../include/gringolexer.h ../include/gringo.h
 gringoparser.o: ../include/gringoparser.h ../include/gringo.h
 gringoparser.o: ../include/gringolexer.h
@@ -160,8 +171,8 @@ grounder.o: ../include/printable.h ../include/groundable.h
 grounder.o: ../include/constant.h ../include/term.h
 grounder.o: ../include/predicateliteral.h ../include/literal.h
 grounder.o: ../include/expandable.h ../include/normalrule.h
-grounder.o: ../include/dependencygraph.h ../include/scc.h
-grounder.o: ../include/evaluator.h ../include/node.h
+grounder.o: ../include/statementdependencygraph.h ../include/program.h
+grounder.o: ../include/evaluator.h ../include/domain.h
 grounder.o: ../include/gringoexception.h
 indexeddomain.o: ../include/indexeddomain.h ../include/gringo.h
 indexeddomain.o: ../include/value.h ../include/funcsymbol.h
@@ -173,19 +184,22 @@ literal.o: ../include/literal.h ../include/gringo.h ../include/printable.h
 literaldependencygraph.o: ../include/literaldependencygraph.h
 literaldependencygraph.o: ../include/gringo.h ../include/literal.h
 literaldependencygraph.o: ../include/printable.h
+literalstatement.o: ../include/literalstatement.h ../include/gringo.h
+literalstatement.o: ../include/statement.h ../include/printable.h
+literalstatement.o: ../include/groundable.h ../include/expandable.h
+literalstatement.o: ../include/statementdependencygraph.h
+literalstatement.o: ../include/literaldependencygraph.h
+literalstatement.o: ../include/conditionalliteral.h ../include/literal.h
+literalstatement.o: ../include/output.h ../include/value.h
+literalstatement.o: ../include/funcsymbol.h ../include/grounder.h
+literalstatement.o: ../include/globalstorage.h ../include/evaluator.h
+literalstatement.o: ../include/gringoexception.h
 lparseconverter.o: ../include/lparseconverter.h ../include/gringo.h
 lparseconverter.o: ../include/gringoparser.h ../include/globalstorage.h
 lparseconverter.o: ../include/funcsymbol.h lparseconverter_impl.h
 lparseconverter.o: ../include/plainlparselexer.h ../include/gringolexer.h
 lparseconverter.o: ../include/grounder.h ../include/output.h
 lparseconverter.o: ../include/value.h
-lparseconverter_impl.o: ../include/gringo.h ../include/lparseconverter.h
-lparseconverter_impl.o: ../include/gringoparser.h ../include/globalstorage.h
-lparseconverter_impl.o: ../include/funcsymbol.h ../include/output.h
-lparseconverter_impl.o: ../include/value.h
-lparselexer.o: ../include/lparselexer.h ../include/gringo.h
-lparselexer.o: ../include/gringolexer.h ../include/lparseparser.h
-lparselexer.o: ../include/gringoparser.h lparseparser_impl.h
 lparseoutput.o: ../include/lparseoutput.h ../include/gringo.h
 lparseoutput.o: ../include/output.h ../include/value.h
 lparseoutput.o: ../include/funcsymbol.h
@@ -194,24 +208,6 @@ lparseparser.o: ../include/gringoparser.h lparseparser_impl.h
 lparseparser.o: ../include/lparselexer.h ../include/gringolexer.h
 lparseparser.o: ../include/grounder.h ../include/output.h ../include/value.h
 lparseparser.o: ../include/funcsymbol.h ../include/globalstorage.h
-lparseparser_impl.o: ../include/gringo.h ../include/lparseparser.h
-lparseparser_impl.o: ../include/gringoparser.h ../include/literal.h
-lparseparser_impl.o: ../include/printable.h ../include/aggregateliteral.h
-lparseparser_impl.o: ../include/expandable.h ../include/predicateliteral.h
-lparseparser_impl.o: ../include/groundable.h ../include/value.h
-lparseparser_impl.o: ../include/funcsymbol.h ../include/conditionalliteral.h
-lparseparser_impl.o: ../include/relationliteral.h
-lparseparser_impl.o: ../include/assignmentliteral.h ../include/sumaggregate.h
-lparseparser_impl.o: ../include/minaggregate.h ../include/maxaggregate.h
-lparseparser_impl.o: ../include/countaggregate.h
-lparseparser_impl.o: ../include/disjunctionaggregate.h
-lparseparser_impl.o: ../include/conjunctionaggregate.h ../include/term.h
-lparseparser_impl.o: ../include/constant.h ../include/functionterm.h
-lparseparser_impl.o: ../include/funcsymbolterm.h ../include/rangeterm.h
-lparseparser_impl.o: ../include/multipleargsterm.h ../include/normalrule.h
-lparseparser_impl.o: ../include/statement.h ../include/weightedstatement.h
-lparseparser_impl.o: ../include/grounder.h ../include/output.h
-lparseparser_impl.o: ../include/globalstorage.h
 maxaggregate.o: ../include/maxaggregate.h ../include/gringo.h
 maxaggregate.o: ../include/aggregateliteral.h ../include/literal.h
 maxaggregate.o: ../include/printable.h ../include/expandable.h
@@ -232,28 +228,32 @@ multipleargsterm.o: ../include/multipleargsterm.h ../include/gringo.h
 multipleargsterm.o: ../include/term.h ../include/printable.h
 multipleargsterm.o: ../include/literal.h ../include/expandable.h
 multipleargsterm.o: ../include/value.h ../include/funcsymbol.h
-node.o: ../include/node.h ../include/gringo.h ../include/value.h
-node.o: ../include/funcsymbol.h ../include/scc.h ../include/printable.h
 normalrule.o: ../include/normalrule.h ../include/gringo.h
 normalrule.o: ../include/statement.h ../include/printable.h
 normalrule.o: ../include/groundable.h ../include/expandable.h
 normalrule.o: ../include/literal.h ../include/predicateliteral.h
 normalrule.o: ../include/value.h ../include/funcsymbol.h
-normalrule.o: ../include/dependencygraph.h
-normalrule.o: ../include/literaldependencygraph.h ../include/node.h
-normalrule.o: ../include/grounder.h ../include/output.h
-normalrule.o: ../include/globalstorage.h ../include/dlvgrounder.h
-normalrule.o: ../include/evaluator.h
+normalrule.o: ../include/statementdependencygraph.h
+normalrule.o: ../include/literaldependencygraph.h ../include/grounder.h
+normalrule.o: ../include/output.h ../include/globalstorage.h
+normalrule.o: ../include/dlvgrounder.h ../include/evaluator.h
+normalrule.o: ../include/gringoexception.h ../include/indexeddomain.h
+normalrule.o: ../include/constant.h ../include/term.h
+optimizeliteral.o: ../include/optimizeliteral.h ../include/gringo.h
+optimizeliteral.o: ../include/literal.h ../include/printable.h
+optimizeliteral.o: ../include/expandable.h ../include/conditionalliteral.h
+optimizeliteral.o: ../include/groundable.h ../include/value.h
+optimizeliteral.o: ../include/funcsymbol.h ../include/grounder.h
+optimizeliteral.o: ../include/output.h ../include/globalstorage.h
+optimizeliteral.o: ../include/statementdependencygraph.h
+optimizeliteral.o: ../include/literaldependencygraph.h
 output.o: ../include/output.h ../include/gringo.h ../include/value.h
-output.o: ../include/funcsymbol.h ../include/node.h ../include/grounder.h
+output.o: ../include/funcsymbol.h ../include/domain.h ../include/grounder.h
 output.o: ../include/globalstorage.h ../include/pilsoutput.h
+output.o: ../include/gringoexception.h
 pilsoutput.o: ../include/pilsoutput.h ../include/gringo.h ../include/output.h
 pilsoutput.o: ../include/value.h ../include/funcsymbol.h
-plainlparselexer.o: ../include/plainlparselexer.h ../include/gringo.h
-plainlparselexer.o: ../include/gringolexer.h ../include/lparseconverter.h
-plainlparselexer.o: ../include/gringoparser.h ../include/globalstorage.h
-plainlparselexer.o: ../include/funcsymbol.h lparseconverter_impl.h
-predicateliteral.o: ../include/dependencygraph.h ../include/gringo.h
+predicateliteral.o: ../include/statementdependencygraph.h ../include/gringo.h
 predicateliteral.o: ../include/printable.h
 predicateliteral.o: ../include/literaldependencygraph.h
 predicateliteral.o: ../include/predicateliteral.h ../include/literal.h
@@ -262,11 +262,18 @@ predicateliteral.o: ../include/value.h ../include/funcsymbol.h
 predicateliteral.o: ../include/assignmentliteral.h
 predicateliteral.o: ../include/relationliteral.h ../include/grounder.h
 predicateliteral.o: ../include/output.h ../include/globalstorage.h
-predicateliteral.o: ../include/constant.h ../include/term.h ../include/node.h
-predicateliteral.o: ../include/rangeterm.h ../include/rangeliteral.h
-predicateliteral.o: ../include/indexeddomain.h ../include/dlvgrounder.h
-predicateliteral.o: ../include/multipleargsterm.h ../include/evaluator.h
+predicateliteral.o: ../include/constant.h ../include/term.h
+predicateliteral.o: ../include/domain.h ../include/rangeterm.h
+predicateliteral.o: ../include/rangeliteral.h ../include/indexeddomain.h
+predicateliteral.o: ../include/dlvgrounder.h ../include/multipleargsterm.h
+predicateliteral.o: ../include/evaluator.h
 printable.o: ../include/printable.h ../include/gringo.h
+program.o: ../include/program.h ../include/gringo.h ../include/printable.h
+program.o: ../include/statement.h ../include/groundable.h
+program.o: ../include/grounder.h ../include/output.h ../include/value.h
+program.o: ../include/funcsymbol.h ../include/globalstorage.h
+program.o: ../include/literal.h ../include/evaluator.h
+program.o: ../include/basicprogramevaluator.h
 rangeliteral.o: ../include/rangeliteral.h ../include/gringo.h
 rangeliteral.o: ../include/literal.h ../include/printable.h
 rangeliteral.o: ../include/constant.h ../include/term.h ../include/value.h
@@ -285,11 +292,6 @@ relationliteral.o: ../include/literal.h ../include/printable.h
 relationliteral.o: ../include/term.h ../include/value.h
 relationliteral.o: ../include/funcsymbol.h ../include/indexeddomain.h
 relationliteral.o: ../include/literaldependencygraph.h
-scc.o: ../include/scc.h ../include/gringo.h ../include/printable.h
-scc.o: ../include/statement.h ../include/groundable.h ../include/grounder.h
-scc.o: ../include/output.h ../include/value.h ../include/funcsymbol.h
-scc.o: ../include/globalstorage.h ../include/literal.h ../include/evaluator.h
-scc.o: ../include/basicprogramevaluator.h
 smodelsconverter.o: ../include/smodelsconverter.h ../include/gringo.h
 smodelsconverter.o: ../include/output.h ../include/value.h
 smodelsconverter.o: ../include/funcsymbol.h ../include/grounder.h
@@ -301,6 +303,14 @@ smodelsoutput.o: ../include/grounder.h ../include/globalstorage.h
 smodelsoutput.o: ../include/gringoexception.h
 statement.o: ../include/statement.h ../include/gringo.h
 statement.o: ../include/printable.h ../include/groundable.h
+statementdependencygraph.o: ../include/statementdependencygraph.h
+statementdependencygraph.o: ../include/gringo.h ../include/printable.h
+statementdependencygraph.o: ../include/predicateliteral.h
+statementdependencygraph.o: ../include/literal.h ../include/groundable.h
+statementdependencygraph.o: ../include/expandable.h ../include/value.h
+statementdependencygraph.o: ../include/funcsymbol.h ../include/domain.h
+statementdependencygraph.o: ../include/grounder.h ../include/output.h
+statementdependencygraph.o: ../include/globalstorage.h ../include/program.h
 sumaggregate.o: ../include/sumaggregate.h ../include/gringo.h
 sumaggregate.o: ../include/aggregateliteral.h ../include/literal.h
 sumaggregate.o: ../include/printable.h ../include/expandable.h
@@ -310,15 +320,6 @@ sumaggregate.o: ../include/output.h
 term.o: ../include/term.h ../include/gringo.h ../include/printable.h
 value.o: ../include/value.h ../include/gringo.h ../include/funcsymbol.h
 value.o: ../include/gringoexception.h
-weightedstatement.o: ../include/weightedstatement.h ../include/gringo.h
-weightedstatement.o: ../include/statement.h ../include/printable.h
-weightedstatement.o: ../include/groundable.h ../include/expandable.h
-weightedstatement.o: ../include/dependencygraph.h
-weightedstatement.o: ../include/conditionalliteral.h ../include/literal.h
-weightedstatement.o: ../include/node.h ../include/value.h
-weightedstatement.o: ../include/funcsymbol.h ../include/output.h
-weightedstatement.o: ../include/grounder.h ../include/globalstorage.h
-weightedstatement.o: ../include/evaluator.h
 lparselexer.o: ../include/lparselexer.h ../include/gringo.h
 lparselexer.o: ../include/gringolexer.h ../include/lparseparser.h
 lparselexer.o: ../include/gringoparser.h lparseparser_impl.h
@@ -337,14 +338,15 @@ lparseparser_impl.o: ../include/expandable.h ../include/predicateliteral.h
 lparseparser_impl.o: ../include/groundable.h ../include/value.h
 lparseparser_impl.o: ../include/funcsymbol.h ../include/conditionalliteral.h
 lparseparser_impl.o: ../include/relationliteral.h
-lparseparser_impl.o: ../include/assignmentliteral.h ../include/sumaggregate.h
-lparseparser_impl.o: ../include/minaggregate.h ../include/maxaggregate.h
-lparseparser_impl.o: ../include/countaggregate.h
+lparseparser_impl.o: ../include/assignmentliteral.h
+lparseparser_impl.o: ../include/computeliteral.h ../include/optimizeliteral.h
+lparseparser_impl.o: ../include/sumaggregate.h ../include/minaggregate.h
+lparseparser_impl.o: ../include/maxaggregate.h ../include/countaggregate.h
 lparseparser_impl.o: ../include/disjunctionaggregate.h
 lparseparser_impl.o: ../include/conjunctionaggregate.h ../include/term.h
 lparseparser_impl.o: ../include/constant.h ../include/functionterm.h
 lparseparser_impl.o: ../include/funcsymbolterm.h ../include/rangeterm.h
 lparseparser_impl.o: ../include/multipleargsterm.h ../include/normalrule.h
-lparseparser_impl.o: ../include/statement.h ../include/weightedstatement.h
+lparseparser_impl.o: ../include/statement.h ../include/literalstatement.h
 lparseparser_impl.o: ../include/grounder.h ../include/output.h
 lparseparser_impl.o: ../include/globalstorage.h

@@ -29,11 +29,7 @@
 
 using namespace NS_GRINGO;
 
-#ifdef WITH_ICLASP
 Grounder::Grounder() : inc_(false), incStep_(0), internalVars_(0), output_(0), eval_(0)
-#else
-Grounder::Grounder() : internalVars_(0), output_(0), eval_(0)
-#endif
 {
 }
 
@@ -148,6 +144,9 @@ void Grounder::preprocess()
 	for(IncParts::iterator it = incParts_.begin(); it != incParts_.end(); it++)
 		for(int j = 0; j < it->second; j++, r++)
 			(*r)->setIncPart(this, it->first.first, it->first.second);
+#else
+	if(inc_)
+		throw GrinGoException("Error: GrinGo has not been compiled with incremental clasp interface.");
 #endif
 	// the size of rules_ may increase during preprocessing make shure the newly inserted rules are preprocessed too
 	for(size_t i = 0; i < rules_.size(); i++)
@@ -218,12 +217,8 @@ void Grounder::iground()
 
 void Grounder::setIncPart(IncPart part, std::string *var)
 {
-#ifdef WITH_ICLASP
 	inc_     = true;
 	incParts_.push_back(make_pair(std::make_pair(part, var), 0));
-#else
-	throw GrinGoException("Error: GrinGo has not been compiled with incremental clasp interface.");
-#endif
 }
 
 

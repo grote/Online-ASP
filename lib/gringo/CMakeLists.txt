@@ -1,14 +1,14 @@
 file(GLOB LIBGRINGO_SRC src/*.cpp)
 SET(LIBGRINGO_SRC 
 	${LIBGRINGO_SRC} 
-	${GrinGo_BINARY_DIR}/lib/gringo/lparselexer.cpp 
-	${GrinGo_BINARY_DIR}/lib/gringo/lparseparser_impl.cpp
-	${GrinGo_BINARY_DIR}/lib/gringo/plainlparselexer.cpp 
-	${GrinGo_BINARY_DIR}/lib/gringo/lparseconverter_impl.cpp)
+	${CMAKE_CURRENT_BINARY_DIR}/lparselexer.cpp 
+	${CMAKE_CURRENT_BINARY_DIR}/lparseparser_impl.cpp
+	${CMAKE_CURRENT_BINARY_DIR}/plainlparselexer.cpp 
+	${CMAKE_CURRENT_BINARY_DIR}/lparseconverter_impl.cpp)
 #SET_SOURCE_FILES_PROPERTIES(lparselexer.cpp GENERATED)
 #SET_SOURCE_FILES_PROPERTIES(lparseparser_impl.cpp GENERATED)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR} include ${GrinGo_BINARY_DIR}/lib/gringo ..)
+include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/config include ..)
 
 ADD_EXECUTABLE(lemon src/lemon.c)
 
@@ -34,17 +34,21 @@ MACRO(LEMON NAME SRC DST)
 	)
 ENDMACRO(LEMON NAME SRC DST)
 
-RE2C(${GrinGo_SOURCE_DIR}/lib/gringo/src/lparselexer.re ${GrinGo_BINARY_DIR}/lib/gringo/lparselexer.cpp)
-LEMON(lparseparser_impl ${GrinGo_SOURCE_DIR}/lib/gringo/src ${GrinGo_BINARY_DIR}/lib/gringo)
+RE2C(${CMAKE_CURRENT_SOURCE_DIR}/src/lparselexer.re ${CMAKE_CURRENT_BINARY_DIR}/lparselexer.cpp)
+LEMON(lparseparser_impl ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 
-RE2C(${GrinGo_SOURCE_DIR}/lib/gringo/src/plainlparselexer.re ${GrinGo_BINARY_DIR}/lib/gringo/plainlparselexer.cpp)
-LEMON(lparseconverter_impl ${GrinGo_SOURCE_DIR}/lib/gringo/src ${GrinGo_BINARY_DIR}/lib/gringo)
+RE2C(${CMAKE_CURRENT_SOURCE_DIR}/src/plainlparselexer.re ${CMAKE_CURRENT_BINARY_DIR}/plainlparselexer.cpp)
+LEMON(lparseconverter_impl ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(gringo-lib STATIC ${LIBGRINGO_SRC})
 target_link_libraries (gringo-lib)
 set_target_properties(gringo-lib PROPERTIES OUTPUT_NAME gringo)
 
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/include/gringo.h.in ${CMAKE_CURRENT_BINARY_DIR}/config/gringo.h)
+
 IF(PCHSupport_FOUND)
-	add_precompiled_header(gringo-lib ${GrinGo_SOURCE_DIR}/lib/gringo/include/gringo.h)
+	add_precompiled_header(gringo-lib ${CMAKE_CURRENT_BINARY_DIR}/config/gringo.h)
 ENDIF(PCHSupport_FOUND)
+
+
 

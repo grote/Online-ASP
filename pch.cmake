@@ -28,11 +28,13 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input )
         GET_FILENAME_COMPONENT(_path ${_input} PATH)
     SET(_outdir "${CMAKE_CURRENT_BINARY_DIR}/${_name}.gch")
         SET(_output "${_outdir}/${CMAKE_BUILD_TYPE}.c++")
-
-    ADD_CUSTOM_COMMAND(
-                OUTPUT ${_outdir}
-                COMMAND mkdir ${_outdir} # TODO: {CMAKE_COMMAND} -E ... 
+    
+    if(NOT EXISTS ${_outdir})
+        ADD_CUSTOM_COMMAND(
+                 OUTPUT ${_outdir}
+                COMMAND -p mkdir ${_outdir} # TODO: {CMAKE_COMMAND} -E ... 
         )
+    endif(NOT EXISTS ${_outdir})
         #MAKE_DIRECTORY(${_outdir})
     
         STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
@@ -69,6 +71,7 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input )
         ADD_CUSTOM_COMMAND(
                 OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${_name} 
                 COMMAND ${CMAKE_COMMAND} -E copy  ${_input} ${CMAKE_CURRENT_BINARY_DIR}/${_name} # ensure same directory! Required by gcc
+		DEPENDS ${_input}
         )
 
     ADD_CUSTOM_COMMAND(
@@ -88,6 +91,5 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input )
                 PROPERTIES      
                         COMPILE_FLAGS "-include ${_name} -Winvalid-pch"
     )
-        
         
 ENDMACRO(ADD_PRECOMPILED_HEADER)

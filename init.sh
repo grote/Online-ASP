@@ -10,7 +10,7 @@ while [[ $# > 0 ]]; do
 			iclasp=1
 			;;
 		"--clasp")
-			options=" -D WITH_CLASP:BOOL=ON"
+			options=" -D WITH_CLASP:BOOL=ON -D WITH_ICLASP:BOOL=OFF"
 			clasp=1
 			;;
 		"--mingw") 
@@ -33,7 +33,9 @@ while [[ $# > 0 ]]; do
 	shift
 done
 
-
+if [[ $clasp == 0 && $iclasp==0 ]]; then
+	options=" -D WITH_CLASP:BOOL=OFF -D WITH_ICLASP:BOOL=OFF"
+fi
 
 mkdir -p build
 cd build

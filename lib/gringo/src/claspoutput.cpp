@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
+#include "claspoutput.h"
+
 #ifdef WITH_CLASP
 
-#include "claspoutput.h"
 #include "gringoexception.h"
 #include "grounder.h"
 #include <clasp/include/program_builder.h>

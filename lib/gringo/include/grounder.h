@@ -31,9 +31,7 @@ namespace NS_GRINGO
 		typedef std::vector<DomainPredicate> DomainPredicateVector;
 		typedef std::map<std::string*, int> VariableMap;
 		typedef std::map<std::string*, std::pair<bool, Term*> > ConstTerms;
-#ifdef WITH_ICLASP
 		typedef std::vector<std::pair<std::pair<IncPart, std::string*>, int> > IncParts;
-#endif
 	public:
 		Grounder();
 		void setOutput(NS_OUTPUT::Output *output);
@@ -73,11 +71,10 @@ namespace NS_GRINGO
 		void ground();
 		void addDomains(std::string *id, std::vector<StringVector*>::iterator pos, std::vector<StringVector*>::iterator end, StringVector &list);
 	private:
-#ifdef WITH_ICLASP
 		bool inc_;
 		IncParts incParts_;
 		int incStep_;
-#endif
+
 		int internalVars_;
 		ProgramVector sccs_;
 		VariableMap varMap_;

@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 	bool files = false;
 #ifdef WITH_ICLASP
 	enum Format {SMODELS, GRINGO, CLASP, LPARSE, ICLASP} format = SMODELS;
-#elif WITH_CLASP
+#elif defined WITH_CLASP
 	enum Format {SMODELS, GRINGO, CLASP, LPARSE} format = SMODELS;
 #else
 	enum Format {SMODELS, GRINGO, LPARSE} format = SMODELS;

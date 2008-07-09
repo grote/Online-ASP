@@ -1,9 +1,9 @@
 if(WITH_CLASP)
 	file(GLOB GRINGO_SRC *.cpp program_opts/*.cpp)
-	include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ../lib)
+	include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ../lib ${GrinGo_BINARY_DIR}/lib/gringo/config)
 else(WITH_CLASP)
 	file(GLOB GRINGO_SRC main.cpp)
-	include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include)
+	include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ${GrinGo_BINARY_DIR}/lib/gringo/config)
 endif(WITH_CLASP)
 
 add_executable (gringo-app ${GRINGO_SRC})

@@ -6,10 +6,9 @@ STATICLIBS = ../bin/libgringo.a
 
 ifeq ($(WITH_CLASP), 1)
 SOURCES     = $(wildcard *.cpp program_opts/*.cpp)
-CFLAGS     += -DWITH_CLASP
 STATICLIBS += ../bin/libclasp.a
 else
-SOURCES = $(wildcard main.cpp)
+SOURCES = main.cpp
 endif
 
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
