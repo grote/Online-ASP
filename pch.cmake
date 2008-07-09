@@ -32,7 +32,7 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _input )
     if(NOT EXISTS ${_outdir})
         ADD_CUSTOM_COMMAND(
                  OUTPUT ${_outdir}
-                COMMAND -p mkdir ${_outdir} # TODO: {CMAKE_COMMAND} -E ... 
+                COMMAND mkdir ${_outdir} # TODO: {CMAKE_COMMAND} -E ... 
         )
     endif(NOT EXISTS ${_outdir})
         #MAKE_DIRECTORY(${_outdir})
