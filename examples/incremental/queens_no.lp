@@ -2,9 +2,9 @@
 #show q/2.
 
 #domain time(K).
-#const timesteps=9.
+#const timesteps=10.
 
-time(0..timesteps).
+time(1..timesteps).
 
 %#base.
 

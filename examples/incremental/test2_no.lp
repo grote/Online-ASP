@@ -1,7 +1,7 @@
 #hide time/1.
 #domain time(K).
 #const timesteps=2.
-time(0..timesteps).
+time(1..timesteps).
 
 %#base.
 
