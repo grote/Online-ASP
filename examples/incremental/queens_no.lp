@@ -2,7 +2,7 @@
 #show q/2.
 
 #domain time(K).
-#const timesteps=30.
+#const timesteps=9.
 
 time(0..timesteps).
 
@@ -27,7 +27,6 @@ c(K,K) :- 1{q(X,K): X=0..K}.
 
 %#delta(K).
 
-:- not d(5).
 :- not l(timesteps,X), d(X).
 :- not c(timesteps,Y), d(Y).
 
