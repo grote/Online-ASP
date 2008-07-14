@@ -22,7 +22,7 @@ c(K,K) :- 1{q(X,K): d(X)}.
 
 #delta(K).
 
-:- not d(10).
+:- not d(40).
 :- not l(K,X), d(X).
 :- not c(K,Y), d(Y).
 

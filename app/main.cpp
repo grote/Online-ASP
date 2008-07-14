@@ -36,6 +36,7 @@ NS_GRINGO::GrinGoParser* parser = 0;
 NS_GRINGO::NS_OUTPUT::Output* output = 0;
 NS_GRINGO::Grounder *grounder = 0;
 
+int  inum        = 1;
 bool convert     = false;
 bool incremental = false;
 
@@ -114,6 +115,17 @@ int main(int argc, char *argv[])
 			else if(strcmp(argv[1], "-i") == 0)
 			{
 				format = ICLASP;
+				if(argc > 2)
+				{
+					char *endptr;
+					int num = strtol(argv[2], &endptr, 10);
+					if(endptr != argv[2] && !*endptr)
+					{
+						inum = num;
+						argc--;
+						argv++;
+					}
+				}
 			}
 #endif
 #ifdef WITH_CLASP
@@ -144,12 +156,13 @@ int main(int argc, char *argv[])
 				std::cerr << "	-c          : Use internal interface to clasp" << std::endl;
 #endif
 #ifdef WITH_ICLASP
-				std::cerr << "  -i          : Ground an incremental program" << std::endl;
+				std::cerr << "  -i [num]    : Ground an incremental program and " << std::endl;
+				std::cerr << "                perform at least num grounding steps (default 1)" << std::endl;
 #endif
 				std::cerr << "	-l          : Print smodels output" << std::endl;
 				std::cerr << "	-p          : Print plain lparse-like output" << std::endl;
 				std::cerr << "	-g [1-7]    : Print experimental ASPils output" << std::endl;
-			        std::cerr << "                      Give an optional normalform number from 1 to 7 (7 if none)" << std::endl;
+			        std::cerr << "                Give an optional normalform number from 1 to 7 (7 if none)" << std::endl;
 				std::cerr << "	The default output is smodels output (-l)" << std::endl;
 #ifdef WITH_CLASP
 				int   argc_c = 2;
