@@ -1,6 +1,7 @@
 mingw=0
 clasp=0
 iclasp=0
+kdev=0
 options=""
 while [[ $# > 0 ]]; do
 	case $1 in
@@ -12,6 +13,9 @@ while [[ $# > 0 ]]; do
 		"--clasp")
 			options=" -D WITH_CLASP:BOOL=ON -D WITH_ICLASP:BOOL=OFF"
 			clasp=1
+			;;
+		"--kdev") 
+			kdev=1
 			;;
 		"--mingw") 
 			mingw=1 
@@ -49,6 +53,13 @@ mkdir -p release
 cd release
 cmake $options ../..
 cd ..
+
+if [[ $kdev == 1 ]]; then
+	mkdir -p kdev
+	cd kdev
+	cmake $options -D CMAKE_BUILD_TYPE:STRING=Debug -G KDevelop3 ../..
+	cd ..
+fi
 
 if [[ $mingw == 1 ]]; then
 	mkdir -p win32
