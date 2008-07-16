@@ -32,6 +32,7 @@ namespace NS_GRINGO
 		RelationLiteral(const RelationLiteral &r);
 		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
+		virtual void createNode(PDGBuilder *dg, bool head, bool defining, bool delayed);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();

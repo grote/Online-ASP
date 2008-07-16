@@ -17,6 +17,7 @@
 
 #include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
+#include "programdependencygraph.h"
 #include "predicateliteral.h"
 #include "assignmentliteral.h"
 #include "relationliteral.h"
@@ -93,6 +94,20 @@ void PredicateLiteral::createNode(LDGBuilder *dg, bool head)
 					(*it)->getVars(provided);
 	}
 	dg->createNode(this, head, needed, provided);
+}
+
+void PredicateLiteral::createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+{
+	VarSet vars, empty;
+	getVars(vars);
+	if(head || getNeg())
+	{
+		if(defining)
+			dg->createHeadNode(uid_);
+		dg->createNode(vars, empty);
+	}
+	else
+		dg->createNode(uid_, vars);
 }
 
 void PredicateLiteral::print(std::ostream &out)

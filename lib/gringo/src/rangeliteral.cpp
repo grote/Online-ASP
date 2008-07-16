@@ -21,6 +21,7 @@
 #include "dlvgrounder.h"
 #include "grounder.h"
 #include "literaldependencygraph.h"
+#include "programdependencygraph.h"
 
 using namespace NS_GRINGO;
 
@@ -41,6 +42,16 @@ void RangeLiteral::createNode(LDGBuilder *dg, bool head)
 	lower_->getVars(needed);
 	var_->getVars(provided);
 	dg->createNode(this, head, needed, provided);
+}
+
+void RangeLiteral::createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+{
+	assert(!head && !defining && !delayed);
+	VarSet needed, provided;
+	var_->getVars(provided);
+	lower_->getVars(needed);
+	upper_->getVars(needed);
+	dg->createNode(needed, provided);
 }
 
 void RangeLiteral::print(std::ostream &out)

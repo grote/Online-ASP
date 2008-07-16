@@ -20,6 +20,7 @@
 #include "value.h"
 #include "indexeddomain.h"
 #include "literaldependencygraph.h"
+#include "programdependencygraph.h"
 
 using namespace NS_GRINGO;
 
@@ -41,6 +42,15 @@ void RelationLiteral::createNode(LDGBuilder *dg, bool head)
 	if(b_)
 		b_->getVars(needed);
 	dg->createNode(this, head, needed, provided);
+}
+
+void RelationLiteral::createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+{
+	assert(!head && !defining && !delayed);
+	VarSet needed, provided;
+	a_->getVars(needed);
+	b_->getVars(needed);
+	dg->createNode(needed, provided);
 }
 
 void RelationLiteral::print(std::ostream &out)

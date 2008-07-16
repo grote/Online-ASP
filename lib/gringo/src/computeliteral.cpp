@@ -133,6 +133,12 @@ void ComputeLiteral::createNode(LDGBuilder *dg, bool head)
 		(*it)->createNode(dg, head);
 }
 
+void ComputeLiteral::createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+{
+	for(ConditionalLiteralVector::const_iterator it = literals_->begin(); it != literals_->end(); it++)
+		(*it)->createNode(dg, false, false, false);
+}
+
 void ComputeLiteral::reset()
 {
 	assert(false);

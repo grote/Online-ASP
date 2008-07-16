@@ -42,6 +42,7 @@ namespace NS_GRINGO
 		void addDomain(const ValueVector &values);
 		void removeDomain(const ValueVector &values);
 		void setType(Type type_);
+		int getDefines();
 		ValueVectorSet &getDomain() const;
 		~Domain();
 	private:

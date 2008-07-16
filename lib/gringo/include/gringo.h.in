@@ -46,6 +46,9 @@ namespace NS_GRINGO
 {
 	class GlobalStorage;
 
+	class PDG;
+	class PDGBuilder;
+
 	class LDGBuilder;
 	typedef std::vector<LDGBuilder*> LDGBuilderVector;
 

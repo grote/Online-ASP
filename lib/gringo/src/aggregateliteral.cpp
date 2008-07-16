@@ -23,6 +23,7 @@
 #include "grounder.h"
 #include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
+#include "programdependencygraph.h"
 #include "indexeddomain.h"
 #include "output.h"
 #include "evaluator.h"
@@ -150,6 +151,33 @@ void AggregateLiteral::createNode(LDGBuilder *dg, bool head)
 	dg->createNode(this, head, needed, provided, true);
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 		(*it)->createNode(dg, head);
+}
+
+void AggregateLiteral::createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+{
+	if(delayed)
+	{
+		// second pass
+		for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+			(*it)->createNode(dg, head, defining, false);
+	}
+	else
+	{
+		// first pass
+		VarSet needed, provided;
+		if(equal_)
+		{
+			equal_->getVars(provided);
+		}
+		else
+		{
+			if(lower_)
+				lower_->getVars(needed);
+			if(upper_)
+				upper_->getVars(needed);
+		}
+		dg->createDelayedNode(this, head, defining, needed, provided);
+	}
 }
 
 void AggregateLiteral::reset()

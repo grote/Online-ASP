@@ -29,6 +29,11 @@ void Domain::setType(Type type)
 	type_ = type;
 }
 
+int Domain::getDefines()
+{
+	return defines_;
+}
+
 bool Domain::complete() const
 {
 	return defines_ == 0;

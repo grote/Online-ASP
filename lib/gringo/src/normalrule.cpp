@@ -20,6 +20,7 @@
 #include "predicateliteral.h"
 #include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
+#include "programdependencygraph.h"
 #include "grounder.h"
 #include "output.h"
 #include "dlvgrounder.h"
@@ -473,6 +474,12 @@ namespace
 			c_->getVars(provided);
 			dg->createNode(this, head, needed, provided);
 		}
+		void createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+		{
+			VarSet needed, provided;
+			c_->getVars(provided);
+			dg->createNode(needed, provided);
+		}
 		double heuristicValue()
 		{
 			return 0;
@@ -565,6 +572,12 @@ namespace
 			VarSet needed, provided;
 			c_->getVars(provided);
 			dg->createNode(this, head, needed, provided);
+		}
+		void createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+		{
+			VarSet needed, provided;
+			c_->getVars(provided);
+			dg->createNode(needed, provided);
 		}
 		double heuristicValue()
 		{

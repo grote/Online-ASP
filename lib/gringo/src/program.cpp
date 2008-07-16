@@ -81,7 +81,7 @@ bool Program::check(Grounder *g)
 	{
 		if(!(*it)->checkO(unsolved))
 		{
-			std::cerr << "the following rule cannot not be grounded, ";
+			std::cerr << "the following rule cannot be grounded, ";
 			std::cerr << "non domain predicates : { ";
 			bool comma = false;
 			for(LiteralVector::iterator it = unsolved.begin(); it != unsolved.end(); it++)
@@ -120,7 +120,7 @@ bool Program::check(Grounder *g)
 			}
 			if(it == rules_.end())
 			{
-				std::cerr << "the following rule cannot not be grounded, ";
+				std::cerr << "the following rule cannot be grounded, ";
 				std::cerr << "weakly restricted varibles: { ";
 				bool comma = false;
 				for(VarVector::iterator it = free.begin(); it != free.end(); it++)

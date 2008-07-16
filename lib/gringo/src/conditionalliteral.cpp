@@ -23,6 +23,7 @@
 #include "dlvgrounder.h"
 #include "value.h"
 #include "literaldependencygraph.h"
+#include "programdependencygraph.h"
 #include "aggregateliteral.h"
 
 using namespace NS_GRINGO;
@@ -94,6 +95,15 @@ void ConditionalLiteral::createNode(LDGBuilder *dgb, bool head)
 		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
 			subDg->addToBody(*it);
 	dgb->addGraph(subDg);
+}
+
+void ConditionalLiteral::createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+{
+	PDGBuilder sub(dg);
+	pred_->createNode(&sub, true, defining, false);
+	if(conditionals_)
+		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
+			(*it)->createNode(&sub, false, false, false);
 }
 
 void ConditionalLiteral::print(std::ostream &out)
