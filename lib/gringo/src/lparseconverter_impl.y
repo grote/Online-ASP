@@ -108,6 +108,9 @@ Object *createDisjunction(Object *disj, Object *pred)
 %type constant_list  { ValueVector* }
 %destructor constant_list  { DELETE_PTR($$) }
 
+%type number { int }
+%destructor number { }
+
 %type weight_literal { WeightLit* }
 %destructor weight_literal { DELETE_PTR($$) }
 
@@ -194,17 +197,16 @@ predicate(res) ::= MINUS IDENTIFIER(id) LPARA constant_list(list) RPARA.
 predicate(res) ::= MINUS IDENTIFIER(id).
   { id->insert(id->begin(), '-'); res = new Atom(false, PRED(STRING(id), 0)); }
 
-aggregate_atom(res) ::= NUMBER(l) aggregate(aggr) NUMBER(u). 
-  { res = aggr; aggr->bounds_ = Aggregate::LU; aggr->lower_ = atol(l->c_str()); aggr->upper_ = atol(u->c_str()); DELETE_PTR(l); DELETE_PTR(u); }
-aggregate_atom(res) ::= aggregate(aggr) NUMBER(u). { res = aggr; aggr->bounds_ = Aggregate::U; aggr->upper_ = atol(u->c_str()); DELETE_PTR(u); }
-aggregate_atom(res) ::= NUMBER(l) aggregate(aggr). { res = aggr; aggr->bounds_ = Aggregate::L; aggr->lower_ = atol(l->c_str()); DELETE_PTR(l); }
-aggregate_atom(res) ::= aggregate(aggr).           { res = aggr; }
+aggregate_atom(res) ::= number(l) aggregate(aggr) number(u). { res = aggr; aggr->bounds_ = Aggregate::LU; aggr->lower_ = l; aggr->upper_ = u; }
+aggregate_atom(res) ::= aggregate(aggr) number(u).           { res = aggr; aggr->bounds_ = Aggregate::U; aggr->upper_ = u; }
+aggregate_atom(res) ::= number(l) aggregate(aggr).           { res = aggr; aggr->bounds_ = Aggregate::L; aggr->lower_ = l; }
+aggregate_atom(res) ::= aggregate(aggr).                     { res = aggr; }
 
 constant_list(res) ::= constant_list(list) COMMA constant(val). { res = list; res->push_back(*val); DELETE_PTR(val); }
 constant_list(res) ::= constant(val).                           { res = new ValueVector(); res->push_back(*val); DELETE_PTR(val); }
 
 constant(res) ::= IDENTIFIER(id). { res = new Value(STRING(id)); }
-constant(res) ::= NUMBER(n).      { res = new Value(atol(n->c_str())); DELETE_PTR(n); }
+constant(res) ::= number(n).      { res = new Value(n); }
 constant(res) ::= STRING(id).     { res = new Value(STRING(id)); }
 constant(res) ::= IDENTIFIER(id) LPARA constant_list(list) RPARA. { res = new Value(FUNCSYM(new FuncSymbol(STRING(id), *list))); DELETE_PTR(list); }
 
@@ -216,7 +218,7 @@ aggregate(res) ::= LSBRAC weight_list(list) RSBRAC.     { res = new Aggregate(fa
 aggregate(res) ::= LBRAC constr_list(list) RBRAC.       { res = new Aggregate(false, Aggregate::COUNT, list->first, list->second); DELETE_PTR(list); }
 
 compute(res)  ::= COMPUTE LBRAC constr_list(list) RBRAC.           { res = new Compute(list->first, 1); DELETE_PTR(list); }
-compute(res)  ::= COMPUTE NUMBER(n) LBRAC constr_list(list) RBRAC. { res = new Compute(list->first, atol(n->c_str())); DELETE_PTR(list); DELETE_PTR(n); }
+compute(res)  ::= COMPUTE number(n) LBRAC constr_list(list) RBRAC. { res = new Compute(list->first, n); DELETE_PTR(list); }
 minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.  { res = new Optimize(Optimize::MINIMIZE, list->first, list->second); DELETE_PTR(list); }
 minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC. { res = new Optimize(Optimize::MINIMIZE, list->first, list->second); DELETE_PTR(list); }
 maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.  { res = new Optimize(Optimize::MAXIMIZE, list->first, list->second); DELETE_PTR(list); }
@@ -230,8 +232,11 @@ nweight_list(res) ::= weight_literal(lit).
   { res = new WeightList(); res->first.push_back(lit->first); res->second.push_back(lit->second); DELETE_PTR(lit); }
 
 
-weight_literal(res) ::= constraint_literal(lit) ASSIGN NUMBER(n). { res = new WeightLit(lit, atol(n->c_str())); DELETE_PTR(n); }
+weight_literal(res) ::= constraint_literal(lit) ASSIGN number(n). { res = new WeightLit(lit, n); }
 weight_literal(res) ::= constraint_literal(lit).                  { res = new WeightLit(lit, 1); }
+
+number(res) ::= NUMBER(n).       { res = atol(n->c_str()); DELETE_PTR(n); }
+number(res) ::= MINUS NUMBER(n). { res = -atol(n->c_str()); DELETE_PTR(n); }
 
 constr_list(res) ::= nconstr_list(list). { res = list; }
 constr_list(res) ::= .                   { res = new WeightList(); }
