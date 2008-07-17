@@ -92,7 +92,7 @@ void Domain::addFact(const ValueVector &values)
 	// b(X) :- a(X)
 	// here a(1) is a fact but the rest is a basic program and a/1 is
 	// not yet complete
-	if(type_ != FACT)
+	//if(type_ != FACT)
 		facts_.insert(values);
 }
 
