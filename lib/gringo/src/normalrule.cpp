@@ -20,7 +20,7 @@
 #include "predicateliteral.h"
 #include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
-#include "programdependencygraph.h"
+#include "statementchecker.h"
 #include "grounder.h"
 #include "output.h"
 #include "dlvgrounder.h"
@@ -33,9 +33,9 @@
 using namespace NS_GRINGO;
 
 #ifdef WITH_ICLASP
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), ground_(1), dg_(0), grounder_(0)
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), ground_(1), isGround_(false), grounder_(0)
 #else
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), dg_(0), grounder_(0)
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), isGround_(false), grounder_(0)
 #endif
 {
 }
@@ -96,20 +96,22 @@ bool NormalRule::checkO(LiteralVector &unsolved)
 bool NormalRule::check(VarVector &free)
 {
 	free.clear();
-	if(dg_)
-		delete dg_;
-	dg_ = new LDG();
-	LDGBuilder dgb(dg_);
+	StatementChecker s;
 	if(head_)
-		dgb.addHead(head_);
+		head_->createNode(&s, true, false);
 	if(body_)
 		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
-			dgb.addToBody(*it);
-	
-	dgb.create();
-	dg_->check(free);
-
-	return free.size() == 0;
+			(*it)->createNode(&s, false, false);
+	if(s.check())
+	{
+		isGround_ = !s.hasVars();
+		return true;
+	}
+	else
+	{
+		s.getFreeVars(free);
+		return false;
+	}
 }
 
 void NormalRule::getVars(VarSet &vars) const
@@ -146,11 +148,11 @@ void NormalRule::evaluate()
 		head_->evaluate();
 }
 
-void NormalRule::getRelevantVars(VarVector &relevant)
+void NormalRule::getRelevantVars(LDG *dg, VarVector &relevant)
 {
 	// TODO: there must be a better way to do this!!!
 	VarSet global;
-	global.insert(dg_->getGlobalVars().begin(), dg_->getGlobalVars().end());
+	global.insert(dg->getGlobalVars().begin(), dg->getGlobalVars().end());
 	VarSet all;
 	if(head_)
 		head_->getVars(all);
@@ -165,6 +167,18 @@ void NormalRule::getRelevantVars(VarVector &relevant)
 			relevant.push_back(*it);
 }
 
+namespace
+{
+	void groundOther(Grounder *g, GroundStep step, Literal *head_, LiteralVector *body_)
+	{
+		if(head_)
+			head_->ground(g, step);
+		if(body_)
+			for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
+				(*it)->ground(g, step);
+	}
+}
+
 bool NormalRule::ground(Grounder *g, GroundStep step)
 {
 	//std::cerr << "grounding: " << this << "(" << step << ")"<< std::endl;
@@ -176,20 +190,35 @@ bool NormalRule::ground(Grounder *g, GroundStep step)
 	{
 		case PREPARE:
 			// if there are no varnodes we can do sth simpler
-			if(body_ && dg_->hasVarNodes())
+			if(body_ && !isGround_)
 			{
+				LDG dg;
+				{
+					LDGBuilder dgb(&dg);
+					if(head_)
+						dgb.addHead(head_);
+					if(body_)
+						for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
+							dgb.addToBody(*it);
+					dgb.create();
+				}
 				//std::cerr << "creating grounder for: " << this << std::endl;
 				VarVector relevant;
-				getRelevantVars(relevant);
-				dg_->sortLiterals(body_);
-				grounder_ = new DLVGrounder(g, this, body_, dg_, relevant);
+				getRelevantVars(&dg, relevant);
+				dg.sortLiterals(body_);
+				grounder_ = new DLVGrounder(g, this, body_, &dg, relevant);
+				groundOther(g, step, head_, body_);
 			}
 			else
+			{
 				grounder_ = 0;
+				groundOther(g, step, head_, body_);
+			}
 			break;
 		case REINIT:
 			if(grounder_)
-				grounder_->reinit(dg_);
+				grounder_->reinit();
+			groundOther(g, step, head_, body_);
 			break;
 		case GROUND:
 			if(grounder_)
@@ -215,26 +244,14 @@ bool NormalRule::ground(Grounder *g, GroundStep step)
 			if(grounder_)
 				grounder_->release();
 #else
-			if(dg_)
-			{
-				delete dg_;
-				dg_ = 0;
-			}
 			if(grounder_)
 			{
 				delete grounder_;
 				grounder_ = 0;
 			}
 #endif
+			groundOther(g, step, head_, body_);
 			break;
-	}
-	if(step != GROUND)
-	{
-		if(head_)
-			head_->ground(g, step);
-		if(body_)
-			for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
-				(*it)->ground(g, step);
 	}
 	return true;
 }
@@ -474,7 +491,7 @@ namespace
 			c_->getVars(provided);
 			dg->createNode(this, head, needed, provided);
 		}
-		void createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+		void createNode(StatementChecker *dg, bool head, bool delayed)
 		{
 			VarSet needed, provided;
 			c_->getVars(provided);
@@ -573,7 +590,7 @@ namespace
 			c_->getVars(provided);
 			dg->createNode(this, head, needed, provided);
 		}
-		void createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+		void createNode(StatementChecker *dg, bool head, bool delayed)
 		{
 			VarSet needed, provided;
 			c_->getVars(provided);
@@ -619,8 +636,6 @@ NormalRule::~NormalRule()
 {
 	if(grounder_)
 		delete grounder_;
-	if(dg_)
-		delete dg_;
 	if(head_)
 		delete head_;
 	if(body_)

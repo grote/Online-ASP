@@ -23,7 +23,7 @@
 #include "dlvgrounder.h"
 #include "grounder.h"
 #include "literaldependencygraph.h"
-#include "programdependencygraph.h"
+#include "statementchecker.h"
 
 using namespace NS_GRINGO;
 
@@ -46,12 +46,12 @@ void AssignmentLiteral::createNode(LDGBuilder *dg, bool head)
 	dg->createNode(this, head, needed, provided);
 }
 
-void AssignmentLiteral::createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+void AssignmentLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 {
-	assert(!head && !defining && !delayed);
+	assert(!head && !delayed);
 	VarSet needed, provided;
-	c_->getVars(needed);
-	t_->getVars(provided);
+	c_->getVars(provided);
+	t_->getVars(needed);
 	dg->createNode(needed, provided);
 }
 

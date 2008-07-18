@@ -20,6 +20,7 @@
 #include "value.h"
 #include "grounder.h"
 #include "statementdependencygraph.h"
+#include "statementchecker.h"
 #include "literaldependencygraph.h"
 #include "output.h"
 
@@ -157,10 +158,20 @@ void OptimizeLiteral::createNode(LDGBuilder *dg, bool head)
 		(*it)->createNode(dg, head);
 }
 
-void OptimizeLiteral::createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+void OptimizeLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 {
-	for(ConditionalLiteralVector::const_iterator it = literals_->begin(); it != literals_->end(); it++)
-		(*it)->createNode(dg, false, false, false);
+	if(delayed)
+	{
+		// second pass
+		for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+			dg->createSubNode(*it, head);
+	}
+	else
+	{
+		// first pass
+		VarSet needed, provided;
+		dg->createDelayedNode(this, head, needed, provided);
+	}	
 }
 
 void OptimizeLiteral::reset()

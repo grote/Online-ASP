@@ -140,7 +140,7 @@ namespace NS_GRINGO
 		 */
 		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo) = 0;
 		virtual void createNode(LDGBuilder *dg, bool head) = 0;
-		virtual void createNode(PDGBuilder *dg, bool head, bool defining, bool delayed) = 0;
+		virtual void createNode(StatementChecker *dg, bool head, bool delayed) = 0;
 		virtual double heuristicValue() = 0;
 		/// Destructor
  		virtual ~Literal();

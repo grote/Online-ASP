@@ -23,7 +23,7 @@
 #include "dlvgrounder.h"
 #include "value.h"
 #include "literaldependencygraph.h"
-#include "programdependencygraph.h"
+#include "statementchecker.h"
 #include "aggregateliteral.h"
 
 using namespace NS_GRINGO;
@@ -86,8 +86,7 @@ SDGNode *ConditionalLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd to
 
 void ConditionalLiteral::createNode(LDGBuilder *dgb, bool head)
 {
-	if(dg_)
-		delete dg_;
+	// TODO: dont ignore the weight!!!
 	dg_ = new LDG();
 	LDGBuilder *subDg = new LDGBuilder(dg_);
 	subDg->addHead(pred_);
@@ -97,13 +96,18 @@ void ConditionalLiteral::createNode(LDGBuilder *dgb, bool head)
 	dgb->addGraph(subDg);
 }
 
-void ConditionalLiteral::createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+void ConditionalLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 {
-	PDGBuilder sub(dg);
-	pred_->createNode(&sub, true, defining, false);
+	if(weight_)
+	{
+		VarSet needed, provided;
+		weight_->getVars(needed);
+		dg->createNode(needed, provided);
+	}
+	pred_->createNode(dg, true, false);
 	if(conditionals_)
 		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
-			(*it)->createNode(&sub, false, false, false);
+			(*it)->createNode(dg, false, false);
 }
 
 void ConditionalLiteral::print(std::ostream &out)
@@ -202,15 +206,27 @@ void ConditionalLiteral::ground(Grounder *g, GroundStep step)
 		case PREPARE:
 			if(conditionals_)
 			{
+				if(!dg_)
+				{
+					dg_ = new LDG();
+					LDGBuilder dgb(dg_);
+					dgb.addHead(pred_);
+					if(conditionals_)
+						for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
+							dgb.addToBody(*it);
+					dgb.create();
+				}
 				dg_->sortLiterals(conditionals_);
 				grounder_ = new DLVGrounder(g, this, conditionals_, dg_, dg_->getGlobalVars());
+				delete dg_;
+				dg_ = 0;
 			}
 			else
 				grounder_ = 0;
 			break;
 		case REINIT:
 			if(grounder_)
-				grounder_->reinit(dg_);
+				grounder_->reinit();
 			break;
 		case GROUND:
 			weights_.clear();

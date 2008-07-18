@@ -28,8 +28,9 @@ using namespace NS_GRINGO;
 DLVGrounder::DLVGrounder(Grounder *g, Groundable *r, LiteralVector *lits, LDG *dg, const VarVector &relevant) :
 	g_(g), r_(r), lit_(*lits), dom_(lits->size()), var_(lits->size()), dep_(lits->size()), 
 	closestBinderVar_(lits->size()), closestBinderDep_(lits->size()), closestBinderRel_(lits->size() + 1), 
-	global_(dg->getGlobalVars()), 
-	relevant_(relevant)
+	global_(dg->getGlobalVars()),
+	relevant_(relevant),
+	provided_(lits->size())
 {
 	sortLiterals(dg);
 	calcDependency();
@@ -42,30 +43,30 @@ DLVGrounder::~DLVGrounder()
 
 void DLVGrounder::sortLiterals(LDG *dg)
 {
-	VarSet index(dg->getParentVars().begin(), dg->getParentVars().end());
+	index_.insert(dg->getParentVars().begin(), dg->getParentVars().end());
+	VarSet index(index_);
 	for(size_t i = 0; i < lit_.size(); i++)
 	{
-		Literal *l = lit_[i];
-		const VarVector &provided = dg->getProvidedVars(l);
-		const VarVector &needed   = dg->getNeededVars(l);
+		Literal *l   = lit_[i];
+		const VarVector &needed = dg->getNeededVars(l);
+		provided_[i] = dg->getProvidedVars(l);
 		VarSet global;
 		global.insert(needed.begin(), needed.end());
-		global.insert(provided.begin(), provided.end());
+		global.insert(provided_[i].begin(), provided_[i].end());
 		dom_[i] = l->createIndexedDomain(index);
 		var_[i].insert(var_[i].end(), global.begin(), global.end());
-		index.insert(provided.begin(), provided.end());
+		index.insert(provided_[i].begin(), provided_[i].end());
 	}
 }
 
-void DLVGrounder::reinit(LDG *dg)
+void DLVGrounder::reinit()
 {
-	VarSet index(dg->getParentVars().begin(), dg->getParentVars().end());
+	VarSet index(index_);
 	for(size_t i = 0; i < lit_.size(); i++)
 	{
 		Literal *l = lit_[i];
-		const VarVector &provided = dg->getProvidedVars(l);
 		dom_[i] = l->createIndexedDomain(index);
-		index.insert(provided.begin(), provided.end());
+		index.insert(provided_[i].begin(), provided_[i].end());
 	}
 }
 

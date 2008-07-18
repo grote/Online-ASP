@@ -30,6 +30,7 @@
 #include <set>
 #include <queue>
 #include <map>
+#include <list>
 #include <stack>
 #include <cmath>
 #include <cfloat>
@@ -59,7 +60,6 @@ namespace NS_GRINGO
 	typedef std::vector<Signature> SignatureVector;
 	class Evaluator;
 
-
 	class Expandable;
 	class Groundable;
 
@@ -75,6 +75,7 @@ namespace NS_GRINGO
 	
 	class DLVGrounder;
 
+	class StatementChecker;
 	class Printable;
 	class DependencyRelation;
 

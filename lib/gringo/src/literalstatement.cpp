@@ -18,6 +18,7 @@
 #include "literalstatement.h"
 #include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
+#include "statementchecker.h"
 #include "conditionalliteral.h"
 #include "output.h"
 #include "grounder.h"
@@ -51,14 +52,16 @@ bool LiteralStatement::checkO(LiteralVector &unsolved)
 
 bool LiteralStatement::check(VarVector &free)
 {
-	LDG dg;
-	free.clear();
-	LDGBuilder dgb(&dg);
-	dgb.addToBody(lit_);
-	dgb.create();
-	dg.check(free);
+	StatementChecker s;
+	lit_->createNode(&s, false, false);
 
-	return free.size() == 0;
+	if(s.check())
+		return true;
+	else
+	{
+		s.getFreeVars(free);
+		return false;
+	}
 }
 
 void LiteralStatement::preprocess(Grounder *g)

@@ -21,6 +21,7 @@
 #include "grounder.h"
 #include "statementdependencygraph.h"
 #include "literaldependencygraph.h"
+#include "statementchecker.h"
 #include "output.h"
 
 using namespace NS_GRINGO;
@@ -133,10 +134,10 @@ void ComputeLiteral::createNode(LDGBuilder *dg, bool head)
 		(*it)->createNode(dg, head);
 }
 
-void ComputeLiteral::createNode(PDGBuilder *dg, bool head, bool defining, bool delayed)
+void ComputeLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 {
 	for(ConditionalLiteralVector::const_iterator it = literals_->begin(); it != literals_->end(); it++)
-		(*it)->createNode(dg, false, false, false);
+		(*it)->createNode(dg, false, false);
 }
 
 void ComputeLiteral::reset()

@@ -28,7 +28,7 @@ namespace NS_GRINGO
 		DLVGrounder(Grounder *g, Groundable *r, LiteralVector *lits, LDG *dg, const VarVector &relevant);
 		void ground();
 		void debug();
-		void reinit(LDG *dg);
+		void reinit();
 		void release();
 		~DLVGrounder();
 	private:
@@ -47,6 +47,8 @@ namespace NS_GRINGO
 		VarVector closestBinderRel_;
 		VarVector global_;
 		VarVector relevant_;
+		VarSet    index_;
+		std::vector<VarVector> provided_;
 	};
 }
 
