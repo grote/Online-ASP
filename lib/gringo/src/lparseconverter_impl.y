@@ -222,7 +222,7 @@ compute(res)  ::= COMPUTE number(n) LBRAC constr_list(list) RBRAC. { res = new C
 minimize(res) ::= MINIMIZE LBRAC  constr_list(list) RBRAC.  { res = new Optimize(Optimize::MINIMIZE, list->first, list->second); DELETE_PTR(list); }
 minimize(res) ::= MINIMIZE LSBRAC weight_list(list) RSBRAC. { res = new Optimize(Optimize::MINIMIZE, list->first, list->second); DELETE_PTR(list); }
 maximize(res) ::= MAXIMIZE LBRAC  constr_list(list) RBRAC.  { res = new Optimize(Optimize::MAXIMIZE, list->first, list->second); DELETE_PTR(list); }
-maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC. { res = new Optimize(Optimize::MINIMIZE, list->first, list->second); DELETE_PTR(list); }
+maximize(res) ::= MAXIMIZE LSBRAC weight_list(list) RSBRAC. { res = new Optimize(Optimize::MAXIMIZE, list->first, list->second); DELETE_PTR(list); }
 
 weight_list(res) ::= nweight_list(list). { res = list; }
 weight_list(res) ::= .                   { res = new WeightList(); }
