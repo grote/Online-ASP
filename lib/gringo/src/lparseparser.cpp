@@ -55,11 +55,7 @@ bool LparseParser::parse(NS_OUTPUT::Output *output)
 	}
 	lparseparser(pParser, 0, lval, this);
 	if(getError())
-	{
-		delete grounder_;
-		grounder_ = 0;
 		return false;
-	}
 	return true;
 }
 
