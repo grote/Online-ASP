@@ -1,14 +1,12 @@
 performance:
-- to implement binder spilitting create new rules (rewriting)
 - literals in the body could be ordered by some heuristic see reference in dlv paper
 - dont use tons of small vectors in domains instead put all values into 1 big vector
   - domains
   - conditional literals
 - optimize memory consumtion/handling in output classes
   - dont use new/delete for all the output objects everytime a rule is grounded
-- dont create literaldependency graphs for ground rules
-- improve the checking phase
 - optimize datastructures (in view of memoryconsumption)
+- improve the code for creating the indexeddomains default/bindersplitting
 
 code:
 - write a better main app
@@ -25,3 +23,6 @@ testing:
 todo:
 - handle classical negation in iclaspoutput
 
+bugs:
+- the weights of conditionalliterals are ignored in the literaldependency graph
+  this could lead to a failure (but only in rare cases)
