@@ -142,6 +142,7 @@ namespace NS_GRINGO
 		virtual void createNode(LDGBuilder *dg, bool head) = 0;
 		virtual void createNode(StatementChecker *dg, bool head, bool delayed) = 0;
 		virtual double heuristicValue() = 0;
+		virtual void binderSplit(Expandable *e, const VarSet &relevant);
 		/// Destructor
  		virtual ~Literal();
 	protected:

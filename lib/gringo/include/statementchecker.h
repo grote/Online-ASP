@@ -38,6 +38,7 @@ namespace NS_GRINGO
 		bool check();
 		void create();
 		void getFreeVars(VarVector &vars);
+		const VarSet &getVars() const;
 		bool hasVars() const;
 
 		void createDelayedNode(Literal *l, bool head, const VarSet &needed, const VarSet &provided);

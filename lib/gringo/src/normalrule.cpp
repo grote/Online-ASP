@@ -105,6 +105,17 @@ bool NormalRule::check(VarVector &free)
 	if(s.check())
 	{
 		isGround_ = !s.hasVars();
+		if(!isGround_ && body_)
+		{
+			VarSet relevant;
+			getRelevantVars(s.getVars(), relevant);
+			if(body_ && s.getVars().size() != relevant.size())
+			{
+				int l = body_->size();
+				for(int i = 0; i < l; i++)
+					(*body_)[i]->binderSplit(this, relevant);
+			}
+		}
 		return true;
 	}
 	else
@@ -148,20 +159,30 @@ void NormalRule::evaluate()
 		head_->evaluate();
 }
 
-void NormalRule::getRelevantVars(LDG *dg, VarVector &relevant)
+void NormalRule::getRelevantVars(const VarSet &global, VarSet &relevant)
 {
-	// TODO: there must be a better way to do this!!!
-	VarSet global;
-	global.insert(dg->getGlobalVars().begin(), dg->getGlobalVars().end());
 	VarSet all;
 	if(head_)
 		head_->getVars(all);
 	if(body_)
 		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
-		{
 			if(!(*it)->solved())
 				(*it)->getVars(all);
-		}
+	VarSet::iterator last = relevant.end();
+	for(VarSet::iterator it = all.begin(); it != all.end(); it++)
+		if(global.find(*it) != global.end())
+			last = relevant.insert(last, *it);
+}
+
+void NormalRule::getRelevantVars(const VarSet &global, VarVector &relevant)
+{
+	VarSet all;
+	if(head_)
+		head_->getVars(all);
+	if(body_)
+		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
+			if(!(*it)->solved())
+				(*it)->getVars(all);
 	for(VarSet::iterator it = all.begin(); it != all.end(); it++)
 		if(global.find(*it) != global.end())
 			relevant.push_back(*it);
@@ -204,7 +225,7 @@ bool NormalRule::ground(Grounder *g, GroundStep step)
 				}
 				//std::cerr << "creating grounder for: " << this << std::endl;
 				VarVector relevant;
-				getRelevantVars(&dg, relevant);
+				getRelevantVars(VarSet(dg.getGlobalVars().begin(), dg.getGlobalVars().end()), relevant);
 				dg.sortLiterals(body_);
 				grounder_ = new DLVGrounder(g, this, body_, &dg, relevant);
 				groundOther(g, step, head_, body_);

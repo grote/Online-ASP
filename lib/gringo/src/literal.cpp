@@ -41,6 +41,10 @@ void Literal::ground(Grounder *g, GroundStep step)
 {
 }
 
+void Literal::binderSplit(Expandable *e, const VarSet &relevant)
+{
+}
+
 Literal::~Literal()
 {
 

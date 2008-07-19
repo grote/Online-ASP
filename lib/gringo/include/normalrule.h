@@ -58,7 +58,8 @@ namespace NS_GRINGO
 		 * \brief Calculate the relevant vars in the body
 		 * \param relevant The resulting set of relevant vars
 		 */
-		void getRelevantVars(LDG *dg, VarVector &relevant);
+		void getRelevantVars(const VarSet &global, VarSet &relevant);
+		void getRelevantVars(const VarSet &global, VarVector &relevant);
 	public:
 		/// The haed
 		Literal *head_;

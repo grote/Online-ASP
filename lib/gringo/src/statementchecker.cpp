@@ -31,6 +31,11 @@ void StatementChecker::createSubNode(Literal *l, bool head)
 	l->createNode(&providedSub_.back().second.first, head, false);
 }
 
+const VarSet &StatementChecker::getVars() const
+{
+	return vars_;
+}
+
 bool StatementChecker::hasVars() const
 {
 	return vars_.size() > 0;

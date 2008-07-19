@@ -59,6 +59,7 @@ namespace NS_GRINGO
 		void addDomain(ValueVector &values);
 		Domain *getDomain() const;
 		const ValueVector &getValues();
+		virtual void binderSplit(Expandable *e, const VarSet &relevant);
 		virtual ~PredicateLiteral();
 	protected:
 		int           uid_;

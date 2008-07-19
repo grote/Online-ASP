@@ -33,6 +33,7 @@
 #include "multipleargsterm.h"
 #include "output.h"
 #include "evaluator.h"
+#include "bindersplitter.h"
 
 using namespace NS_GRINGO;
 		
@@ -376,5 +377,22 @@ void PredicateLiteral::getVars(VarSet &vars) const
 	if(variables_)
 		for(TermVector::const_iterator it = variables_->begin(); it != variables_->end(); it++)
 			(*it)->getVars(vars);
+}
+
+void PredicateLiteral::binderSplit(Expandable *e, const VarSet &relevant)
+{
+	if(!variables_ || getNeg() || !solved())
+		return;
+	VarVector r;
+	VarSet vars;
+	getVars(vars);
+	for(VarSet::iterator it = vars.begin(); it != vars.end(); it++)
+		if(relevant.find(*it) != relevant.end())
+			r.push_back(*it);
+	if(r.size() != vars.size() && r.size() > 0)
+	{
+		std::cerr << "bindersplit: " << this << std::endl;
+		e->appendLiteral(new BinderSplitter(predNode_, variables_, r), Expandable::RANGETERM);
+	}
 }
 
