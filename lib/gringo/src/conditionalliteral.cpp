@@ -125,6 +125,11 @@ bool ConditionalLiteral::match(Grounder *g)
 	assert(false);
 }
 
+bool ConditionalLiteral::isFact(Grounder *g)
+{
+	assert(false);
+}
+
 void ConditionalLiteral::start()
 {
 	current_ = 0;
@@ -261,9 +266,9 @@ void ConditionalLiteral::grounded(Grounder *g)
 	ValueVector values;
 	values.reserve(pred_->getArgs()->size());
 	for(TermVector::iterator it = pred_->getArgs()->begin(); it != pred_->getArgs()->end(); it++)
-		values.push_back((*it)->getValue());
+		values.push_back((*it)->getValue(g));
 	if(weight_)
-		weights_.push_back(weight_->getValue());
+		weights_.push_back(weight_->getValue(g));
 	values_.push_back(ValueVector());
 
 	std::swap(values_.back(), values);

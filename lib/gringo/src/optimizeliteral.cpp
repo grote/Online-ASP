@@ -35,7 +35,7 @@ bool OptimizeLiteral::solved()
 	assert(false);
 }
 
-bool OptimizeLiteral::isFact()
+bool OptimizeLiteral::isFact(Grounder *g)
 {
 	assert(false);
 }

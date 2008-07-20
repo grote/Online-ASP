@@ -368,7 +368,7 @@ Value Grounder::getConstValue(std::string *id)
 		if(it->second.first)
 			throw GrinGoException("Error: cyclic constant definition.");
 		it->second.first = true;
-		Value v = it->second.second->getConstValue();
+		Value v = it->second.second->getConstValue(this);
 		it->second.first = false;
 		return v;
 	}

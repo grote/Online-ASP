@@ -31,17 +31,16 @@ namespace NS_GRINGO
 		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual void print(std::ostream &out);
-		virtual Value getValue();
-		virtual Value getConstValue();
+		virtual Value getValue(Grounder *g);
+		virtual Value getConstValue(Grounder *g);
  		virtual Term* clone() const;
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual bool unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
 			       	ValueVector& boundSubstitution, ValueVector& freeSubstitutions) const;
 		virtual ~FuncSymbolTerm();
 	protected:
-		std::string*	name_;
-		TermVector*		termList_;
-		Grounder*		grounder_;
+		std::string* name_;
+		TermVector*  termList_;
 	};
 }
 

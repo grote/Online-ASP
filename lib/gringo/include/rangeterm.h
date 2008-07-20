@@ -32,8 +32,8 @@ namespace NS_GRINGO
 		virtual void print(std::ostream &out);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
-		virtual Value getValue();
-		virtual Value getConstValue();
+		virtual Value getValue(Grounder *g);
+		virtual Value getConstValue(Grounder *g);
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual bool unify(const Value&, const VarVector&, const VarVector&,
 			       	ValueVector&, ValueVector&) const

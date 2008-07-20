@@ -289,7 +289,7 @@ void NormalRule::grounded(Grounder *g)
 		// NOTE: if the head is already a fact this rule is useless!!! of course 
 		// except if the head is a choice head since choice heads are always facts
 		// currently aggregates are only facts if all their literals are facts
-		if(head_->isFact())
+		if(head_->isFact(g))
 			return;
 		hasHead = true;
 		head = head_->convert();
@@ -304,7 +304,7 @@ void NormalRule::grounded(Grounder *g)
 	{
 		for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
 		{
-			if(!(*it)->isFact())
+			if(!(*it)->isFact(g))
 			{
 				// flatten conjunctions
 				NS_OUTPUT::Object *c = (*it)->convert();
@@ -468,7 +468,7 @@ namespace
 		{
 			return true;
 		}
-		bool isFact()
+		bool isFact(Grounder *g)
 		{
 			return true;
 		}
@@ -489,7 +489,7 @@ namespace
 		}
 		bool match(Grounder *g)
 		{
-			return (int)c_->getValue() == g->getIncStep();
+			return (int)c_->getValue(g) == g->getIncStep();
 		}
 		NS_OUTPUT::Object *convert()
 		{
@@ -570,7 +570,7 @@ namespace
 		{
 			return false;
 		}
-		bool isFact()
+		bool isFact(Grounder *g)
 		{
 			return false;
 		}
@@ -591,7 +591,7 @@ namespace
 		}
 		bool match(Grounder *g)
 		{
-			return (int)c_->getValue() == g->getIncStep();
+			return (int)c_->getValue(g) == g->getIncStep();
 		}
 		NS_OUTPUT::Object *convert()
 		{

@@ -105,7 +105,7 @@ namespace NS_GRINGO
 		 * \brief Returns if the literal is a fact wrt. the current assignment
 		 * \return Returns true if the literal is a fact
 		 */
-		virtual bool isFact() = 0;
+		virtual bool isFact(Grounder *g) = 0;
 		/**
 		 * \brief Clones the literal
 		 * \return Pointer to the new copied literal

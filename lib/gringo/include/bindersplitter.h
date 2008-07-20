@@ -39,7 +39,7 @@ namespace NS_GRINGO
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
 		virtual bool solved();
-		virtual bool isFact();
+		virtual bool isFact(Grounder *g);
 		virtual void finish();
 		virtual void evaluate();
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);

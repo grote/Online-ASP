@@ -41,7 +41,7 @@ bool AggregateLiteral::solved()
 	return false;
 }
 
-bool AggregateLiteral::isFact()
+bool AggregateLiteral::isFact(Grounder *g)
 {
 	return fact_;
 }
@@ -75,10 +75,10 @@ void AggregateLiteral::setEqual(int bound)
 	upperBound_ = bound;
 }
 
-bool AggregateLiteral::checkBounds(int lower, int upper)
+bool AggregateLiteral::checkBounds(Grounder *g, int lower, int upper)
 {
-	lowerBound_ = lower_ ? std::max((int)lower_->getValue(), lower) : lower;
-	upperBound_ = upper_ ? std::min((int)upper_->getValue(), upper) : upper;
+	lowerBound_ = lower_ ? std::max((int)lower_->getValue(g), lower) : lower;
+	upperBound_ = upper_ ? std::min((int)upper_->getValue(g), upper) : upper;
 	// stupid bounds
 	if(lowerBound_ > upperBound_)
 		return getNeg();
@@ -102,7 +102,7 @@ bool AggregateLiteral::match(Grounder *g)
 {
 	int upper, lower, fixed;
 	match(g, lower, upper, fixed);
-	return checkBounds(lower, upper);
+	return checkBounds(g, lower, upper);
 }
 
 void AggregateLiteral::getVars(VarSet &vars) const

@@ -65,12 +65,12 @@ Term *RangeTerm::getUpper()
 	return upper_;
 }
 
-Value RangeTerm::getConstValue()
+Value RangeTerm::getConstValue(Grounder *g)
 {
 	assert(false);
 }
 
-Value RangeTerm::getValue()
+Value RangeTerm::getValue(Grounder *g)
 {
 	assert(false);
 }

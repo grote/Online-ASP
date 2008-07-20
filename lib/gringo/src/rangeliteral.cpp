@@ -59,7 +59,7 @@ void RangeLiteral::print(std::ostream &out)
 	out << var_ << " = [" << lower_ << ", " << upper_ << "]";
 }
 
-bool RangeLiteral::isFact()
+bool RangeLiteral::isFact(Grounder *g)
 {
 	return true;
 }
@@ -93,7 +93,7 @@ void RangeLiteral::finish()
 
 bool RangeLiteral::match(Grounder *g)
 {
-	return ((int)lower_->getValue() <= (int)var_->getValue() && (int)var_->getValue() <= (int)upper_->getValue());
+	return ((int)lower_->getValue(g) <= (int)var_->getValue(g) && (int)var_->getValue(g) <= (int)upper_->getValue(g));
 }
 
 namespace
@@ -119,8 +119,8 @@ namespace
 
 	void IndexedDomainRange::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		end_     = upper_->getValue();
-		current_ = lower_->getValue();
+		end_     = upper_->getValue(g->g_);
+		current_ = lower_->getValue(g->g_);
 		if(current_ <= end_)
 		{
 			g->g_->setValue(var_, Value(current_), binder);

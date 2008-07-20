@@ -36,8 +36,8 @@ namespace NS_GRINGO
 		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
-		virtual Value getConstValue();
-		virtual Value getValue();
+		virtual Value getConstValue(Grounder *g);
+		virtual Value getValue(Grounder *g);
 		int getUID();
 		virtual Term* clone() const;
 		virtual bool unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
@@ -45,7 +45,6 @@ namespace NS_GRINGO
  		virtual ~Constant();
 	protected:
 		ConstantType type_;
-		Grounder *g_;
 		Value value_;
 		int uid_;
 	};

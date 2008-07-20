@@ -80,7 +80,7 @@ void RelationLiteral::print(std::ostream &out)
 	out << b_;
 }
 
-bool RelationLiteral::isFact()
+bool RelationLiteral::isFact(Grounder *g)
 {
 	return true;
 }
@@ -116,17 +116,17 @@ bool RelationLiteral::match(Grounder *g)
 	switch(type_)
 	{ 
 		case EQ:
-			return a_->getValue() == b_->getValue();
+			return a_->getValue(g) == b_->getValue(g);
 		case NE:
-			return a_->getValue() != b_->getValue();
+			return a_->getValue(g) != b_->getValue(g);
 		case GT:
-			return a_->getValue() > b_->getValue();
+			return a_->getValue(g) > b_->getValue(g);
 		case GE:
-			return a_->getValue() >= b_->getValue();
+			return a_->getValue(g) >= b_->getValue(g);
 		case LE:
-			return a_->getValue() <= b_->getValue();
+			return a_->getValue(g) <= b_->getValue(g);
 		case LT:
-			return a_->getValue() < b_->getValue();
+			return a_->getValue(g) < b_->getValue(g);
 	}
 	assert(false);
 }

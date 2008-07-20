@@ -35,7 +35,7 @@ bool ComputeLiteral::solved()
 	assert(false);
 }
 
-bool ComputeLiteral::isFact()
+bool ComputeLiteral::isFact(Grounder *g)
 {
 	assert(false);
 }

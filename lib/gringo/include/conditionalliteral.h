@@ -44,6 +44,7 @@ namespace NS_GRINGO
 		virtual void finish();
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual bool match(Grounder *g);
+		virtual bool isFact(Grounder *g);
 		void ground(Grounder *g, GroundStep step);
 		virtual void grounded(Grounder *g);
 		virtual void appendLiteral(Literal *l, ExpansionType type);
@@ -57,7 +58,7 @@ namespace NS_GRINGO
 		
 		// functions to access all possible bindings of the conditional literal
 		virtual NS_OUTPUT::Object *convert();
-		virtual bool isFact();
+		bool isFact();
 		bool isEmpty();
 		void start();
 		bool hasWeight();

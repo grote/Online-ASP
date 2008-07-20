@@ -20,11 +20,11 @@
 
 using namespace NS_GRINGO;
 		
-Constant::Constant(int value) : Term(), type_(NUM), g_(0), value_(value), uid_(0)
+Constant::Constant(int value) : Term(), type_(NUM), value_(value), uid_(0)
 {
 }
 
-Constant::Constant(ConstantType type, Grounder *g, std::string *value) : Term(), type_(type), g_(g), uid_(type == VAR ? g->registerVar(value) : 0)
+Constant::Constant(ConstantType type, Grounder *g, std::string *value) : Term(), type_(type), uid_(type == VAR ? g->registerVar(value) : 0)
 {
 	switch(type_)
 	{
@@ -74,24 +74,24 @@ void Constant::print(std::ostream &out)
 	}
 }
 
-Value Constant::getConstValue()
+Value Constant::getConstValue(Grounder *g)
 {
 	switch(type_)
 	{
 		case VAR:
 			assert(false);
 		case ID:
-			return g_->getConstValue(value_.stringValue_);
+			return g->getConstValue(value_.stringValue_);
 		case NUM:
 			return value_;
 	}
 	assert(false);
 }
 
-Value Constant::getValue()
+Value Constant::getValue(Grounder *g)
 {
 	if(type_ == VAR)
-		return g_->getValue(uid_);
+		return g->getValue(uid_);
 	else
 		return value_;
 }
@@ -109,13 +109,13 @@ void Constant::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 {
 	if(type_ == ID)
 	{
-		value_ = g_->getConstValue(value_.stringValue_);
+		value_ = g->getConstValue(value_.stringValue_);
 		if(value_.type_ == Value::INT)
 			type_ = NUM;
 	}
 }
 
-Constant::Constant(const Constant &c) : type_(c.type_), g_(c.g_), value_(c.value_), uid_(c.uid_)
+Constant::Constant(const Constant &c) : type_(c.type_), value_(c.value_), uid_(c.uid_)
 {
 }
 

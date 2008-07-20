@@ -80,58 +80,58 @@ bool FunctionTerm::isComplex()
 	return true;
 }
 
-Value FunctionTerm::getConstValue()
+Value FunctionTerm::getConstValue(Grounder *g)
 {
 	switch(type_)
 	{
 		case ABS:
-			return Value(abs(a_->getConstValue()));
+			return Value(abs(a_->getConstValue(g)));
 		case PLUS:
-			return Value(a_->getConstValue() + b_->getConstValue());
+			return Value(a_->getConstValue(g) + b_->getConstValue(g));
 		case MINUS:
-			return Value(a_->getConstValue() - b_->getConstValue());
+			return Value(a_->getConstValue(g) - b_->getConstValue(g));
 		case TIMES:
-			return Value(a_->getConstValue() * b_->getConstValue());
+			return Value(a_->getConstValue(g) * b_->getConstValue(g));
 		case DIVIDE:
-			return Value(a_->getConstValue() / b_->getConstValue());
+			return Value(a_->getConstValue(g) / b_->getConstValue(g));
 		case MOD:
-			return Value(a_->getConstValue() % b_->getConstValue());
+			return Value(a_->getConstValue(g) % b_->getConstValue(g));
 		case BITXOR:
-			return Value(a_->getConstValue() ^ b_->getConstValue());
+			return Value(a_->getConstValue(g) ^ b_->getConstValue(g));
 		case BITOR:
-			return Value(a_->getConstValue() | b_->getConstValue());
+			return Value(a_->getConstValue(g) | b_->getConstValue(g));
 		case BITAND:
-			return Value(a_->getConstValue() & b_->getConstValue());
+			return Value(a_->getConstValue(g) & b_->getConstValue(g));
 		case COMPLEMENT:
-			return Value(~a_->getConstValue());
+			return Value(~a_->getConstValue(g));
 	}
 	assert(false);
 }
 
-Value FunctionTerm::getValue()
+Value FunctionTerm::getValue(Grounder *g)
 {
 	switch(type_)
 	{
 		case ABS:
-			return Value(abs(a_->getValue()));
+			return Value(abs(a_->getValue(g)));
 		case PLUS:
-			return Value(a_->getValue() + b_->getValue());
+			return Value(a_->getValue(g) + b_->getValue(g));
 		case MINUS:
-			return Value(a_->getValue() - b_->getValue());
+			return Value(a_->getValue(g) - b_->getValue(g));
 		case TIMES:
-			return Value(a_->getValue() * b_->getValue());
+			return Value(a_->getValue(g) * b_->getValue(g));
 		case DIVIDE:
-			return Value(a_->getValue() / b_->getValue());
+			return Value(a_->getValue(g) / b_->getValue(g));
 		case MOD:
-			return Value(a_->getValue() % b_->getValue());
+			return Value(a_->getValue(g) % b_->getValue(g));
 		case BITXOR:
-			return Value(a_->getValue() ^ b_->getValue());
+			return Value(a_->getValue(g) ^ b_->getValue(g));
 		case BITOR:
-			return Value(a_->getValue() | b_->getValue());
+			return Value(a_->getValue(g) | b_->getValue(g));
 		case BITAND:
-			return Value(a_->getValue() & b_->getValue());
+			return Value(a_->getValue(g) & b_->getValue(g));
 		case COMPLEMENT:
-			return Value(~a_->getValue());
+			return Value(~a_->getValue(g));
 	}
 	assert(false);
 }

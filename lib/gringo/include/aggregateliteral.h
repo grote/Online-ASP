@@ -46,14 +46,14 @@ namespace NS_GRINGO
 		virtual void setBounds(Term *lower, Term *upper);
 		virtual void setEqual(Constant *equal);
 		virtual void setEqual(int bound);
-		virtual bool checkBounds(int lower, int upper);
+		virtual bool checkBounds(Grounder *g, int lower, int upper);
 		/**
 		 * \brief This function returns if the aggregate is a fact
 		 * This function will/may only return true if all the literals of
 		 * the aggregate are facts (or if they dont match all). If there is
 		 * at least one unsolved literal the function has to return false.
 		 */
-		virtual bool isFact();
+		virtual bool isFact(Grounder *g);
 		virtual bool solved();
 		ConditionalLiteralVector *getLiterals() const;
 		Term *getLower() const;

@@ -25,7 +25,7 @@
 
 using namespace NS_GRINGO;
 
-FuncSymbolTerm::FuncSymbolTerm(Grounder* g, std::string* s, TermVector* tl) : Term(), name_(s), termList_(tl), grounder_(g)
+FuncSymbolTerm::FuncSymbolTerm(Grounder* g, std::string* s, TermVector* tl) : Term(), name_(s), termList_(tl)
 {
 }
 
@@ -67,35 +67,35 @@ bool FuncSymbolTerm::isComplex()
 	return false;
 }
 
-Value FuncSymbolTerm::getConstValue()
+Value FuncSymbolTerm::getConstValue(Grounder *g)
 {
 	ValueVector args;
 	for (unsigned int i = 0; i != termList_->size(); ++i)
 	{
-		args.push_back((*termList_)[i]->getConstValue());
+		args.push_back((*termList_)[i]->getConstValue(g));
 	}
 
 	FuncSymbol* funcSymbol = new FuncSymbol(name_, args);
 
-	funcSymbol = grounder_->createFuncSymbol(funcSymbol);
+	funcSymbol = g->createFuncSymbol(funcSymbol);
 	return Value(funcSymbol);
 }
 
-Value FuncSymbolTerm::getValue()
+Value FuncSymbolTerm::getValue(Grounder *g)
 {
 	ValueVector args;
 	for (unsigned int i = 0; i != termList_->size(); ++i)
 	{
-		args.push_back((*termList_)[i]->getValue());
+		args.push_back((*termList_)[i]->getValue(g));
 	}
 
 	FuncSymbol* funcSymbol = new FuncSymbol(name_, args);
 
-	funcSymbol = grounder_->createFuncSymbol(funcSymbol);
+	funcSymbol = g->createFuncSymbol(funcSymbol);
 	return Value(funcSymbol);
 }
 
-FuncSymbolTerm::FuncSymbolTerm(const FuncSymbolTerm &f) : name_(f.name_), grounder_(f.grounder_)
+FuncSymbolTerm::FuncSymbolTerm(const FuncSymbolTerm &f) : name_(f.name_)
 {
 	termList_ = new TermVector();
 	for (TermVector::const_iterator i = f.termList_->begin(); i != f.termList_->end(); ++i)

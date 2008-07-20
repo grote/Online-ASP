@@ -72,7 +72,7 @@ void BinderSplitter::evaluate()
 	assert(false);
 }
 
-bool BinderSplitter::isFact()
+bool BinderSplitter::isFact(Grounder *g)
 {
 	return true;
 }

@@ -60,7 +60,7 @@ void AssignmentLiteral::print(std::ostream &out)
 	out << c_ << " = " << t_;
 }
 
-bool AssignmentLiteral::isFact()
+bool AssignmentLiteral::isFact(Grounder *g)
 {
 	return true;
 }
@@ -93,7 +93,7 @@ void AssignmentLiteral::finish()
 
 bool AssignmentLiteral::match(Grounder *g)
 {
-	return c_->getValue() == t_->getValue();
+	return c_->getValue(g) == t_->getValue(g);
 }
 
 void AssignmentLiteral::preprocess(Grounder *g, Expandable *e)
@@ -121,7 +121,7 @@ namespace
 	
 	void IndexedDomainAssign::firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 	{
-		g->g_->setValue(var_, t_->getValue(), binder);
+		g->g_->setValue(var_, t_->getValue(g->g_), binder);
 		status = SuccessfulMatch;
 	}
 

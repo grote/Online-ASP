@@ -168,13 +168,13 @@ bool PredicateLiteral::isFact(const ValueVector &values)
 		return predNode_->isFact(values);
 }
 
-bool PredicateLiteral::isFact()
+bool PredicateLiteral::isFact(Grounder *g)
 {
 	// a precondition for this method is that the predicate is not false!
 	if(predNode_->solved())
 		return true;
 	for(int i = 0; i < (int)variables_->size(); i++)
-		values_[i] = (*variables_)[i]->getValue();
+		values_[i] = (*variables_)[i]->getValue(g);
 	if(getNeg())
 	{
 		assert(!predNode_->isFact(values_));
@@ -222,7 +222,7 @@ bool PredicateLiteral::match(Grounder *g)
 		if(getNeg() && predNode_->hasFacts())
 		{
 			for(int i = 0; i < (int)variables_->size(); i++)
-				values_[i] = (*variables_)[i]->getValue();
+				values_[i] = (*variables_)[i]->getValue(g);
 			return !predNode_->isFact(values_);
 		}
 		else
@@ -233,7 +233,7 @@ bool PredicateLiteral::match(Grounder *g)
 	if(variables_)
 	{
 		for(int i = 0; i < (int)variables_->size(); i++)
-			values_[i] = (*variables_)[i]->getValue();
+			values_[i] = (*variables_)[i]->getValue(g);
 	}
 	match = predNode_->inDomain(values_);
 	if(getNeg())

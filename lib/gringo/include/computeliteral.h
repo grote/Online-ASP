@@ -42,7 +42,7 @@ namespace NS_GRINGO
 		virtual IndexedDomain *createIndexedDomain(VarSet &index);
 		virtual void appendLiteral(Literal *l, ExpansionType type);
 		virtual double heuristicValue();
-		virtual bool isFact();
+		virtual bool isFact(Grounder *g);
 		virtual bool solved();
 		virtual Literal *clone() const;
 		virtual NS_OUTPUT::Object *convert();
