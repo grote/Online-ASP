@@ -26,7 +26,7 @@ namespace NS_GRINGO
 	class RangeLiteral : public Literal
 	{
 	public:
-		RangeLiteral(Constant *var, Term *lower, Term *upper);
+		RangeLiteral(Variable *var, Term *lower, Term *upper);
 		RangeLiteral(const RangeLiteral &r);
 		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
@@ -46,7 +46,7 @@ namespace NS_GRINGO
 		virtual double heuristicValue();
 		virtual ~RangeLiteral();
 	protected:
-		Constant *var_;
+		Variable *var_;
 		Term *lower_;
 		Term *upper_;
 	};

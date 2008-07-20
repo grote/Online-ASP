@@ -17,7 +17,7 @@
 
 #include "assignmentliteral.h"
 #include "term.h"
-#include "constant.h"
+#include "variable.h"
 #include "value.h"
 #include "indexeddomain.h"
 #include "dlvgrounder.h"
@@ -27,7 +27,7 @@
 
 using namespace NS_GRINGO;
 
-AssignmentLiteral::AssignmentLiteral(Constant *c, Term *t) : Literal(), c_(c), t_(t)
+AssignmentLiteral::AssignmentLiteral(Variable *c, Term *t) : Literal(), c_(c), t_(t)
 {
 
 }
@@ -143,7 +143,7 @@ IndexedDomain *AssignmentLiteral::createIndexedDomain(VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 }
 
-AssignmentLiteral::AssignmentLiteral(const AssignmentLiteral &r) : c_((Constant*)r.c_->clone()), t_(r.t_->clone())
+AssignmentLiteral::AssignmentLiteral(const AssignmentLiteral &r) : c_(static_cast<Variable*>(r.c_->clone())), t_(r.t_->clone())
 {
 }
 

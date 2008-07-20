@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef CONSTANT_H
-#define CONSTANT_H
+#ifndef VARIABLE_H
+#define VARIABLE_H
 
 #include <gringo.h>
 #include <term.h>
@@ -24,24 +24,25 @@
 
 namespace NS_GRINGO
 {
-	class Constant : public Term
+	class Variable : public Term
 	{
 	public:
-		Constant(int value);
-		Constant(std::string *value);
-		Constant(const Constant &c);
+		Variable(Grounder *g, std::string *id);
+		Variable(const Variable &c);
 		virtual void print(std::ostream &out);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual Value getConstValue(Grounder *g);
 		virtual Value getValue(Grounder *g);
+		int getUID();
 		virtual Term* clone() const;
 		virtual bool unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
 			       	ValueVector& boundSubstitution, ValueVector& freeSubstitutions) const;
- 		virtual ~Constant();
+ 		virtual ~Variable();
 	protected:
-		Value value_;
+		std::string *id_;
+		int uid_;
 	};
 }
 

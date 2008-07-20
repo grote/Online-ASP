@@ -44,7 +44,7 @@ namespace NS_GRINGO
 		virtual void appendLiteral(Literal *l, ExpansionType type);
 		virtual double heuristicValue();
 		virtual void setBounds(Term *lower, Term *upper);
-		virtual void setEqual(Constant *equal);
+		virtual void setEqual(Variable *equal);
 		virtual void setEqual(int bound);
 		virtual bool checkBounds(Grounder *g, int lower, int upper);
 		/**
@@ -63,7 +63,7 @@ namespace NS_GRINGO
 		ConditionalLiteralVector *literals_;
 		Term *lower_;
 		Term *upper_;
-		Constant *equal_;
+		Variable *equal_;
 		bool fact_;
 	public:
 		int lowerBound_;

@@ -19,7 +19,7 @@
 #include "value.h"
 #include "grounder.h"
 #include "expandable.h"
-#include "constant.h"
+#include "variable.h"
 #include "rangeliteral.h"
 
 using namespace NS_GRINGO;
@@ -43,8 +43,8 @@ bool RangeTerm::isComplex()
 void RangeTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 {
 	std::string *var = g->createUniqueVar();
-	e->appendLiteral(new RangeLiteral(new Constant(Constant::VAR, g, var), lower_, upper_), Expandable::RANGETERM);
-	p = new Constant(Constant::VAR, g, var);
+	e->appendLiteral(new RangeLiteral(new Variable(g, var), lower_, upper_), Expandable::RANGETERM);
+	p = new Variable(g, var);
 	lower_ = 0;
 	upper_ = 0;
 	delete this;

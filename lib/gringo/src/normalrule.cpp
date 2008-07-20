@@ -28,7 +28,7 @@
 #include "output.h"
 #include "gringoexception.h"
 #include "indexeddomain.h"
-#include "constant.h"
+#include "variable.h"
 
 using namespace NS_GRINGO;
 
@@ -435,10 +435,10 @@ namespace
 	class LambdaLiteral : public Literal
 	{
 	public:
-		LambdaLiteral(Constant *c) : c_(c)
+		LambdaLiteral(Variable *c) : c_(c)
 		{
 		}
-		LambdaLiteral(const LambdaLiteral &l) : c_(static_cast<Constant*>(l.c_->clone()))
+		LambdaLiteral(const LambdaLiteral &l) : c_(static_cast<Variable*>(l.c_->clone()))
 		{
 		}
 		void getVars(VarSet &vars) const
@@ -531,16 +531,16 @@ namespace
 			delete c_;
 		}
 	private:
-		Constant *c_;
+		Variable *c_;
 	};
 
 	class DeltaLiteral : public Literal
 	{
 	public:
-		DeltaLiteral(Constant *c) : c_(c)
+		DeltaLiteral(Variable *c) : c_(c)
 		{
 		}
-		DeltaLiteral(const DeltaLiteral &l) : c_(static_cast<Constant*>(l.c_->clone()))
+		DeltaLiteral(const DeltaLiteral &l) : c_(static_cast<Variable*>(l.c_->clone()))
 		{
 		}
 		void getVars(VarSet &vars) const
@@ -630,7 +630,7 @@ namespace
 			delete c_;
 		}
 	private:
-		Constant *c_;
+		Variable *c_;
 	};
 }
 
@@ -642,10 +642,10 @@ void NormalRule::setIncPart(Grounder *g, IncPart part, std::string *var)
 			ground_ = 2;
 			break;
 		case LAMBDA:
-			appendLiteral(new LambdaLiteral(new Constant(Constant::VAR, g, var)), Expandable::COMPLEXTERM);
+			appendLiteral(new LambdaLiteral(new Variable(g, var)), Expandable::COMPLEXTERM);
 			break;
 		case DELTA:
-			appendLiteral(new DeltaLiteral(new Constant(Constant::VAR, g, var)), Expandable::COMPLEXTERM);
+			appendLiteral(new DeltaLiteral(new Variable(g, var)), Expandable::COMPLEXTERM);
 			break;
 		default:
 			break;

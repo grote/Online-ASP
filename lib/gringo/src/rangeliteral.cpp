@@ -16,7 +16,7 @@
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "rangeliteral.h"
-#include "constant.h"
+#include "variable.h"
 #include "indexeddomain.h"
 #include "dlvgrounder.h"
 #include "grounder.h"
@@ -25,7 +25,7 @@
 
 using namespace NS_GRINGO;
 
-RangeLiteral::RangeLiteral(Constant *var, Term *lower, Term *upper) : Literal(), var_(var), lower_(lower), upper_(upper)
+RangeLiteral::RangeLiteral(Variable *var, Term *lower, Term *upper) : Literal(), var_(var), lower_(lower), upper_(upper)
 {
 }
 
@@ -167,7 +167,7 @@ NS_OUTPUT::Object *RangeLiteral::convert()
 	assert(false);
 }
 
-RangeLiteral::RangeLiteral(const RangeLiteral &r) : var_((Constant*)r.var_->clone()), lower_(r.lower_->clone()), upper_(r.upper_->clone())
+RangeLiteral::RangeLiteral(const RangeLiteral &r) : var_(static_cast<Variable*>(r.var_->clone())), lower_(r.lower_->clone()), upper_(r.upper_->clone())
 {
 }
 

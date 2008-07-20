@@ -26,7 +26,7 @@ namespace NS_GRINGO
 	class AssignmentLiteral : public Literal
 	{
 	public:
-		AssignmentLiteral(Constant *c, Term *t);
+		AssignmentLiteral(Variable *c, Term *t);
 		AssignmentLiteral(const AssignmentLiteral &r);
 		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
@@ -46,7 +46,7 @@ namespace NS_GRINGO
 		virtual double heuristicValue();
 		virtual ~AssignmentLiteral();
 	protected:
-		Constant *c_;
+		Variable *c_;
 		Term     *t_;
 	};
 }

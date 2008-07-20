@@ -20,35 +20,16 @@
 
 using namespace NS_GRINGO;
 		
-Constant::Constant(int value) : Term(), type_(NUM), value_(value), uid_(0)
+Constant::Constant(int value) : value_(value)
 {
 }
 
-Constant::Constant(ConstantType type, Grounder *g, std::string *value) : Term(), type_(type), uid_(type == VAR ? g->registerVar(value) : 0)
+Constant::Constant(std::string *value) : value_(value)
 {
-	switch(type_)
-	{
-		case ID:
-		case VAR:
-		{
-			value_.type_        = Value::STRING;
-			value_.stringValue_ = value;
-			break;
-		}
-		case NUM: 
-		{
-			value_.type_     = Value::INT;
-			value_.intValue_ = atol(value->c_str());
-			delete value;
-			break;
-		}
-	}
 }
 
 void Constant::getVars(VarSet &vars) const
 {
-	if(type_ == VAR)
-		vars.insert(uid_);
 }
 
 bool Constant::isComplex()
@@ -58,47 +39,20 @@ bool Constant::isComplex()
 
 void Constant::print(std::ostream &out)
 {
-	switch(type_)
-	{
-		case VAR:
-		case ID:
-		{
-			out << *(value_.stringValue_);
-			break;
-		}
-		case NUM: 
-		{
-			out << value_.intValue_;
-			break;
-		}
-	}
+	out << value_;
 }
 
 Value Constant::getConstValue(Grounder *g)
 {
-	switch(type_)
-	{
-		case VAR:
-			assert(false);
-		case ID:
-			return g->getConstValue(value_.stringValue_);
-		case NUM:
-			return value_;
-	}
-	assert(false);
-}
-
-Value Constant::getValue(Grounder *g)
-{
-	if(type_ == VAR)
-		return g->getValue(uid_);
+	if(value_.type_ == Value::STRING)
+		return g->getConstValue(value_.stringValue_);
 	else
 		return value_;
 }
 
-int Constant::getUID()
+Value Constant::getValue(Grounder *g)
 {
-	return uid_;
+	return value_;
 }
 
 Constant::~Constant()
@@ -107,15 +61,11 @@ Constant::~Constant()
 
 void Constant::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 {
-	if(type_ == ID)
-	{
+	if(value_.type_ == Value::STRING)
 		value_ = g->getConstValue(value_.stringValue_);
-		if(value_.type_ == Value::INT)
-			type_ = NUM;
-	}
 }
 
-Constant::Constant(const Constant &c) : type_(c.type_), value_(c.value_), uid_(c.uid_)
+Constant::Constant(const Constant &c) :  value_(c.value_)
 {
 }
 
@@ -127,50 +77,5 @@ Term* Constant::clone() const
 bool Constant::unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
 			       	ValueVector& boundSubstitutions, ValueVector& freeSubstitutions) const
 {
-	switch(type_)
-	{
-		case VAR:
-			{
-				for (unsigned int i = 0; i < boundVariables.size(); ++i)
-				{
-					//if variable is bound
-					if (boundVariables[i] == uid_)
-					{
-
-						// variable is not set, then set, else compare
-						if (boundSubstitutions[i].type_ == Value::UNDEF)
-						{
-							boundSubstitutions[i] = t;
-							return true;
-						}
-						else
-							return boundSubstitutions[i] == t;
-					}
-				}
-				for (unsigned int i = 0; i < freeVariables.size(); ++i)
-				{
-					if (freeVariables[i] == uid_)
-					{
-						if (freeSubstitutions[i].type_ == Value::UNDEF)
-						{
-							freeSubstitutions[i] = t;
-							return true;
-						}
-						else
-							return freeSubstitutions[i] == t;
-					}
-				}
-				assert(false);
-				break;
-			}
-		case ID:
-		case NUM:
-			{
-				return t == value_;
-			}	
-		default: 
-		{
-			assert(false);
-		}
-	}
+	return t == value_;
 }

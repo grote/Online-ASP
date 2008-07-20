@@ -85,6 +85,7 @@ namespace NS_GRINGO
 	typedef std::vector<int> VarVector;
 	typedef std::vector<int> IntVector;
 
+	class Variable;
 	class Constant;
 	typedef std::vector<std::string*> StringVector;
 	typedef std::vector<Constant*> ConstantVector;

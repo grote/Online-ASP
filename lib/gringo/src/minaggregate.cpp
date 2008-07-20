@@ -23,7 +23,7 @@
 #include "dlvgrounder.h"
 #include "grounder.h"
 #include "indexeddomain.h"
-#include "constant.h"
+#include "variable.h"
 
 using namespace NS_GRINGO;
 

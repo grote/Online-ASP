@@ -17,7 +17,7 @@
 
 #include "grounder.h"
 #include "statement.h"
-#include "constant.h"
+#include "variable.h"
 #include "predicateliteral.h"
 #include "normalrule.h"
 #include "statementdependencygraph.h"
@@ -107,7 +107,7 @@ void Grounder::addDomains()
 					// construct predicate literal
 					TermVector *tv = new TermVector();
 					for(StringVector::iterator vars = dp.second->begin(); vars != dp.second->end(); vars++)
-						tv->push_back(new Constant(Constant::VAR, this, *vars));
+						tv->push_back(new Variable(this, *vars));
 					PredicateLiteral *pred = new PredicateLiteral(this, dp.first, tv);
 					rule->addDomain(pred);
 					break;
@@ -409,8 +409,8 @@ void Grounder::addTrueNegation(std::string *id, int arity)
 		{
 			// in theory existing vars could be reused
 			std::string *var = createUniqueVar();
-			tp->push_back(new Constant(Constant::VAR, this, var));
-			tn->push_back(new Constant(Constant::VAR, this, var));
+			tp->push_back(new Variable(this, var));
+			tn->push_back(new Variable(this, var));
 		}
 		std::string *pos = createString(id->substr(1));
 		PredicateLiteral *p = new PredicateLiteral(this, pos, tp);

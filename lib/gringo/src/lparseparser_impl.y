@@ -44,6 +44,7 @@
 // terms
 #include "term.h"
 #include "constant.h"
+#include "variable.h"
 #include "functionterm.h"
 #include "funcsymbolterm.h"
 #include "rangeterm.h"
@@ -244,7 +245,7 @@ conditional_list(res) ::= .                                              { res =
 body_literal(res) ::= body_atom(atom).                     { res = atom; }
 body_literal(res) ::= NOT body_atom(atom).                 { res = atom; res->setNeg(true); }
 body_literal(res) ::= relation_literal(rel).               { res = rel; }
-body_literal(res) ::= VARIABLE(id) ASSIGN aggregate(aggr). { res = aggr; aggr->setEqual(new Constant(Constant::VAR, GROUNDER, STRING(id))); }
+body_literal(res) ::= VARIABLE(id) ASSIGN aggregate(aggr). { res = aggr; aggr->setEqual(new Variable(GROUNDER, STRING(id))); }
 body_literal(res) ::= aggregate_atom(atom).                { res = atom; }
 
 constraint_literal(res) ::= constraint_atom(atom).     { res = atom; }
@@ -253,7 +254,7 @@ constraint_literal(res) ::= NOT constraint_atom(atom). { res = atom; res->setNeg
 body_atom(res) ::= predicate(pred) conditional_list(list). { res = ConjunctionAggregate::createBody(pred, list); }
 
 // assignment literals are not realy relation literals but they are used like them
-relation_literal(res) ::= VARIABLE(a) ASSIGN term(b). { res = new AssignmentLiteral(new Constant(Constant::VAR, GROUNDER, STRING(a)), b); }
+relation_literal(res) ::= VARIABLE(a) ASSIGN term(b). { res = new AssignmentLiteral(new Variable(GROUNDER, STRING(a)), b); }
 relation_literal(res) ::= term(a) EQ term(b).         { res = new RelationLiteral(RelationLiteral::EQ, a, b); }
 relation_literal(res) ::= term(a) NE term(b).         { res = new RelationLiteral(RelationLiteral::NE, a, b); }
 relation_literal(res) ::= term(a) GT term(b).         { res = new RelationLiteral(RelationLiteral::GT, a, b); }
@@ -284,9 +285,9 @@ aggregate_atom(res) ::= aggregate(aggr).                 { res = aggr; aggr->set
 termlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(term); }
 termlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }
 
-term(res) ::= VARIABLE(x).   { res = new Constant(Constant::VAR, GROUNDER, STRING(x)); }
-term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }
-term(res) ::= STRING(x).     { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }
+term(res) ::= VARIABLE(x).   { res = new Variable(GROUNDER, STRING(x)); }
+term(res) ::= IDENTIFIER(x). { res = new Constant(STRING(x)); }
+term(res) ::= STRING(x).     { res = new Constant(STRING(x)); }
 term(res) ::= NUMBER(x).     { res = new Constant(atol(x->c_str())); DELETE_PTR(x); }
 term(res) ::= LPARA term(a) RPARA.     { res = a; }
 term(res) ::= term(a) MOD term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
@@ -307,8 +308,8 @@ term(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new FuncSymbolT
 const_termlist(res) ::= const_termlist(list) COMMA const_term(term). { res = list; res->push_back(term); }
 const_termlist(res) ::= const_term(term).                            { res = new TermVector(); res->push_back(term); }
 
-const_term(res) ::= IDENTIFIER(x). { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }
-const_term(res) ::= STRING(x).     { res = new Constant(Constant::ID, GROUNDER, STRING(x)); }
+const_term(res) ::= IDENTIFIER(x). { res = new Constant(STRING(x)); }
+const_term(res) ::= STRING(x).     { res = new Constant(STRING(x)); }
 const_term(res) ::= NUMBER(x).     { res = new Constant(atol(x->c_str())); DELETE_PTR(x); }
 const_term(res) ::= LPARA const_term(a) RPARA.           { res = a; }
 const_term(res) ::= const_term(a) MOD const_term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }

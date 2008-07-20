@@ -20,7 +20,7 @@
 #include "grounder.h"
 #include "funcsymbol.h"
 #include "assignmentliteral.h"
-#include "constant.h"
+#include "variable.h"
 #include "expandable.h"
 
 using namespace NS_GRINGO;
@@ -53,8 +53,8 @@ void FuncSymbolTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e
 		if((*it)->isComplex())
 		{
 			std::string *var = g->createUniqueVar();
-			e->appendLiteral(new AssignmentLiteral(new Constant(Constant::VAR, g, var), *it), Expandable::COMPLEXTERM);
-			*it = new Constant(Constant::VAR, g, var);
+			e->appendLiteral(new AssignmentLiteral(new Variable(g, var), *it), Expandable::COMPLEXTERM);
+			*it = new Variable(g, var);
 		}
 }
 

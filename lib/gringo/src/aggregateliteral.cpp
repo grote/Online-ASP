@@ -27,7 +27,7 @@
 #include "indexeddomain.h"
 #include "output.h"
 #include "evaluator.h"
-#include "constant.h"
+#include "variable.h"
 #include "dlvgrounder.h"
 
 using namespace NS_GRINGO;
@@ -52,7 +52,7 @@ void AggregateLiteral::setBounds(Term *lower, Term *upper)
 	upper_ = upper;
 }
 
-void AggregateLiteral::setEqual(Constant *equal)
+void AggregateLiteral::setEqual(Variable *equal)
 {
 	equal_ = equal;
 	lower_ = equal_->clone();
@@ -269,7 +269,7 @@ IndexedDomain *AggregateLiteral::createIndexedDomain(VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 }
 
-AggregateLiteral::AggregateLiteral(const AggregateLiteral &a) : lower_(a.lower_ ? a.lower_->clone() : 0), upper_(a.upper_ ? a.upper_->clone() : 0), equal_(a.equal_ ? static_cast<Constant*>(equal_->clone()) : 0)
+AggregateLiteral::AggregateLiteral(const AggregateLiteral &a) : lower_(a.lower_ ? a.lower_->clone() : 0), upper_(a.upper_ ? a.upper_->clone() : 0), equal_(a.equal_ ? static_cast<Variable*>(equal_->clone()) : 0)
 {
 	if(a.literals_)
 	{

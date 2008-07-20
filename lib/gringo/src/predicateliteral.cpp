@@ -22,7 +22,7 @@
 #include "assignmentliteral.h"
 #include "relationliteral.h"
 #include "grounder.h"
-#include "constant.h"
+#include "variable.h"
 #include "term.h"
 #include "domain.h"
 #include "rangeterm.h"
@@ -317,8 +317,8 @@ void PredicateLiteral::preprocess(Grounder *g, Expandable *e)
 			if((*it)->isComplex())
 			{
 				std::string *var = g->createUniqueVar();
-				e->appendLiteral(new AssignmentLiteral(new Constant(Constant::VAR, g, var), *it), Expandable::COMPLEXTERM);
-				*it = new Constant(Constant::VAR, g, var);
+				e->appendLiteral(new AssignmentLiteral(new Variable(g, var), *it), Expandable::COMPLEXTERM);
+				*it = new Variable(g, var);
 			}
 	}
 	if((*id_)[0] == '-')
