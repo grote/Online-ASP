@@ -111,10 +111,10 @@ bool Program::check(Grounder *g)
 			StatementVector::iterator it = ok;
 			for(it++; it != rules_.end(); it++)
 			{
-				// maybe we get new domain predicates so normalizing has to be restarted
 				if((*it)->check(free))
 				{
 					std::swap(*ok, *it);
+					(*ok++)->finish();
 					break;
 				}
 			}

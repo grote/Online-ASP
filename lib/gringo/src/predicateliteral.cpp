@@ -101,7 +101,7 @@ void PredicateLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 {
 	VarSet vars, empty;
 	getVars(vars);
-	if(head || getNeg())
+	if(head || getNeg() || !predNode_->complete())
 		dg->createNode(vars, empty);
 	else
 		dg->createNode(empty, vars);
