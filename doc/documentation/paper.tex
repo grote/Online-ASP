@@ -35,7 +35,14 @@ It was developed by Roland Kaminski and is orientated on the ideas of gringo1.0.
 The goal of this work is to give an overview of the features supported by gringo2.0. First, the general restrictions to the input language are stated. A broad set of potentialities for writing encodings for logic programs exists. Currently, no other grounder support such a rich featured, less restricted input language.
 There exist several output formats which can be used be different grounders and even a human readable format for debugging purposes.
 Gringo also has an internal interface to the solver clasp \cite{gekanesc07b}, so the output can directly by parsed to the solver and answersets can be computed.
-The syntax of gringo2.0 can be found in the appendix \ref{appendix}.
+Furthermore gringo can be used with clasp incrementally. Detailed information about incremental solving can be found here \cite{IncrementalASP} 
+The syntax of the gringo2.0 input language can be found in the appendix \ref{appendix}.
+
+\section{$\lambda$-Restriction}
+\label{domainrestricted}
+Gringo verifies that the input program is $\lambda$-
+restricted \cite{gringopaper}, so that the existence of a finite equivalent ground instantiation is guaranteed. The definition of lambda restrictedness can be found in \cite{gringopaper} and was expanded for aggregates and disjunctions.
+
 
 \section{Interface}
 Gringo can be started on the command line and has some parameters that can be useful.
@@ -65,7 +72,7 @@ For example:
 \begin{verbatim}
  gringo -c --const n=5 -- --supp-models 3
 \end{verbatim}
-Furthermore all restriction on smodels output al hold as clasps internal interface currently reads smodels format.
+Furthermore all restriction on smodels output hold as clasps internal interface currently reads smodels format.
 \paragraph{-p}
 Parameter ``p'' invokes the plain output method, so the output is printed in human readable format, which is also the input format for gringo.
 \paragraph{-g X}
@@ -270,11 +277,11 @@ The procedure of writing a logic program shall now be explained with a little ex
 We want to write a problem encoding for the 3-colorability problem of graph coloring.
 Given an arbitraty graph, no two connected edges may have the same color.
 \newline
-Usually you start with the non instance domains, like what colors we do have.
+Usually you start with the non instance domains, in our example the colors we use.
 \begin{verbatim}
  color(red). color(green). color(blue).
 \end{verbatim}
-After that we have to color the vertices, but we must give attention that each vertex only has one color.
+After that, we have to color the vertices, but we must give attention that each vertex has only one color.
 We can do this by simply saying that a vertex is colored with one color X, and that the same vertex does not have another color Y.
 \begin{verbatim}
  colored(V,C) :- not colored(V,D), C != D, color(C;D), vertex(V).
@@ -298,10 +305,11 @@ We just need to define several vertices and edges that do connect the vertices.
  edge(3,1). edge(4,1). edge(3,2).
 \end{verbatim}
 
-If we give the problem description and instance to the grounder, it will generate a variable free version of the problem. This can then be solved by a solver and in the answer sets of the solver the colored predicate states the color of a valid coloring of all vertices.
+If we give the problem description and instance to the grounder, it will generate a variable free version of the problem. This can then be solved by a solver and in the answer sets of the solver the ``colored'' predicate states a valid coloring of all vertices.
 \newline
 To ease the process writing logic programs some features in the input syntax were introduced and are now explained in detail.
 \subsection{Features}
+The extended features of the input syntax are now explained in detail. For a full syntax description in EBNF see appendix (\ref{appendix}).
 \paragraph{Expanding Terms}
 \subparagraph{Range Operator}
 To define several atoms that stretch on one or more parameters over a certain range, two dots can used to express an increasing integer range.
@@ -489,11 +497,11 @@ The statement can be weighted or not, therefore weights can be omitted in the fo
 \end{verbatim}
 The maximize statement uses the keyword ``maximize'' instead.
 
-\section{$\lambda$-Restriction}
-\label{domainrestricted}
-Gringo verifies that the input program is $\lambda$-
-restricted \cite{gringopaper}, so that the existence of a finite equivalent ground instantiation is guaranteed. The definition of lambda restrictedness can be found in \cite{gringopaper} and was expanded for aggregates and disjunctions.
-
+\section{Compiling Gringo}
+For compiling gringo, a binary version of ``re2c'' is needed to compile the lexer and the parser.
+TODO: What about lemon.
+As the build environment ``cmake'' is used.
+TODO: How to build gringo, clingo, iclingo etc...
 
 \section{Examples}
 In this section come encodings for common problems are presented and explained.
@@ -564,6 +572,7 @@ TODO: Official (non internal wiki) link to the instances.
 \input{benchmark2.result}
 \appendixname
 \begin{appendix}
+\section{EBNF Syntax}
 \label{appendix}
 \input{appendix}
 \end{appendix}
