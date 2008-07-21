@@ -260,6 +260,47 @@ Is has the syntax
 $number$ is the number of models that shall be computed by the answerset solver and can be omitted. If it is zero, no restriction to the number of models is applied.
 All positive atoms in the compute statement must be in the computed models, and all negative atoms do not have to be in the models of the program.
 The compute statement is solver dependent and supported by every solver.
+
+\subsection{How to write a logic program}
+Writing a logic program to solve a problem is rather describing a problem than describing an algorithm to solve a problem.
+Therefore the problem must be encoded as a set of rules.
+Typically these are divided into a problem description and an instance of the problem.
+The solution to a problem can then be read from answer sets of the rules.
+The procedure of writing a logic program shall now be explained with a little example.
+We want to write a problem encoding for the 3-colorability problem of graph coloring.
+Given an arbitraty graph, no two connected edges may have the same color.
+\newline
+Usually you start with the non instance domains, like what colors we do have.
+\begin{verbatim}
+ color(red). color(green). color(blue).
+\end{verbatim}
+After that we have to color the vertices, but we must give attention that each vertex only has one color.
+We can do this by simply saying that a vertex is colored with one color X, and that the same vertex does not have another color Y.
+\begin{verbatim}
+ colored(V,C) :- not colored(V,D), C != D, color(C;D), vertex(V).
+\end{verbatim}
+As you can see, you have to give the domain of the variables in the rule.
+The variable V is used for vertices and the variables C and D are used for colors.
+After every vertex now has a color we would get all possible solutions of all vertices colorfully painted.
+We now need to restrict our solutions again by saying that two vertices that are connected by an edge should not have the same color.
+We can do this by using an integrity constraint.
+An integrity constraint is a rule with an empty head, and if an assignment of variables fulfills the body, the assignment is not a solution of our problem.
+\begin{verbatim}
+ :- edge(V,U), colored(V,C), colored(U,C), vertex(V;U), color(C).
+\end{verbatim}
+Here we have the edge between two vertices V and U, and if both are colored with the same color C the assignment is not a solution to our problem.
+\newline
+We have finally written our problem description, all we need now is a problem instance. This step is fairly simple.
+We just need to define several vertices and edges that do connect the vertices.
+\begin{verbatim}
+ vertices(1..4).
+ edge(1,2). edge(1,4). edge(2,4).
+ edge(3,1). edge(4,1). edge(3,2).
+\end{verbatim}
+
+If we give the problem description and instance to the grounder, it will generate a variable free version of the problem. This can then be solved by a solver and in the answer sets of the solver the colored predicate states the color of a valid coloring of all vertices.
+\newline
+To ease the process writing logic programs some features in the input syntax were introduced and are now explained in detail.
 \subsection{Features}
 \paragraph{Expanding Terms}
 \subparagraph{Range Operator}
@@ -293,6 +334,21 @@ results in
  a :- {b(1), b(2), b(3)}.
 \end{verbatim}
 
+\paragraph{Expander :}
+With the expander ``:'' a domain for an atom can be set.
+On the left side of the operator an atom with variables is expected and on the right side the domain for that variables is given.
+In the head, the atoms get connected via a disjunction, in the body they get connected via a conjunction, so no new rules are created with this operator.
+\begin{verbatim}
+ a(X,Y) : b(X) : c(Y) :- d(X) : e(X).
+ b(1..2).
+ c(3).
+ e(a;b;c).
+\end{verbatim}
+would become
+\begin{verbatim}
+ a(1,3) | a(2,3) :- d(a), d(b), d(c).
+\end{verbatim}
+This operator can be used in aggregates to create a comma separated list of atoms.
 
 \paragraph{Conjunctor ;}
 The conjunctor ``;'' will create a conjunction of the its elements.
@@ -320,22 +376,6 @@ Results in
  p(1).
  p(2).
 \end{verbatim}
-
-\paragraph{Expander :}
-With the expander ``:'' a domain for an atom can be set.
-On the left side of the operator an atom with variables is expected and on the right side the domain for that variables is given.
-In the head, the atoms get connected via a disjunction, in the body they get connected via a conjunction, so no new rules are created with this operator.
-\begin{verbatim}
- a(X,Y) : b(X) : c(Y) :- d(X) : e(X).
- b(1..2).
- c(3).
- e(a;b;c).
-\end{verbatim}
-would become
-\begin{verbatim}
- a(1,3) | a(2,3) :- d(a), d(b), d(c).
-\end{verbatim}
-This operator can be used in aggregates to create a comma separated list of atoms.
 
 \paragraph{Arithmetic Expressions}
 The build in arithmetics can be used for integer arithmetic.
@@ -452,7 +492,7 @@ The maximize statement uses the keyword ``maximize'' instead.
 \section{$\lambda$-Restriction}
 \label{domainrestricted}
 Gringo verifies that the input program is $\lambda$-
-restricted \cite{gringopaper}, so that the existence of a finite equivalent ground instantiation is guaranteed.
+restricted \cite{gringopaper}, so that the existence of a finite equivalent ground instantiation is guaranteed. The definition of lambda restrictedness can be found in \cite{gringopaper} and was expanded for aggregates and disjunctions.
 
 
 \section{Examples}
