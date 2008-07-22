@@ -25,7 +25,8 @@ namespace NS_GRINGO
 	class LDG
 	{
 		friend class LDGBuilder;
-	private:
+	//private:
+	public:
 		struct LiteralNode;
 		struct VarNode;
 

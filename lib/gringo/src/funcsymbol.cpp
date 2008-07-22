@@ -49,7 +49,7 @@ size_t FuncSymbol::getHash() const
 	Value::VectorHash t;
 	hash = t(args_);
 
-	hash = (hash << 4) + int(name_);
+	hash = (hash << 4) + size_t(name_);
 	if((x = hash & 0xF0000000L) != 0)
 	{
 		hash ^= (x >> 24);

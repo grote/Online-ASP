@@ -62,7 +62,8 @@ if [[ $kdev == 1 ]]; then
 fi
 
 if [[ $mingw == 1 ]]; then
-	mkdir -p win32
+	mkdir -p win32/bin
+	gcc -o win32/bin/lemon ../lib/gringo/src/lemon.c
 	cd win32
 	cmake $options -D CMAKE_TOOLCHAIN_FILE=../../mingw.cmake ../..
 	cd ..

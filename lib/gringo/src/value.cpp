@@ -87,9 +87,9 @@ int Value::compare(const Value &b) const
 		case INT:
 			return intValue_ - b.intValue_;
 		case STRING:
-			return (int)stringValue_ - (int)b.stringValue_;
+			return stringValue_ - b.stringValue_ == 0 ? 0 : (stringValue_ - b.stringValue_ > 0 ? 1 : -1);
 		case FUNCSYMBOL:
-			return (int)funcSymbol_ - (int)b.funcSymbol_;
+			return funcSymbol_ - b.funcSymbol_ == 0 ? 0 : (funcSymbol_ - b.funcSymbol_ > 0 ? 1 : -1);
 	}
 	assert(false);
 }

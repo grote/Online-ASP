@@ -24,7 +24,7 @@ MACRO(LEMON NAME SRC DST)
 	ADD_CUSTOM_COMMAND(
 		OUTPUT ${DST}/${NAME}.cpp ${DST}/${NAME}.h
 		COMMAND cp ${SRC}/lempar.c ${DST}/lempar.c
-		COMMAND lemon -q ${SRC}/${NAME}.y
+		COMMAND ${EXECUTABLE_OUTPUT_PATH}/lemon -q ${SRC}/${NAME}.y
 		COMMAND rm ${DST}/lempar.c
 		COMMAND mv ${SRC}/${NAME}.c ${DST}/${NAME}.cpp
 		COMMAND mv ${SRC}/${NAME}.h ${DST}/${NAME}.h
