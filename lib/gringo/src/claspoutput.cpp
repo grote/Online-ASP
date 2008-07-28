@@ -175,6 +175,7 @@ void IClaspOutput::reinitialize()
 		b_->setCompute(incUid_, false);
 	// create a new uid
 	incUid_ = newUid();
+	b_->setAtomName(incUid_, "");
 	IntVector empty, head;
 	head.push_back(incUid_);
 	printChoiceRule(head, empty, empty);
