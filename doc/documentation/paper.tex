@@ -30,11 +30,11 @@ First, a grounder translates a non-ground problem description into a proposition
 \caption{Architecture of an ASP System}
 \label{fig:ASP}
 \end{figure}
-Gringo2.0 is a state of the art and has many features that makes writing logic programs easy.
+gringo2.0 is a state of the art grounder and has many features that makes writing logic programs easy.
 It was developed by Roland Kaminski and is orientated on the ideas of gringo1.0.
-The goal of this work is to give an overview of the features supported by gringo2.0. First, the general restrictions to the input language are stated. A broad set of potentialities for writing encodings for logic programs exists. Currently, no other grounder support such a rich featured, less restricted input language.
-There exist several output formats which can be used be different grounders and even a human readable format for debugging purposes.
-Gringo also has an internal interface to the solver clasp \cite{gekanesc07b}, so the output can directly by parsed to the solver and answersets can be computed.
+The goal of this work is to give an overview of the features supported by gringo2.0. First, the general restrictions to the input language are stated. A broad set of potentialities for writing encodings for logic programs exists. Currently, no other grounder supports such a rich featured, less restricted input language.
+gringo2.0 supports several output formats and even a human readable format for debugging purposes.
+It also has an internal interface to the solver clasp \cite{gekanesc07b}, so the output can directly by parsed to the solver and answersets can be computed.
 Furthermore gringo can be used with clasp incrementally. Detailed information about incremental solving can be found here \cite{IncrementalASP} 
 The syntax of the gringo2.0 input language can be found in the appendix \ref{appendix}.
 
@@ -46,11 +46,11 @@ restricted \cite{gringopaper}, so that the existence of a finite equivalent grou
 
 \section{Interface}
 Gringo can be started on the command line and has some parameters that can be useful.
-The first parameters are gringo parameters and and arbritary number of filenames of the logic program.
+The first parameters are gringo specific parameters and any arbritary number of filenames of the logic program.
 \paragraph{--help}
 Gives a short overview of all parameters.
 \paragraph{--const}
-You can set the value of constants defined in you logic program via the command line of gringo.
+You can set the value of constants defined in your logic program via the command line of gringo.
 After the parameter ``--const'' you have to give the name of the constant you want to set followed by a ``='' and the value of that constant. The integer value can even be an arithmetic expression. For example:
 \begin{verbatim}
  gringo --const n=5*2
@@ -75,8 +75,8 @@ For example:
 Furthermore all restriction on smodels output hold as clasps internal interface currently reads smodels format.
 \paragraph{-p}
 Parameter ``p'' invokes the plain output method, so the output is printed in human readable format, which is also the input format for gringo.
-\paragraph{-g X}
-This parameter invokes the new output format for the intermediate languages ASPils \cite{atleastthisreferenceishouldgive}. The X can be any number from $1$ to $7$ to refer to one of the following normalforms (Simple=1, SModels=2, DisjunctiveLogicProgram=3, CModels=4, CModelsExtended=5, DLV=6, Conglomeration=7). If no normalform is specified, conglomeration(7)  is assumed.
+\paragraph{-g [1-7]}
+This parameter invokes the new output format for the intermediate languages ASPils \cite{atleastthisreferenceishouldgive}. The optional number can range from $1$ to $7$ and refers to one of the following normalforms (Simple=1, SModels=2, DisjunctiveLogicProgram=3, CModels=4, CModelsExtended=5, DLV=6, Conglomeration=7). If no normalform is specified, conglomeration(7)  is assumed.
 
 \paragraph{default parameters}
 The default parameter is ``-l'' for smodels output.
@@ -97,16 +97,16 @@ An atom is a predicate with a name. The name can consist of letters, digits and 
 It has to start with a lower case letter or an underscore.
 An atom can have several parameters, encapsulated by parenthesis and separated with commas.
 The parameters are either constants, variables or function symbols.
-A function symbols do have the same syntax as atoms. This way they can be finitely nested.
+Function symbols do have the same syntax as atoms. This way they can be finitely nested.
 As an example, an atom with three parameters is given:
-The first parameter being a constant, the others being function symbols.
+The first parameter being a constant $a$, the others being function symbols $f(b,X)$ and $g(f(X), Y))$.
 \begin{verbatim}
  p(a,f(b,X), g(f(X),Y)).
 \end{verbatim}
 
 \paragraph{Rule}
-A rule normally consists of a head and a body and ands with a dot.
-The body is separated from the using ``\:\-'' as in
+A rule normally consists of a head and a body and ends with a dot.
+The body is separated from the head using ``:-'' as in
 \begin{verbatim}
  head :- body.
 \end{verbatim}
@@ -136,7 +136,7 @@ They are all printed to standard error output.
 \begin{verbatim}
  "Warning: sum with negative bounds in the body of a rule"
 \end{verbatim}
-This warning occurs if a sum aggregate with negative weights has been found and the output format smodels is used or the output is redirected to clasp.
+This warning occurs if a sum aggregate with negative weights has been found and the output format smodels is used or the output is redirected to clasp. In this format negative bounds are not allowed.
  \item 
 \begin{verbatim}
  "Warning: multiple definitions of #const n"
@@ -148,7 +148,7 @@ The last attached value is used for grounding.
  "Warning: p/3 is never defined"
 \end{verbatim}
 This warnings states that an atom is used in the body of a rule that never occurs in the head.
-``p'' is the name of the atom and ``3'' is the arity.
+``p'' is the name of the predicate and ``3'' is the arity.
 \item
 \begin{verbatim}
  "got ground program i hope u have enough memory :)"
@@ -159,20 +159,20 @@ Use the command line option ``--convert'' to convert a ground program into anoth
 Furthermore all warnings from clasp are included.
 
 \paragraph{Errors}
-Gringo2.0 stops the execution and prints an error mesaage to standard error output.
+gringo2.0 stops the execution and prints an error message to standard error output.
 \begin{itemize}
  \item 
 \begin{verbatim}
  "the following rule cannot not be grounded,
   non domain predicates : { ... }"
 \end{verbatim}
-This error message gives a list of atoms that are not omega restricted.
+This error message gives a list of predicates that are not domain restricted.
  \item 
 \begin{verbatim}
  "the following rule cannot not be grounded,
-  weakly restricted varibles: { ... }"
+  weakly restricted variables: { ... }"
 \end{verbatim}
-This error message gives a list of atoms that are not lambda restricted. 
+This error message gives a list of predicates that are not lambda restricted. 
 \item
 \begin{verbatim}
  "syntax error on line Y column Z unexpected token: X"
@@ -227,8 +227,8 @@ and the second
 \end{verbatim}
 Both variants hide the predicate ``name''.
 The arity of the predicate can be given explicit or implicit with a list of variables.
-The variables are just placeholder and do not unify. The second syntax is implemented for compatibility reasons only.
-If the predicate that has to be hidden has arity zero, meaning it is an atom, the syntax is
+The variables are just placeholder and do not unify with other variables. For example hide p(X,X) would also hide the fact p(a,b). The second syntax is implemented for compatibility reasons only.
+If the predicate that has to be hidden has arity zero the syntax is
 \begin{verbatim}
  #hide name.
 \end{verbatim}
@@ -244,8 +244,8 @@ The ``show'' statement has the same syntax as ``hide'' but uses the keyword ``sh
 \end{verbatim}
 The example hides all atoms except the predicate $p$ with arity $3$.
 \paragraph{const}
-Within the ``const'' statement, a default value for constants can be defined.
-Constants are atoms used in the logic program and are normally defined via the command line options.
+Within the ``const'' statement, a default value for constants can be defined in the logic program.
+while they are normally defined via the command line options.
 A default value for a constant $n$ can be easily be set.
 \begin{verbatim}
  #const n=5.
@@ -257,7 +257,7 @@ The statement
  #domain time(T).
 \end{verbatim}
 makes sure that the variable ``T'' is always bound to the domain of ``time''.
-This has the same effect as adding the domain ``time(T)'' to every rule the variable occurs in.
+This has the same effect as adding the domain ``time(T)'' to every rule the variable ``T'' occurs in.
 \paragraph{compute}
 The compute statement is a hint for the solver which models to compute.
 Is has the syntax
@@ -272,7 +272,7 @@ The compute statement is solver dependent and supported by every solver.
 Writing a logic program to solve a problem is rather describing a problem than describing an algorithm to solve a problem.
 Therefore the problem must be encoded as a set of rules.
 Typically these are divided into a problem description and an instance of the problem.
-The solution to a problem can then be read from answer sets of the rules.
+The solution to a problem can then be read from the answer sets of the program.
 The procedure of writing a logic program shall now be explained with a little example.
 We want to write a problem encoding for the 3-colorability problem of graph coloring.
 Given an arbitraty graph, no two connected edges may have the same color.
@@ -312,7 +312,7 @@ To ease the process writing logic programs some features in the input syntax wer
 The extended features of the input syntax are now explained in detail. For a full syntax description in EBNF see appendix (\ref{appendix}).
 \paragraph{Expanding Terms}
 \subparagraph{Range Operator}
-To define several atoms that stretch on one or more parameters over a certain range, two dots can used to express an increasing integer range.
+To define several atoms that stretch on one or more parameters over a certain range, two dots can be used to express an increasing integer range.
 Using the range operator in the head of a rule, it works as a conjunction of all the members in the range, so for every number the rule is duplicated.
 \begin{verbatim}
  times(1..3, 1..2).
@@ -327,7 +327,7 @@ Using the range operator in the body of a rule, a disjunction of all members in 
 \begin{verbatim}
  a :- p(1..3).
 \end{verbatim}
-will result in the rules
+will result in the rules\footnote{gringo would simplify the grounded rules to facts, since all literals in the body are facts}
 \begin{verbatim}
  a :- p(1).
  a :- p(2).
@@ -386,7 +386,7 @@ Results in
 \end{verbatim}
 
 \paragraph{Arithmetic Expressions}
-The build in arithmetics can be used for integer arithmetic.
+The build-in arithmetics can be used for integer arithmetic.
 As operators addition (+), subtraction (-), multiplication (*), division (/), modulo (mod) and the absolute value operator (abs) can be used.
 Furthermore the bitwise operators and(\&), or(?), xor(\textasciicircum) and invert($\sim$) are supported. The bitwise operators are executed on signed integers using the binary complement for negative numbers.
 Arithmetic expressions can occur everywhere in head and in the body, even in complex constructs.
@@ -397,7 +397,7 @@ The simple example of using operators and range terms
  b(1,2).
  c(4).
 \end{verbatim}
-would result in the grounded program\footnote{gringo would simplify the grounded rules to facts, since all literals in the body are facts}
+would result in the grounded program
 \begin{verbatim}
  a(0) :- b(1,2), c(4).
  a(1) :- b(1,2), c(4).
@@ -409,7 +409,7 @@ would result in the grounded program\footnote{gringo would simplify the grounded
 \subparagraph{Relational Operators}
 The relational operators are ``less than'' ($<$),\\ ``greater than'' ($>$), ``less equal'' ($<=$), ``greater equal'' ($>=$) , ``equal'' ($==$) and ``not equal'' ($!=$).
 They can be used to constrain certain variables.
-For example, some rule is only generated for all unifications where X is greater than Y-1.
+For example, the following rule is only generated for all unifications where X is greater than Y-1.
 \begin{verbatim}
  a(X) :- b(X,Y), X >= Y-1.
  b(0,2).
@@ -440,7 +440,7 @@ A cyclic assignment that results in an unbound variable is not allowed and is re
  a(X) :- X=Y, Y=X.
 \end{verbatim}
 
-\paragraph{True Negation}
+\paragraph{Classical Negation}
 True negation can be used. Therefore the atom is preceded by a minus sign.
 \begin{verbatim}
  -a :- not  a.
