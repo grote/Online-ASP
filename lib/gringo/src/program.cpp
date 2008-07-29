@@ -77,23 +77,23 @@ bool Program::check(Grounder *g)
 	VarVector free;
 	LiteralVector unsolved;
 	// conditionals have to be omega restricted
-	for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
+	for(StatementVector::iterator i = rules_.begin(); i != rules_.end(); i++)
 	{
-		if(!(*it)->checkO(unsolved))
+		if(!(*i)->checkO(unsolved))
 		{
 			std::cerr << "the following rule cannot be grounded, ";
 			std::cerr << "non domain predicates : { ";
 			bool comma = false;
-			for(LiteralVector::iterator it = unsolved.begin(); it != unsolved.end(); it++)
+			for(LiteralVector::iterator j = unsolved.begin(); j != unsolved.end(); j++)
 			{
 				if(comma)
 					std::cerr << ", ";
 				else
 					comma = true;
-				std::cerr << *it;
+				std::cerr << *j;
 			}
 			std::cerr << " }" << std::endl;
-			std::cerr << "	" << rules_.back() << std::endl;
+			std::cerr << "	" << (*i) << std::endl;
 			return false;
 		}
 	}
