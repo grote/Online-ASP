@@ -80,7 +80,7 @@ Furthermore all restriction on smodels output hold as clasps internal interface 
 \paragraph{\texttt{-p}}
 Parameter ``\texttt{-p}'' invokes the plain output method, so the output is printed in human readable format, which is also the input format for gringo.
 \paragraph{\texttt{-g [1-7]}}
-This parameter invokes the new output format for the intermediate languages ASPils \cite{atleastthisreferenceishouldgive}. The optional number can range from $1$ to $7$ and refers to one of the following normalforms (Simple=1, SModels=2, DisjunctiveLogicProgram=3, CModels=4, CModelsExtended=5, DLV=6, Conglomeration=7). If no normalform is specified, conglomeration(7)  is assumed.
+This parameter invokes the new output format for the intermediate languages ASPils \cite{atleastthisreferenceishouldgive}. The optional number can range from $1$ to $7$ and refers to one of the following normal forms (Simple=1, SModels=2, DisjunctiveLogicProgram=3, CModels=4, CModelsExtended=5, DLV=6, Conglomeration=7). If no normal form is specified, conglomeration(7)  is assumed.
 
 \paragraph{default parameters}
 The default parameter is ``\texttt{-l}'' for smodels output.
@@ -174,7 +174,15 @@ A normal logic program $\Pi$ over $L(P,F,C)$ is a finite set of rules over $L(P,
 %\end{verbatim}
 
 \subsection{Meta-Syntax}
-The ``\#'' sign in front of all meta expressions is optional and can therefore be omitted.
+The ``\#'' sign in front of all meta expressions is optional but is it strongly recommend to use it.
+It separates the meta directives from the logic program more clearly and can prevent severe mistakes,
+ confusing those constructs with atoms as shown in the example.
+\begin{verbatim}
+ hide.
+ hidden :- hide.
+\end{verbatim}
+This program hides all predicates from the output of the ASP solver instead of deriving the facts \texttt{hide} and \texttt{hidden}.
+
 \paragraph{hide}
 The hide construct is used to hide atoms from the output of the ASP solver.
 Two different syntaxes are supported by gringo.
@@ -492,7 +500,7 @@ They are all printed to standard error output.
 \begin{verbatim}
  "Warning: sum with negative bounds in the body of a rule"
 \end{verbatim}
-This warning occurs if a sum aggregate with negative weights has been found and the output format smodels is used or the output is redirected to clasp. In this format negative bounds are not allowed.
+This warning occurs if a sum aggregate with negative weights has been found and the output format smodels is used or the output is redirected to clasp. In this format negative bounds are compiled away using the transformation described in \cite{lparseManual}. This may lead to counterintuitive results.
  \item 
 \begin{verbatim}
  "Warning: multiple definitions of #const n"
@@ -510,6 +518,7 @@ This warnings states that an atom is used in the body of a rule that never occur
  "got ground program i hope u have enough memory :)"
 \end{verbatim}
 Use the command line option ``--convert'' to convert a ground program into another format.
+For converting already ground programs to an output language a special module has been implemented that uses far less memory. Because trying to ground an already variable free program could need a huge amount of memory.
 
 \end{itemize}
 Furthermore all warnings from clasp are included.
@@ -528,44 +537,58 @@ This error message gives a list of predicates that are not domain restricted.
  "the following rule cannot not be grounded,
   weakly restricted variables: { ... }"
 \end{verbatim}
-This error message gives a list of predicates that are not lambda restricted. 
+This error message gives a list of variables that are not lambda restricted. 
 \item
 \begin{verbatim}
  "syntax error on line Y column Z unexpected token: X"
 \end{verbatim}
 The parser can not read the input format.
+\newline
+The next errors all belong to the ASPils output format.
+Some constructs in the input language can not be expressed in certain normal forms.
+Another normal form as to be chosen to support this feature.
 \begin{verbatim}
- "Disjunction not allowed on this normalform."
+ "Disjunction not allowed on this normal form,
+  please choose normal form 2 or 4-7."
  "Count aggregate/cardinality constraint not allowed
-  in this normalform."
+  in this normal form,
+  please choose normal form 3-7."
  "Count aggregate/cardinality constraint not allowed 
-  with non trivial upper bound in this normalform."
+  with non trivial upper bound in this normal form,
+  please choose normal form 5-7."
  "Count aggregate/cardinality constraint not allowed 
-  with negative lower bound in this normalform."
+  with negative lower bound in this normal form,
+  please choose normal form 5-7."
  "Sum aggregate/weight constraint not allowed
-  in this normalform."
+  in this normal form,
+  please choose normal form 3-7."
  "Sum aggregate/weight constraint not allowed 
-  with non trivial upper bound in this normalform."
+  with non trivial upper bound in this normal form,
+  please choose normal form 5-7."
  "Sum aggregate/weight constraint not allowed 
-  with negative lower bound in this normalform."
+  with negative lower bound in this normal form,
+  please choose normal form 5-7"
  "Sum aggregate/weight constraint not allowed
-  with negative weights in this normalform."
- "Sum aggregate/weight constraint not allowed
-  with negative weights in this normalform."
- "Max aggregate not allowed in this normalform."
+  with negative weights in this normal form,
+  please choose normal form 5 or 7."
+ "Max aggregate not allowed in this normal form,
+  please choose normal form 6 or 7."
  "Max aggregate not allowed
-  with negative weights in this normalform."
- "Min aggregate not allowed in this normalform."
+  with negative weights in this normal form,
+  please choose normal form 7."
+ "Min aggregate not allowed in this normal form,
+  please choose normal form 6 or 7."
  "Min aggregate not allowed 
-  with negative weights in this normalform."
- "Optimize statement not allowed in this normalform."
+  with negative weights in this normal form,
+  please choose normal form 7."
+ "Optimize statement not allowed in this normal form,
+  please choose normal form 3-7."
 \end{verbatim}
 %\begin{verbatim}
-% "Times aggregate not allowed in this normalform."
+% "Times aggregate not allowed in this normal form."
 % "Times aggregate not allowed
-%  with negative weights in this normalform."
+%  with negative weights in this normal form."
 %\end{verbatim}
-These errors belong to the ASPils output format. Another normal form as to be chosen.
 \end{itemize}
 
 \section{Examples}

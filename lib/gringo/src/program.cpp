@@ -121,7 +121,7 @@ bool Program::check(Grounder *g)
 			if(it == rules_.end())
 			{
 				std::cerr << "the following rule cannot be grounded, ";
-				std::cerr << "weakly restricted varibles: { ";
+				std::cerr << "weakly restricted variables: { ";
 				bool comma = false;
 				for(VarVector::iterator it = free.begin(); it != free.end(); it++)
 				{
