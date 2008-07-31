@@ -175,7 +175,6 @@ void Grounder::start()
 	reset();
 	std::cerr << "done" << std::endl;
 	std::cerr << "grounding ... " << std::endl;
-	output_->initialize(getPred());
 	substitution_.resize(varMap_.size() + 2);
 	binder_.resize(varMap_.size() + 2, -1);
 	ground();
