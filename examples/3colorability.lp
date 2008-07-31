@@ -1,11 +1,13 @@
-vertex(1..3).
+%sample from the documentation
+#hide.
+#show colored/2.
 
-edge(1,2).
-edge(2,3).
-edge(3,1).
+color(red). color(green). color(blue).
 
-color(red;green;blue).
+colored(V,C) :- not colored(V,D), not colored(V,E), C != D, C != E, D != E, color(E), color(C), color(D), vertex(V).
 
-colored(V,C) :- not colored(V,D), C != D, color(C;D), vertex(V).
+:- edge(V,U), colored(V,C), colored(U,C), vertex(V), vertex(U), color(C).
 
-:- edge(V,U), colored(V,C), colored(U,C), vertex(V;U), color(C).
+vertex(1..4).
+edge(1,2). edge(1,4).
+edge(3,1). edge(3,2).
