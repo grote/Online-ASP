@@ -37,7 +37,7 @@ Therefore it supports Bindersplitting, Backjumping and all other features alread
 The goal of this work is to give an overview of the features supported by gringo2.0. A broad set of potentialities for writing encodings for logic programs exists. Currently, no other grounder supports such a rich featured language.
 gringo2.0 supports several output formats and even a human readable format for debugging purposes.
 It also has an internal interface to the solver clasp \cite{gekanesc07b}, so the output can directly by parsed to the solver and answer sets can be computed.
-Furthermore gringo2.0 can be used with clasp incrementally. Detailed information about incremental solving can be found here \cite{IncrementalASP} 
+Furthermore gringo2.0 can be used with clasp incrementally. Detailed information about incremental solving can be found here \cite{gekaosscth08a} 
 First, the general restrictions to the input language are stated. Then a brief description of how to use gringo2.0 is given.
 In the next chapter the syntax of the supported language is described in detail and a short introduction of how to write a logic program is given. The paper closes with some examples of logic programs and gives an outlook of future work that has to be done in the area of grounding logic programs.
 The syntax of the gringo2.0 input language can be found in the appendix \ref{appendix}.
@@ -91,7 +91,7 @@ Furthermore all restriction on smodels output hold as clasps internal interface 
 \paragraph{\texttt{-p}}
 Parameter ``\texttt{-p}'' invokes the plain output method, so the output is printed in human readable format, which is also the input format for gringo2.0. The output is variable free and some simplifications on the program were made. To convert the plain format into a format readable by a solver use the \texttt{--convert} option.
 \paragraph{\texttt{-g [1-7]}}
-This parameter invokes the new output format for the intermediate languages ASPils \cite{atleastthisreferenceishouldgive}. The optional number can range from $1$ to $7$ and refers to one of the following normal forms (Simple=1, SModels=2, DisjunctiveLogicProgram=3, CModels=4, CModelsExtended=5, DLV=6, Conglomeration=7). If no normal form is specified, conglomeration(7)  is assumed.
+This parameter invokes the new output format for the intermediate languages ASPils \cite{gejaosscth08b}. The optional number can range from $1$ to $7$ and refers to one of the following normal forms (Simple=1, SModels=2, DisjunctiveLogicProgram=3, CModels=4, CModelsExtended=5, DLV=6, Conglomeration=7). If no normal form is specified, conglomeration(7)  is assumed.
 
 \paragraph{default parameters}
 The default command line is ``\texttt{./gringo -l}'' to read from standard input and for smodels output.
@@ -357,6 +357,7 @@ and we can interpret them as the colors of the vertices
 \]
 
 \subsection{Meta-Syntax}
+This section is about constructs that do not originally belong to the logic program but can be used to give additional information for example to the solver.
 The ``\#'' sign in front of all meta expressions is optional but is it strongly recommend to use it.
 It separates the meta directives from the logic program more clearly and can prevent severe mistakes,
  confusing those constructs with atoms as shown in the example.
@@ -664,7 +665,7 @@ altserves(Rname,Dist) :- restaurant(Rname,RK),
    Dist = min [ altdepot(DN1, DK1) : restaurant(DN1, DK1) = abs(DK1-RK) ].
 
 % fail if we have not found a better solution
- :- costs(C), C [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
+:- costs(C), C [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
 
 % thats the easiest way to show the calculated costs
 minimize [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
@@ -675,9 +676,10 @@ minimize [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
 #hide.
 #show q(X,Y).
 
+% this can be set via the command line
 #const queens = 200.
-#const diags  = queens * 2 - 1.
 
+#const diags  = queens * 2 - 1.
 d(1..queens).
 diag(1..diags).
 
