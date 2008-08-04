@@ -120,8 +120,8 @@ void AggregateLiteral::getVars(VarSet &vars) const
 SDGNode *AggregateLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
 {
 	// TODO: this is only needed as long as the truth value of aggregates is not determined
-	if(todo == ADD_BODY_DEP)
-		prev->addDependency(prev, true);
+	//if(todo == ADD_BODY_DEP)
+	//	prev->addDependency(prev, true);
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
 	{
 		// aggregate literals always depend negativly on its literals 
