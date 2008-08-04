@@ -33,6 +33,7 @@ First, a grounder translates a non-ground problem description into a proposition
 \end{figure}
 gringo2.0 is a state of the art grounder and has many features that makes writing logic programs easy.
 It was developed by Roland Kaminski and is orientated on the ideas of gringo1.0.
+Therefore it supports Bindersplitting, Backjumping and all other features already implemented in gringo1.0.\cite{gringopaper}
 The goal of this work is to give an overview of the features supported by gringo2.0. A broad set of potentialities for writing encodings for logic programs exists. Currently, no other grounder supports such a rich featured language.
 gringo2.0 supports several output formats and even a human readable format for debugging purposes.
 It also has an internal interface to the solver clasp \cite{gekanesc07b}, so the output can directly by parsed to the solver and answer sets can be computed.
@@ -44,7 +45,7 @@ The syntax of the gringo2.0 input language can be found in the appendix \ref{app
 \section{$\lambda$-Restriction}
 \label{domainrestricted}
 There exist two major grounders for ASP besides gringo1.0, lParse \cite{lparseManual} and  the DLV grounding module\cite{DLV}.
-To ensure the existence of an equivivalent ground instantiation of a program both grounders except a subclass of logic programs. For lParse the logic programs must be $\omega$-restricted\cite{omega} while DLV can handle safe programs\cite{safe}.
+To ensure the existence of an equivalent ground instantiation of a program both grounders except a subclass of logic programs. For lParse the logic programs must be $\omega$-restricted\cite{omega} while DLV can handle safe programs\cite{safe}.
 gringo2.0 verifies that the input program is $\lambda$-
 restricted \cite{gringopaper}, so that the existence of a finite equivalent ground instantiation is guaranteed. 
 $\lambda$-restrictedness extends the capabilities of $\omega$-restricted programs. The definition of $\lambda$-restrictedness can be found in \cite{gringopaper} and was expanded for aggregates and disjunctions.
@@ -54,7 +55,7 @@ $\lambda$-restrictedness can not be compared with the safe programs of DLV since
 \section{Using gringo2.0}
 \subsection{Command line Interface}
 gringo2.0 can be started on the command line and has some parameters that can be useful.
-The first parameters are gringo2.0 specific parameters and consist of a number of options and any arbritary number of filenames of the logic program. For the special purpose that gringo2.0 is used with its clasp module a double minus ``\texttt{--}'' is used to seperate the clasp parameters from the gringo2.0 parameters.
+The first parameters are gringo2.0 specific parameters and consist of a number of options and any arbitrary number of filenames of the logic program. For the special purpose that gringo2.0 is used with its clasp module a double minus ``\texttt{--}'' is used to separate the clasp parameters from the gringo2.0 parameters.
 If no filename is given, gringo2.0 reads from standard input.
 \begin{verbatim}
  ./gringo (gringo option|file)* [--[ clasp options]]
@@ -78,7 +79,7 @@ For converting an already grounded logic program into an output format supported
 This mode prints smodels conform output. For a definition of the output format see \cite{lparseManual}.
 Since some features of gringo2.0 are not natively supported for this output language, new atoms are introduced to create an equivalent program.\newline
 This is the current default output format of gringo2.0.
-Sum aggregates with negative weights are handled like weight constraint in lparse for this output format. So a transformation as explaned in \cite{lparseManual} is used to get rid of the negative weights.
+Sum aggregates with negative weights are handled like weight constraint in lparse for this output format. So a transformation as explained in \cite{lparseManual} is used to get rid of the negative weights.
 \paragraph{\texttt{-c}}
 In this mode, the output is directly parsed to clasp, an ASP solver. For solving logic programs, no intermediate files are produced and the answer sets are printed directly.
 With this option enabled, all parameters for clasp are valid and can be declared in the command line. Therefore a double minus ``\texttt{--}'' must be given after all gringo2.0 related parameters are set. After them the clasp parameters follow.
@@ -116,7 +117,7 @@ The last attached value is used for grounding.
  "Warning: p/3 is never defined"
 \end{verbatim}
 This warnings states that an atom is used in the body of a rule that never occurs in the head.
-The predicate literal is given in the warning. The predicate will be removed trhough optimization.
+The predicate literal is given in the warning. The predicate will be removed through optimization.
 \item
 \begin{verbatim}
  "got ground program i hope u have enough memory :)"
@@ -147,7 +148,7 @@ This error message gives a list of variables that are not lambda restricted.
 \begin{verbatim}
  "syntax error on line Y column Z unexpected token: X"
 \end{verbatim}
-The parser can not read the input format. Some unexpected token occured in the input file.
+The parser can not read the input format. Some unexpected token occurred in the input file.
 \newline
 \newline
 The next errors all belong to the ASPils output format.
@@ -208,49 +209,46 @@ TODO: How to build gringo2.0, clingo, iclingo etc...
 The basic elements of a logic program and its syntax is now described.
 Disjunctive logic programs are based on an alphabet \cite{syntax} consisting of:
 \begin{itemize}
-\item a set P of predicate symbols,
-\item a set F of function symbols,
-\item a set V of variables,
-\item a set C of constants,
+\item a set $\mathcal{P}$ of predicate symbols,
+\item a set $\mathcal{F}$ of function symbols,
+\item a set $\mathcal{V}$ of variables,
+\item a set $\mathcal{C}$ of constants,
 \item a set \{ ``$\mid$'', ``,'' ,$\leftarrow$, not \} of connectives, and
 \item a set \{ ``('', ``)'', ``,'' \} of punctuation symbols.
 \end{itemize}
 
-
-
-TODO: Which greek letters for P, F, L and C
 \paragraph{Predicates and function symbols}
 Predicates and function symbols have a predicate symbol/name and an arity.
 For the function symbol $f$ with arity 3 we write $f/3$.
 The names of the function symbols and predicates have to start with either a lower case letter or an underscore and can contain digits and letters.
-With $P$ we denote to the set of predicates and $F$ denotes the set of function symbols.
+With $\mathcal{P}$ we denote to the set of predicates and $\mathcal{F}$ denotes the set of function symbols.
 \paragraph{Constants}
 Constants are function symbols with an arity of zero.
 The name of a constant can also be encompassed by double quotation marks, which is sometimes helpful when using constants with spaces. It has to be remarked that a constant with quotation marks is never equal to a constant without, so ``\texttt{a}'' is not equal to \texttt{a}.
-$C$ is the set of constants
+$\mathcal{C}$ is the set of constants
 \paragraph{Variables}
 Variables have to start with a capitalized letter and can contain digits and letters.
-The set of variables is denoted by $V$.
-The language over $P$, $F$ and $C$ is denoted by $L(P,F,C)$.
+The set of variables is denoted by $\mathcal{V}$.
+The language over $\mathcal{P}$, $\mathcal{F}$ and $\mathcal{C}$ is denoted by $\mathcal{L(P,F,C)}$.
 \paragraph{Terms}
 The building blocks of the language are terms.
-Each constant $c \in C$ and each function symbol $f \in F$ is a term.
-Furthermore $f(t_1, \dots, t_n)$ is a term if $f/n \in F$ and $t_i \mid i \in \{1 \dots n\}$ are terms.
+Each constant $c \in \mathcal{C}$ and each function symbol $f \in \mathcal{F}$ is a term.
+Furthermore $f(t_1, \dots, t_n)$ is a term if $f/n \in \mathcal{F}$ and $t_i \mid i \in \{1 \dots n\}$ are terms.
 Since a term is defined recursively, it can be nested.
 A term with the first parameter being a constant $a$, the others being terms $f(b,X)$ and $g(f(X), Y))$ would be expressed this way.
 \begin{verbatim}
  p(a,f(b,X), g(f(X),Y)).
 \end{verbatim}
 \paragraph{Atoms}
-An atom over $L(P, F, C)$ is of the form $p(t_1, \dots, t_n)$ where $p/n$ is a predicate
+An atom over $\mathcal{L(P, F, C)}$ is of the form $p(t_1, \dots, t_n)$ where $p/n$ is a predicate
 symbol with arity $n$, and $t_i \mid i \in \{1 \dots n\}$ are terms.
 \paragraph{Rules}
-A rule over the language $L(P,F,C)$ has the form
+A rule over the language $\mathcal{L(P,F,C)}$ has the form
 $$
 A_0 \mid \dots \mid A_l \leftarrow A_{l+1}, \dots, A_m, not\ A_{m+1}, \dots, not\ A_n.
 $$
 where $A_0$ to $A_n$ are atoms. \newline
-A normal logic program $\Pi$ over $L(P,F,C)$ is a finite set of rules over $L(P,F,C)$.
+A normal logic program $\Pi$ over $\mathcal{L(P,F,C)}$ is a finite set of rules over $\mathcal{L(P,F,C)}$.
 
 %\paragraph{Function Symbols}
 %A constant is a representation of an entity in the problem domain.
@@ -300,7 +298,7 @@ Typically these are divided into a problem description and an instance of the pr
 The solution to a problem can then be read from the answer sets of the program.
 The procedure of writing a logic program shall now be explained with a little example.
 We want to write a problem encoding for the 3-colorability problem of graph coloring.
-Given an arbitraty graph, no two connected edges may have the same color.
+Given an arbitrary graph, no two connected edges may have the same color.
 The most common technique is the ``generate \& test'' approach. Therefore, in the generator, rules are created that can derive a superset of the solution to the problem. In the tester all solutions that do not fit the constraints are omitted.
 \newline
 Usually you start with the non instance domains, in our example the colors we use.
@@ -432,7 +430,7 @@ For the most problems it is possible to write a much shorter version of the prog
 For a full syntax description in EBNF see appendix (\ref{appendix}).
 \paragraph{Function Symbols}
 Function symbols are fully supported with gringo2.0.
-They can be finitly nested and also be used as domain predicates.
+They can be finitely nested and also be used as domain predicates.
 While in lParse function symbols are allowed in a very restricted way, no restrictions apply in gringo2.0.
 The following program can not be grounded with lParse since $X$ is an unrestricted variable. With gringo2.0 the program is now groundable.
 \begin{verbatim}
@@ -596,7 +594,7 @@ The general syntax is
 \begin{verbatim}
  lower aggregate_name [atom1=w1, ..., atomN=wN] upper
 \end{verbatim}
-If squared brackets are used, the atom list is interpretated as a set, otherwise, for curly brackets, as a multiset of atoms.
+If squared brackets are used, the atom list is interpreted as a set, otherwise, for curly brackets, as a multiset of atoms.
 The lower and upper bound is optional, and can be omitted.
 
 \subparagraph{Count}
@@ -620,7 +618,7 @@ If the command line option ``-l'' is used the semantic may change if negative we
 The ``min'' aggregate is determined by the minimum of all weights of atoms that evaluate to true.
 For the minimum aggregate a multiset with weighted atoms is used. It has no shorthand syntax.
 \subparagraph{Max}
-The ``max'' aggregate is similiar to the minimum aggregate but considers the maximum of the weights.
+The ``max'' aggregate is similar to the minimum aggregate but considers the maximum of the weights.
 
 \paragraph{Optimize Statements}
 
@@ -665,7 +663,7 @@ X { altdepot(R,K) : restaurant(R,K) } X :- depots(X).
 altserves(Rname,Dist) :- restaurant(Rname,RK),
    Dist = min [ altdepot(DN1, DK1) : restaurant(DN1, DK1) = abs(DK1-RK) ].
 
-% fail if we havnt found a better solution
+% fail if we have not found a better solution
  :- costs(C), C [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
 
 % thats the easiest way to show the calculated costs
@@ -697,17 +695,13 @@ diagY(X,Y,X + Y - 1) :- d(X), d(Y).
 
 \end{verbatim}
 
-\section{Benchmarks}
-The benchmarks were run on an Athlon XP 1700+ with 1GB of RAM.
-TODO: Official (non internal wiki) link to the instances.
+%\section{Benchmarks}
+%The benchmarks were run on an Athlon XP 1700+ with 1GB of RAM.
+%TODO: Official (non internal wiki) link to the instances.
 
-\input{benchmark2.result}
+%\input{benchmark2.result}
 \section{Future Work}
-$\Pi$-restrictedness
-bottom up grounding
-get rid of backward compatibility
-more aggregates
-
+Further research has to be done on features in the input language. Additionally the support of incremental grounding will be improved. To speed up the grounding process research on a bottom up grounding procedure is done. To support an even less restricted input language the support for $\Pi$-restricted programs is planned in a future release of gringo. All these features will lead to more acceptance of ASP-systems as the programs become easier to write and the bottleneck of ASP, the grounding part, will be faster.
 \newpage
 \textbf{\appendixname}
 \begin{appendix}
