@@ -113,7 +113,7 @@ bool Preprocessor::preprocessSimple(bool bodyEq) {
 
 // If the program is defined incrementally, mark atoms from previous steps as supported
 void Preprocessor::updatePreviouslyDefinedAtoms(Var startAtom, bool strong) {
-	for (VarVec::size_type i = 0; i != startAtom; ++i) {
+	for (Var i = 0; i != startAtom; ++i) {
 		PrgAtomNode* a = prg_->atoms_[i];
 		if (!strong && a->visited() == 0) {
 			// a is an atom about to be unfrozen
@@ -122,7 +122,7 @@ void Preprocessor::updatePreviouslyDefinedAtoms(Var startAtom, bool strong) {
 		PrgAtomNode* aEq = 0;
 		if (strong) {
 			nodes_[i].aSeen = 1;
-			Var eq = prg_->getEqAtom(i);
+			uint32 eq = prg_->getEqAtom(i);
 			if (eq != i) {
 				aEq = prg_->atoms_[eq];
 			}
@@ -152,10 +152,10 @@ void Preprocessor::updatePreviouslyDefinedAtoms(Var startAtom, bool strong) {
 //
 /////////////////////////////////////////////////////////////////////////////////////////
 bool Preprocessor::preprocessEq(uint32 maxIters) {
-	nodes_.resize( std::max(prg_->bodies_.size(), prg_->atoms_.size()) );
+	nodes_.resize( prg_->bodies_.size() >= prg_->atoms_.size() ? prg_->bodies_.size() : prg_->atoms_.size() );
 	Var startAtom		= prg_->incData_?prg_->incData_->startAtom_ : 0;
 	Var stopAtom		= startAtom;
-	Var		startVar	= prg_->incData_?prg_->incData_->startVar_	: 1;
+	Var	startVar		= prg_->incData_?prg_->incData_->startVar_	: 1;
 	conflict_ = false;
 	pass_			= 0;
 	maxPass_	= maxIters;

@@ -214,6 +214,10 @@ bool SatElite::preprocess() {
 			Literal unit = c->size() == 1 ? (*c)[0] : negLit(0);
 			c->destroy(); clauses_[i] = 0;
 			if (!(solver_->force(unit, 0)&&solver_->propagate()) || !propagateFacts()) {
+				for (++i; i != clauses_.size(); ++i) {
+					clauses_[i]->destroy();
+				}
+				clauses_.erase(clauses_.begin()+j, clauses_.end());
 				return false;
 			}
 		}

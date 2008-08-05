@@ -136,11 +136,12 @@ void Options::setDefaults() {
 	satPreParams.assign(3, 0);
 	file							= "";
 	heuristic					= "berkmin";
+	cons							= "";
 	numModels					= 1;
 	seed							= -1;
 	loopRep						= DefaultUnfoundedCheck::common_reason;
 	lookahead					= -1;
-	eqIters						= -1;
+	eqIters						= 5;
 	transExt					= LparseReader::transform_no;
 	help							= false;	
 	version						= false;
@@ -149,7 +150,7 @@ void Options::setDefaults() {
 	suppModels				= false;
 	stats							= false;
 	dimacs						= false;
-	optimizeAll				= false;
+	optimize					= 0;
 	ccmExp						= false;
 }
 
@@ -172,15 +173,18 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"\t  no    : Don't transform extended rules; handle them natively")
 		("eq", value<int>(&eqIters), 
 			"Run Eq-Preprocessor for at most <n> passes.\n"
-			"\tDefault: -1 (run to fixpoint). 0 = disable Eq-Preprocessor\n", "<n>")
+			"\tDefault: -1 (run to fixpoint); 0 = disable Eq-Preprocessor\n", "<n>")
 		("sat-prepro", value<vector<int> >(&satPreParams)->parser(mapSatElite),
 			"Enable SatElite-like preprocessor\n"
 			"\tDefault: no (yes if --dimacs), Valid: yes/no or <n1,[n2,n3]>\n"
 			"\t  n1 : Max iterations      (-1 means run to fixpoint)\n"
 			"\t  n2 : Heuristic cutoff    (-1 means no cutoff) \n"
 			"\t  n3 : Max time in seconds (-1 means no time limit)\n")
-		("optimize-all", bool_switch(&optimizeAll), "When optimizing compute all optimal solutions")
-		("optimize-value", value<std::vector<int> >(&optVals), "Initialize the optimization function")
+		("opt-all", bool_switch(), "When optimizing compute all optimal solutions")
+		("opt-rand",bool_switch(), "When computing one optimal solution randomize search")
+		("opt-value", value<std::vector<int> >(&optVals),"Initialize the optimization function")
+		("brave", bool_switch(), "compute the set of brave consequences\n")
+		("cautious", bool_switch(), "compute the set of cautious consequences\n")
 	;
 	allOpts.addOptions(common);
 	OptionGroup basic("\nBasic-Options - Configure the search strategy:\n");
@@ -324,6 +328,25 @@ void Options::checkCommonOptions(const OptionValues& vm) {
 		}
 		eqIters = 0;
 	}
+	if (vm.count("opt-all"))	optimize += 1;
+	if (vm.count("opt-rand")) optimize += 2;
+	if (optimize == 3) {
+		warning_ += "Warning: 'opt-all' and 'opt-rand' are mutually exclusive!\n";
+		optimize = 1;
+	}
+	bool bc = vm.count("brave") != 0;
+	bool cc = vm.count("cautious") != 0;
+	if (bc && cc) {
+		warning_ += "Warning: 'brave' and 'cautious' are mutually exclusive!\n";
+		bc = false;
+	}
+	if (bc || cc) {
+		cons = bc ? "brave" : "cautious";
+		if (dimacs) {
+			warning_ += "Warning: '" + cons + "' and 'dimacs' are mutually exclusive!\n";
+			cons = "";
+		}
+	}
 }
 bool Options::setSolverStrategies(Solver& s, const OptionValues& vm) {
 	s.strategies().randomWatches = value_cast<bool>(vm["rand-watches"]);
@@ -392,7 +415,7 @@ void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
 			<< "\nusage: clasp [number] [options]" << endl;
 	os << opts << endl;
 	os << "Default commandline:\n"
-			<< "  clasp 1 --trans-ext=no --eq=-1 \n"
+			<< "  clasp 1 --trans-ext=no --eq=5 \n"
 			<< "          --lookahead=no --lookback=yes --heuristic=Berkmin\n"
 			<< "          --rand-prop=0.0 --randomize=no --rand-watches=yes\n"
 			<< "          --restarts=100,1.5 --deletion=3,1.1,3.0\n"

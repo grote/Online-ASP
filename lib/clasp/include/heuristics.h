@@ -334,18 +334,27 @@ public:
 	void undoUntil(const Solver&, LitVec::size_type);
 	void simplify(Solver&, LitVec::size_type);
 	void resurrect(Var v) {
-		queue_.update(v);	
+		vars_.update(v);	
 	}
 private:
 	Literal doSelect(Solver& s);
-	void updateVarActivity(Var v);
-	void decayActivity();
+	void updateVarActivity(Var v) {
+		if ( (score_[v].first += inc_) > 1e100 ) {
+			for (LitVec::size_type i = 0; i != score_.size(); ++i) {
+				score_[i].first *= 1e-100;
+			}
+			inc_ *= 1e-100;
+		}
+		if (vars_.is_in_queue(v)) {
+			vars_.increase(v);
+		}
+	}
 	// HScore.first: activity of a variable
 	// HScore.second: occurrence counter for a variable's literal
 	//	> 0: positive literal occurred more often
 	//	< 0: negative literal occurred more often
 	//	= 0: literals occurred equally often
-	typedef std::pair<uint32, int32>	HScore;
+	typedef std::pair<double, int32>	HScore;
 	typedef PodVector<HScore>::type		Scores;
 	struct GreaterActivity {
 		explicit GreaterActivity(const Scores& s) : sc_(s) {}
@@ -356,9 +365,11 @@ private:
 		GreaterActivity& operator=(const GreaterActivity&);
 		const Scores& sc_;
 	};
-	Scores score_;
-	bk_lib::indexed_priority_queue<GreaterActivity> queue_;
-	bool considerLoops_;
+	typedef bk_lib::indexed_priority_queue<GreaterActivity> VarOrder;
+	Scores		score_;
+	VarOrder	vars_;
+	double		inc_;
+	bool			scoreLoops_;
 };
 
 }

@@ -25,8 +25,14 @@ using std::log;
 namespace Clasp { 
 
 ModelPrinter::~ModelPrinter() {}
-void ModelPrinter::printModel(Clasp::Solver&) {}
-static ModelPrinter noPrinter_s;
+Enumerator::Enumerator() : printer_(0) {}
+Enumerator::~Enumerator() {}
+void Enumerator::updateModel(Solver& s)							{ if (printer_) printer_->printModel(s); }
+bool Enumerator::backtrackFromModel(Solver& s)			{	return s.backtrack();		}
+bool Enumerator::allowRestarts() const							{ return false;						}
+uint64 Enumerator::numModels(const Solver& s)	const	{ return s.stats.models;	}
+void Enumerator::report(const Solver&)				const { }
+static Enumerator defaultEnum_s;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SolveParams
@@ -35,7 +41,7 @@ SolveParams::SolveParams()
 	: reduceBase_(3.0), reduceInc_(1.1), reduceMaxF_(3.0)
 	, restartInc_(1.5)
 	, randProp_(0.0)
-	, printer_(&noPrinter_s)
+	, enumerator_(&defaultEnum_s)
 	, restartBase_(100)
 	, restartOuter_(0)
 	, randRuns_(0), randConflicts_(0)
@@ -98,12 +104,11 @@ private:
 /////////////////////////////////////////////////////////////////////////////////////////
 namespace {
 bool backtrackFromModel(Solver& s, const SolveParams& p) {
-	p.printer()->printModel(s);
+	p.enumerator()->updateModel(s);
 	if (s.strategies().satPrePro.get() && s.strategies().satPrePro->hasSymModel()) {
 		return true;
 	}
-	MinimizeConstraint* c = s.strategies().minimizer;
-	return !c ? s.backtrack() : c->backtrackFromModel(s);
+	return p.enumerator()->backtrackFromModel(s);
 }
 }
 
@@ -131,6 +136,7 @@ bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
 	double randProp	= randRuns == 0 ? p.randomPropability() : 1.0;
 	uint64 maxCfl		= randRuns == 0 ? rs.next() : p.randConflicts();
 	uint32 shuffle	= p.shuffleBase();
+	bool	noRestartAfterModel = !p.enumerator()->allowRestarts() && !p.restartBounded();
 	while (result == value_free) {
 #ifdef PRINT_SEARCH_PROGRESS
 		printf("c V: %7u, C: %8u, L: %8u, ML: %8u (%6.2f%%), IL: %8u\n"
@@ -155,7 +161,7 @@ bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
 				// or limit them to the current backtrack level. Full restarts are
 				// no longer possible - the solver does not record found models and
 				// therefore could recompute them after a complete restart.
-				if (!p.restartBounded()) maxCfl = static_cast<uint64>(-1);
+				if (noRestartAfterModel) maxCfl = static_cast<uint64>(-1);
 			}
 		}
 		else if (result == value_free){

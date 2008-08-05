@@ -33,7 +33,7 @@
  */
 namespace Clasp { 
 
-class Solver;
+class		Solver;
 
 //! Interface for printing models
 /*!
@@ -42,7 +42,30 @@ class Solver;
 class ModelPrinter {
 public:
 	virtual ~ModelPrinter();
-	virtual void printModel(Solver&);
+	virtual void printModel(const Solver&) = 0;
+};
+
+//! Interface for enumerating models
+class Enumerator {
+public:
+	Enumerator();
+	virtual ~Enumerator();
+	void	setPrinter(ModelPrinter* p) { printer_ = p; }
+	//! Defaults to a noop
+	virtual void		updateModel(Solver& s);
+	//! Defaults to return s.backtrack()
+	virtual bool		backtrackFromModel(Solver& s);
+	//! Defaults to return false
+	virtual bool		allowRestarts()							const;
+	//! Defaults to return s.stats.models
+	virtual uint64	numModels(const Solver& s)	const;
+	//! Defaults to a noop
+	virtual void		report(const Solver& s)			const;
+protected:
+	ModelPrinter* printer_;
+private:
+	Enumerator(const Enumerator&);
+	Enumerator& operator=(const Enumerator&);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -64,12 +87,11 @@ struct SolveParams {
 	 * deletion			: initial size: vars()/3, grow factor: 1.1, max factor: 3.0, do not reduce on restart
 	 * randomization: disabled
 	 * randomProp		: 0.0 (disabled)
-	 * model printer: not used (i.e. models are ignored)
+	 * enumerator		: default
 	 */
 	SolveParams();
 	
-	//! calls p.printModel(solver) whenever a model is found.
-	void setModelPrinter(ModelPrinter& p) { printer_ = &p; }
+	void setEnumerator(Enumerator& e)			{ enumerator_ = &e; }
 	
 	//! sets the restart-parameters to use during search.
 	/*!
@@ -158,15 +180,14 @@ struct SolveParams {
 	
 	uint32	shuffleBase() const { return shuffleFirst_; }
 	uint32	shuffleNext() const { return shuffleNext_; }
-	
-	ModelPrinter* printer() const { return printer_;}
+	Enumerator*		enumerator()	const { return enumerator_; }
 private:
 	double				reduceBase_;
 	double				reduceInc_;
 	double				reduceMaxF_;
 	double				restartInc_; 
 	double				randProp_;
-	ModelPrinter*	printer_;
+	Enumerator*		enumerator_;
 	uint32				restartBase_;
 	uint32				restartOuter_;
 	uint32				randRuns_;

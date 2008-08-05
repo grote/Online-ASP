@@ -36,7 +36,7 @@ namespace ProgramOptions {
 				temp << ",-" << o.shortName();
 			}
 			if (!o.getValue()->isImplicit())
-				temp << '=' << o.argDescription();
+				temp << (o.shortName().empty()?'=':' ') << o.argDescription();
 
 			os << temp.str();
 			if (!o.description().empty())
@@ -248,7 +248,7 @@ namespace ProgramOptions {
 	{
 		string::size_type n = name.find(',');
 		string shortName, longName, desc, arg;
-		arg = "arg";
+		arg = "<arg>";
 		if (description)
 			desc = description;
 		if (argDesc) {

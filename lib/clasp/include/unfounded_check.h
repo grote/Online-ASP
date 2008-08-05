@@ -206,23 +206,18 @@ public:
 		return 0;
 	}
 	// helpers
-	void enqueueTodo(UfsAtomNode* head) {
-		if (head->pickedOrTodo == 0) {
-			todo_.push_back(head);
-			head->pickedOrTodo = 1;
-		}
-	}
-	void enqueueUnfounded(UfsAtomNode* head) {
-		if (head->typeOrUnfounded == 0) {
-			unfounded_.push_back(head);
-			head->typeOrUnfounded = 1;
-		}
-	}
-	void enqueueUnsourced(UfsAtomNode* a) {
-		sourceQueue_.push_back(a);
-	}
+	// The body b can no longer be used as source pointer.
+	// Mark it for later source pointer removal
 	void enqueueInvalid(UfsBodyNode* b) {
 		invalid_.push_back(b);
+	}
+
+	// Mark atom a for later source pointer removal
+	// Pre: a->hasSource() == true
+	void enqueuePropagateUnsourced(UfsAtomNode* a) {
+		assert(a->hasSource() == true);
+		a->markSourceInvalid();
+		sourceQueue_.push_back(a);
 	}
 	void addWatch(Literal p, UfsBodyNode* b, uint32 data);
 	void addReasonLit(Literal p, const UfsBodyNode* reason);
@@ -269,6 +264,18 @@ private:
 	void createLoopFormula();
 // -------------------------------------------------------------------------------------------	
 // more helpers
+	void enqueueTodo(UfsAtomNode* head) {
+		if (head->pickedOrTodo == 0) {
+			todo_.push_back(head);
+			head->pickedOrTodo = 1;
+		}
+	}
+	void enqueueUnfounded(UfsAtomNode* head) {
+		if (head->typeOrUnfounded == 0) {
+			unfounded_.push_back(head);
+			head->typeOrUnfounded = 1;
+		}
+	}
 	UfsAtomNode* dequeueTodo() {
 		UfsAtomNode* head = todo_.front();
 		todo_.pop_front();

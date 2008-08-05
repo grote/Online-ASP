@@ -36,13 +36,13 @@ namespace Clasp {
 
 class Solver;
 class ClauseCreator;
-class MinimizeConstraint;
 class PrgNode;
 class PrgBodyNode;
 class PrgAtomNode;
 class ProgramBuilder;
 class Preprocessor;
 class DefaultUnfoundedCheck;
+class MinimizeConstraint;
 typedef PodVector<PrgAtomNode*>::type AtomList;
 typedef PodVector<PrgBodyNode*>::type BodyList;
 typedef PodVector<PrgNode*>::type NodeList;
@@ -306,7 +306,8 @@ public:
 	 * Call this method to load the program (increment) into the solver
 	 *
 	 * \param solver The solver object in which the optimized representation of the lp should be stored.
-	 * \param initialLookahead if true, the program is simplified using a one-step lookahead operation.
+	 * \param initialLookahead if true and finalizeSolver is true, the program is simplified using a one-step lookahead operation.
+	 * \param finalizeSolver if true, endProgram() calls solver.endAddConstraints()
 	 * \return false if the program is initially conflicting, true otherwise.
 	 *
 	 * \note If endProgram returned false, the state of the ProgramBuilder object is undefined. In that case,
@@ -317,7 +318,17 @@ public:
 	 * \note To load the same program into different solvers, call endProgram for each solver.
 	 *
 	 */
-	bool endProgram(Solver& solver, bool initialLookahead = false);
+	bool endProgram(Solver& solver, bool initialLookahead = false, bool finalizeSolver = true);
+
+	//! returns true if the program contains at least one minimize statement
+	bool hasMinimize() const { return minimize_ != 0; }
+	
+	//! Creates a minimize constraints from the minimize statements contained in the program
+	/*!
+	 * \pre The program is frozen, ie. endProgram was already called.
+	 * \return 0 if the program does not contain minimize statements
+	 */
+	MinimizeConstraint* createMinimize(Solver& s);
 
 	/*!
 	 * Writes the (possibly simplified) program in lparse-format to the given stream.
@@ -361,6 +372,7 @@ private:
 	void cloneVars(Solver& s);
 	void minimize(Solver& s);
 	bool addConstraints(Solver& s, CycleChecker& c, uint32 startAtom);
+	void freezeMinimize(Solver&);
 	// ------------------------------------------------------------------------
 	void writeRule(PrgBodyNode*, uint32 h, std::ostream&);
 

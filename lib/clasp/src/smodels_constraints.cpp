@@ -227,7 +227,8 @@ MinimizeConstraint::MinimizeConstraint()
 	: models_(0)
 	, activePL_(0)
 	, activeIdx_(0)
-	, mode_(compare_less) {
+	, mode_(compare_less) 
+	, restart_(false) {
 	undoList_.push_back( UndoLit(posLit(0), 0, true) );	// sentinel
 }
 
@@ -407,11 +408,19 @@ bool MinimizeConstraint::backtrackFromModel(Solver& s) {
 	if (dl < s.rootLevel() || dl == static_cast<uint32>(-1)) {
 		return false;
 	}
-	while (s.backtrack() && dl < s.decisionLevel());
-	assert(dl == s.decisionLevel());
-	activePL_		= 0;
-	activeIdx_	= 0;
-	return backpropagate(s, rule(activePL_));
+	if (!restart_) {
+		while (s.backtrack() && dl < s.decisionLevel());
+		assert(dl == s.decisionLevel());
+		activePL_		= 0;
+		activeIdx_	= 0;
+		return backpropagate(s, rule(activePL_));
+	}
+	else {
+		s.undoUntil( 0 );
+		activePL_		= 0;
+		activeIdx_	= 0;
+		return select(s) && backpropagate(s, rule(activePL_));
+	}
 }
 
 void MinimizeConstraint::addUndo(Solver& s, Literal p, uint32 key, bool forced) {
@@ -457,7 +466,7 @@ bool MinimizeConstraint::select(Solver& s) {
 			}
 		}
 	}
-	return false;
+	return s.strategies().heuristic->select(s);
 }
 
 

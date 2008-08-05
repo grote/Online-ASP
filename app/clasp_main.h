@@ -18,11 +18,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 #include <clasp/include/lparse_reader.h>
-#include <clasp/include/unfounded_check.h>
-#include <clasp/include/smodels_constraints.h>
 #include <clasp/include/satelite.h>
-#include <clasp/include/util/misc_types.h>
+#include <clasp/include/unfounded_check.h>
 #include "options.h"
+#include "enumerator.h"
 #include "timer.h"
 #include <iostream>
 #include <iomanip>
@@ -80,11 +79,12 @@ private:
 		}
 		return std::cin;
 	}
-	bool solveAsp();
+	bool solve();
 	bool parseLparse();
-	bool solveSat();
-	std::auto_ptr<LparseStats> lpStats_;
-	std::auto_ptr<PreproStats> preStats_;
+	bool readSat();
+	std::auto_ptr<LparseStats>	lpStats_;
+	std::auto_ptr<PreproStats>	preStats_;
+	std::auto_ptr<Enumerator>		enum_;
 	std::ifstream	inFile_;
 } clasp_g;
 
@@ -93,6 +93,7 @@ const int S_UNKNOWN				=	0;
 const int S_SATISFIABLE		= 10;
 const int S_UNSATISFIABLE = 20;
 const int S_ERROR					= EXIT_FAILURE;
+const int S_MEMORY				= 107;
 
 static void sigHandler(int) {
 	// ignore further signals
@@ -108,36 +109,6 @@ static void sigHandler(int) {
 	printf("%sRestarts  : %u\n", (satM?"c ":""), (uint32)clasp_g.solver.stats.restarts);
 	exit(S_UNKNOWN);
 }
-
-struct StdOutPrinter : ModelPrinter {
-	StdOutPrinter() : index(0) {}
-	const AtomIndex*	index;
-	void printModel(Solver& s) {
-		if (index && clasp_g.mode == ClaspApp::ASP_MODE) {
-			cout << "Answer: " << s.stats.models << "\n";
-			for (AtomIndex::size_type i = 0; i != index->size(); ++i) {
-				if (s.value((*index)[i].lit.var()) == trueValue((*index)[i].lit) && !(*index)[i].name.empty()) {
-					cout << (*index)[i].name << " ";
-				}
-			}
-			cout << "\n";
-			if (s.strategies().minimizer) { s.strategies().minimizer->printOptimum(cout); }
-			cout << flush;
-		}
-		else {
-			const uint32 numVarPerLine = 10;
-			cout << "c Model: " << s.stats.models << "\n";
-			cout << "v ";
-			for (Var v = 1, cnt=0; v <= s.numVars(); ++v) {
-				if (s.value(v) == value_false) cout << "-";
-				cout << v;
-				if (++cnt == numVarPerLine && v+1 <= s.numVars()) { cnt = 0; cout << "\nv"; }
-				cout << " ";
-			}
-			cout << "0 \n";
-		}
-	}
-};
 
 void ClaspApp::setState(State s) {
 	bool q = options.quiet;
@@ -258,21 +229,21 @@ void ClaspApp::printAspStats(bool more) const {
 	cout.setf(ios_base::fixed, ios_base::floatfield);
 	const SolverStatistics& st = solver.stats;
 	cout << "\n";
-	uint64 m1 = st.models;
-	uint64 m2 = solver.strategies().minimizer ? solver.strategies().minimizer->models() : m1;
+	uint64 enumerated = st.models;
+	uint64 models			= enum_.get() != 0 ? enum_->numModels(solver) : enumerated;
 	cout	<< left << setw(12) << "Models" << ": ";
 	if (more) {
 		char buf[64];
-		int wr		= sprintf(buf, "%llu", m2);
+		int wr		= sprintf(buf, "%llu", models);
 		buf[wr]		= '+';
 		buf[wr+1]	= 0;
 		cout << setw(6) << buf;
 	}
 	else {
-		cout << setw(6) << m2;
+		cout << setw(6) << models;
 	}
-	if (m1 != m2 && options.stats) {
-		cout << " (Enumerated: " << m1 << ")";
+	if (enumerated != models && options.stats) {
+		cout << " (Enumerated: " << enumerated << ")";
 	}
 	cout	<< "\n";
 	cout	<< left << setw(12) << "Time"	 << ": " << setw(6) << t_all.Print()
@@ -344,10 +315,11 @@ int ClaspApp::run(int argc, char** argv) {
 	getStream();
 	cout << (mode == ASP_MODE ?"":"c ") << "Reading from " << (options.file.empty()?"stdin":shortName(options.file).c_str()) << "\n";
 	t_all.Start();
-	bool more = mode == ASP_MODE
-		? solveAsp()
-		: solveSat();
+	bool more = solve();
 	t_all.Stop();
+	if (enum_.get()) {
+		enum_.get()->report(solver);
+	}
 	if (mode == ASP_MODE) {
 		printAspStats(more);
 	}
@@ -358,72 +330,7 @@ int ClaspApp::run(int argc, char** argv) {
 	return solver.stats.models != 0 ? S_SATISFIABLE : S_UNSATISFIABLE;
 }
 
-bool ClaspApp::solveSat() {
-	std::istream& in = getStream();
-	setState(start_read);
-	bool res = parseDimacs(in, solver, options.numModels == 1);
-	setState(end_read);
-	if (res) {
-		setState(start_pre);
-		res = solver.endAddConstraints(options.initialLookahead);
-		setState(end_pre);
-	}
-	if (res) {
-		StdOutPrinter printer;
-		if (!options.quiet) options.solveParams.setModelPrinter(printer);
-		setState(start_solve);
-		res = solve(solver, options.numModels, options.solveParams);
-		setState(end_solve);
-	}
-	return res;
-}
-
-bool ClaspApp::parseLparse() {
-	// ******************* NOTE: modify here *********************
-
-	//std::istream& in = getStream();
-	lpStats_.reset(new LparseStats());
-	preStats_.reset(new PreproStats());
-
-	//LparseReader reader;
-	//reader.setTransformMode(LparseReader::TransformMode(options.transExt));
-	ProgramBuilder api;
-	api.startProgram(options.suppModels
-		? 0
-		: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.loopRep))
-		, (uint32)options.eqIters
-	);
-	setState(start_read);
-
-	// TODO: put gringo here!!!
-	//bool ret = reader.parse(in, api);
-	bool ret = true;
-	output = new NS_GRINGO::NS_OUTPUT::ClaspOutput(&api, LparseReader::TransformMode(options.transExt));
-	start_grounding();
-
-	setState(end_read);
-	if (ret) {
-		setState(start_pre);
-		ret = api.endProgram(solver, options.initialLookahead);
-		setState(end_pre);
-	}
-	api.stats.moveTo(*preStats_);
-	// TODO: modify here
-	*lpStats_ = static_cast<NS_GRINGO::NS_OUTPUT::ClaspOutput*>(output)->getStats();
-	if (solver.strategies().minimizer && options.optimizeAll) {
-		solver.strategies().minimizer->setMode( MinimizeConstraint::compare_less_equal );
-	}
-	if (solver.strategies().minimizer && !options.optVals.empty()) {
-		MinimizeConstraint* c = solver.strategies().minimizer;
-		uint32 m = std::min((uint32)options.optVals.size(), c->numRules());
-		for (uint32 x = 0; x != m; ++x) {
-			c->setOptimum(x, options.optVals[x]);
-		}
-	}
-	return ret;
-	// ******************* NOTE: modify here *********************
-}
-bool ClaspApp::solveAsp() {
+bool ClaspApp::solve() {
 #ifdef WITH_ICLASP
 	if(incremental)
 	{
@@ -446,21 +353,20 @@ bool ClaspApp::solveAsp() {
 		bool ret  = false;
 		do
 		{
+			solver.undoUntil(0);
 			api.updateProgram();
 			grounder->iground();
-			ret = api.endProgram(solver, options.initialLookahead);
-			solver.undoUntil(0);
+			ret = api.endProgram(solver, options.initialLookahead, false);
 			if(ret)
 			{
 				StdOutPrinter printer;
 				if (!options.quiet) {
 					printer.index = &api.stats.index;
-					options.solveParams.setModelPrinter(printer);
+					options.solveParams.enumerator()->setPrinter(&printer);
 				}
 				LitVec assumptions;
 				assumptions.push_back(api.stats.index[static_cast<NS_GRINGO::NS_OUTPUT::IClaspOutput*>(output)->getIncUid()].lit);
-
-				more = solve(solver, assumptions, options.numModels, options.solveParams);
+				more = Clasp::solve(solver, assumptions, options.numModels, options.solveParams);
 				ret = solver.stats.models > 0;
 			}
 		}
@@ -471,18 +377,87 @@ bool ClaspApp::solveAsp() {
 		return more;
 	}
 #endif
-	bool res = parseLparse();
+	bool res = mode == ASP_MODE ? parseLparse() : readSat();
 	if (res) {
 		StdOutPrinter printer;
 		if (!options.quiet) {
-			printer.index = &preStats_->index;
-			options.solveParams.setModelPrinter(printer);
+			if (mode == ASP_MODE) printer.index	= &preStats_->index;
+			options.solveParams.enumerator()->setPrinter(&printer);
 		}
 		setState(start_solve);
-		res = solve(solver, options.numModels, options.solveParams);
+		res = Clasp::solve(solver, options.numModels, options.solveParams);
 		setState(end_solve);
 	}
 	return res;
+}
+
+
+bool ClaspApp::readSat() {
+	std::istream& in = getStream();
+	setState(start_read);
+	bool res = parseDimacs(in, solver, options.numModels == 1);
+	setState(end_read);
+	if (res) {
+		setState(start_pre);
+		res = solver.endAddConstraints(options.initialLookahead);
+		setState(end_pre);
+	}
+	return res;
+}
+
+bool ClaspApp::parseLparse() {
+	std::istream& in = getStream();
+	lpStats_.reset(new LparseStats());
+	preStats_.reset(new PreproStats());
+	//LparseReader reader;
+	//reader.setTransformMode(LparseReader::TransformMode(options.transExt));
+	ProgramBuilder api;
+	api.startProgram(options.suppModels
+		? 0
+		: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.loopRep))
+		, (uint32)options.eqIters
+	);
+	setState(start_read);
+	bool ret = true;
+	output = new NS_GRINGO::NS_OUTPUT::ClaspOutput(&api, LparseReader::TransformMode(options.transExt));
+	start_grounding();
+	//bool ret = reader.parse(in, api);
+	setState(end_read);
+	if (!ret) return ret;
+	if (api.hasMinimize() || !options.cons.empty()) {
+		if (api.hasMinimize() && !options.cons.empty()) {
+			cerr << "Warning: Optimize statements are ignored because of '" << options.cons << "'!" << endl;
+		}
+		if (options.numModels != 0) {
+			!options.cons.empty() 
+				? cerr << "Warning: For computing consequences clasp must be called with '--number=0'!" << endl
+				: cerr << "Warning: For computing optimal solutions clasp must be called with '--number=0'!" << endl;
+		}
+	}
+	setState(start_pre);
+	ret = api.endProgram(solver, options.initialLookahead, false);
+	//*lpStats_ = reader.stats;
+	*lpStats_ = static_cast<NS_GRINGO::NS_OUTPUT::ClaspOutput*>(output)->getStats();
+	api.stats.moveTo(*preStats_);
+	if (!options.cons.empty()) {
+		enum_.reset(new CBConsequences(solver, &preStats_->index, options.cons == "brave" ? CBConsequences::brave_consequences : CBConsequences::cautious_consequences, options.quiet));
+		options.solveParams.setEnumerator( *enum_ );
+	}
+	else if (api.hasMinimize()) {
+		MinimizeConstraint* c = api.createMinimize(solver);
+		c->setMode( MinimizeConstraint::Mode(options.optimize & 1), options.optimize == 2 );
+		if (!options.optVals.empty()) {
+			uint32 m = std::min((uint32)options.optVals.size(), c->numRules());
+			for (uint32 x = 0; x != m; ++x) {
+				c->setOptimum(x, options.optVals[x]);
+			}
+		}
+		enum_.reset(new MinimizeEnumerator(c));
+		options.solveParams.setEnumerator( *enum_ );
+	}
+	ret = ret && solver.endAddConstraints(options.initialLookahead);
+	setState(end_pre);
+	return ret;
 }
 
 int clasp_main(int argc, char** argv) {
@@ -505,11 +480,15 @@ int clasp_main(int argc, char** argv) {
 	} 
 	catch(const ReadError& e) {
 		cerr << "Failed!\nError(" << e.line_ << "): " << e.what() << endl;
-		return EXIT_FAILURE;
+		return S_ERROR;
+	}
+	catch (const std::bad_alloc&) {
+		cerr << "\nclasp ERROR: out of memory"  << endl;
+		return S_MEMORY;
 	}
 	catch (const std::exception& e) {
 		cerr << "\nclasp ERROR: " << e.what() << endl;
-		return EXIT_FAILURE;
+		return S_ERROR;
 	}
-	return EXIT_SUCCESS;
+	return S_UNKNOWN;
 }

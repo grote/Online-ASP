@@ -35,7 +35,6 @@ namespace Clasp {
 class DecisionHeuristic;
 class PostPropagator;
 class ClauseCreator;
-class MinimizeConstraint;
 
 //! Base class for preprocessors working on clauses only
 class SatPreprocessor {
@@ -93,7 +92,6 @@ struct SolverStrategies {
 	 *  - search					: use_learning
 	 *  - cflMin					: beame_minimization
 	 *	- cflMinAntes			: all_antes
-	 *	- minimizer				: none
 	 *  - compression			: 60
 	 *	- randomWatches		: false
 	 *	- saveProgress		: false
@@ -105,7 +103,6 @@ struct SolverStrategies {
 	Heuristic						heuristic;
 	PostProp						postProp;
 	SearchStrategy			search;
-	MinimizeConstraint*	minimizer;
 	CflMinStrategy			cflMin;
 	CflMinAntes					cflMinAntes;
 	bool								randomWatches;
@@ -121,7 +118,6 @@ struct SolverStrategies {
 		postProp.reset( o.postProp.release() );
 		search				= o.search;
 		cflMin				= o.cflMin;
-		minimizer			= o.minimizer;
 		compress_			= o.compress_;
 		randomWatches = o.randomWatches;
 		saveProgress	= o.saveProgress;

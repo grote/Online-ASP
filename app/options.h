@@ -32,7 +32,7 @@
 #include <clasp/include/solver.h>
 #include <clasp/include/solve_algorithms.h>
 
-const char* const VERSION = "1.0.5-SR08";
+const char* const VERSION = "1.1.0";
 
 namespace Clasp {
 
@@ -53,18 +53,19 @@ public:
 	std::vector<int> satPreParams;	// Params for the SatElite-preprocessor
 	std::string		file;							// Default: "" -> read from stdin
 	std::string		heuristic;				// Default: berkmin
+	std::string		cons;							// Default: ""
 	int						seed;							// Default: -1 -> use default seed
 	int						transExt;					// Default: 0 -> do not transform extended rules
 	int						eqIters;					// Default: -1 -> run eq-preprocessing to fixpoint
 	int						numModels;				// Default: 1
 	int						lookahead;				// Default: lookahead_no
 	int						loopRep;					// Default: common
+	int						optimize;					// Default: 0
 	bool					help;							// Default: false
 	bool					version;					// Defailt: false
 	bool					quiet;						// Default: false
 	bool					stats;						// Default: false
 	bool					dimacs;						// Default: false
-	bool					optimizeAll;			// Default: false
 	bool					suppModels;				// Default: false
 	bool					initialLookahead;	// Default: false
 	bool					ccmExp;						// Default: false

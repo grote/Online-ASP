@@ -54,8 +54,7 @@ public:
 		assert(choice_ == 1);
 		if (succs[data]->hasSource() && succs[data]->watch() == this) {
 			assert(ufs.solver().isFalse(succs[data]->lit));
-			succs[data]->markSourceInvalid();
-			ufs.enqueueUnsourced(succs[data]);
+			ufs.enqueuePropagateUnsourced(succs[data]);
 		}
 	}
 	bool canSource(const UfsAtomNode&)		{ return circWeight_ == 0; }
@@ -233,9 +232,9 @@ private:
 /////////////////////////////////////////////////////////////////////////////////////////
 DefaultUnfoundedCheck::DefaultUnfoundedCheck(ReasonStrategy r)
 	: solver_(0) 
+	, reasons_(0)
 	, activeClause_(0)
-	, strategy_(r)
-	, reasons_(0) {
+	, strategy_(r) {
 }
 DefaultUnfoundedCheck::~DefaultUnfoundedCheck() { clear(); }
 
@@ -436,8 +435,10 @@ DefaultUnfoundedCheck::UfsBodyNode* DefaultUnfoundedCheck::addBody(PrgBodyNode* 
 /////////////////////////////////////////////////////////////////////////////////////////
 bool DefaultUnfoundedCheck::findUnfoundedSet() {
 	// first: remove all sources that were recently falsified
-	if (!sourceQueue_.empty()) propagateSource();
-	for (VarVec::size_type i = 0; i < invalid_.size(); ++i) { 
+	if (!sourceQueue_.empty()) {
+		propagateSource();
+	}
+	for (VarVec::size_type i = 0; i != invalid_.size(); ++i) { 
 		removeSource(invalid_[i]); 
 	}
 	invalid_.clear();
@@ -512,7 +513,11 @@ bool DefaultUnfoundedCheck::findSource(UfsAtomNode* head) {
 // POST: source(head) != 0
 void DefaultUnfoundedCheck::setSource(UfsBodyNode* body, UfsAtomNode* head) {
 	assert(!solver_->isFalse(body->lit));
-	if (!head->hasSource()) {
+	// For normal rules from not false B follows not false head, but
+	// for choice rules this is not the case. Therefore, the 
+	// check for isFalse(head) is needed so that we do not inadvertantly
+	// source a head that is currently false.
+	if (!head->hasSource() && !solver_->isFalse(head->lit)) {
 		head->updateSource(body);
 		sourceQueue_.push_back(head);
 	}
@@ -534,6 +539,7 @@ void DefaultUnfoundedCheck::removeSource(UfsBodyNode* body) {
 	}
 	propagateSource();
 }	
+
 
 // propagates recently set source pointers within one strong component.
 void DefaultUnfoundedCheck::propagateSource() {

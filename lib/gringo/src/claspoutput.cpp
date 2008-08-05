@@ -17,7 +17,15 @@
 
 #include "claspoutput.h"
 
+//#define DEBUG_ICLASP
+
+#ifdef DEBUG_ICLASP
+#include <fstream>
+std::fstream g_out("iclasp.h", std::ios_base::out | std::ios_base::trunc);
+#endif
+
 #ifdef WITH_CLASP
+
 
 #include "gringoexception.h"
 #include "grounder.h"
@@ -46,6 +54,15 @@ void ClaspOutput::printBasicRule(int head, const IntVector &pos, const IntVector
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
 		b_->addToBody(*it, true);
 	b_->endRule();
+#ifdef DEBUG_ICLASP
+	g_out << "api.startRule().addHead(t" << head << ")";
+	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++)
+		g_out << ".addToBody(t" << *it << ", false)";
+	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
+		g_out << ".addToBody(t" << *it << ", true)";
+	g_out << ".endRule();" << NL;
+#endif
+
 }
 
 void ClaspOutput::printConstraintRule(int head, int bound, const IntVector &pos, const IntVector &neg)
@@ -62,6 +79,14 @@ void ClaspOutput::printConstraintRule(int head, int bound, const IntVector &pos,
 		b_->addAsNormalRules(r);
 	else
 		b_->addRule(r);
+#ifdef DEBUG_ICLASP
+	g_out << "api.startRule(Clasp::CONSTRAINTRULE, " << bound << ").addHead(t" << head << ")";
+	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++)
+		g_out << ".addToBody(t" << *it << ", false)";
+	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
+		g_out << ".addToBody(t" << *it << ", true)";
+	g_out << ".endRule();" << NL;
+#endif
 }
 
 void ClaspOutput::printChoiceRule(const IntVector &head, const IntVector &pos, const IntVector &neg)
@@ -78,6 +103,16 @@ void ClaspOutput::printChoiceRule(const IntVector &head, const IntVector &pos, c
 		b_->addAsNormalRules(r);
 	else
 		b_->addRule(r);
+#ifdef DEBUG_ICLASP
+	g_out << "api.startRule(Clasp::CHOICERULE)";
+	for(IntVector::const_iterator it = head.begin(); it != head.end(); it++)
+		g_out << ".addHead(t" << *it << ")";
+	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++)
+		g_out << ".addToBody(t" << *it << ", false)";
+	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
+		g_out << ".addToBody(t" << *it << ", true)";
+	g_out << ".endRule();" << NL;
+#endif
 }
 
 void ClaspOutput::printWeightRule(int head, int bound, const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg)
@@ -96,6 +131,16 @@ void ClaspOutput::printWeightRule(int head, int bound, const IntVector &pos, con
 		b_->addAsNormalRules(r);
 	else
 		b_->addRule(r);
+#ifdef DEBUG_ICLASP
+	g_out << "api.startRule(Clasp::WEIGHTRULE, " << bound << ").addHead(t" << head << ")";
+	itW = wNeg.begin();
+	for(IntVector::const_iterator it = neg.begin(); it != neg.end(); it++, itW++)
+		g_out << ".addToBody(t" << *it << ", false, " << *itW << ")";
+	itW = wPos.begin();
+	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++, itW++)
+		g_out << ".addToBody(t" << *it << ", true, " << *itW << ")";
+	g_out << ".endRule();" << NL;
+#endif
 }
 
 void ClaspOutput::printMinimizeRule(const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg)
@@ -133,7 +178,11 @@ void ClaspOutput::finalize()
 int ClaspOutput::newUid()
 {
 	uids_++;
-	return b_->newAtom();
+	int uid = b_->newAtom();
+#ifdef DEBUG_ICLASP
+	g_out << "int t" << uid << " = api.newAtom();" << NL;
+#endif
+	return uid;
 }
 
 Clasp::LparseStats &ClaspOutput::getStats()
@@ -145,7 +194,12 @@ bool ClaspOutput::addAtom(NS_OUTPUT::Atom *r)
 {
 	bool ret = Output::addAtom(r);
 	if(ret && isVisible(r->predUid_))
+	{
 		b_->setAtomName(r->uid_, atomToString(r->predUid_, r->values_).c_str());
+#ifdef DEBUG_ICLASP
+		g_out << "api.setAtomName(t" << r->uid_ << ", \"" << atomToString(r->predUid_, r->values_) << "\");" << NL;
+#endif
+	}
 	return ret;
 }
 
@@ -163,6 +217,11 @@ IClaspOutput::IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::Transf
 
 void IClaspOutput::initialize(SignatureVector *pred)
 {
+#ifdef DEBUG_ICLASP
+	g_out << "LitVec assumptions;" << NL << NL;
+	g_out << "solver.undoUntil(0);" << NL;
+	g_out << "api.updateProgram();" << NL;
+#endif
 	ClaspOutput::initialize(pred);
 	incUid_ = 0;
 	reinitialize();
@@ -173,9 +232,29 @@ void IClaspOutput::reinitialize()
 	// set the previous incUid to false
 	if(incUid_)
 		b_->setCompute(incUid_, false);
+#ifdef DEBUG_ICLASP
+	if(incUid_)
+	{
+		g_out << "solver.undoUntil(0);" << NL;
+		g_out << "api.updateProgram();" << NL;
+		g_out << "api.setCompute(t" << incUid_ << ", false);" << NL;
+	}
+#endif
+	if(incUid_)
+	{
+		false_ = newUid();
+		b_->setCompute(false_, false);
+	}
+#ifdef DEBUG_ICLASP
+	g_out << "api.setCompute(t" << getFalse() << ", false);" << NL;
+#endif
+
 	// create a new uid
 	incUid_ = newUid();
 	b_->setAtomName(incUid_, "");
+#ifdef DEBUG_ICLASP
+	g_out << "api.setAtomName(t" << incUid_ << ", \"\");" << NL;
+#endif
 	IntVector empty, head;
 	head.push_back(incUid_);
 	printChoiceRule(head, empty, empty);
@@ -183,6 +262,15 @@ void IClaspOutput::reinitialize()
 
 void IClaspOutput::finalize()
 {
+#ifdef DEBUG_ICLASP
+	static int its = 0;
+	its++;
+	g_out << "std::cout << \"============= solving " << its << " =============\" << std::endl;" << NL;
+	g_out << "api.endProgram(solver, options.initialLookahead);" << NL << NL;
+	g_out << "assumptions.clear();" << NL;
+	g_out << "assumptions.push_back(api.stats.index[t" << incUid_ << "].lit);" << NL;
+	g_out << "Clasp::solve(solver, assumptions, options.numModels, options.solveParams);" << NL << NL;
+#endif
 	ClaspOutput::finalize();
 }
 

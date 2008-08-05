@@ -101,7 +101,6 @@ SolverStrategies::SolverStrategies()
 	, heuristic(new SelectFirst) 
 	, postProp(new NoPostPropagator)
 	, search(use_learning)
-	, minimizer(0)
 	, cflMin(beame_minimization)
 	, cflMinAntes(all_antes)
 	, randomWatches(false)
@@ -450,24 +449,26 @@ bool Solver::unitPropagate() {
 			}
 		}
 		// and finally do general BCP
-		GWL& gWL = gwl(wl);
-		Constraint::PropResult r;
-		LitVec::size_type j;
-		for (j = 0, i = 0, end = gWL.size(); i != gWL.size(); ) {
-			Watch& w = gWL[i++];
-			r = w.propagate(*this, p);
-			if (r.second) {	// keep watch
-				gWL[j++] = w;
-			}
-			if (!r.first) {
-				while (i != end) {
-					gWL[j++] = gWL[i++];
+		if (!wl.gens.empty()) {
+			GWL& gWL = gwl(wl);
+			Constraint::PropResult r;
+			LitVec::size_type j;
+			for (j = 0, i = 0, end = gWL.size(); i != gWL.size(); ) {
+				Watch& w = gWL[i++];
+				r = w.propagate(*this, p);
+				if (r.second) {	// keep watch
+					gWL[j++] = w;
 				}
-				gWL.erase(gWL.begin()+j, gWL.end());
-				return false;
+				if (!r.first) {
+					while (i != end) {
+						gWL[j++] = gWL[i++];
+					}
+					gWL.erase(gWL.begin()+j, gWL.end());
+					return false;
+				}
 			}
+			gWL.erase(gWL.begin()+j, gWL.end());
 		}
-		gWL.erase(gWL.begin()+j, gWL.end());
 	}
 	return true;
 }

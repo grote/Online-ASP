@@ -790,7 +790,7 @@ void ProgramBuilder::clearRuleState(const PrgRule& r) {
 	}	
 }
 
-bool ProgramBuilder::endProgram(Solver& solver, bool initialLookahead) {
+bool ProgramBuilder::endProgram(Solver& solver, bool initialLookahead, bool finalizeSolver) {
 	if (frozen_ == false) {
 		stats.bodies += (uint32)bodies_.size();
 		updateFrozenAtoms();
@@ -827,7 +827,7 @@ bool ProgramBuilder::endProgram(Solver& solver, bool initialLookahead) {
 		stats.ufsNodes = (uint32)ufs_->nodes();
 	}
 	if (incData_) atoms_.resize( atoms_.size() - incData_->unfreeze_.size() );
-	return ret && solver.endAddConstraints(initialLookahead);
+	return ret && (!finalizeSolver || solver.endAddConstraints(initialLookahead));
 }
 
 void ProgramBuilder::updateFrozenAtoms() {
@@ -910,15 +910,13 @@ bool ProgramBuilder::addConstraints(Solver& s, CycleChecker& c, uint32 startAtom
 		if ( !(*it)->toConstraint(s, gc, *this) ) { return false; }
 		c.visit(*it);
 	}
-	minimize(s);
+	freezeMinimize(s);
 	return true;
 }
-// adds minimize constraint
-void ProgramBuilder::minimize(Solver& solver) {
-	if (!minimize_) { return; }
+
+MinimizeConstraint* ProgramBuilder::createMinimize(Solver& solver) {
+	if (!minimize_) { return 0; }
 	MinimizeConstraint* m = new MinimizeConstraint();
-	solver.add(m);
-	solver.strategies().minimizer = m;
 	WeightLitVec lits;
 	for (MinimizeRule* r = minimize_; r; r = r->next_) {
 		for (WeightLitVec::iterator it = r->lits_.begin(); it != r->lits_.end(); ++it) {
@@ -929,6 +927,21 @@ void ProgramBuilder::minimize(Solver& solver) {
 		}
 		m->minimize(solver, lits);
 		lits.clear();
+	}
+	m->simplify(solver,false);
+	return m;
+}
+
+// exclude vars contained in minimize statements from var elimination
+void ProgramBuilder::freezeMinimize(Solver& solver) {
+	if (!minimize_) return;
+	for (MinimizeRule* r = minimize_; r; r = r->next_) {
+		for (WeightLitVec::iterator it = r->lits_.begin(); it != r->lits_.end(); ++it) {
+			PrgAtomNode* h		= atoms_[it->first.var()];
+			if (h->hasVar()) {
+				solver.setFrozen(h->var(), true);
+			}
+		}
 	}
 }
 /////////////////////////////////////////////////////////////////////////////////////////

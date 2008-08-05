@@ -502,28 +502,39 @@ Literal ClaspVmtf::doSelect(Solver& s) {
 /////////////////////////////////////////////////////////////////////////////////////////
 // ClaspVsids selection strategy
 /////////////////////////////////////////////////////////////////////////////////////////
+const double vsidsVarDecay_g = 1 / 0.95;
+
 ClaspVsids::ClaspVsids(bool loops) 
-	: queue_(GreaterActivity(score_)) 
-	, considerLoops_(loops) {}
+	: vars_(GreaterActivity(score_)) 
+	, inc_(1.0)
+	, scoreLoops_(loops) {}
 
 void ClaspVsids::startInit(const Solver& s) {
 	score_.clear();
 	score_.resize(s.numVars()+1);
 }
 void ClaspVsids::endInit(const Solver& s) {
-	queue_.clear();
+	vars_.clear();
+	inc_ = 1.0;
+	double maxS = 0.0;
 	for (Var v = 1; v <= s.numVars(); ++v) {
 		if (s.value(v) == value_free) {
 			// initialize activity to moms-score
 			score_[v].first = momsScore(s, v);
-			queue_.push(v);
+			if (score_[v].first > maxS) {
+				maxS = score_[v].first;
+			}
+			vars_.push(v);
 		}
+	}
+	for (VarVec::size_type i = 0; i != score_.size(); ++i) {
+		score_[i].first /= maxS;
 	}
 }
 
 void ClaspVsids::simplify(Solver& s, LitVec::size_type i) {
 	for (; i < s.numAssignedVars(); ++i) {
-		queue_.remove(s.assignment()[i].var());
+		vars_.remove(s.assignment()[i].var());
 	}
 }
 
@@ -531,50 +542,35 @@ void ClaspVsids::newConstraint(const Solver&, const Literal* first, LitVec::size
 	if (t != Constraint_t::native_constraint) {
 		for (LitVec::size_type i = 0; i < size; ++i, ++first) {
 			score_[first->var()].second += 1 - (first->sign() + first->sign());
-			if (t == Constraint_t::learnt_conflict || considerLoops_) {
+			if (t == Constraint_t::learnt_conflict || scoreLoops_) {
 				updateVarActivity(first->var());
 			}
+		}
+		if (t == Constraint_t::learnt_conflict) {
+			inc_ *= vsidsVarDecay_g;
 		}
 	}
 }
 
 void ClaspVsids::updateReason(const Solver&, const LitVec&, Literal r) {
-	updateVarActivity(r.var());
+	if (r.var() != 0) updateVarActivity(r.var());
 }
 
 void ClaspVsids::undoUntil(const Solver& s , LitVec::size_type st) {
 	const LitVec& a = s.assignment();
 	for (; st < a.size(); ++st) {
-		if (!queue_.is_in_queue(a[st].var())) {
-			queue_.push(a[st].var());
+		if (!vars_.is_in_queue(a[st].var())) {
+			vars_.push(a[st].var());
 		}
 	}
 }
 
-void ClaspVsids::updateVarActivity(Var v) {
-	++score_[v].first;	
-	if (queue_.is_in_queue(v)) {
-		queue_.increase(v);
-	}
-}
-
-
-void ClaspVsids::decayActivity() {
-	for (LitVec::size_type i = 0; i < score_.size(); ++i) {
-		score_[i].first >>= 1;
-	}
-}
-
 Literal ClaspVsids::doSelect(Solver& s) {
-	if ( ((s.stats.choices + 1) & 255) == 0 ) {
-		decayActivity();
-	}
 	Var var;
-	while ( s.value(queue_.top()) != value_free ) {
-		queue_.pop();
+	while ( s.value(vars_.top()) != value_free ) {
+		vars_.pop();
 	}
-	var = queue_.top();
-	queue_.pop();
+	var = vars_.top();
 	return score_[var].second == 0
 		? s.preferredLiteralByType(var)
 		: Literal( var, score_[var].second < 0 );
