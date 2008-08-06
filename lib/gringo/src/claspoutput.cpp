@@ -17,7 +17,7 @@
 
 #include "claspoutput.h"
 
-//#define DEBUG_ICLASP
+#define DEBUG_ICLASP
 
 #ifdef DEBUG_ICLASP
 #include <fstream>
@@ -234,7 +234,7 @@ void IClaspOutput::reinitialize()
 	{
 		g_out << "solver.undoUntil(0);" << NL;
 		g_out << "api.updateProgram();" << NL;
-		g_out << "api.setCompute(t" << incUid_ << ", false);" << NL;
+		g_out << "api.unfreeze(t" << incUid_ << ");" << NL;
 	}
 #endif
 	if(incUid_)
@@ -242,11 +242,14 @@ void IClaspOutput::reinitialize()
 		// create a new false atom
 		false_ = newUid();
 		b_->setCompute(false_, false);
+		b_->unfreeze(incUid_);
 
 		// set the current incUid to false
+		/*
 		IntVector pos, neg;
 		pos.push_back(incUid_);
 		printBasicRule(getFalse(), pos, neg);
+		*/
 		//b_->setCompute(incUid_, false);
 	}
 #ifdef DEBUG_ICLASP
@@ -256,8 +259,10 @@ void IClaspOutput::reinitialize()
 	// create a new uid
 	incUid_ = newUid();
 	b_->setAtomName(incUid_, "");
+	b_->freeze(incUid_);
 #ifdef DEBUG_ICLASP
 	g_out << "api.setAtomName(t" << incUid_ << ", \"\");" << NL;
+	g_out << "api.freeze(t" << incUid_ << ");" << NL;
 #endif
 	IntVector empty, head;
 	head.push_back(incUid_);
