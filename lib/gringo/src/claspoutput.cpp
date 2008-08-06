@@ -17,7 +17,7 @@
 
 #include "claspoutput.h"
 
-#define DEBUG_ICLASP
+//#define DEBUG_ICLASP
 
 #ifdef DEBUG_ICLASP
 #include <fstream>
