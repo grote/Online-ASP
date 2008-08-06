@@ -264,9 +264,11 @@ void IClaspOutput::reinitialize()
 	g_out << "api.setAtomName(t" << incUid_ << ", \"\");" << NL;
 	g_out << "api.freeze(t" << incUid_ << ");" << NL;
 #endif
+	/*
 	IntVector empty, head;
 	head.push_back(incUid_);
 	printChoiceRule(head, empty, empty);
+	*/
 }
 
 void IClaspOutput::finalize()
