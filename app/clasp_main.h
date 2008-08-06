@@ -353,7 +353,7 @@ bool ClaspApp::solve() {
 		bool ret  = false;
 		do
 		{
-			solver.undoUntil(0);
+			//solver.reduceLearnts(1.0);
 			api.updateProgram();
 			grounder->iground();
 			ret = api.endProgram(solver, options.initialLookahead, false);

@@ -229,9 +229,6 @@ void IClaspOutput::initialize(SignatureVector *pred)
 
 void IClaspOutput::reinitialize()
 {
-	// set the previous incUid to false
-	if(incUid_)
-		b_->setCompute(incUid_, false);
 #ifdef DEBUG_ICLASP
 	if(incUid_)
 	{
@@ -242,8 +239,15 @@ void IClaspOutput::reinitialize()
 #endif
 	if(incUid_)
 	{
+		// create a new false atom
 		false_ = newUid();
 		b_->setCompute(false_, false);
+
+		// set the current incUid to false
+		IntVector pos, neg;
+		pos.push_back(incUid_);
+		printBasicRule(getFalse(), pos, neg);
+		//b_->setCompute(incUid_, false);
 	}
 #ifdef DEBUG_ICLASP
 	g_out << "api.setCompute(t" << getFalse() << ", false);" << NL;
