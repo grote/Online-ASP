@@ -371,7 +371,7 @@ bool ClaspApp::solve() {
 				ret = solver.stats.models > 0;
 			}
 		}
-		while(!ret || inum-- > 1);
+		while(inum-- > 1 || !ret);
 		setState(end_solve);
 
 		*lpStats_ = static_cast<NS_GRINGO::NS_OUTPUT::ClaspOutput*>(output)->getStats();
