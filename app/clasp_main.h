@@ -357,7 +357,7 @@ bool ClaspApp::solve() {
 			//solver.reduceLearnts(1.0);
 			api.updateProgram();
 			grounder->iground();
-			ret = api.endProgram(solver, options.initialLookahead, false);
+			ret = api.endProgram(solver, options.initialLookahead, true);
 			if(ret)
 			{
 				StdOutPrinter printer;
