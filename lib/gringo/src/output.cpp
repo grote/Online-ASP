@@ -703,7 +703,7 @@ void DeltaObject::print(NS_OUTPUT::Output *o, std::ostream &out)
 
 void DeltaObject::print_plain(NS_OUTPUT::Output *o, std::ostream &out)
 {
-	out << "delta";
+	out << "delta(" << o->getIncUid() << ")";
 }
 
 void DeltaObject::addDomain(bool fact)

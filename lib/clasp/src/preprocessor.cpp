@@ -131,9 +131,7 @@ void Preprocessor::updatePreviouslyDefinedAtoms(Var startAtom, bool strong) {
 			PrgBodyNode* body = prg_->bodies_[a->posDep[b]];
 			if (strong) {
 				++nodes_[a->posDep[b]].known;
-				if (aEq) {
-					nodes_[a->posDep[b]].sBody = 1;
-				}
+				if (aEq) { nodes_[a->posDep[b]].sBody = 1; }
 			}
 			if ( ( (a->hasVar() && a->value() != value_false) || (aEq && aEq->hasVar() && aEq->value() != value_false) ) 
 					&& !body->isSupported() && body->onPosPredSupported(Var(i))) {
@@ -143,6 +141,7 @@ void Preprocessor::updatePreviouslyDefinedAtoms(Var startAtom, bool strong) {
 		if (strong) {
 			for (VarVec::size_type b = 0; b != a->negDep.size(); ++b) {
 				++nodes_[a->negDep[b]].known;
+				if (aEq) { nodes_[a->negDep[b]].sBody = 1; }
 			}
 		}
 	}

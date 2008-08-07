@@ -179,6 +179,7 @@ bool Solver::endAddConstraints(bool look) {
 	stats.native[2] = numTernaryConstraints();
 	if (!hasConflict()) {
 		strategy_.heuristic->endInit(*this);	
+		if (randHeuristic_) randHeuristic_->endInit(*this);
 	}
 	return !hasConflict();
 }

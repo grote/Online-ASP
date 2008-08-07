@@ -341,8 +341,8 @@ bool ClaspApp::solve() {
 		api.startProgram(options.suppModels
 			? 0
 			: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.loopRep))
-			, 0
-			//, (uint32)options.eqIters
+			//, 0
+			, (uint32)options.eqIters
 		);
 		output = new NS_GRINGO::NS_OUTPUT::IClaspOutput(&api, LparseReader::TransformMode(options.transExt));
 		if(parser->parse(output))

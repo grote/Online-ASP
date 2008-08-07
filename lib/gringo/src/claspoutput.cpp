@@ -42,6 +42,9 @@ void ClaspOutput::initialize(SignatureVector *pred)
 {
 	SmodelsConverter::initialize(pred);
 	b_->setCompute(getFalse(), false);
+#ifdef DEBUG_ICLASP
+	g_out << "api.setCompute(t" << getFalse() << ", false);" << NL;
+#endif
 }
 
 void ClaspOutput::printBasicRule(int head, const IntVector &pos, const IntVector &neg)
@@ -239,22 +242,16 @@ void IClaspOutput::reinitialize()
 #endif
 	if(incUid_)
 	{
+/*
 		// create a new false atom
 		false_ = newUid();
 		b_->setCompute(false_, false);
-		b_->unfreeze(incUid_);
-
-		// set the current incUid to false
-		/*
-		IntVector pos, neg;
-		pos.push_back(incUid_);
-		printBasicRule(getFalse(), pos, neg);
-		*/
-		//b_->setCompute(incUid_, false);
-	}
 #ifdef DEBUG_ICLASP
-	g_out << "api.setCompute(t" << getFalse() << ", false);" << NL;
+		g_out << "api.setCompute(t" << getFalse() << ", false);" << NL;
 #endif
+*/
+		b_->unfreeze(incUid_);
+	}
 
 	// create a new uid
 	incUid_ = newUid();
@@ -262,13 +259,9 @@ void IClaspOutput::reinitialize()
 	b_->freeze(incUid_);
 #ifdef DEBUG_ICLASP
 	g_out << "api.setAtomName(t" << incUid_ << ", \"\");" << NL;
+	g_out << "// delta(" << incUid_ << ")." << NL;
 	g_out << "api.freeze(t" << incUid_ << ");" << NL;
 #endif
-	/*
-	IntVector empty, head;
-	head.push_back(incUid_);
-	printChoiceRule(head, empty, empty);
-	*/
 }
 
 void IClaspOutput::finalize()
@@ -292,7 +285,10 @@ int IClaspOutput::getIncUid()
 
 void IClaspOutput::print(NS_OUTPUT::Object *o)
 {
-	//o->print_plain(this, std::cout);
+#ifdef DEBUG_ICLASP
+	g_out << "// ";
+	o->print_plain(this, g_out);
+#endif
 	SmodelsConverter::print(o);
 }
 
