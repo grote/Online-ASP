@@ -112,6 +112,7 @@ bool Preprocessor::preprocessSimple(bool bodyEq) {
 }
 
 // If the program is defined incrementally, mark atoms from previous steps as supported
+// Pre: Atoms that are true/false have their value-member set
 void Preprocessor::updatePreviouslyDefinedAtoms(Var startAtom, bool strong) {
 	for (Var i = 0; i != startAtom; ++i) {
 		PrgAtomNode* a = prg_->atoms_[i];
@@ -125,27 +126,42 @@ void Preprocessor::updatePreviouslyDefinedAtoms(Var startAtom, bool strong) {
 			uint32 eq = prg_->getEqAtom(i);
 			if (eq != i) {
 				aEq = prg_->atoms_[eq];
+				a->clearVar(true);
+				a->setValue( aEq->value() );
 			}
 		}
+		ValueRep v = a->hasVar() || aEq ? a->value() : value_false;
 		for (VarVec::size_type b = 0; b != a->posDep.size(); ++b) {
 			PrgBodyNode* body = prg_->bodies_[a->posDep[b]];
-			if (strong) {
-				++nodes_[a->posDep[b]].known;
-				if (aEq) { nodes_[a->posDep[b]].sBody = 1; }
+			if (strong && (aEq || v != value_free)) {
+				nodes_[a->posDep[b]].sBody = 1;
 			}
-			if ( ( (a->hasVar() && a->value() != value_false) || (aEq && aEq->hasVar() && aEq->value() != value_false) ) 
-					&& !body->isSupported() && body->onPosPredSupported(Var(i))) {
-				prg_->initialSupp_.push_back(a->posDep[b]);
+			if (v != value_false) {
+				if (strong) ++nodes_[a->posDep[b]].known;
+				bool isSupp = body->isSupported();
+				body->onPosPredSupported(Var(i));
+				if (!isSupp && body->isSupported()) {
+					prg_->initialSupp_.push_back(a->posDep[b]);
+				}
 			}
 		}
 		if (strong) {
 			for (VarVec::size_type b = 0; b != a->negDep.size(); ++b) {
-				++nodes_[a->negDep[b]].known;
-				if (aEq) { nodes_[a->negDep[b]].sBody = 1; }
+				if (aEq || v != value_free) {
+					nodes_[a->negDep[b]].sBody = 1;
+				}
+				if (v != value_true) {
+					++nodes_[a->negDep[b]].known;
+				}
+			}
+			if (v != value_free) {
+				a->posDep.clear();
+				a->negDep.clear();
 			}
 		}
 	}
 }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // equivalence preprocessing
 //
@@ -164,7 +180,7 @@ bool Preprocessor::preprocessEq(uint32 maxIters) {
 		std::stable_sort(prg_->initialSupp_.begin(), prg_->initialSupp_.end(), LessBodySize(prg_->bodies_));
 		prg_->vars_.shrink(startVar);
 		litToNode_.clear();
-		for (Var i = startAtom; i != stopAtom; ++i) {
+		for (Var i = startAtom; i < stopAtom; ++i) {
 			prg_->atoms_[i]->clearVar(false);
 			if (i < (uint32)prg_->stats.index.size()) { prg_->stats.index[i].lit = negLit(0); }	
 		}	

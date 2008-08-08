@@ -366,7 +366,7 @@ private:
 	}
 	bool					applyCompute();
 	void					setConflict();
-	void					updateFrozenAtoms();
+	void					updateFrozenAtoms(const Solver&);
 	// ------------------------------------------------------------------------
 	// Nogood creation
 	void cloneVars(Solver& s);

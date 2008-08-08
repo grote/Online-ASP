@@ -793,7 +793,7 @@ void ProgramBuilder::clearRuleState(const PrgRule& r) {
 bool ProgramBuilder::endProgram(Solver& solver, bool initialLookahead, bool finalizeSolver) {
 	if (frozen_ == false) {
 		stats.bodies += (uint32)bodies_.size();
-		updateFrozenAtoms();
+		updateFrozenAtoms(solver);
 		frozen_ = true;
 		if (atoms_[0]->value() == value_true || !applyCompute()) { return false; }
 		Preprocessor p;
@@ -830,8 +830,15 @@ bool ProgramBuilder::endProgram(Solver& solver, bool initialLookahead, bool fina
 	return ret && (!finalizeSolver || solver.endAddConstraints(initialLookahead));
 }
 
-void ProgramBuilder::updateFrozenAtoms() {
+void ProgramBuilder::updateFrozenAtoms(const Solver& solver) {
 	if (incData_ != 0) {
+		// update truth values of atoms from previous iterations
+		for (uint32 i = 0; i != incData_->startAtom_; ++i) {
+			ValueRep v = solver.value( atoms_[i]->var() );
+			if (v != value_free) {
+				atoms_[i]->setValue(v == trueValue(atoms_[i]->literal()) ? value_true : value_false);
+			}
+		}
 		for (VarVec::iterator it = incData_->unfreeze_.begin(), end = incData_->unfreeze_.end(); it != end; ++it) {
 			PrgAtomNode* a = atoms_[*it]; 
 			assert(a->hasVar() && "Error: Can't unfreeze atom that is not frozen");
