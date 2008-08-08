@@ -2,6 +2,14 @@
 #show push_from(X,Y,D,K).
 #show push_to(X,Y,D,K).
 
+#base.
+
+% convert my instances
+square(X, Y)        :- field(X, Y).
+target_square(X, Y) :- target(X, Y).
+initial_box(X, Y)   :- stone(X, Y).
+initial_at(X, Y)    :- start(X, Y).
+
 #lambda(K).
 
 direction(u) :- K<2.

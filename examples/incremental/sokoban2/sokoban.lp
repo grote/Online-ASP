@@ -3,6 +3,12 @@
 
 #base.
 
+% convert incasp sokoban instances
+field(X, Y)  :- square(X, Y).
+target(X, Y) :- target_square(X, Y).
+stone(X, Y)  :- initial_box(X, Y).
+start(X, Y)  :- initial_at(X, Y).
+
 stone(X, Y, 0) :- stone(X, Y).
 pos(X, Y, 0)   :- start(X, Y).
 
@@ -40,3 +46,4 @@ stone(X, Y, T) :- stone(X, Y, T - 1), not pushed(X, Y, T), field(X, Y).
 #delta(T).
  :- not target(X, Y), stone(X, Y, T).
 
+#base.
