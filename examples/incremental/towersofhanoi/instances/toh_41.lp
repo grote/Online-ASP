@@ -1,5 +1,3 @@
-#base.
-
 disk(1).
 disk(2).
 disk(3).
@@ -10,18 +8,16 @@ disk(7).
 disk(8).
 disk(9).
 
-on(8,7,0).
-on(7,4,0).
-on(4,1,0).
-on(5,2,0).
-on(9,6,0).
-on(6,3,0).
+init_on(8,7).
+init_on(7,4).
+init_on(4,1).
+init_on(5,2).
+init_on(9,6).
+init_on(6,3).
 
-#delta(K).
-
-:- not on(4,3,K).
-:- not on(5,4,K).
-:- not on(6,5,K).
-:- not on(7,6,K).
-:- not on(8,7,K).
-:- not on(9,8,K).
+goal_on(4,3).
+goal_on(5,4).
+goal_on(6,5).
+goal_on(7,6).
+goal_on(8,7).
+goal_on(9,8).

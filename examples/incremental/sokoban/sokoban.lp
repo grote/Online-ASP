@@ -70,15 +70,6 @@ box(X,Y,K) :- box(X,Y,K-1), square(X,Y),
 :- push_to(X,Y,r,K-1), push_from(X,Y,r,K), square(X,Y).
 :- push_to(X,Y,l,K-1), push_from(X,Y,l,K), square(X,Y).
 
-:- push_from(X,Y,u,K-1), push_to(X,Y1,u,K-1), push_from(X,Y1+2,d,K),
-   not push(X,Y+1,d,K), square(X,Y), square(X,Y1), Y1>Y.
-:- push_from(X,Y,d,K-1), push_to(X,Y1,d,K-1), push_from(X,Y1-2,u,K),
-   not push(X,Y-1,u,K), square(X,Y), square(X,Y1), Y1<Y.
-:- push_from(X,Y,r,K-1), push_to(X1,Y,r,K-1), push_from(X1+2,Y,l,K),
-   not push(X+1,Y,l,K), square(X,Y), square(X1,Y), X1>X.
-:- push_from(X,Y,l,K-1), push_to(X1,Y,l,K-1), push_from(X1-2,Y,r,K),
-   not push(X-1,Y,r,K), square(X,Y), square(X1,Y), X1<X.
-
 #delta(K).
 :- target_square(X,Y), not box(X,Y,K).
 

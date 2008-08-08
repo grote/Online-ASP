@@ -31,6 +31,8 @@
 #	include <claspoutput.h>
 #endif
 
+const char *GRINGO_VERSION = "2.0.0";
+
 // evil hack :)
 NS_GRINGO::GrinGoParser* parser = 0;
 NS_GRINGO::NS_OUTPUT::Output* output = 0;
@@ -83,11 +85,30 @@ int main(int argc, char *argv[])
 	{
 		while(argc > 1)
 		{
-			if(strcmp(argv[1], "--convert") == 0)
+			if(strcmp(argv[1], "--version") == 0)
+			{
+				std::cout << "GrinGo " << GRINGO_VERSION << std::endl;
+				std::cout << "Copyright (C) Roland Kaminski" << std::endl;
+				std::cout << "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>" << std::endl;
+				std::cout << "GrinGo is free software: you are free to change and redistribute it." << std::endl;
+				std::cout << "There is NO WARRANTY, to the extent permitted by law." << std::endl;
+#ifdef WITH_CLASP
+				std::cout << "clasp " << VERSION << std::endl;
+				std::cout << "Copyright (C) Benjamin Kaufmann" << std::endl;
+				std::cout << "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>" << std::endl;
+				std::cout << "clasp is free software: you are free to change and redistribute it." << std::endl;
+				std::cout << "There is NO WARRANTY, to the extent permitted by law." << std::endl;
+#endif
+
+				for(std::vector<std::istream*>::iterator it = streams.begin(); it != streams.end(); it++)
+					delete *it;
+				return 0;
+			}
+			else if(strcmp(argv[1], "--convert") == 0)
 			{
 				convert = true;
 			}
-			else if(strcmp(argv[1], "-g") == 0)
+			else if(strcmp(argv[1], "-a") == 0)
 			{
 				format = GRINGO;
 				if(argc > 2)
@@ -107,7 +128,7 @@ int main(int argc, char *argv[])
 			{
 				format = SMODELS;
 			}
-			else if(strcmp(argv[1], "-p") == 0)
+			else if(strcmp(argv[1], "-t") == 0)
 			{
 				format = LPARSE;
 			}
@@ -129,12 +150,12 @@ int main(int argc, char *argv[])
 			}
 #endif
 #ifdef WITH_CLASP
-			else if(strcmp(argv[1], "-c") == 0)
+			else if(strcmp(argv[1], "--clasp") == 0)
 			{
 				format = CLASP;
 			}
 #endif
-			else if(strcmp(argv[1], "--const") == 0)
+			else if(strcmp(argv[1], "-c") == 0)
 			{
 				if(argc == 2)
 					throw GrinGoException("error: constant missing");
@@ -150,18 +171,20 @@ int main(int argc, char *argv[])
 				std::cerr << "Usage: " << arg0 << " (gringo option|file)*" << std::endl << std::endl;
 #endif
 				std::cerr << "gringo options are: " << std::endl;
-				std::cerr << "	--convert   : convert already ground program" << std::endl;
-				std::cerr << "	--const c=v : Pass constant c equal value v to grounder" << std::endl;
+				std::cerr << "	--help      : Print this help message" << std::endl;
+				std::cerr << "	--version   : Print version information" << std::endl;
+				std::cerr << "	--convert   : Convert already ground program" << std::endl;
+				std::cerr << "	-c c=v      : Pass constant c equal value v to grounder" << std::endl;
 #ifdef WITH_CLASP
-				std::cerr << "	-c          : Use internal interface to clasp" << std::endl;
+				std::cerr << "	--clasp     : Use internal interface to clasp" << std::endl;
 #endif
 #ifdef WITH_ICLASP
 				std::cerr << "  -i [num]    : Ground an incremental program and " << std::endl;
 				std::cerr << "                perform at least num grounding steps (default 1)" << std::endl;
 #endif
 				std::cerr << "	-l          : Print smodels output" << std::endl;
-				std::cerr << "	-p          : Print plain lparse-like output" << std::endl;
-				std::cerr << "	-g [1-7]    : Print experimental ASPils output" << std::endl;
+				std::cerr << "	-t          : Print plain lparse-like output" << std::endl;
+				std::cerr << "	-a [1-7]    : Print experimental ASPils output" << std::endl;
 			        std::cerr << "                Give an optional normalform number from 1 to 7 (7 if none)" << std::endl;
 				std::cerr << "	The default output is smodels output (-l)" << std::endl;
 #ifdef WITH_CLASP
