@@ -403,9 +403,14 @@ public:
 	//! equivalent to insert(end(), x);
 	void push_back(const T& x) {
 		if (size() == capacity())  {
+			// x may be in sequence - copy it
+			T temp(x);
 			grow(size()+1);
+			new (last_) T(temp);
 		}
-		new(last_) T(x);
+		else {
+			new(last_) T(x);
+		}
 		++last_;
 	}
 	
