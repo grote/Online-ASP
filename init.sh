@@ -1,3 +1,5 @@
+#!/bin/bash
+
 mingw=0
 clasp=0
 iclasp=0
