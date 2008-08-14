@@ -29,11 +29,11 @@ namespace NS_GRINGO
 		{
 		public:
 			PilsOutput(std::ostream *out, unsigned int normalForm);
-			virtual void initialize(SignatureVector *pred);
-			virtual void print(NS_OUTPUT::Object *o);
-			virtual void finalize();
-			virtual void addOptimizedID(unsigned int id);
-			virtual unsigned int getNormalForm() const;
+			void initialize(SignatureVector *pred);
+			void print(NS_OUTPUT::Object *o);
+			void finalize(bool last);
+			void addOptimizedID(unsigned int id);
+			unsigned int getNormalForm() const;
 			virtual ~PilsOutput();
 		protected:
 			IntVector optimizedIDs_;

@@ -1,20 +1,24 @@
 #!/bin/bash
 
 mingw=0
-clasp=0
-iclasp=0
+clingo=0
+iclingo=0
 kdev=0
+
 options=""
 while [[ $# > 0 ]]; do
 	case $1 in
-		"--iclasp")
+		"--debug")
+			debug=1
+			;;
+		"--iclingo")
 			options=" -D WITH_CLASP:BOOL=ON -D WITH_ICLASP:BOOL=ON"
 			clasp=1
-			iclasp=1
+			iclingo=1
 			;;
-		"--clasp")
+		"--clingo")
 			options=" -D WITH_CLASP:BOOL=ON -D WITH_ICLASP:BOOL=OFF"
-			clasp=1
+			clingo=1
 			;;
 		"--kdev") 
 			kdev=1
@@ -25,11 +29,12 @@ while [[ $# > 0 ]]; do
 		"--help")
 			echo "$0 [options]"
 			echo
-			echo "--help :   show this help"
-			echo "--mingw :  crosscompile for windows"
-			echo "           Note: u may have to change the file \"mingw.cmake\""
-			echo "--clasp :  enable build-in clasp version"
-			echo "--iclasp : enable incremental clasp interface "
+			echo "--help    : show this help"
+			echo "--mingw   : crosscompile for windows"
+			echo "            Note: u may have to change the file \"mingw.cmake\""
+			echo "--clingo  : enable build-in clasp version"
+			echo "--iclingo : enable incremental clasp interface "
+			echo "--debug   : also create debug builds"
 			exit 0
 			;;
 		*)
@@ -39,49 +44,59 @@ while [[ $# > 0 ]]; do
 	shift
 done
 
-if [[ $clasp == 0 && $iclasp==0 ]]; then
-	options=" -D WITH_CLASP:BOOL=OFF -D WITH_ICLASP:BOOL=OFF"
-fi
+function prepare()
+{
+	mkdir -p $1
+	cd $1
+
+	mkdir -p release
+	cd release
+	cmake $2 ../../..
+	cd ..
+	if [[ $debug == 1 ]]; then
+		mkdir -p debug
+		cd debug
+		cmake -D CMAKE_BUILD_TYPE:STRING=Debug $2 ../../..
+		cd ..
+	fi
+	if [[ $kdev == 1 ]]; then
+		mkdir -p kdevelop
+		cd kdevelop
+		cmake -G KDevelop3 $2 ../../..
+		cd ..
+	fi
+	if [[ $mingw == 1 ]]; then
+		mkdir -p win32
+		cd win32
+		cmake -D CMAKE_TOOLCHAIN_FILE=../../../mingw.cmake $2 ../../..
+		cd ..
+	fi
+
+	cd ..
+}
 
 mkdir -p build
 cd build
 
-mkdir -p debug
-cd debug
-cmake -D CMAKE_BUILD_TYPE:STRING=Debug $options ../..
-cd ..
-
-mkdir -p release
-cd release
-cmake $options ../..
-cd ..
-
-if [[ $kdev == 1 ]]; then
-	mkdir -p kdev
-	cd kdev
-	cmake $options -D CMAKE_BUILD_TYPE:STRING=Debug -G KDevelop3 ../..
-	cd ..
+prepare gringo "-D WITH_CLASP:BOOL=OFF -D WITH_ICLASP:BOOL=OFF"
+if [[ $clingo == 1 ]]; then
+	prepare clingo "-D WITH_CLASP:BOOL=ON -D WITH_ICLASP:BOOL=OFF"
 fi
-
-if [[ $mingw == 1 ]]; then
-	mkdir -p win32/bin
-	gcc -o win32/bin/lemon ../lib/gringo/src/lemon.c
-	cd win32
-	cmake $options -D CMAKE_TOOLCHAIN_FILE=../../mingw.cmake ../..
-	cd ..
+if [[ $iclingo == 1 ]]; then
+	prepare iclingo "-D WITH_CLASP:BOOL=ON -D WITH_ICLASP:BOOL=ON"
 fi
 
 echo
 echo 
-echo "To compile the project simply change to folder build/{debug,release,win32} and type \"make\"."
+echo "To compile the project simply change to folder build/{gringo,clingo/iclingo}/{debug,release,win32} and type \"make\"."
 echo "Note: You can always change the cmake options by modifying the file \"CMakeCache.txt\"."
 echo 
-if [[ $iclasp == 1 ]]; then
+if [[ $iclingo == 1 ]]; then
 	echo "incremental clasp interface: yes"
 else
-	echo "incremental clasp interface: no (enable with --iclasp)"
+	echo "incremental clasp interface: no (enable with --iclingo)"
 fi
-if [[ $clasp == 1 ]]; then
+if [[ $clingo == 1 ]]; then
 	echo "internal clasp support: yes"
 else
 	echo "internal clasp support: no (enable with --clasp)"

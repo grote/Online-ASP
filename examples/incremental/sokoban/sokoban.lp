@@ -10,7 +10,7 @@ target_square(X, Y) :- target(X, Y).
 initial_box(X, Y)   :- stone(X, Y).
 initial_at(X, Y)    :- start(X, Y).
 
-#lambda(K).
+#incremental(K).
 
 direction(u) :- K<2.
 direction(d) :- K<2.
@@ -70,7 +70,7 @@ box(X,Y,K) :- box(X,Y,K-1), square(X,Y),
 :- push_to(X,Y,r,K-1), push_from(X,Y,r,K), square(X,Y).
 :- push_to(X,Y,l,K-1), push_from(X,Y,l,K), square(X,Y).
 
-#delta(K).
+#volatile(K).
 :- target_square(X,Y), not box(X,Y,K).
 
 #base.

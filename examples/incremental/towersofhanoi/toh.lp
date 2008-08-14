@@ -1,7 +1,7 @@
 #hide.
 #show put(M,N,K).
 
-#lambda(K).
+#incremental(K).
 
 1{move(N,K)  : disk(N) : N > 3}1.
 1{where(N,K) : disk(N)}1.
@@ -16,7 +16,7 @@ on(M,N,K) :- disk(M;N), on(M,N,K-1), not move(M,K).
 
 put(M,N,K) :- disk(M;N), move(M,K), where(N,K).
 
-#delta(K).
+#volatile(K).
 
 :- goal_on(X,Y), not on(X,Y,K).
 

@@ -1,7 +1,7 @@
 #hide.
 #show put(M,N,K).
 
-#lambda(K).
+#incremental(K).
 
 1{on(M,N,0) : disk(N) : M > N}1 :- disk(M), M > 3, K < 2.
  {on(M,N,0) : disk(M) : M > N : M > 3}1 :- disk(N), K < 2.
@@ -20,7 +20,7 @@ on(M,N,-K) :- disk(M;N), on(M,N,-K+1), not move(M,-K), M > N, M > 3.
 
 put(M,N,-K) :- disk(M;N), move(M,-K), on(M,N,-K+1).
 
-#delta(K).
+#volatile(K).
 
 :- init_on(M,N), not on(M,N,-K).
 

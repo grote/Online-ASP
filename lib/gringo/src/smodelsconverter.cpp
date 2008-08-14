@@ -103,12 +103,10 @@ void SmodelsConverter::handleBody(ObjectVector &body)
 			assert(!(*it)->neg_);
 			printBody(static_cast<Aggregate*>(*it));
 		}
-#ifdef WITH_ICLASP
 		else if(dynamic_cast<DeltaObject*>(*it))
 		{
 			pos_.push_back(getIncUid());
 		}
-#endif
 		else
 		{
 			assert(false);

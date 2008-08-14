@@ -33,15 +33,20 @@ namespace NS_GRINGO
 		typedef std::map<std::string*, std::pair<bool, Term*> > ConstTerms;
 		typedef std::vector<std::pair<std::pair<IncPart, std::string*>, int> > IncParts;
 	public:
-		Grounder();
+		struct Options
+		{
+			Options() : bindersplitting_(true), verbose_(false), ifixed_(-1) {}
+			bool bindersplitting_;
+			bool verbose_;
+			int ifixed_;
+		};
+	public:
+		Grounder(const Options &opts = Options());
 		void setOutput(NS_OUTPUT::Output *output);
 		void addStatement(Statement *rule);
 		void addDomains(std::string *id, std::vector<StringVector*>* list);
 		void start();
-#ifdef WITH_ICLASP
 		void iground();
-		int getIncStep() const;
-#endif
 		void addProgram(Program *scc);
 		void addTrueNegation(std::string *id, int arity);
 		int getVar(std::string *var);
@@ -53,7 +58,7 @@ namespace NS_GRINGO
 		void setValue(int var, const Value &val, int binder);
 		void setTempValue(int var, const Value &val);
 		// access binders
-		int getBinder(int var);
+		int getBinder(int var) const;
 		void setConstValue(std::string *id, Term *p);
 		Value getConstValue(std::string *id);
 		void preprocess();
@@ -62,6 +67,11 @@ namespace NS_GRINGO
 		/// Adds a domain that never occurs in any head
 		void addZeroDomain(Domain *d);
 		void setIncPart(IncPart part, std::string *var);
+
+		int getIncStep() const;
+		bool isIncGrounding() const;
+		bool verbose() const;
+		int getIFixed() const;
 		~Grounder();
 	private:
 		void buildDepGraph();
@@ -71,8 +81,9 @@ namespace NS_GRINGO
 		void ground();
 		void addDomains(std::string *id, std::vector<StringVector*>::iterator pos, std::vector<StringVector*>::iterator end, StringVector &list);
 	private:
-		bool inc_;
+		Options opts_;
 		IncParts incParts_;
+		bool incremental_;
 		int incStep_;
 
 		int internalVars_;

@@ -63,9 +63,9 @@ begin:
 		MINIMIZE        = "#"? 'minimize';
 		MAXIMIZE        = "#"? 'maximize';
 		COMPUTE         = "#"? 'compute';
-		LAMBDA          = "#lambda";
+		LAMBDA          = "#incremental";
 		BASE            = "#base";
-		DELTA           = "#delta";
+		DELTA           = "#volatile";
 
 		CONST           { return LPARSEPARSER_CONST; }
 		SHOW            { return LPARSEPARSER_SHOW; }

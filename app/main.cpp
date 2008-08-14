@@ -38,7 +38,10 @@ NS_GRINGO::GrinGoParser* parser = 0;
 NS_GRINGO::NS_OUTPUT::Output* output = 0;
 NS_GRINGO::Grounder *grounder = 0;
 
-int  inum        = 1;
+
+int  imin        = 1;
+int  imax        = std::numeric_limits<int>::max();
+bool iunsat      = true;
 bool convert     = false;
 bool incremental = false;
 
@@ -65,15 +68,32 @@ void start_grounding()
 
 using namespace NS_GRINGO;
 
+int readNum(int &argc, char **&argv, const char *msg)
+{
+	if(argc > 2)
+	{
+		char *endptr;
+		int num = strtol(argv[2], &endptr, 10);
+		if(endptr != argv[2] && !*endptr)
+		{
+			argc--;
+			argv++;
+			return num;
+		}
+	}
+	throw GrinGoException(msg);
+}
 
 int main(int argc, char *argv[])
 {
-	char *arg0 = argv[0];
-	bool files = false;
+	Grounder::Options opts;
+	char *arg0   = argv[0];
+	bool files   = false;
+
 #ifdef WITH_ICLASP
-	enum Format {SMODELS, GRINGO, CLASP, LPARSE, ICLASP} format = SMODELS;
+	enum Format {SMODELS, GRINGO, CLASP, LPARSE, ICLASP} format = ICLASP;
 #elif defined WITH_CLASP
-	enum Format {SMODELS, GRINGO, CLASP, LPARSE} format = SMODELS;
+	enum Format {SMODELS, GRINGO, CLASP, LPARSE} format = CLASP;
 #else
 	enum Format {SMODELS, GRINGO, LPARSE} format = SMODELS;
 #endif
@@ -85,7 +105,7 @@ int main(int argc, char *argv[])
 	{
 		while(argc > 1)
 		{
-			if(strcmp(argv[1], "--version") == 0)
+			if(strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)
 			{
 				std::cout << "GrinGo " << GRINGO_VERSION << std::endl;
 				std::cout << "Copyright (C) Roland Kaminski" << std::endl;
@@ -104,7 +124,7 @@ int main(int argc, char *argv[])
 					delete *it;
 				return 0;
 			}
-			else if(strcmp(argv[1], "--convert") == 0)
+			else if(strcmp(argv[1], "--ground") == 0 || strcmp(argv[1], "-G") == 0)
 			{
 				convert = true;
 			}
@@ -128,34 +148,45 @@ int main(int argc, char *argv[])
 			{
 				format = SMODELS;
 			}
+			else if(strcmp(argv[1], "--bindersplitting=off") == 0)
+			{
+				opts.bindersplitting_ = false;
+			}
+			else if(strcmp(argv[1], "--bindersplitting=on") == 0)
+			{
+				opts.bindersplitting_ = true;
+			}
 			else if(strcmp(argv[1], "-t") == 0)
 			{
 				format = LPARSE;
 			}
-#ifdef WITH_ICLASP
-			else if(strcmp(argv[1], "-i") == 0)
+			else if(strcmp(argv[1], "--verbose") == 0 || strcmp(argv[1], "-V") == 0)
 			{
-				format = ICLASP;
-				if(argc > 2)
-				{
-					char *endptr;
-					int num = strtol(argv[2], &endptr, 10);
-					if(endptr != argv[2] && !*endptr)
-					{
-						inum = num;
-						argc--;
-						argv++;
-					}
-				}
+				opts.verbose_ = true;
 			}
-#endif
-#ifdef WITH_CLASP
-			else if(strcmp(argv[1], "--clasp") == 0)
+#ifdef WITH_ICLASP
+			else if(strcmp(argv[1], "--imin") == 0)
+			{
+				imin = readNum(argc, argv, "error: number expected after option --imin");
+			}
+			else if(strcmp(argv[1], "--imax") == 0)
+			{
+				imax = readNum(argc, argv, "error: number expected after option --imax");
+			}
+			else if(strcmp(argv[1], "--ifixed") == 0)
+			{
+				opts.ifixed_ = readNum(argc, argv, "error: number expected after option --ifixed");
+			}
+			else if(strcmp(argv[1], "--iunsat") == 0)
+			{
+				iunsat = true;
+			}
+			else if(strcmp(argv[1], "--clasp") == 0 || strcmp(argv[1], "-C") == 0)
 			{
 				format = CLASP;
 			}
 #endif
-			else if(strcmp(argv[1], "-c") == 0)
+			else if(strcmp(argv[1], "-c") == 0 || strcmp(argv[1], "--constant") == 0)
 			{
 				if(argc == 2)
 					throw GrinGoException("error: constant missing");
@@ -163,7 +194,7 @@ int main(int argc, char *argv[])
 				argv++;
 				*ss << "#const " << argv[1] << "." << std::endl;
 			}
-			else if(strcmp(argv[1], "--help") == 0)
+			else if(strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)
 			{
 #ifdef WITH_CLASP
 				std::cerr << "Usage: " << arg0 << " (gringo option|file)* [--[ clasp options]] " << std::endl << std::endl;
@@ -171,22 +202,36 @@ int main(int argc, char *argv[])
 				std::cerr << "Usage: " << arg0 << " (gringo option|file)*" << std::endl << std::endl;
 #endif
 				std::cerr << "gringo options are: " << std::endl;
-				std::cerr << "	--help      : Print this help message" << std::endl;
-				std::cerr << "	--version   : Print version information" << std::endl;
-				std::cerr << "	--convert   : Convert already ground program" << std::endl;
-				std::cerr << "	-c c=v      : Pass constant c equal value v to grounder" << std::endl;
-#ifdef WITH_CLASP
-				std::cerr << "	--clasp     : Use internal interface to clasp" << std::endl;
-#endif
+				std::cerr << "	-h, --help     : Print this help message" << std::endl;
+				std::cerr << "	-v, --version  : Print version information" << std::endl;
+				std::cerr << "	-G, --ground   : Convert already ground program" << std::endl;
+				std::cerr << "	-c, " << std::endl;
+				std::cerr << "  --constant c=v : Pass constant c equal value v to grounder" << std::endl;
+				std::cerr << "	-l             : Print lparse output format" << std::endl;
+				std::cerr << "	-t             : Print plain text format" << std::endl;
+				std::cerr << "	-a [1-7]       : Print experimental ASPils output" << std::endl;
+			        std::cerr << "                   Give an optional normalform number from 1 to 7 (7 if none)" << std::endl;
+			        std::cerr << "  --bindersplitting=on|off " << std::endl;
+				std::cerr << "                 :  Enable or disable bindersplitting" << std::endl;
 #ifdef WITH_ICLASP
-				std::cerr << "  -i [num]    : Ground an incremental program and " << std::endl;
-				std::cerr << "                perform at least num grounding steps (default 1)" << std::endl;
+				std::cerr << "	-C, --clasp    : Use non incremental interface to clasp" << std::endl << std::endl;
+
+				std::cerr << "Incremental grounding" << std::endl;
+				std::cerr << "  --imax <num>   : Maximum number of incremental steps" << std::endl;
+				std::cerr << "  --imin <num>   : Minimum number of incremental steps" << std::endl;
+				std::cerr << "  --iunsat       : Stop after first unsatisfiable solution" << std::endl;
+#else
+				std::cerr << std::endl << "Incremental grounding" << std::endl;
 #endif
-				std::cerr << "	-l          : Print smodels output" << std::endl;
-				std::cerr << "	-t          : Print plain lparse-like output" << std::endl;
-				std::cerr << "	-a [1-7]    : Print experimental ASPils output" << std::endl;
-			        std::cerr << "                Give an optional normalform number from 1 to 7 (7 if none)" << std::endl;
-				std::cerr << "	The default output is smodels output (-l)" << std::endl;
+				std::cerr << "  --ifixed <num> : Fixed number of incremental steps" << std::endl << std::endl;
+#ifdef WITH_ICLASP
+				std::cerr << "The default output is the incremantal clasp interface" << std::endl;
+#elif defined WITH_CLASP
+				std::cerr << "The default output is the internal clasp interface" << std::endl;
+#else
+				std::cerr << "The default output is lparse output (-l)" << std::endl;
+#endif
+
 #ifdef WITH_CLASP
 				int   argc_c = 2;
 				char *argv_c[] = { arg0, argv[1] };
@@ -217,17 +262,22 @@ int main(int argc, char *argv[])
 			argc--;
 			argv++;
 		}
+		if(format == ICLASP)
+		{
+			incremental  = true;
+			opts.ifixed_ = -1;
+		}
 		if(!files)
 			streams.push_back(new std::istream(std::cin.rdbuf()));
 		argv[0] = arg0;
 		if(convert && incremental)
-			throw GrinGoException("Error: cannot use both -i and -c.");
-		
+			throw GrinGoException("Error: cannot use both --ground and incremental grounding.");
+
 		if(convert)
 			parser = new LparseConverter(streams);
 		else
 		{
-			grounder = new Grounder();
+			grounder = new Grounder(opts);
 			parser   = new LparseParser(grounder, streams);
 		}
 		
@@ -247,7 +297,6 @@ int main(int argc, char *argv[])
 				break;
 #ifdef WITH_ICLASP
 			case ICLASP:
-				incremental = true;
 				clasp_main(argc, argv);
 				break;
 #endif

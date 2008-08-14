@@ -42,6 +42,7 @@
 #include <memory>
 #include <ext/hash_set>
 #include <ext/hash_map>
+#include <limits>
 
 namespace NS_GRINGO
 {

@@ -1,6 +1,6 @@
 #base.
-#lambda(K).
+#incremental(K).
 d(K).
 K { q(X) : d(X) } K. 
-#delta(K).
+#volatile(K).
 :- not d(5).

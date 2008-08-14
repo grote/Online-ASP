@@ -28,7 +28,7 @@ colB(X,Y,C4) :- place(X, Y, N, C1, C2, C3, C4).
 
 %%%%%%%%%%%%%%%%%% test %%%%%%%%%%%%%%%%%%%%%%
 
-#lambda(T).
+#incremental(T).
 check(T, T, 1..T).
 check(T, 1..T, T).
 

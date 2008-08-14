@@ -18,7 +18,8 @@ class Program:
 				break;
 			# here it would be better to distinguish the rule types
 			for x in l.strip().split(' '):
-				self.max = max(int(x), self.max)
+				if x != '':
+					self.max = max(int(x), self.max)
 			self.fout.write(l)
 		for l in self.fin:
 			if l[0] == '0':

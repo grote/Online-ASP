@@ -29,7 +29,7 @@
 
 using namespace NS_GRINGO;
 
-Grounder::Grounder() : inc_(false), incStep_(1), internalVars_(0), output_(0), eval_(0)
+Grounder::Grounder(const Options &opts) : opts_(opts), incremental_(false), incStep_(1), internalVars_(0), output_(0), eval_(0)
 {
 }
 
@@ -40,10 +40,8 @@ void Grounder::setOutput(NS_OUTPUT::Output *output)
 
 void Grounder::addStatement(Statement *rule)
 {
-#ifdef WITH_ICLASP
 	if(incParts_.size() > 0)
 		incParts_.back().second++;
-#endif
 	rules_.push_back(rule);
 }
 
@@ -139,15 +137,11 @@ void Grounder::reset()
 
 void Grounder::preprocess()
 {
-#ifdef WITH_ICLASP
 	StatementVector::iterator r = rules_.begin();
 	for(IncParts::iterator it = incParts_.begin(); it != incParts_.end(); it++)
 		for(int j = 0; j < it->second; j++, r++)
 			(*r)->setIncPart(this, it->first.first, it->first.second);
-#else
-	if(inc_)
-		throw GrinGoException("Error: GrinGo has not been compiled with incremental clasp interface.");
-#endif
+
 	// the size of rules_ may increase during preprocessing make shure the newly inserted rules are preprocessed too
 	for(size_t i = 0; i < rules_.size(); i++)
 		rules_[i]->preprocess(this);
@@ -155,40 +149,72 @@ void Grounder::preprocess()
 
 void Grounder::start()
 {
-#ifdef WITH_ICLASP
-	if(inc_)
-		throw GrinGoException("Error: Use the option -i to ground an incremental program.");
-#endif
-	std::cerr << "preprocessing ... " << std::endl;
-	preprocess();
-	std::cerr << "done" << std::endl;
-	if(varMap_.size() == 0)
-		std::cerr << "got ground program i hope u have enough memory :)" << std::endl;
-	std::cerr << "adding domain predicates ... " << std::endl;
-	addDomains();
-	std::cerr << "done" << std::endl;
-	std::cerr << "building dependencygraph ... " << std::endl;
-	buildDepGraph();
-	std::cerr << "done" << std::endl;
-	std::cerr << "checking ... " << std::endl;
-	check();
-	reset();
-	std::cerr << "done" << std::endl;
-	std::cerr << "grounding ... " << std::endl;
-	substitution_.resize(varMap_.size() + 2);
-	binder_.resize(varMap_.size() + 2, -1);
-	ground();
-	std::cerr << "done" << std::endl;
+	if(incParts_.size() > 0 && opts_.ifixed_ < 0)
+		throw GrinGoException("Error: A fixed number of incremtal steps is needed to ground the program.");
+	if(incParts_.size() > 0)
+	{
+		do
+		{
+			iground();
+		}
+		while(incStep_ <= opts_.ifixed_);
+		output_->finalize(true);
+	}
+	else
+	{
+		std::cerr << "preprocessing ... " << std::endl;
+		preprocess();
+		std::cerr << "done" << std::endl;
+		if(varMap_.size() == 0)
+			std::cerr << "got ground program i hope u have enough memory :)" << std::endl;
+		std::cerr << "adding domain predicates ... " << std::endl;
+		addDomains();
+		std::cerr << "done" << std::endl;
+		std::cerr << "building dependencygraph ... " << std::endl;
+		buildDepGraph();
+		std::cerr << "done" << std::endl;
+		std::cerr << "checking ... " << std::endl;
+		check();
+		reset();
+		std::cerr << "done" << std::endl;
+		std::cerr << "grounding ... " << std::endl;
+		substitution_.resize(varMap_.size() + 2);
+		binder_.resize(varMap_.size() + 2, -1);
+		ground();
+		std::cerr << "done" << std::endl;
+		output_->finalize(true);
+	}
 }
 
-#ifdef WITH_ICLASP
+int Grounder::getIFixed() const
+{
+	return opts_.ifixed_;
+}
+
 int Grounder::getIncStep() const
 {
 	return incStep_;
 }
 
+bool Grounder::verbose() const
+{
+	return opts_.verbose_;
+}
+
+bool Grounder::isIncGrounding() const
+{
+	return incremental_;
+}
+
 void Grounder::iground()
 {
+	incremental_ = true;
+	if(incParts_.size() == 0)
+	{
+		incParts_.push_back(make_pair(std::make_pair(BASE, static_cast<std::string*>(0)), rules_.size()));
+		std::cerr << "Warning: There are no #base, #lambda or #delta sections." << std::endl;
+	}
+
 	if(incStep_ == 1)
 	{
 		std::cerr << "preprocessing ... " << std::endl;
@@ -212,11 +238,9 @@ void Grounder::iground()
 	std::cerr << "done" << std::endl;
 	incStep_++;
 }
-#endif
 
 void Grounder::setIncPart(IncPart part, std::string *var)
 {
-	inc_     = true;
 	if(incParts_.size() == 0 && rules_.size() > 0)
 	{
 		incParts_.push_back(make_pair(std::make_pair(BASE, static_cast<std::string*>(0)), rules_.size()));
@@ -234,14 +258,11 @@ void Grounder::addProgram(Program *scc)
 
 void Grounder::ground()
 {
-#ifdef WITH_ICLASP
-	if(incStep_ == 1 || !inc_)
+	if(incStep_ == 1 || !incremental_)
 		output_->initialize(getPred());
 	else
 		output_->reinitialize();
-#else
-	output_->initialize(getPred());
-#endif
+	
 	for(ProgramVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
 	{
 		Program *scc = *it;
@@ -252,14 +273,11 @@ void Grounder::ground()
 		for(StatementVector::iterator it = rules->begin(); it !=rules->end(); it++)
 		{
 			Statement *rule = *it;
-#ifdef WITH_ICLASP
-			if(incStep_ == 1 || !inc_)
+			if(incStep_ == 1 || !incremental_)
 				rule->ground(this, PREPARE);
 			else
 				rule->ground(this, REINIT);
-#else
-			rule->ground(this, PREPARE);
-#endif
+
 			rule->ground(this, GROUND);
 			rule->ground(this, RELEASE);
 			rule->finish();
@@ -273,7 +291,7 @@ void Grounder::ground()
 		eval_->evaluate();
 		eval_ = 0;
 	}
-	output_->finalize();
+	output_->finalize(false);
 }
 
 std::string *Grounder::createUniqueVar()
@@ -344,7 +362,7 @@ void Grounder::setValue(int var, const Value &val, int binder)
 	binder_[var] = binder;
 }
 
-int Grounder::getBinder(int var)
+int Grounder::getBinder(int var) const
 {
 	return binder_[var];
 }
@@ -389,7 +407,7 @@ void Grounder::addTrueNegation(std::string *id, int arity)
 {
 #ifdef WITH_ICLASP
 	// TODO: this is ugly
-	if(inc_)
+	if(incremental_)
 	{
 		static bool warn = true;
 		if(!warn)

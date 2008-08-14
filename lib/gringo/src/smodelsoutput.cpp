@@ -113,29 +113,32 @@ void SmodelsOutput::printComputeRule(int models, const IntVector &pos, const Int
 	compNeg_.insert(neg.begin(), neg.end());
 }
 
-void SmodelsOutput::finalize()
+void SmodelsOutput::finalize(bool last)
 {
-	*out_ << 0 << NL;
-	int uid = 0;
-	for(AtomLookUp::iterator it = atoms_.begin(); it != atoms_.end(); it++, uid++)
-		if(isVisible(uid))
-			for(AtomHash::iterator atom = it->begin(); atom != it->end(); atom++)
-				*out_ << atom->second << " " << atomToString(uid, atom->first) << NL;
-	*out_ << 0 << NL;
-	*out_ << "B+" << NL;
-	// compute +
-	for(IntSet::iterator it = compPos_.begin(); it != compPos_.end(); it++)
-		*out_ << *it << NL;
-	*out_ << 0 << NL;
-	*out_ << "B-" << NL;
-	// compute -
-	*out_ << getFalse() << NL;
-	for(IntSet::iterator it = compNeg_.begin(); it != compNeg_.end(); it++)
-		*out_ << *it << NL;
-	*out_ << 0 << NL;
-	// number of models
-	*out_ << models_ << NL;
-	out_->flush();
+	if(last)
+	{
+		*out_ << 0 << NL;
+		int uid = 0;
+		for(AtomLookUp::iterator it = atoms_.begin(); it != atoms_.end(); it++, uid++)
+			if(isVisible(uid))
+				for(AtomHash::iterator atom = it->begin(); atom != it->end(); atom++)
+					*out_ << atom->second << " " << atomToString(uid, atom->first) << NL;
+		*out_ << 0 << NL;
+		*out_ << "B+" << NL;
+		// compute +
+		for(IntSet::iterator it = compPos_.begin(); it != compPos_.end(); it++)
+			*out_ << *it << NL;
+		*out_ << 0 << NL;
+		*out_ << "B-" << NL;
+		// compute -
+		*out_ << getFalse() << NL;
+		for(IntSet::iterator it = compNeg_.begin(); it != compNeg_.end(); it++)
+			*out_ << *it << NL;
+		*out_ << 0 << NL;
+		// number of models
+		*out_ << models_ << NL;
+		out_->flush();
+	}
 }
 
 SmodelsOutput::~SmodelsOutput()

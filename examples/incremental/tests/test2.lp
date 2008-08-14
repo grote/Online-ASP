@@ -4,7 +4,7 @@ p(0) :- not -p(0).
 -p(0) :- not p(0).
 :- p(0), -p(0).
 
-#lambda(K).
+#incremental(K).
 
 a(K) :- not -a(K).
 -a(K) :- not a(K).
@@ -14,7 +14,7 @@ p(K) :- p(K-1), not -p(K).
 :- p(K), -p(K).
 :- a(K), -a(K).
 
-#delta(K).
+#volatile(K).
 
 :- not -p(0).
 :- not p(K).

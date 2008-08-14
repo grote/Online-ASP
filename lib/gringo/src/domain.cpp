@@ -47,6 +47,7 @@ bool Domain::solved() const
 void Domain::setSolved(bool solved)
 {
 	solved_ = solved;
+/*
 // incremental grounding may fail cause of that
 // since this is only a very small optimization
 // i simply turn it off in iclingo
@@ -58,6 +59,7 @@ void Domain::setSolved(bool solved)
 		std::swap(facts, facts_);
 	}
 #endif
+*/
 }
 
 void Domain::evaluate()

@@ -223,11 +223,14 @@ void ConditionalLiteral::ground(Grounder *g, GroundStep step)
 				}
 				dg_->sortLiterals(conditionals_);
 				grounder_ = new DLVGrounder(g, this, conditionals_, dg_, dg_->getGlobalVars());
-				delete dg_;
-				dg_ = 0;
 			}
 			else
 				grounder_ = 0;
+			if(dg_)
+			{
+				delete dg_;
+				dg_ = 0;
+			}
 			break;
 		case REINIT:
 			if(grounder_)
@@ -242,21 +245,18 @@ void ConditionalLiteral::ground(Grounder *g, GroundStep step)
 				grounded(g);
 			break;
 		case RELEASE:
-#ifdef WITH_ICLASP
-			if(grounder_)
-				grounder_->release();
-#else
-			if(dg_)
-			{
-				delete dg_;
-				dg_ = 0;
-			}
 			if(grounder_)
 			{
-				delete grounder_;
-				grounder_ = 0;
+				if(g->isIncGrounding())
+				{
+					grounder_->release();
+				}
+				else
+				{
+					delete grounder_;
+					grounder_ = 0;
+				}
 			}
-#endif
 			break;
 	}
 }

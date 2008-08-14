@@ -12,7 +12,7 @@ start(X, Y)  :- initial_at(X, Y).
 stone(X, Y, 0) :- stone(X, Y).
 pos(X, Y, 0)   :- start(X, Y).
 
-#lambda(T).
+#incremental(T).
 
 % a place is reachable if we are at the same place 1 timestep ago
 reachable(X, Y, T) :- pos(X, Y, T-1).
@@ -43,7 +43,7 @@ testP2(T) :- push(X, Y, T).
 stone(X, Y, T) :- push(X, Y, T).
 stone(X, Y, T) :- stone(X, Y, T - 1), not pushed(X, Y, T), field(X, Y).
 
-#delta(T).
+#volatile(T).
  :- not target(X, Y), stone(X, Y, T).
 
 #base.

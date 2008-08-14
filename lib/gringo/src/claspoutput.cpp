@@ -172,10 +172,13 @@ void ClaspOutput::printComputeRule(int models, const IntVector &pos, const IntVe
 		b_->setCompute(*it, true);
 }
 
-void ClaspOutput::finalize()
+void ClaspOutput::finalize(bool last)
 {
-	stats_.atoms[0] = uids_ - 1;
-	stats_.atoms[1] = b_->numAtoms() - uids_;
+	if(!last)
+	{
+		stats_.atoms[0] = uids_ - 1;
+		stats_.atoms[1] = b_->numAtoms() - uids_;
+	}
 }
 
 int ClaspOutput::newUid()
@@ -242,14 +245,6 @@ void IClaspOutput::reinitialize()
 #endif
 	if(incUid_)
 	{
-/*
-		// create a new false atom
-		false_ = newUid();
-		b_->setCompute(false_, false);
-#ifdef DEBUG_ICLASP
-		g_out << "api.setCompute(t" << getFalse() << ", false);" << NL;
-#endif
-*/
 		b_->unfreeze(incUid_);
 	}
 
@@ -264,18 +259,21 @@ void IClaspOutput::reinitialize()
 #endif
 }
 
-void IClaspOutput::finalize()
+void IClaspOutput::finalize(bool last)
 {
 #ifdef DEBUG_ICLASP
-	static int its = 0;
-	its++;
-	g_out << "std::cout << \"============= solving " << its << " =============\" << std::endl;" << NL;
-	g_out << "api.endProgram(solver, options.initialLookahead);" << NL << NL;
-	g_out << "assumptions.clear();" << NL;
-	g_out << "assumptions.push_back(api.stats.index[t" << incUid_ << "].lit);" << NL;
-	g_out << "Clasp::solve(solver, assumptions, options.numModels, options.solveParams);" << NL << NL;
+	if(!last)
+	{
+		static int its = 0;
+		its++;
+		g_out << "std::cout << \"============= solving " << its << " =============\" << std::endl;" << NL;
+		g_out << "api.endProgram(solver, options.initialLookahead);" << NL << NL;
+		g_out << "assumptions.clear();" << NL;
+		g_out << "assumptions.push_back(api.stats.index[t" << incUid_ << "].lit);" << NL;
+		g_out << "Clasp::solve(solver, assumptions, options.numModels, options.solveParams);" << NL << NL;
+	}
 #endif
-	ClaspOutput::finalize();
+	ClaspOutput::finalize(last);
 }
 
 int IClaspOutput::getIncUid()

@@ -8,7 +8,7 @@ time(1..timesteps).
 
 %#base.
 
-%#lambda(K).
+%#incremental(K).
 d(K).
 
 {q(X,K)} :- not l(K-1,X), d(X), X<K.
@@ -25,7 +25,7 @@ c(K,K) :- 1{q(X,K): d(X) : X <= K}.
 :- q(X,K), q(Z,Y), abs(X-Z)==K-Y, d(X),      d(Y), Y<K, d(Z).
 :- q(K,Y), q(X,Z), K-X==abs(Y-Z), d(X), X<K, d(Y), Y<K, d(Z), Z<K.
 
-%#delta(K).
+%#volatile(K).
 
 :- not l(timesteps,X), d(X).
 :- not c(timesteps,Y), d(Y).

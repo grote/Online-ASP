@@ -39,20 +39,23 @@ void PilsOutput::print(NS_OUTPUT::Object *r)
 	r->print(this, *out_);
 }
 
-void PilsOutput::finalize()
+void PilsOutput::finalize(bool last)
 {
-	//write the optimize statement for all added sums
-	if (optimizedIDs_.size())
+	if(last)
 	{
-		*out_ << "1d" << " " << newUid() << " " << "1e" << " " << optimizedIDs_.size();
-		for (IntVector::const_iterator i = optimizedIDs_.begin(); i != optimizedIDs_.end(); ++i)
+		//write the optimize statement for all added sums
+		if (optimizedIDs_.size())
 		{
-			*out_ << " " << *i;
+			*out_ << "1d" << " " << newUid() << " " << "1e" << " " << optimizedIDs_.size();
+			for (IntVector::const_iterator i = optimizedIDs_.begin(); i != optimizedIDs_.end(); ++i)
+			{
+				*out_ << " " << *i;
+			}
+			*out_ << " 0" << NL;
 		}
-		*out_ << " 0" << NL;
+		// end of output
+		*out_ << "0 0" << NL;
 	}
-	// end of output
-	*out_ << "0 0" << NL;
 }
 
 void PilsOutput::addOptimizedID(unsigned int id)

@@ -38,7 +38,7 @@ state(1,full,6..7,1..7).
 % Note that simply relying on "not status(full)" would give a more ocmpact representation
 
 
-#lambda(K).
+#incremental(K).
 
 % Can move a full location over a full location to an empty one.
 possibleMove(K,up,X,Y) :-  state(K,full,X,Y), state(K,full,X,Y-1), state(K,empty,X,Y-2),
@@ -97,7 +97,7 @@ changed(K+1,X+2,Y) :- move(K,right,X,Y), location(X,Y), location(X+2,Y).
 
 state(K+1,S,X,Y) :- not changed(K+1,X,Y), state(K,S,X,Y), status(S), location(X,Y).
 
-#delta(K).
+#volatile(K).
 :- {state(K,empty,X,Y) : location(X,Y)}n-1.
 
 #base.

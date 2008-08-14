@@ -30,7 +30,7 @@ namespace NS_GRINGO
 		public:
 			SmodelsOutput(std::ostream *out);
 			void initialize(SignatureVector *pred);
-			void finalize();
+			void finalize(bool last);
 			~SmodelsOutput();
 		protected:
 			void printBasicRule(int head, const IntVector &pos, const IntVector &neg);

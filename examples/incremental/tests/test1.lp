@@ -1,9 +1,9 @@
 #base.
 p(0).
 
-#lambda(X).
+#incremental(X).
 p(X) :- p(X-1).
 
-#delta(X).
+#volatile(X).
  :- not p(4).
 

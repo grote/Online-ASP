@@ -39,17 +39,14 @@ void Output::initialize(SignatureVector *pred)
 	atoms_.resize(pred_->size());
 }
 
-#ifdef WITH_ICLASP
 void Output::reinitialize()
 {
-	throw GrinGoException("Error: output does not support reinitialization.");
 }
 
 int Output::getIncUid()
 {
 	throw GrinGoException("Error: output does not support getIncUid.");
 }
-#endif
 
 std::string Output::atomToString(int id, const ValueVector &values) const
 {
@@ -690,7 +687,6 @@ void Optimize::addDomain(bool fact)
 {
 }
 
-#ifdef WITH_ICLASP
 // =============== NS_OUTPUT::DeltaObject ===============
 DeltaObject::DeltaObject()
 {
@@ -714,5 +710,4 @@ void DeltaObject::addDomain(bool fact)
 DeltaObject::~DeltaObject()
 {
 }
-#endif
 

@@ -15,7 +15,7 @@ loc(X) :- block(X).
 % initial situation the blocks are stacked
 on(X, X - 1, 0) :- block(X).
 
-#lambda(T).
+#incremental(T).
 
 % move one block
 1 { mv(X,Y,T) : block(X) : loc(Y) : X != Y } 1.
@@ -34,7 +34,7 @@ on(X,Y,T) :- block(X), loc(Y), not moved(X, T), on(X,Y,T - 1).
 % blocks can only be put on topmost blocks
  :- mv(X, Y, T), block(Y), on(Z, Y, T - 1).
 
-#delta(T).
+#volatile(T).
 % all blocks have to be on the table
  :- block(X), not on(X, 0, T).
 

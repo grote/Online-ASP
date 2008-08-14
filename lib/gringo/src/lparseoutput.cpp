@@ -51,7 +51,7 @@ void LparseOutput::print(NS_OUTPUT::Object *r)
 	r->print_plain(this, *out_);
 }
 
-void LparseOutput::finalize()
+void LparseOutput::finalize(bool last)
 {
 }
 

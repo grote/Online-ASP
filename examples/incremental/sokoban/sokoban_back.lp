@@ -10,7 +10,7 @@ target_square(X, Y) :- target(X, Y).
 initial_box(X, Y)   :- stone(X, Y).
 initial_at(X, Y)    :- start(X, Y).
 
-#lambda(K).
+#incremental(K).
 
 box(X,Y,0) :- target_square(X,Y), K < 2.
 
@@ -81,7 +81,7 @@ route(X,Y,-K) :- route(X,Y-1,-K), not box(X,Y,-K), square(X,Y).
 % :- push_from(X1,Y,-K), push_to(X2,Y,-K), push_from(X2,Y,-K+1), push_dir(r,-K+1), not push(X1,Y,r,-K+1),
 %    square(X1,Y), square(X2,Y), X1 > X2, K > 1.
 
-#delta(K).
+#volatile(K).
 
 :- initial_box(X,Y), not box(X,Y,-K).
 :- initial_at(X,Y), not route(X,Y,-K).

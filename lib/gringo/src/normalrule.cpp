@@ -32,11 +32,7 @@
 
 using namespace NS_GRINGO;
 
-#ifdef WITH_ICLASP
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), ground_(1), isGround_(false), grounder_(0)
-#else
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), isGround_(false), grounder_(0)
-#endif
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), grounder_(0), ground_(1), once_(0), next_(0), last_(0), isGround_(0)
 {
 }
 
@@ -203,10 +199,15 @@ namespace
 bool NormalRule::ground(Grounder *g, GroundStep step)
 {
 	//std::cerr << "grounding: " << this << "(" << step << ")"<< std::endl;
-#ifdef WITH_ICLASP
+	if(last_ && g->getIncStep() == g->getIFixed())
+	{
+		last_   = 0;
+		ground_ = 1;
+		if(step == REINIT)
+			step = PREPARE;
+	}
 	if(!ground_)
 		return true;
-#endif
 	switch(step)
 	{
 		case PREPARE:
@@ -242,6 +243,7 @@ bool NormalRule::ground(Grounder *g, GroundStep step)
 			groundOther(g, step, head_, body_);
 			break;
 		case GROUND:
+			//std::cerr << "grounding: " << this << std::endl;
 			if(grounder_)
 			{
 				//std::cerr << "grounding: " << this << std::endl;
@@ -255,23 +257,23 @@ bool NormalRule::ground(Grounder *g, GroundStep step)
 							return true;
 				grounded(g);
 			}
-#ifdef WITH_ICLASP
-			if(ground_ == 2)
-				ground_ = 0;
-#endif
 			break;
 		case RELEASE:
-#ifdef WITH_ICLASP
-			if(grounder_)
-				grounder_->release();
-#else
 			if(grounder_)
 			{
-				delete grounder_;
-				grounder_ = 0;
+				if(g->isIncGrounding())
+				{
+					grounder_->release();
+				}
+				else
+				{
+					delete grounder_;
+					grounder_ = 0;
+				}
 			}
-#endif
 			groundOther(g, step, head_, body_);
+			if(once_)
+				ground_ = 0;
 			break;
 	}
 	return true;
@@ -404,8 +406,6 @@ void NormalRule::appendLiteral(Literal *l, ExpansionType type)
 		body_ = new LiteralVector();	
 	body_->push_back(l);
 }
-
-#ifdef WITH_ICLASP
 
 namespace
 {
@@ -572,7 +572,10 @@ namespace
 		}
 		bool isFact(Grounder *g)
 		{
-			return false;
+			if(g->getIFixed() >= 0)
+				return true;
+			else
+				return false;
 		}
 		Literal* clone() const
 		{
@@ -639,19 +642,23 @@ void NormalRule::setIncPart(Grounder *g, IncPart part, std::string *var)
 	switch(part)
 	{
 		case BASE:
-			ground_ = 2;
+			once_ = 1;
 			break;
 		case LAMBDA:
 			appendLiteral(new LambdaLiteral(new Variable(g, var)), Expandable::COMPLEXTERM);
 			break;
 		case DELTA:
+			if(g->getIFixed() >= 0)
+			{
+				ground_ = 0;
+				last_   = 1;
+			}
 			appendLiteral(new DeltaLiteral(new Variable(g, var)), Expandable::COMPLEXTERM);
 			break;
 		default:
 			break;
 	}
 }
-#endif
 
 NormalRule::~NormalRule()
 {

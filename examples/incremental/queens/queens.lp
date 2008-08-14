@@ -3,7 +3,7 @@
 
 #base.
 
-#lambda(K).
+#incremental(K).
 
 dim(K).
 
@@ -13,7 +13,7 @@ dim(K).
 :- q(X1,K), q(X2,Y), Y<K, abs(X1-X2)==K-Y, dim(X1), dim(X2), dim(Y).
 :- q(K,Y1), q(X,Y2), Y1<K, Y2<K, X<K, K-X==abs(Y1-Y2), dim(X), dim(Y1), dim(Y2).
 
-#delta(K).
+#volatile(K).
 
 % :- not dim(10).
 
