@@ -202,19 +202,19 @@ int main(int argc, char *argv[])
 				std::cerr << "Usage: " << arg0 << " (gringo option|file)*" << std::endl << std::endl;
 #endif
 				std::cerr << "gringo options are: " << std::endl;
-				std::cerr << "	-h, --help     : Print this help message" << std::endl;
-				std::cerr << "	-v, --version  : Print version information" << std::endl;
-				std::cerr << "	-G, --ground   : Convert already ground program" << std::endl;
-				std::cerr << "	-c, " << std::endl;
+				std::cerr << "  -h, --help     : Print this help message" << std::endl;
+				std::cerr << "  -v, --version  : Print version information" << std::endl;
+				std::cerr << "  -G, --ground   : Convert already ground program" << std::endl;
+				std::cerr << "  -c, " << std::endl;
 				std::cerr << "  --constant c=v : Pass constant c equal value v to grounder" << std::endl;
-				std::cerr << "	-l             : Print lparse output format" << std::endl;
-				std::cerr << "	-t             : Print plain text format" << std::endl;
-				std::cerr << "	-a [1-7]       : Print experimental ASPils output" << std::endl;
+				std::cerr << "  -l             : Print lparse output format" << std::endl;
+				std::cerr << "  -t             : Print plain text format" << std::endl;
+				std::cerr << "  -a [1-7]       : Print experimental ASPils output" << std::endl;
 			        std::cerr << "                   Give an optional normalform number from 1 to 7 (7 if none)" << std::endl;
 			        std::cerr << "  --bindersplitting=on|off " << std::endl;
 				std::cerr << "                 :  Enable or disable bindersplitting" << std::endl;
 #ifdef WITH_ICLASP
-				std::cerr << "	-C, --clasp    : Use non incremental interface to clasp" << std::endl << std::endl;
+				std::cerr << "  -C, --clasp    : Use non incremental interface to clasp" << std::endl << std::endl;
 
 				std::cerr << "Incremental grounding" << std::endl;
 				std::cerr << "  --imax <num>   : Maximum number of incremental steps" << std::endl;
