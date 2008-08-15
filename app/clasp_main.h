@@ -352,6 +352,7 @@ bool ClaspApp::solve() {
 		setState(start_solve);
 		bool more = false;
 		bool ret  = false;
+		int steps = 0;
 		do
 		{
 			//solver.reduceLearnts(1.0);
@@ -371,10 +372,11 @@ bool ClaspApp::solve() {
 				more = Clasp::solve(solver, assumptions, options.numModels, options.solveParams);
 				ret = solver.stats.models - models > 0;
 			}
+			steps++;
 		}
 		while(imax-- > 1 && (imin-- > 1 || ret == iunsat));
 		setState(end_solve);
-
+		std::cout << "Total Steps : " << steps << std::endl;
 		*lpStats_ = static_cast<NS_GRINGO::NS_OUTPUT::ClaspOutput*>(output)->getStats();
 		return more;
 	}
