@@ -74,8 +74,7 @@ Term* Constant::clone() const
 	return new Constant(*this);
 }
 
-bool Constant::unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
-			       	ValueVector& boundSubstitutions, ValueVector& freeSubstitutions) const
+bool Constant::unify(const Value& t, const VarVector& vars, ValueVector& vals) const
 {
 	return t == value_;
 }

@@ -41,7 +41,7 @@ namespace NS_GRINGO
 		virtual void buildDepGraph(SDG *dg);
 		virtual void print(std::ostream &out);
 		virtual bool checkO(LiteralVector &unsolved);
-		virtual bool check(VarVector &free);
+		virtual bool check(Grounder *g, VarVector &free);
 		virtual void reset();
 		virtual void preprocess(Grounder *g);
 		virtual void appendLiteral(Literal *l, ExpansionType type);

@@ -82,8 +82,7 @@ namespace
 		Value getConstValue(Grounder *g) { assert(false); }
 		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { assert(false); }
 		void print(std::ostream &stream) { assert(false); }
-		bool unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
-			       	ValueVector& boundSubstitution, ValueVector& freeSubstitutions) const
+		bool unify(const Value& t, const VarVector& vars, ValueVector& subst) const
 		{
 			assert(false);
 		}

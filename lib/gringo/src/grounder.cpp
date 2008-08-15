@@ -149,7 +149,7 @@ void Grounder::preprocess()
 
 void Grounder::start()
 {
-	if(incParts_.size() > 0 && opts_.ifixed_ < 0)
+	if(incParts_.size() > 0 && opts_.ifixed < 0)
 		throw GrinGoException("Error: A fixed number of incremtal steps is needed to ground the program.");
 	if(incParts_.size() > 0)
 	{
@@ -157,33 +157,33 @@ void Grounder::start()
 		{
 			iground();
 		}
-		while(incStep_ <= opts_.ifixed_);
+		while(incStep_ <= opts_.ifixed);
 		output_->finalize(true);
 	}
 	else
 	{
-		if(verbose())
+		if(options().verbose)
 			std::cerr << "preprocessing ... " << std::endl;
 		preprocess();
-		if(verbose())
+		if(options().verbose)
 			std::cerr << "done" << std::endl;
-		if(verbose())
+		if(options().verbose)
 			std::cerr << "adding domain predicates ... " << std::endl;
 		addDomains();
-		if(verbose())
+		if(options().verbose)
 		{
 			std::cerr << "done" << std::endl;
 			std::cerr << "building dependencygraph ... " << std::endl;
 		}
 		buildDepGraph();
-		if(verbose())
+		if(options().verbose)
 		{
 			std::cerr << "done" << std::endl;
 			std::cerr << "checking ... " << std::endl;
 		}
 		check();
 		reset();
-		if(verbose())
+		if(options().verbose)
 		{
 			std::cerr << "done" << std::endl;
 			std::cerr << "grounding ... " << std::endl;
@@ -191,25 +191,15 @@ void Grounder::start()
 		substitution_.resize(varMap_.size() + 2);
 		binder_.resize(varMap_.size() + 2, -1);
 		ground();
-		if(verbose())
+		if(options().verbose)
 			std::cerr << "done" << std::endl;
 		output_->finalize(true);
 	}
 }
 
-int Grounder::getIFixed() const
-{
-	return opts_.ifixed_;
-}
-
 int Grounder::getIncStep() const
 {
 	return incStep_;
-}
-
-bool Grounder::verbose() const
-{
-	return opts_.verbose_;
 }
 
 bool Grounder::isIncGrounding() const
@@ -228,35 +218,35 @@ void Grounder::iground()
 
 	if(incStep_ == 1)
 	{
-		if(verbose())
+		if(options().verbose)
 			std::cerr << "preprocessing ... " << std::endl;
 		preprocess();
-		if(verbose())
+		if(options().verbose)
 		{
 			std::cerr << "done" << std::endl;
 			std::cerr << "adding domain predicates ... " << std::endl;
 		}
 		addDomains();
-		if(verbose())
+		if(options().verbose)
 		{
 			std::cerr << "done" << std::endl;
 			std::cerr << "building dependencygraph ... " << std::endl;
 		}
 		buildDepGraph();
-		if(verbose())
+		if(options().verbose)
 		{
 			std::cerr << "done" << std::endl;
 			std::cerr << "checking ... " << std::endl;
 		}
 		check();
-		if(verbose())
+		if(options().verbose)
 			std::cerr << "done" << std::endl;
 	}
-	if(verbose())
+	if(options().verbose)
 		std::cerr << "grounding step: " << incStep_ << " ... " << std::endl;
 	reset();
 	ground();
-	if(verbose())
+	if(options().verbose)
 		std::cerr << "done" << std::endl;
 	incStep_++;
 }
@@ -423,6 +413,11 @@ Evaluator *Grounder::getEvaluator()
 NS_OUTPUT::Output *Grounder::getOutput()
 {
 	return output_;
+}
+
+const Grounder::Options &Grounder::options() const
+{
+	return opts_;
 }
 
 void Grounder::addTrueNegation(std::string *id, int arity)

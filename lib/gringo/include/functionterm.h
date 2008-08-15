@@ -37,8 +37,7 @@ namespace NS_GRINGO
 		virtual Value getConstValue(Grounder *g);
 		virtual Term* clone() const;
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
-		virtual bool unify(const Value&, const VarVector&, const VarVector&,
-			       	ValueVector&, ValueVector&) const
+		virtual bool unify(const Value& t, const VarVector& vars, ValueVector& subst) const
 		{
 			assert(false);
 		}

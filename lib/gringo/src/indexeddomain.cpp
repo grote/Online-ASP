@@ -87,20 +87,21 @@ IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet 
 	newEnd = std::unique(bind_.begin(), bind_.end());
 	bind_.erase(newEnd, bind_.end());
 
+	VarVector unifyVars;
+	unifyVars.insert(unifyVars.end(), bind_.begin(), bind_.end());
+	unifyVars.insert(unifyVars.end(), index_.begin(), index_.end());
 
 	for(ValueVectorSet::iterator it = domain.begin(); it != domain.end(); it++)
 	{
 		const ValueVector &val = (*it);
-		ValueVector curIndex(index_.size(),Value());
-		ValueVector curValue(bind_.size(), Value());
+		ValueVector unifyVals(unifyVars.size());
 		bool doContinue = false;
-
 
 		assert(paramNew.size() == val.size());
 		TermVector::const_iterator p = paramNew.begin();
 		for (ValueVector::const_iterator i = val.begin(); i != val.end(); ++i, ++p)
 		{
-			if (!(*p)->unify(*i, index_, bind_, curIndex, curValue))
+			if (!(*p)->unify(*i, unifyVars, unifyVals))
 			{
 				doContinue = true;
 				break;
@@ -109,10 +110,10 @@ IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet 
 
 		if (doContinue) continue;
 
-
 		//die indexedDomain mit dem Index aller einer Instanz aller gebundenen Variablen ist gleich der Instanz aus der Domain
 		// (mehrere Instanzen)
-		domain_[curIndex].insert(domain_[curIndex].end(),curValue.begin(), curValue.end());
+		ValueVector &v = domain_[ValueVector(unifyVals.begin() + bind_.size(), unifyVals.end())];
+		v.insert(v.end(), unifyVals.begin(), unifyVals.begin() + bind_.size());
 	}
 }
 

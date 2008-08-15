@@ -57,7 +57,7 @@ namespace NS_GRINGO
 		 * \param free List of variables that are which are not bound by complete predicates
 		 * \return Returns false in case of failure
 		 */
-		virtual bool check(VarVector &free) = 0;
+		virtual bool check(Grounder *g, VarVector &free) = 0;
 		/**
 		 * \brief Performs static preprocessing.
 		 *

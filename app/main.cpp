@@ -150,11 +150,11 @@ int main(int argc, char *argv[])
 			}
 			else if(strcmp(argv[1], "--bindersplitting=off") == 0)
 			{
-				opts.bindersplitting_ = false;
+				opts.binderSplit = false;
 			}
 			else if(strcmp(argv[1], "--bindersplitting=on") == 0)
 			{
-				opts.bindersplitting_ = true;
+				opts.binderSplit = true;
 			}
 			else if(strcmp(argv[1], "-t") == 0)
 			{
@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
 			}
 			else if(strcmp(argv[1], "--verbose") == 0 || strcmp(argv[1], "-V") == 0)
 			{
-				opts.verbose_ = true;
+				opts.verbose = true;
 			}
 #ifdef WITH_ICLASP
 			else if(strcmp(argv[1], "--imin") == 0)
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 			}
 			else if(strcmp(argv[1], "--ifixed") == 0)
 			{
-				opts.ifixed_ = readNum(argc, argv, "error: number expected after option --ifixed");
+				opts.ifixed = readNum(argc, argv, "error: number expected after option --ifixed");
 			}
 			else if(strcmp(argv[1], "--iunsat") == 0)
 			{
@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
 		if(format == ICLASP)
 		{
 			incremental  = true;
-			opts.ifixed_ = -1;
+			opts.ifixed = -1;
 		}
 		if(!files)
 			streams.push_back(new std::istream(std::cin.rdbuf()));

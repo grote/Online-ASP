@@ -97,7 +97,6 @@ namespace NS_GRINGO
 {
 	namespace
 	{
-		/*
 		std::string print(const ValueVector &v)
 		{
 			std::stringstream ss;
@@ -112,7 +111,6 @@ namespace NS_GRINGO
 			}
 			return ss.str();
 		}
-		*/
 
 		class IndexedDomainBS : public IndexedDomain
 		{
@@ -121,7 +119,7 @@ namespace NS_GRINGO
 		public:
 			IndexedDomainBS(ValueVectorSet &domain, VarSet &index, TermVector &param, VarVector &relevant)
 			{
-				VarVector bind;
+				VarVector unrelevant;
 				for(int i = 0; i < (int)param.size(); i++)
 				{
 					VarSet variables;
@@ -130,80 +128,60 @@ namespace NS_GRINGO
 					{
 						if(std::binary_search(relevant.begin(), relevant.end(), *j))
 						{
-							//add the UID of bound variables
 							if (index.find(*j) != index.end())
+								//add the UID of bound variables
 								index_.push_back(*j);
 							else
-							{
 								//and unbound variables
 								bind_.push_back(*j);
-								bind.push_back(*j);
-							}
 						}
 						else
 						{
-							bind.push_back(*j);
+							unrelevant.push_back(*j);
 						}
 					}
 				}
 
 				//make unique
 				sort(index_.begin(), index_.end());
-				VarVector::iterator newEnd = std::unique(index_.begin(), index_.end());
-				index_.erase(newEnd, index_.end());
-
-				sort(bind.begin(), bind.end());
-				newEnd = std::unique(bind.begin(), bind.end());
-				bind.erase(newEnd, bind.end());
+				index_.erase(std::unique(index_.begin(), index_.end()), index_.end());
 
 				sort(bind_.begin(), bind_.end());
-				newEnd = std::unique(bind_.begin(), bind_.end());
-				bind_.erase(newEnd, bind_.end());
+				bind_.erase(std::unique(bind_.begin(), bind_.end()), bind_.end());
+
+				sort(unrelevant.begin(), unrelevant.end());
+				unrelevant.erase(std::unique(unrelevant.begin(), unrelevant.end()), unrelevant.end());
+
+				VarVector unifyVars;
+				unifyVars.insert(unifyVars.end(), bind_.begin(), bind_.end());
+				unifyVars.insert(unifyVars.end(), index_.begin(), index_.end());
+				unifyVars.insert(unifyVars.end(), unrelevant.begin(), unrelevant.end());
 
 				ValueVectorSet domainsBS;
 				for(ValueVectorSet::iterator it = domain.begin(); it != domain.end(); it++)
 				{
 					const ValueVector &val = (*it);
-					ValueVector curIndex(index_.size(),Value());
-					ValueVector curValue(bind.size(), Value());
+					ValueVector unifyVals(unifyVars.size());
 					bool doContinue = false;
 
 					assert(param.size() == val.size());
 					TermVector::const_iterator p = param.begin();
 					for (ValueVector::const_iterator i = val.begin(); i != val.end(); ++i, ++p)
 					{
-						if (!(*p)->unify(*i, index_, bind, curIndex, curValue))
+						if (!(*p)->unify(*i, unifyVars, unifyVals))
 						{
 							doContinue = true;
 							break;
 						}
 					}
 
-					if (doContinue) continue;
-
-					//std::cerr << "unified with: " << print(curIndex) << " | " << print(curValue) << std::endl;
-					
-					ValueVector v = curIndex;
-					ValueVector curValue2;
-					ValueVector::iterator l = curValue.begin();
-					for(VarVector::iterator j = bind.begin(), k = bind_.begin(); j != bind.end() && k != bind_.end(); j++, l++)
-						if(*j == *k)
-						{
-							curValue2.push_back(*l);
-							k++;
-						}
-					v.insert(v.end(), curValue2.begin(), curValue2.end());
-					if(!domainsBS.insert(v).second)
-					{
-						//std::cerr << " <- already contained!" << std::endl;;
+					if(doContinue || !domainsBS.insert(ValueVector(unifyVals.begin(), unifyVals.end() - unrelevant.size())).second)
 						continue;
-					}
-					//else
-						//std::cerr << " <- inserted!" << std::endl;;
-						
+					
 					//die indexedDomain mit dem Index aller einer Instanz aller gebundenen Variablen ist gleich der Instanz aus der Domain
 					// (mehrere Instanzen)
-					domain_[curIndex].insert(domain_[curIndex].end(), curValue2.begin(), curValue2.end());
+					ValueVector &v = domain_[ValueVector(unifyVals.begin() + bind_.size(), unifyVals.end() - unrelevant.size())];
+					v.insert(v.end(), unifyVals.begin(), unifyVals.begin() + bind_.size());
 				}
 			}
 

@@ -102,7 +102,7 @@ bool Program::check(Grounder *g)
 	{
 		for(; ok != rules_.end(); ok++)
 		{
-			if(!(*ok)->check(free))
+			if(!(*ok)->check(g, free))
 				break;
 			(*ok)->finish();
 		}
@@ -111,7 +111,7 @@ bool Program::check(Grounder *g)
 			StatementVector::iterator it = ok;
 			for(it++; it != rules_.end(); it++)
 			{
-				if((*it)->check(free))
+				if((*it)->check(g, free))
 				{
 					std::swap(*ok, *it);
 					(*ok++)->finish();

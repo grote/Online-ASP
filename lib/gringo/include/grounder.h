@@ -35,10 +35,10 @@ namespace NS_GRINGO
 	public:
 		struct Options
 		{
-			Options() : bindersplitting_(true), verbose_(false), ifixed_(-1) {}
-			bool bindersplitting_;
-			bool verbose_;
-			int ifixed_;
+			Options() : binderSplit(true), verbose(false), ifixed(-1) {}
+			bool binderSplit;
+			bool verbose;
+			int ifixed;
 		};
 	public:
 		Grounder(const Options &opts = Options());
@@ -67,11 +67,11 @@ namespace NS_GRINGO
 		/// Adds a domain that never occurs in any head
 		void addZeroDomain(Domain *d);
 		void setIncPart(IncPart part, std::string *var);
-
+		
 		int getIncStep() const;
 		bool isIncGrounding() const;
-		bool verbose() const;
-		int getIFixed() const;
+
+		const Options &options() const;
 		~Grounder();
 	private:
 		void buildDepGraph();

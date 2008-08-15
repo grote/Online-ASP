@@ -50,7 +50,7 @@ bool LiteralStatement::checkO(LiteralVector &unsolved)
 	return lit_->checkO(unsolved);
 }
 
-bool LiteralStatement::check(VarVector &free)
+bool LiteralStatement::check(Grounder *g, VarVector &free)
 {
 	StatementChecker s;
 	lit_->createNode(&s, false, false);

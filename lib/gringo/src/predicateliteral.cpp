@@ -391,7 +391,7 @@ void PredicateLiteral::binderSplit(Expandable *e, const VarSet &relevant)
 			r.push_back(*it);
 	if(r.size() != vars.size() && r.size() > 0)
 	{
-		std::cerr << "bindersplit: " << this << std::endl;
+		//std::cerr << "bindersplit: " << this << std::endl;
 		e->appendLiteral(new BinderSplitter(predNode_, variables_, r), Expandable::RANGETERM);
 	}
 }

@@ -71,37 +71,24 @@ Term* Variable::clone() const
 	return new Variable(*this);
 }
 
-bool Variable::unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
-			       	ValueVector& boundSubstitutions, ValueVector& freeSubstitutions) const
+bool Variable::unify(const Value& t, const VarVector& vars, ValueVector& vals) const
 {
-	for (unsigned int i = 0; i < boundVariables.size(); ++i)
+	// TODO: constant access would be nice
+	for (size_t i = 0; i < vars.size(); ++i)
 	{
-		//if variable is bound
-		if (boundVariables[i] == uid_)
+		// if variable is bound
+		if (vars[i] == uid_)
 		{
-
 			// variable is not set, then set, else compare
-			if (boundSubstitutions[i].type_ == Value::UNDEF)
+			if (vals[i].type_ == Value::UNDEF)
 			{
-				boundSubstitutions[i] = t;
+				vals[i] = t;
 				return true;
 			}
 			else
-				return boundSubstitutions[i] == t;
-		}
-	}
-	for (unsigned int i = 0; i < freeVariables.size(); ++i)
-	{
-		if (freeVariables[i] == uid_)
-		{
-			if (freeSubstitutions[i].type_ == Value::UNDEF)
-			{
-				freeSubstitutions[i] = t;
-				return true;
-			}
-			else
-				return freeSubstitutions[i] == t;
+				return vals[i] == t;
 		}
 	}
 	assert(false);
 }
+

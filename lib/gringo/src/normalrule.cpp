@@ -89,7 +89,7 @@ bool NormalRule::checkO(LiteralVector &unsolved)
 	return true;
 }
 
-bool NormalRule::check(VarVector &free)
+bool NormalRule::check(Grounder *g, VarVector &free)
 {
 	free.clear();
 	StatementChecker s;
@@ -101,7 +101,7 @@ bool NormalRule::check(VarVector &free)
 	if(s.check())
 	{
 		isGround_ = !s.hasVars();
-		if(!isGround_ && body_)
+		if(g->options().binderSplit && !isGround_ && body_)
 		{
 			VarSet relevant;
 			getRelevantVars(s.getVars(), relevant);
@@ -199,7 +199,7 @@ namespace
 bool NormalRule::ground(Grounder *g, GroundStep step)
 {
 	//std::cerr << "grounding: " << this << "(" << step << ")"<< std::endl;
-	if(last_ && g->getIncStep() == g->getIFixed())
+	if(last_ && g->getIncStep() == g->options().ifixed)
 	{
 		last_   = 0;
 		ground_ = 1;
@@ -572,7 +572,7 @@ namespace
 		}
 		bool isFact(Grounder *g)
 		{
-			if(g->getIFixed() >= 0)
+			if(g->options().ifixed >= 0)
 				return true;
 			else
 				return false;
@@ -648,7 +648,7 @@ void NormalRule::setIncPart(Grounder *g, IncPart part, std::string *var)
 			appendLiteral(new LambdaLiteral(new Variable(g, var)), Expandable::COMPLEXTERM);
 			break;
 		case DELTA:
-			if(g->getIFixed() >= 0)
+			if(g->options().ifixed >= 0)
 			{
 				ground_ = 0;
 				last_   = 1;

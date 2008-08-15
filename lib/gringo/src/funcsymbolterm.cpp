@@ -108,8 +108,8 @@ Term* FuncSymbolTerm::clone() const
 {
 	return new FuncSymbolTerm(*this);
 }
-bool FuncSymbolTerm::unify(const Value& t, const VarVector& boundVariables, const VarVector& freeVariables,
-       	ValueVector& boundSubstitution, ValueVector& freeSubstitutions) const
+
+bool FuncSymbolTerm::unify(const Value& t, const VarVector& vars, ValueVector& vals) const
 {
 	if (t.type_ == Value::FUNCSYMBOL)
 	{
@@ -122,7 +122,7 @@ bool FuncSymbolTerm::unify(const Value& t, const VarVector& boundVariables, cons
 		TermVector::const_iterator term = termList_->begin();
 		for (ValueVector::const_iterator i = values.begin(); i != values.end(); ++i, ++term)
 		{
-			if (!(*term)->unify(*i, boundVariables, freeVariables, boundSubstitution, freeSubstitutions))
+			if (!(*term)->unify(*i, vars, vals))
 				return false;
 		}
 		return true;
