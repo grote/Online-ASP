@@ -162,26 +162,37 @@ void Grounder::start()
 	}
 	else
 	{
-		std::cerr << "preprocessing ... " << std::endl;
+		if(verbose())
+			std::cerr << "preprocessing ... " << std::endl;
 		preprocess();
-		std::cerr << "done" << std::endl;
-		if(varMap_.size() == 0)
-			std::cerr << "got ground program i hope u have enough memory :)" << std::endl;
-		std::cerr << "adding domain predicates ... " << std::endl;
+		if(verbose())
+			std::cerr << "done" << std::endl;
+		if(verbose())
+			std::cerr << "adding domain predicates ... " << std::endl;
 		addDomains();
-		std::cerr << "done" << std::endl;
-		std::cerr << "building dependencygraph ... " << std::endl;
+		if(verbose())
+		{
+			std::cerr << "done" << std::endl;
+			std::cerr << "building dependencygraph ... " << std::endl;
+		}
 		buildDepGraph();
-		std::cerr << "done" << std::endl;
-		std::cerr << "checking ... " << std::endl;
+		if(verbose())
+		{
+			std::cerr << "done" << std::endl;
+			std::cerr << "checking ... " << std::endl;
+		}
 		check();
 		reset();
-		std::cerr << "done" << std::endl;
-		std::cerr << "grounding ... " << std::endl;
+		if(verbose())
+		{
+			std::cerr << "done" << std::endl;
+			std::cerr << "grounding ... " << std::endl;
+		}
 		substitution_.resize(varMap_.size() + 2);
 		binder_.resize(varMap_.size() + 2, -1);
 		ground();
-		std::cerr << "done" << std::endl;
+		if(verbose())
+			std::cerr << "done" << std::endl;
 		output_->finalize(true);
 	}
 }
@@ -217,25 +228,36 @@ void Grounder::iground()
 
 	if(incStep_ == 1)
 	{
-		std::cerr << "preprocessing ... " << std::endl;
+		if(verbose())
+			std::cerr << "preprocessing ... " << std::endl;
 		preprocess();
-		std::cerr << "done" << std::endl;
-		if(varMap_.size() == 0)
-			std::cerr << "got ground program i hope u have enough memory :)" << std::endl;
-		std::cerr << "adding domain predicates ... " << std::endl;
+		if(verbose())
+		{
+			std::cerr << "done" << std::endl;
+			std::cerr << "adding domain predicates ... " << std::endl;
+		}
 		addDomains();
-		std::cerr << "done" << std::endl;
-		std::cerr << "building dependencygraph ... " << std::endl;
+		if(verbose())
+		{
+			std::cerr << "done" << std::endl;
+			std::cerr << "building dependencygraph ... " << std::endl;
+		}
 		buildDepGraph();
-		std::cerr << "done" << std::endl;
-		std::cerr << "checking ... " << std::endl;
+		if(verbose())
+		{
+			std::cerr << "done" << std::endl;
+			std::cerr << "checking ... " << std::endl;
+		}
 		check();
-		std::cerr << "done" << std::endl;
+		if(verbose())
+			std::cerr << "done" << std::endl;
 	}
-	std::cerr << "grounding step: " << incStep_ << " ... " << std::endl;
+	if(verbose())
+		std::cerr << "grounding step: " << incStep_ << " ... " << std::endl;
 	reset();
 	ground();
-	std::cerr << "done" << std::endl;
+	if(verbose())
+		std::cerr << "done" << std::endl;
 	incStep_++;
 }
 

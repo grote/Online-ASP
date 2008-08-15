@@ -360,6 +360,7 @@ bool ClaspApp::solve() {
 			ret = api.endProgram(solver, options.initialLookahead, true);
 			if(ret)
 			{
+				uint64 models = solver.stats.models;
 				StdOutPrinter printer;
 				if (!options.quiet) {
 					printer.index = &api.stats.index;
@@ -368,10 +369,10 @@ bool ClaspApp::solve() {
 				LitVec assumptions;
 				assumptions.push_back(api.stats.index[static_cast<NS_GRINGO::NS_OUTPUT::IClaspOutput*>(output)->getIncUid()].lit);
 				more = Clasp::solve(solver, assumptions, options.numModels, options.solveParams);
-				ret = solver.stats.models > 0;
+				ret = solver.stats.models - models > 0;
 			}
 		}
-		while(imax-- > 1 && (imin-- > 1 || ret != iunsat));
+		while(imax-- > 1 && (imin-- > 1 || ret == iunsat));
 		setState(end_solve);
 
 		*lpStats_ = static_cast<NS_GRINGO::NS_OUTPUT::ClaspOutput*>(output)->getStats();

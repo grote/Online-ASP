@@ -41,7 +41,7 @@ NS_GRINGO::Grounder *grounder = 0;
 
 int  imin        = 1;
 int  imax        = std::numeric_limits<int>::max();
-bool iunsat      = true;
+bool iunsat      = false;
 bool convert     = false;
 bool incremental = false;
 
