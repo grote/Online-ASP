@@ -89,6 +89,8 @@ begin:
 		"min"           { return LPARSEPARSER_MIN; }
 		"max"           { return LPARSEPARSER_MAX; }
 		"count"         { return LPARSEPARSER_COUNT; }
+		"div"           { return LPARSEPARSER_DIVIDE; }
+		"mod"           { return LPARSEPARSER_MOD; }
 		STRING          { lval = new std::string(start, cursor); return LPARSEPARSER_STRING; }
 		IDENTIFIER      { lval = new std::string(start, cursor); return LPARSEPARSER_IDENTIFIER; }
 		VARIABLE        { lval = new std::string(start, cursor); return LPARSEPARSER_VARIABLE; }
