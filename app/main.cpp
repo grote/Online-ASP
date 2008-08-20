@@ -262,11 +262,13 @@ int main(int argc, char *argv[])
 			argc--;
 			argv++;
 		}
+#ifdef WITH_ICLASP
 		if(format == ICLASP)
 		{
 			incremental  = true;
 			opts.ifixed = -1;
 		}
+#endif
 		if(!files)
 			streams.push_back(new std::istream(std::cin.rdbuf()));
 		argv[0] = arg0;
