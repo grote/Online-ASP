@@ -88,7 +88,7 @@ fi
 
 echo
 echo 
-echo "To compile the project simply change to folder build/{gringo,clingo/iclingo}/{debug,release,win32} and type \"make\"."
+echo "To compile the project simply change to folder build/{gringo,clingo,iclingo}/{debug,release,win32} and type \"make\"."
 echo "Note: You can always change the cmake options by modifying the file \"CMakeCache.txt\"."
 echo 
 if [[ $iclingo == 1 ]]; then
@@ -99,6 +99,6 @@ fi
 if [[ $clingo == 1 ]]; then
 	echo "internal clasp support: yes"
 else
-	echo "internal clasp support: no (enable with --clasp)"
+	echo "internal clasp support: no (enable with --clingo)"
 fi
 
