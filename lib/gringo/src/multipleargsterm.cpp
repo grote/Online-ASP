@@ -99,7 +99,7 @@ void MultipleArgsTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable 
 	p = a_;
 	a_ = 0;
 	b_ = 0;
-	p->preprocess(l, a_, g, e);
+	p->preprocess(l, p, g, e);
 	delete this;
 }
 
