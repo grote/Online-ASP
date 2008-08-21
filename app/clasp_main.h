@@ -353,9 +353,11 @@ bool ClaspApp::solve() {
 		bool more = false;
 		bool ret  = false;
 		int steps = 0;
+		solver.strategies().heuristic->reinit(keepHeuristic);
 		do
 		{
-			//solver.reduceLearnts(1.0);
+			if(!keepLearnts)
+				solver.reduceLearnts(1.0f);
 			api.updateProgram();
 			grounder->iground();
 			ret = api.endProgram(solver, options.initialLookahead, true);

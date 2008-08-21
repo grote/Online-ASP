@@ -752,23 +752,39 @@ bool Solver::decideNextBranch() {
 // Keep those that are locked or have a high activity.
 void Solver::reduceLearnts(float maxRem) {
 	uint32 oldS = numLearntConstraints();
-	LitVec::size_type remMax = static_cast<LitVec::size_type>(numLearntConstraints() * std::min(1.0f, std::max(0.0f, maxRem)));
 	ConstraintDB::size_type i, j = 0;
-	uint64 actSum = 0;
-	for (i = 0; i != learnts_.size(); ++i) {
-		actSum += static_cast<LearntConstraint*>(learnts_[i])->activity();
-	}
-	double actThresh = (actSum / (double) numLearntConstraints()) * 1.5;
-	for (i = 0; i != learnts_.size(); ++i) {
-		LearntConstraint* c = static_cast<LearntConstraint*>(learnts_[i]);
-		if (remMax == 0 || c->locked(*this) || c->activity() > actThresh) {
-			c->decreaseActivity();
-			learnts_[j++] = c;
+	if (maxRem < 1.0f) {		
+		LitVec::size_type remMax = static_cast<LitVec::size_type>(numLearntConstraints() * std::min(1.0f, std::max(0.0f, maxRem)));
+		uint64 actSum = 0;
+		for (i = 0; i != learnts_.size(); ++i) {
+			actSum += static_cast<LearntConstraint*>(learnts_[i])->activity();
 		}
-		else {
-			--remMax;
-			c->removeWatches(*this);
-			c->destroy();
+		double actThresh = (actSum / (double) numLearntConstraints()) * 1.5;
+		for (i = 0; i != learnts_.size(); ++i) {
+			LearntConstraint* c = static_cast<LearntConstraint*>(learnts_[i]);
+			if (remMax == 0 || c->locked(*this) || c->activity() > actThresh) {
+				c->decreaseActivity();
+				learnts_[j++] = c;
+			}
+			else {
+				--remMax;
+				c->removeWatches(*this);
+				c->destroy();
+			}
+		}
+	}
+	else {
+		// remove all nogoods that are not locked
+		for (i = 0; i != learnts_.size(); ++i) {
+			LearntConstraint* c = static_cast<LearntConstraint*>(learnts_[i]);
+			if (c->locked(*this)) {
+				c->decreaseActivity();
+				learnts_[j++] = c;
+			}
+			else {
+				c->removeWatches(*this);
+				c->destroy();
+			}
 		}
 	}
 	learnts_.erase(learnts_.begin()+j, learnts_.end());

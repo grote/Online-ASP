@@ -153,6 +153,7 @@ public:
 	explicit ClaspBerkmin(uint32 maxBerk = 0, bool considerLoops = true);
 	//! initializes the heuristic.
 	void startInit(const Solver& s);
+	void reinit(bool b) { reinit_ = b; }
 	//! updates occurrence-counters if constraint is a learnt constraint.
 	void newConstraint(const Solver& s, const Literal* first, LitVec::size_type size, ConstraintType t);
 	//! updates activity-counters
@@ -215,6 +216,7 @@ private:
 	uint32	numVsids_;			// number of consecutive vsids-based decisions
 	uint32	maxBerkmin_;		// when searching for an open learnt constraint, check at most maxBerkmin_ candidates.
 	bool		loops_;					// Consider loop nogoods when searching for learnt nogoods that are not sat
+	bool		reinit_;
 };
 
 //! Variable Move To Front decision strategies inspired by Siege.
@@ -237,7 +239,7 @@ public:
 	//! initializes the heuristic.
 	void startInit(const Solver& s);
 	void endInit(const Solver&);
-
+	void reinit(bool b) { reinit_ = b; }
 	/*!
 	 * updates occurrence-counters if constraint is not a native constraint. Moves active
 	 * vars to the front of the variable list the constraint is a conflict-clause
@@ -296,6 +298,7 @@ private:
 	uint32			decay_;			// "global" decay counter. Increased every 512 decisions
 	const LitVec::size_type MOVE_TO_FRONT;
 	bool				loops_;			// Move MOVE_TO_FRONT/2 vars from loop nogoods to the front of vars 
+	bool				reinit_;
 };
 
 //! A variable state independent decision heuristic favoring variables that were active in recent conflicts.
@@ -329,6 +332,7 @@ public:
 	explicit ClaspVsids(bool considerLoops = false);
 	void startInit(const Solver& s);
 	void endInit(const Solver&);
+	void reinit(bool b) { reinit_ = b; }
 	void newConstraint(const Solver& s, const Literal* first, LitVec::size_type size, ConstraintType t);
 	void updateReason(const Solver& s, const LitVec& lits, Literal resolveLit);
 	void undoUntil(const Solver&, LitVec::size_type);
@@ -370,6 +374,7 @@ private:
 	VarOrder	vars_;
 	double		inc_;
 	bool			scoreLoops_;
+	bool			reinit_;
 };
 
 }

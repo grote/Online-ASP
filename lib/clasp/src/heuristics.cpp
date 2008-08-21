@@ -199,11 +199,12 @@ ClaspBerkmin::ClaspBerkmin(uint32 maxB, bool loops)
 	, decay_(0)
 	, numVsids_(0)
 	, maxBerkmin_(maxB == 0 ? uint32(-1) : maxB)
-	, loops_(loops) {
+	, loops_(loops)
+	, reinit_(true) {
 }
 
 void ClaspBerkmin::startInit(const Solver& s) {
-	score_.clear();
+	if (reinit_) score_.clear();
 	score_.resize(s.numVars()+1);
 	
 	cache_.clear();
@@ -340,7 +341,7 @@ Literal ClaspBerkmin::selectVsids(Solver& s) {
 	for (; s.value( front_ ) != value_free; ++front_);	// Pre: At least one unassigned var!
 	Var var = front_;
 #if defined(BERK_TOP_LEVEL_MOMS) && BERK_TOP_LEVEL_MOMS == 1
-	if (s.stats.conflicts != 0 || (numVsids_>50&&s.numFreeVars()>9999)) {		// populate cache with most active vars
+	if (score_[0].activity_!=0 || (numVsids_>50&&s.numFreeVars()>9999)) {		// populate cache with most active vars
 #endif
 		if (!cache_.empty() && cacheSize_ < s.numFreeVars()/10) {
 			cacheSize_ = static_cast<uint32>( (cacheSize_*BERK_CACHE_GROW) + .5 );
@@ -397,26 +398,31 @@ Literal ClaspBerkmin::selectLiteral(Solver& s, Var var, bool vsids) {
 /////////////////////////////////////////////////////////////////////////////////////////
 // ClaspVmtf selection strategy
 /////////////////////////////////////////////////////////////////////////////////////////
-ClaspVmtf::ClaspVmtf(LitVec::size_type mtf, bool loops) : MOVE_TO_FRONT(mtf), loops_(loops) { 
+ClaspVmtf::ClaspVmtf(LitVec::size_type mtf, bool loops) : MOVE_TO_FRONT(mtf), loops_(loops), reinit_(true) { 
 }
 
 
 void ClaspVmtf::startInit(const Solver& s) {
-	score_.clear();
+	if (reinit_) { score_.clear(); vars_.clear(); }
 	score_.resize(s.numVars()+1, VarInfo(vars_.end()));
 }
 
 void ClaspVmtf::endInit(const Solver& s) {
-	vars_.clear();
+	if (reinit_) vars_.clear();
+	bool moms = reinit_ || score_[0].activity_ == 0;
 	for (Var v = 1; v <= s.numVars(); ++v) {
-		if (s.value(v) == value_free) {
-			score_[v].activity_ = momsScore(s, v);
+		if (s.value(v) == value_free && score_[v].pos_ == vars_.end()) {
+			if (moms) {
+				score_[v].activity_ = momsScore(s, v);
+			}
 			score_[v].pos_ = vars_.insert(vars_.end(), v);
 		}
 	}
-	vars_.sort(LessLevel(s, score_));
-	for (VarList::iterator it = vars_.begin(); it != vars_.end(); ++it) {
-		score_[*it].activity_ = 0;
+	if (moms) {
+		vars_.sort(LessLevel(s, score_));
+		for (VarList::iterator it = vars_.begin(); it != vars_.end(); ++it) {
+			score_[*it].activity_ = 0;
+		}
 	}
 	front_ = vars_.begin();
 	decay_ = 0;
@@ -507,28 +513,34 @@ const double vsidsVarDecay_g = 1 / 0.95;
 ClaspVsids::ClaspVsids(bool loops) 
 	: vars_(GreaterActivity(score_)) 
 	, inc_(1.0)
-	, scoreLoops_(loops) {}
+	, scoreLoops_(loops) 
+	, reinit_(true) {}
 
 void ClaspVsids::startInit(const Solver& s) {
-	score_.clear();
+	if (reinit_)score_.clear();
 	score_.resize(s.numVars()+1);
 }
 void ClaspVsids::endInit(const Solver& s) {
-	vars_.clear();
+	if (reinit_) vars_.clear();
+	bool moms = vars_.empty();
 	inc_ = 1.0;
 	double maxS = 0.0;
 	for (Var v = 1; v <= s.numVars(); ++v) {
-		if (s.value(v) == value_free) {
-			// initialize activity to moms-score
-			score_[v].first = momsScore(s, v);
-			if (score_[v].first > maxS) {
-				maxS = score_[v].first;
+		if (s.value(v) == value_free && (reinit_ || !vars_.is_in_queue(v))) {
+			if (moms) {
+				// initialize activity to moms-score
+				score_[v].first = momsScore(s, v);
+				if (score_[v].first > maxS) {
+					maxS = score_[v].first;
+				}
 			}
 			vars_.push(v);
 		}
 	}
-	for (VarVec::size_type i = 0; i != score_.size(); ++i) {
-		score_[i].first /= maxS;
+	if (moms) {
+		for (VarVec::size_type i = 0; i != score_.size(); ++i) {
+			score_[i].first /= maxS;
+		}
 	}
 }
 

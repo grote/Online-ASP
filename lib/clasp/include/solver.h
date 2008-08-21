@@ -858,6 +858,7 @@ class DecisionHeuristic {
 public:
 	DecisionHeuristic() {}
 	virtual ~DecisionHeuristic();	
+	
 	/*!
 	 * Called once after all problem variables are known to the solver.
 	 * The default-implementation is a noop.
@@ -871,6 +872,14 @@ public:
 	 * \param s The solver in which this heuristic is used.
 	 */
 	virtual void endInit(const Solver& /* s */) {}	
+
+	/*!
+	 * If the heuristic is used in an incremental setting, enable/disable
+	 * reinitialization of existing variables.
+	 * The default-implementation is a noop. Hence, heuristics will typically
+	 * simply (re-)initialize all variables.
+	 */
+	virtual void reinit(bool /* b */) {}
 	
 	/*!
 	 * Called for each var that changes its state from eliminated back to normal.

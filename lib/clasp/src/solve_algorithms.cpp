@@ -129,6 +129,7 @@ bool solve(Solver& s, uint32 maxAs, const SolveParams& p) {
 	double lBase				= std::min(s.numVars(), s.numConstraints());
 	double maxLearnts		= p.reduceBase() != 0 ? (uint32)std::max(10.0, lBase / p.reduceBase()) : -1.0;
 	double boundLearnts	= p.reduceMax() != 0 ? lBase * p.reduceMax() : std::numeric_limits<double>::max();
+	if (maxLearnts < s.numLearntConstraints()) maxLearnts = s.numLearntConstraints();
 	RestartStrategy rs(p.restartBase(), p.restartInc(), p.restartOuter());
 	uint32 asFound	= 0;
 	ValueRep result = value_free;
