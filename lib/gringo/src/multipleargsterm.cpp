@@ -19,6 +19,7 @@
 #include "literal.h"
 #include "expandable.h"
 #include "value.h"
+#include "grounder.h"
 
 using namespace NS_GRINGO;
 
@@ -37,9 +38,9 @@ Term* MultipleArgsTerm::clone() const
 	return new MultipleArgsTerm(*this);
 }
 
-void MultipleArgsTerm::print(std::ostream &out)
+void MultipleArgsTerm::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << "(" << a_ << "; " << b_ << ")" << std::endl;
+	out << "(" << pp(g, a_) << "; " << pp(g, b_) << ")";
 }
 
 void MultipleArgsTerm::getVars(VarSet &vars) const
@@ -81,8 +82,8 @@ namespace
 		Value getValue(Grounder *g) { assert(false); }
 		Value getConstValue(Grounder *g) { assert(false); }
 		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { assert(false); }
-		void print(std::ostream &stream) { assert(false); }
-		bool unify(const Value& t, const VarVector& vars, ValueVector& subst) const
+		void print(const GlobalStorage *g, std::ostream &out) const { assert(false); }
+		bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& subst) const
 		{
 			assert(false);
 		}
@@ -98,7 +99,7 @@ void MultipleArgsTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable 
 	p = a_;
 	a_ = 0;
 	b_ = 0;
-	p->preprocess(l, p, g, e);
+	p->preprocess(l, a_, g, e);
 	delete this;
 }
 

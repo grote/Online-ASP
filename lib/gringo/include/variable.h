@@ -27,9 +27,9 @@ namespace NS_GRINGO
 	class Variable : public Term
 	{
 	public:
-		Variable(Grounder *g, std::string *id);
+		Variable(Grounder *g, int id);
 		Variable(const Variable &c);
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
@@ -37,10 +37,10 @@ namespace NS_GRINGO
 		virtual Value getValue(Grounder *g);
 		int getUID();
 		virtual Term* clone() const;
-		bool unify(const Value& t, const VarVector& vars, ValueVector& vals) const;
+		bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& vals) const;
  		virtual ~Variable();
 	protected:
-		std::string *id_;
+		int id_;
 		int uid_;
 	};
 }

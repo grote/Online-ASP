@@ -20,7 +20,7 @@
 
 using namespace NS_GRINGO;
 		
-Variable::Variable(Grounder *g, std::string *id) : id_(id), uid_(g->registerVar(id))
+Variable::Variable(Grounder *g, int id) : id_(id), uid_(g->registerVar(id))
 {
 }
 
@@ -34,9 +34,9 @@ bool Variable::isComplex()
 	return false;
 }
 
-void Variable::print(std::ostream &out)
+void Variable::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << *id_;
+	out << *g->getString(id_);
 }
 
 Value Variable::getConstValue(Grounder *g)
@@ -71,7 +71,7 @@ Term* Variable::clone() const
 	return new Variable(*this);
 }
 
-bool Variable::unify(const Value& t, const VarVector& vars, ValueVector& vals) const
+bool Variable::unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& vals) const
 {
 	// TODO: constant access would be nice
 	for (size_t i = 0; i < vars.size(); ++i)
@@ -86,7 +86,7 @@ bool Variable::unify(const Value& t, const VarVector& vars, ValueVector& vals) c
 				return true;
 			}
 			else
-				return vals[i] == t;
+				return vals[i].equal(t);
 		}
 	}
 	assert(false);

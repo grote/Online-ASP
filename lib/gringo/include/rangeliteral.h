@@ -38,11 +38,11 @@ namespace NS_GRINGO
 		virtual bool solved();
 		virtual bool isFact(Grounder *g);
 		virtual void preprocess(Grounder *g, Expandable *e);
-		virtual IndexedDomain *createIndexedDomain(VarSet &index);
+		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual bool match(Grounder *g);
 		virtual NS_OUTPUT::Object *convert();
 		virtual Literal* clone() const;
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual double heuristicValue();
 		virtual ~RangeLiteral();
 	protected:

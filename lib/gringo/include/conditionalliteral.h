@@ -36,13 +36,13 @@ namespace NS_GRINGO
 		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, Literal::DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void createNode(StatementChecker *dg, bool head, bool delayed);
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
 		virtual bool solved();
 		virtual void finish();
-		virtual IndexedDomain *createIndexedDomain(VarSet &index);
+		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual bool match(Grounder *g);
 		virtual bool isFact(Grounder *g);
 		void ground(Grounder *g, GroundStep step);
@@ -70,8 +70,7 @@ namespace NS_GRINGO
 		const ValueVector &getValues();
 		int getWeight();
 
-		void clonePredicate(bool clone);
-		void setPredicate(PredicateLiteral* pred);
+		void clonePredicate(PredicateLiteral *clone);
 		void preprocessDisjunction(Grounder *g, AggregateLiteral *a, Expandable *e);
 		virtual ~ConditionalLiteral();
 	protected:
@@ -84,7 +83,7 @@ namespace NS_GRINGO
 		std::vector<ValueVector> values_;
 		std::vector<int>         weights_;
 		size_t                   current_;
-		bool                     clone_;
+		PredicateLiteral        *clone_;
 	};
 }
 

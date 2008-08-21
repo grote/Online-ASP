@@ -34,7 +34,7 @@ namespace NS_GRINGO
 			typedef std::vector<AtomHash> AtomLookUp;
 		public:
 			Output(std::ostream *out);
-			virtual void initialize(SignatureVector *pred);
+			virtual void initialize(GlobalStorage *g, SignatureVector *pred);
 			virtual void reinitialize();
 			virtual int getIncUid();
 			virtual void print(NS_OUTPUT::Object *o) = 0;
@@ -45,9 +45,9 @@ namespace NS_GRINGO
 			virtual ~Output();
 
 			void hideAll();
-			void setVisible(std::string *id, int arity, bool visible);
+			void setVisible(int id, int arity, bool visible);
 			bool isVisible(int uid);
-			bool isVisible(std::string *id, int arity);
+			bool isVisible(int id, int arity);
 			
 			// must be called if predicates are added after initialize has been called
 			void addSignature();
@@ -59,6 +59,7 @@ namespace NS_GRINGO
 			bool hideAll_;
 			std::map<Signature, bool> hide_;
 			std::vector<bool> visible_;
+			GlobalStorage *g_;
 		};
 	
 		struct Object

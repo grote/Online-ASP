@@ -29,7 +29,7 @@ namespace NS_GRINGO
 		{
 		public:
 			LparseOutput(std::ostream *out);
-			void initialize(SignatureVector *pred);
+			void initialize(GlobalStorage *g, SignatureVector *pred);
 			void print(NS_OUTPUT::Object *o);
 			void finalize(bool last);
 			virtual ~LparseOutput();

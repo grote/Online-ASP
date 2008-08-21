@@ -21,6 +21,7 @@
 #include "term.h"
 #include "value.h"
 #include "output.h"
+#include "grounder.h"
 
 using namespace NS_GRINGO;
 
@@ -53,7 +54,7 @@ void ConjunctionAggregate::match(Grounder *g, int &lower, int &upper, int &fixed
 	assert(false);
 }
 
-void ConjunctionAggregate::print(std::ostream &out)
+void ConjunctionAggregate::print(const GlobalStorage *g, std::ostream &out) const
 {
 	bool comma = false;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
@@ -62,7 +63,7 @@ void ConjunctionAggregate::print(std::ostream &out)
 			out << ", ";
 		else
 			comma = true;
-		out << *it;
+		out << pp(g, *it);
 	}
 }
 

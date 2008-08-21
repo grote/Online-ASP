@@ -41,14 +41,14 @@ namespace NS_GRINGO
 		virtual void reset();
 		virtual void finish();
 		virtual void preprocess(Grounder *g, Expandable *e);
-		virtual IndexedDomain *createIndexedDomain(VarSet &index);
+		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual void appendLiteral(Literal *l, ExpansionType type);
 		virtual double heuristicValue();
 		virtual bool isFact(Grounder *g);
 		virtual bool solved();
 		virtual Literal *clone() const;
 		virtual NS_OUTPUT::Object *convert();
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual ~OptimizeLiteral();
 	protected:
 		Type type_;

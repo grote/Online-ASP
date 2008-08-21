@@ -39,7 +39,7 @@ namespace NS_GRINGO
 		// implemented from base class or interface
 		virtual void getVars(VarSet &vars) const;
 		virtual void buildDepGraph(SDG *dg);
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual bool check(Grounder *g, VarVector &free);
 		virtual void reset();
@@ -50,7 +50,7 @@ namespace NS_GRINGO
 		virtual void grounded(Grounder *g);
 		virtual bool ground(Grounder *g, GroundStep step);
 		virtual void addDomain(PredicateLiteral *pl);
-		virtual void setIncPart(Grounder *g, IncPart part, std::string *var);
+		virtual void setIncPart(Grounder *g, IncPart part, int var);
 	private:
 		/**
 		 * \brief Calculate the relevant vars in the body

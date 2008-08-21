@@ -19,7 +19,7 @@
 #define VALUE_H
 
 #include <gringo.h>
-#include <funcsymbol.h>
+#include <printable.h>
 
 namespace NS_GRINGO
 {
@@ -62,20 +62,10 @@ namespace NS_GRINGO
 		 */
 		Value(const Value &v);
 		/**
-		 * \brief Creates a value encapsulationg a string
-		 * \param value The string
-		 */
-		Value(std::string *value);
-		/**
-		 * \brief Creates a value encapsulationg an int
+		 * \brief Creates a value encapsulationg an object of type uid
 		 * \param intValue The int
 		 */
-		Value(int intValue);
-		/**
-		 * \brief Creates a value encapsulating a function symbol
-		 * \param fn The function symbol
-		 */
-		Value(const FuncSymbol* fn);
+		Value(Type type, int uid_);
 		/**
 		 * \brief Calculates a hash for the value
 		 * \return The Hash
@@ -86,70 +76,37 @@ namespace NS_GRINGO
 		 * \param b The other value
 		 * \return Return an int less then 0 if the the value is lower than b, 0 if the values are equal or an int > 0 if the value is greater than b
 		 */
-		int compare(const Value &b) const;
+		int compare(const GlobalStorage *g, const Value &b) const;
 		/**
 		 * \brief Function used to compare Values in hash_sets or hash_maps.
 		 * This function doesnt throw an exception if the types of the values are distinct
 		 * \return The result of the comparisson
 		 */
-		bool equal_set(const Value &b) const;
-		/**
-		 * \brief Operator to compare Values
-		 * \return The result of the comparisson
-		 */
-		bool operator<(const Value &b) const;
-		/**
-		 * \brief Operator to compare Values
-		 * \return The result of the comparisson
-		 */
-		bool operator>(const Value &b) const;
-		/**
-		 * \brief Operator to compare Values
-		 * \return The result of the comparisson
-		 */
-		bool operator==(const Value &b) const;
-		/**
-		 * \brief Operator to compare Values
-		 * \return The result of the comparisson
-		 */
-		bool operator<=(const Value &b) const;
-		/**
-		 * \brief Operator to compare Values
-		 * \return The result of the comparisson
-		 */
-		bool operator>=(const Value &b) const;
-		/**
-		 * \brief Operator to compare Values
-		 * \return The result of the comparisson
-		 */
-		bool operator!=(const Value &b) const;
+		bool equal(const Value &b) const;
 		/**
 		 * \brief Operator casting any value to int
-		 * \return if the current value is a string or undef 0 is returned otherwise the value of the int is returned
+		 * \return if the current value is a string or undef an exception is thrown otherwise the value of the int is returned
 		 */
+		void print(const GlobalStorage *g, std::ostream &out) const;
+
 		operator int();
 	public:
 		/// The type of the value
 		Type type_;
-		/// Union for all possible value types
-		union
-		{
-			/// The int value
-			int intValue_;
-			/// The string value
-			std::string *stringValue_;
-			/// The FuncSymbol value
-			const FuncSymbol *funcSymbol_;
-		};
+		/// The value its an uid for every type used
+		int uid_;
 	};
 	
-	/**
-	 * \brief Operator to easily print values
-	 * \param out The output stream
-	 * \param v The value
-	 * \return Returns a reference to the output stream
-	 */
-	std::ostream &operator<<(std::ostream &out, const Value &v);
+	inline const std::pair<const GlobalStorage *, const Value> print(const GlobalStorage *g, const Value &v)
+	{
+		return std::make_pair(g, v);
+	}
+
+	inline std::ostream &operator<<(std::ostream &out, const std::pair<const GlobalStorage *, const Value> &p)
+	{
+		p.second.print(p.first, out);
+		return out;
+	}
 	
 	/// Type to efficiently access values
 	typedef __gnu_cxx::hash_set<ValueVector, Value::VectorHash, Value::VectorEqual> ValueVectorSet;
@@ -159,11 +116,11 @@ namespace NS_GRINGO
 		switch(type_)
 		{
 			case INT:
-				return (size_t)intValue_;
+				return (size_t)uid_;
 			case STRING:
-				return (size_t)stringValue_;
+				return (size_t)uid_;
 			case FUNCSYMBOL:
-				return funcSymbol_->getHash();
+				return ~(size_t)uid_;
 			default:
 				// this shouldnt happen
 				assert(false);
@@ -176,7 +133,7 @@ namespace NS_GRINGO
 			return false;
 		for(ValueVector::const_iterator i = a.begin(), j = b.begin(); i != a.end(); i++, j++)
 		{
-			if(!i->equal_set(*j))
+			if(!i->equal(*j))
 				return false;
 		}
 		return true;

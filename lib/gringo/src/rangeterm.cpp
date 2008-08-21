@@ -42,7 +42,7 @@ bool RangeTerm::isComplex()
 
 void RangeTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 {
-	std::string *var = g->createUniqueVar();
+	int var = g->createUniqueVar();
 	e->appendLiteral(new RangeLiteral(new Variable(g, var), lower_, upper_), Expandable::RANGETERM);
 	p = new Variable(g, var);
 	lower_ = 0;
@@ -50,9 +50,9 @@ void RangeTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 	delete this;
 }
 
-void RangeTerm::print(std::ostream &out)
+void RangeTerm::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << lower_ << ".." << upper_;
+	out << pp(g, lower_) << ".." << pp(g, upper_);
 }
 
 Term *RangeTerm::getLower()

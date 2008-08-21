@@ -88,7 +88,7 @@ namespace NS_GRINGO
 		 *
 		 * \return true if the term unifies with t, otherwise false
 		 */
-		virtual bool unify(const Value& t, const VarVector& vars, ValueVector& subst) const = 0;
+		virtual bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& subst) const = 0;
 		/**
 		 * \brief Virtual Destructor
 		 */

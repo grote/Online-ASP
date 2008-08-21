@@ -135,7 +135,7 @@ Object *createDisjunction(Object *disj, Object *pred)
 start ::= header program.
 
 program ::= program rule DOT.
-program ::= . { OUTPUT->initialize(pConverter->getPred()); }
+program ::= . { OUTPUT->initialize(pConverter, pConverter->getPred()); }
 
 header ::= header SHOW show_list DOT.
 header ::= header HIDE hide_list DOT.
@@ -205,10 +205,10 @@ aggregate_atom(res) ::= aggregate(aggr).                     { res = aggr; }
 constant_list(res) ::= constant_list(list) COMMA constant(val). { res = list; res->push_back(*val); DELETE_PTR(val); }
 constant_list(res) ::= constant(val).                           { res = new ValueVector(); res->push_back(*val); DELETE_PTR(val); }
 
-constant(res) ::= IDENTIFIER(id). { res = new Value(STRING(id)); }
-constant(res) ::= number(n).      { res = new Value(n); }
-constant(res) ::= STRING(id).     { res = new Value(STRING(id)); }
-constant(res) ::= IDENTIFIER(id) LPARA constant_list(list) RPARA. { res = new Value(FUNCSYM(new FuncSymbol(STRING(id), *list))); DELETE_PTR(list); }
+constant(res) ::= IDENTIFIER(id). { res = new Value(Value::STRING, STRING(id)); }
+constant(res) ::= number(n).      { res = new Value(Value::INT, n); }
+constant(res) ::= STRING(id).     { res = new Value(Value::STRING, STRING(id)); }
+constant(res) ::= IDENTIFIER(id) LPARA constant_list(list) RPARA. { res = new Value(Value::FUNCSYMBOL, FUNCSYM(new FuncSymbol(STRING(id), *list))); DELETE_PTR(list); }
 
 aggregate(res) ::= SUM LBRAC weight_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::SUM, list->first, list->second); DELETE_PTR(list); }
 aggregate(res) ::= MIN LBRAC weight_list(list) RBRAC.   { res = new Aggregate(false, Aggregate::MIN, list->first, list->second); DELETE_PTR(list); }

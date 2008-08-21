@@ -27,17 +27,16 @@ namespace NS_GRINGO
 	class Constant : public Term
 	{
 	public:
-		Constant(int value);
-		Constant(std::string *value);
+		Constant(const Value &value);
 		Constant(const Constant &c);
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual Value getConstValue(Grounder *g);
 		virtual Value getValue(Grounder *g);
 		virtual Term* clone() const;
-		bool unify(const Value& t, const VarVector& vars, ValueVector& vals) const;
+		bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& vals) const;
  		virtual ~Constant();
 	protected:
 		Value value_;

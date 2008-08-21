@@ -155,11 +155,11 @@ using namespace NS_GRINGO;
 %type variable_list { int }
 %destructor variable_list { }
 
-%type domain_var { StringVector* }
+%type domain_var { IntVector* }
 %destructor domain_var { DELETE_PTR($$) }
 
-%type domain_list { std::vector<StringVector*>* }
-%destructor domain_list { DELETE_PTRVECTOR(std::vector<StringVector*>, $$) }
+%type domain_list { std::vector<IntVector*>* }
+%destructor domain_list { DELETE_PTRVECTOR(std::vector<IntVector*>, $$) }
 
 %type neg_pred { std::string* }
 %destructor neg_pred { DELETE_PTR($$) }
@@ -218,11 +218,11 @@ domain_predicate ::= neg_pred(id) LPARA domain_list(list) RPARA. { GROUNDER->add
 variable_list(res) ::= variable_list(list) COMMA VARIABLE. { res = list + 1; }
 variable_list(res) ::= VARIABLE.                           { res = 1; }
 
-domain_var(res) ::= VARIABLE(var).                       { res = new StringVector(); res->push_back(STRING(var)); }
+domain_var(res) ::= VARIABLE(var).                       { res = new IntVector(); res->push_back(STRING(var)); }
 domain_var(res) ::= domain_var(list) SEMI VARIABLE(var). { res = list; res->push_back(STRING(var)); }
 
 domain_list(res) ::= domain_list(list) COMMA domain_var(var). { res = list; res->push_back(var); }
-domain_list(res) ::= domain_var(var).                         { res = new std::vector<StringVector*>(); res->push_back(var); }
+domain_list(res) ::= domain_var(var).                         { res = new std::vector<IntVector*>(); res->push_back(var); }
 
 rule(res) ::= head_atom(head) IF body(body). { res = new NormalRule(head, body); }
 rule(res) ::= head_atom(head) IF .           { res = new NormalRule(head, 0); }
@@ -286,9 +286,9 @@ termlist(res) ::= termlist(list) COMMA term(term). { res = list; res->push_back(
 termlist(res) ::= term(term).                      { res = new TermVector(); res->push_back(term); }
 
 term(res) ::= VARIABLE(x).   { res = new Variable(GROUNDER, STRING(x)); }
-term(res) ::= IDENTIFIER(x). { res = new Constant(STRING(x)); }
-term(res) ::= STRING(x).     { res = new Constant(STRING(x)); }
-term(res) ::= NUMBER(x).     { res = new Constant(atol(x->c_str())); DELETE_PTR(x); }
+term(res) ::= IDENTIFIER(x). { res = new Constant(Value(Value::STRING, STRING(x))); }
+term(res) ::= STRING(x).     { res = new Constant(Value(Value::STRING, STRING(x))); }
+term(res) ::= NUMBER(x).     { res = new Constant(Value(Value::INT, atol(x->c_str()))); DELETE_PTR(x); }
 term(res) ::= LPARA term(a) RPARA.     { res = a; }
 term(res) ::= term(a) MOD term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
 term(res) ::= term(a) PLUS term(b).    { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
@@ -300,7 +300,7 @@ term(res) ::= term(a) AND term(b).     { res = new FunctionTerm(FunctionTerm::BI
 term(res) ::= term(a) OR term(b).      { res = new FunctionTerm(FunctionTerm::BITOR, a, b); }
 term(res) ::= TILDE term(a).           { res = new FunctionTerm(FunctionTerm::COMPLEMENT, a); }
 term(res) ::= term(l) DOTS term(u).    { res = new RangeTerm(l, u); }
-term(res) ::= MINUS term(b). [UMINUS]  { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(0), b); }
+term(res) ::= MINUS term(b). [UMINUS]  { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(Value(Value::INT, 0)), b); }
 term(res) ::= ABS LPARA term(a) RPARA. { res = new FunctionTerm(FunctionTerm::ABS, a); }
 term(res) ::= term(a) SEMI term(b).    { res = new MultipleArgsTerm(a, b); }
 term(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new FuncSymbolTerm(GROUNDER, STRING(id), list); }
@@ -308,16 +308,16 @@ term(res) ::= IDENTIFIER(id) LPARA termlist(list) RPARA. { res = new FuncSymbolT
 const_termlist(res) ::= const_termlist(list) COMMA const_term(term). { res = list; res->push_back(term); }
 const_termlist(res) ::= const_term(term).                            { res = new TermVector(); res->push_back(term); }
 
-const_term(res) ::= IDENTIFIER(x). { res = new Constant(STRING(x)); }
-const_term(res) ::= STRING(x).     { res = new Constant(STRING(x)); }
-const_term(res) ::= NUMBER(x).     { res = new Constant(atol(x->c_str())); DELETE_PTR(x); }
+const_term(res) ::= IDENTIFIER(x). { res = new Constant(Value(Value::STRING, STRING(x))); }
+const_term(res) ::= STRING(x).     { res = new Constant(Value(Value::STRING, STRING(x))); }
+const_term(res) ::= NUMBER(x).     { res = new Constant(Value(Value::INT, atol(x->c_str()))); DELETE_PTR(x); }
 const_term(res) ::= LPARA const_term(a) RPARA.           { res = a; }
 const_term(res) ::= const_term(a) MOD const_term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
 const_term(res) ::= const_term(a) PLUS const_term(b).    { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
 const_term(res) ::= const_term(a) TIMES const_term(b).   { res = new FunctionTerm(FunctionTerm::TIMES, a, b); }
 const_term(res) ::= const_term(a) MINUS const_term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
 const_term(res) ::= const_term(a) DIVIDE const_term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
-const_term(res) ::= MINUS const_term(b). [UMINUS]        { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(0), b); }
+const_term(res) ::= MINUS const_term(b). [UMINUS]        { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(Value(Value::INT, 0)), b); }
 const_term(res) ::= ABS LPARA const_term(a) RPARA.       { res = new FunctionTerm(FunctionTerm::ABS, a); }
 const_term(res) ::= IDENTIFIER(id) LPARA const_termlist(list) RPARA. { res = new FuncSymbolTerm(GROUNDER, STRING(id), list); }
 
@@ -341,12 +341,12 @@ nweight_list(res) ::= nweight_list(list) COMMA weight_term(term). { res = list; 
 nweight_list(res) ::= weight_term(term). { res = new ConditionalLiteralVector(); res->push_back(term);}
 
 weight_term(res) ::= constraint_literal(literal) ASSIGN term(term). { res = literal; res->setWeight(term); }
-weight_term(res) ::= constraint_literal(literal).                   { res = literal; res->setWeight(new Constant(1)); }
+weight_term(res) ::= constraint_literal(literal).                   { res = literal; res->setWeight(new Constant(Value(Value::INT, 1))); }
 
 constr_list(res) ::= nconstr_list(list). { res = list; }
 constr_list(res) ::= .                   { res = new ConditionalLiteralVector(); }
 nconstr_list(res) ::= nconstr_list(list) COMMA constr_term(term). { res = list; res->push_back(term); }
 nconstr_list(res) ::= constr_term(term).                          { res = new ConditionalLiteralVector(); res->push_back(term); }
 
-constr_term(res) ::= constraint_literal(literal).  { res = literal; res->setWeight(new Constant(1)); }
+constr_term(res) ::= constraint_literal(literal).  { res = literal; res->setWeight(new Constant(Value(Value::INT, 1))); }
 

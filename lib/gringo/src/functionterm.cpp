@@ -24,39 +24,39 @@ FunctionTerm::FunctionTerm(FunctionType type, Term *a, Term *b) : Term(), type_(
 {
 }
 
-void FunctionTerm::print(std::ostream &out)
+void FunctionTerm::print(const GlobalStorage *g, std::ostream &out) const
 {
 	switch(type_)
 	{
 		case ABS:
-			out << "abs" << "(" << a_ << ")";
+			out << "abs" << "(" << pp(g, a_) << ")";
 			break;
 		case PLUS:
-			out << "(" << a_ << " + " << b_ << ")";
+			out << "(" << pp(g, a_) << " + " << pp(g, b_) << ")";
 			break;
 		case MINUS:
-			out << "(" << a_ << " - " << b_ << ")";
+			out << "(" << pp(g, a_) << " - " << pp(g, b_) << ")";
 			break;
 		case TIMES:
-			out << "(" << a_ << " * " << b_ << ")";
+			out << "(" << pp(g, a_) << " * " << pp(g, b_) << ")";
 			break;
 		case DIVIDE:
-			out << "(" << a_ << " / " << b_ << ")";
+			out << "(" << pp(g, a_) << " / " << pp(g, b_) << ")";
 			break;
 		case MOD:
-			out << "(" << a_ << " mod " << b_ << ")";
+			out << "(" << pp(g, a_) << " mod " << pp(g, b_) << ")";
 			break;
 		case BITXOR:
-			out << "(" << a_ << " ^ " << b_ << ")";
+			out << "(" << pp(g, a_) << " ^ " << pp(g, b_) << ")";
 			break;
 		case BITOR:
-			out << "(" << a_ << " ? " << b_ << ")";
+			out << "(" << pp(g, a_) << " ? " << pp(g, b_) << ")";
 			break;
 		case BITAND:
-			out << "(" << a_ << " & " << b_ << ")";
+			out << "(" << pp(g, a_) << " & " << pp(g, b_) << ")";
 			break;
 		case COMPLEMENT:
-			out << "(~" << a_ << ")";
+			out << "(~" << pp(g, a_) << ")";
 			break;
 	}
 }
@@ -85,25 +85,25 @@ Value FunctionTerm::getConstValue(Grounder *g)
 	switch(type_)
 	{
 		case ABS:
-			return Value(abs(a_->getConstValue(g)));
+			return Value(Value::INT, abs(a_->getConstValue(g)));
 		case PLUS:
-			return Value(a_->getConstValue(g) + b_->getConstValue(g));
+			return Value(Value::INT, a_->getConstValue(g) + b_->getConstValue(g));
 		case MINUS:
-			return Value(a_->getConstValue(g) - b_->getConstValue(g));
+			return Value(Value::INT, a_->getConstValue(g) - b_->getConstValue(g));
 		case TIMES:
-			return Value(a_->getConstValue(g) * b_->getConstValue(g));
+			return Value(Value::INT, a_->getConstValue(g) * b_->getConstValue(g));
 		case DIVIDE:
-			return Value(a_->getConstValue(g) / b_->getConstValue(g));
+			return Value(Value::INT, a_->getConstValue(g) / b_->getConstValue(g));
 		case MOD:
-			return Value(a_->getConstValue(g) % b_->getConstValue(g));
+			return Value(Value::INT, a_->getConstValue(g) % b_->getConstValue(g));
 		case BITXOR:
-			return Value(a_->getConstValue(g) ^ b_->getConstValue(g));
+			return Value(Value::INT, a_->getConstValue(g) ^ b_->getConstValue(g));
 		case BITOR:
-			return Value(a_->getConstValue(g) | b_->getConstValue(g));
+			return Value(Value::INT, a_->getConstValue(g) | b_->getConstValue(g));
 		case BITAND:
-			return Value(a_->getConstValue(g) & b_->getConstValue(g));
+			return Value(Value::INT, a_->getConstValue(g) & b_->getConstValue(g));
 		case COMPLEMENT:
-			return Value(~a_->getConstValue(g));
+			return Value(Value::INT, ~a_->getConstValue(g));
 	}
 	assert(false);
 }
@@ -113,25 +113,25 @@ Value FunctionTerm::getValue(Grounder *g)
 	switch(type_)
 	{
 		case ABS:
-			return Value(abs(a_->getValue(g)));
+			return Value(Value::INT, abs(a_->getValue(g)));
 		case PLUS:
-			return Value(a_->getValue(g) + b_->getValue(g));
+			return Value(Value::INT, a_->getValue(g) + b_->getValue(g));
 		case MINUS:
-			return Value(a_->getValue(g) - b_->getValue(g));
+			return Value(Value::INT, a_->getValue(g) - b_->getValue(g));
 		case TIMES:
-			return Value(a_->getValue(g) * b_->getValue(g));
+			return Value(Value::INT, a_->getValue(g) * b_->getValue(g));
 		case DIVIDE:
-			return Value(a_->getValue(g) / b_->getValue(g));
+			return Value(Value::INT, a_->getValue(g) / b_->getValue(g));
 		case MOD:
-			return Value(a_->getValue(g) % b_->getValue(g));
+			return Value(Value::INT, a_->getValue(g) % b_->getValue(g));
 		case BITXOR:
-			return Value(a_->getValue(g) ^ b_->getValue(g));
+			return Value(Value::INT, a_->getValue(g) ^ b_->getValue(g));
 		case BITOR:
-			return Value(a_->getValue(g) | b_->getValue(g));
+			return Value(Value::INT, a_->getValue(g) | b_->getValue(g));
 		case BITAND:
-			return Value(a_->getValue(g) & b_->getValue(g));
+			return Value(Value::INT, a_->getValue(g) & b_->getValue(g));
 		case COMPLEMENT:
-			return Value(~a_->getValue(g));
+			return Value(Value::INT, ~a_->getValue(g));
 	}
 	assert(false);
 }

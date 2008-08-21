@@ -116,7 +116,7 @@ namespace NS_GRINGO
 		 * \param index Stores a set to the variables that have to be indexed.
 		 * \return Returns the new indexed domain
 		 */
-		virtual IndexedDomain *createIndexedDomain(VarSet &index) = 0;
+		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index) = 0;
 		/**
 		 * \brief Determines if the literal can be satisfied wrt. the current substitution
 		 *

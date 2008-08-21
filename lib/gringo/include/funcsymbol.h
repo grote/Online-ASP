@@ -35,7 +35,7 @@ namespace NS_GRINGO
 		 * \brief Constructor - f(a,b,c(1,2,3))    *s="f"
 		 * doest not take ownership of s
 		 */
-		FuncSymbol(const std::string* s, const ValueVector& args);
+		FuncSymbol(int s, const ValueVector& args);
 		/**
 		 * \brief simple hash function
 		 * Merges the hash value of the argument vector with the hash value of the function name
@@ -49,12 +49,12 @@ namespace NS_GRINGO
 		 * \brief Prints the function symbol
 		 * \param out The output stream
 		 */
-		void print(std::ostream& out) const;
+		void print(const GlobalStorage *g, std::ostream& out) const;
 		/**
 		 * \brief Get the name of the function symbol
 		 * \return the string pointer to the name
 		 */
-		const std::string* getName() const;
+		int getName() const;
 		/**
 		 * \brief Get the values of the function symbol
 		 * \return a vector of values
@@ -65,7 +65,7 @@ namespace NS_GRINGO
 		 */
 		virtual ~FuncSymbol();
 	protected:
-		const std::string*	name_;
+		int                     name_;
 		ValueVector		args_;
 	};
 }

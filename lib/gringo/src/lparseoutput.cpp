@@ -16,6 +16,7 @@
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lparseoutput.h"
+#include "globalstorage.h"
 
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
@@ -24,16 +25,16 @@ LparseOutput::LparseOutput(std::ostream *out) : Output(out)
 {
 }
 
-void LparseOutput::initialize(SignatureVector *pred)
+void LparseOutput::initialize(GlobalStorage *g, SignatureVector *pred)
 {
-	Output::initialize(pred);
+	Output::initialize(g, pred);
 	if(hideAll_)
 		*out_ << "#hide." << std::endl;
 	for(std::map<Signature, bool>::iterator it = hide_.begin(); it  != hide_.end(); it++)
 	{
 		if(hideAll_ != it->second)
 		{
-			*out_ << (hideAll_ ? "#show " : "#hide ") << *(it->first.first);
+			*out_ << (hideAll_ ? "#show " : "#hide ") << *g_->getString(it->first.first);
 			if(it->first.second > 0)
 			{
 				*out_ << "(X0";

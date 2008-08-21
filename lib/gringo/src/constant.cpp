@@ -20,11 +20,7 @@
 
 using namespace NS_GRINGO;
 		
-Constant::Constant(int value) : value_(value)
-{
-}
-
-Constant::Constant(std::string *value) : value_(value)
+Constant::Constant(const Value &v) : value_(v)
 {
 }
 
@@ -37,15 +33,15 @@ bool Constant::isComplex()
 	return false;
 }
 
-void Constant::print(std::ostream &out)
+void Constant::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << value_;
+	value_.print(g, out);
 }
 
 Value Constant::getConstValue(Grounder *g)
 {
 	if(value_.type_ == Value::STRING)
-		return g->getConstValue(value_.stringValue_);
+		return g->getConstValue(value_.uid_);
 	else
 		return value_;
 }
@@ -62,7 +58,7 @@ Constant::~Constant()
 void Constant::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 {
 	if(value_.type_ == Value::STRING)
-		value_ = g->getConstValue(value_.stringValue_);
+		value_ = g->getConstValue(value_.uid_);
 }
 
 Constant::Constant(const Constant &c) :  value_(c.value_)
@@ -74,7 +70,7 @@ Term* Constant::clone() const
 	return new Constant(*this);
 }
 
-bool Constant::unify(const Value& t, const VarVector& vars, ValueVector& vals) const
+bool Constant::unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& vals) const
 {
-	return t == value_;
+	return t.equal(value_);
 }

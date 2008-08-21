@@ -88,10 +88,10 @@ void CountAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 	upper+= fixed;
 }
 
-void CountAggregate::print(std::ostream &out)
+void CountAggregate::print(const GlobalStorage *g, std::ostream &out) const
 {
 	if(lower_)
-		out << lower_ << " ";
+		out << pp(g, lower_) << " ";
 	out << "sum [";
 	bool comma = false;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
@@ -100,11 +100,11 @@ void CountAggregate::print(std::ostream &out)
 			out << ", ";
 		else
 			comma = true;
-		out << *it;
+		out << pp(g, *it);
 	}
 	out << "]";
 	if(upper_)
-		out << " " << upper_;
+		out << " " << pp(g, upper_);
 }
 
 CountAggregate::CountAggregate(const CountAggregate &a) : AggregateLiteral(a)

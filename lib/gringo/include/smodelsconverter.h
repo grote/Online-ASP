@@ -29,7 +29,7 @@ namespace NS_GRINGO
 		{
 		public:
 			SmodelsConverter(std::ostream *out);
-			virtual void initialize(SignatureVector *pred);
+			virtual void initialize(GlobalStorage *g, SignatureVector *pred);
 			virtual void print(Object *o);
 			int getFalse() const;
 			virtual ~SmodelsConverter();

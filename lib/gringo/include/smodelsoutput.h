@@ -29,7 +29,7 @@ namespace NS_GRINGO
 		{
 		public:
 			SmodelsOutput(std::ostream *out);
-			void initialize(SignatureVector *pred);
+			void initialize(GlobalStorage *g, SignatureVector *pred);
 			void finalize(bool last);
 			~SmodelsOutput();
 		protected:

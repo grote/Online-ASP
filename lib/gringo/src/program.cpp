@@ -49,7 +49,7 @@ Evaluator *Program::getEvaluator()
 	return eval_;
 }
 
-void Program::print(std::ostream &out)
+void Program::print(const GlobalStorage *g, std::ostream &out) const
 {
 	if(rules_.size() > 0)
 	{
@@ -65,9 +65,9 @@ void Program::print(std::ostream &out)
 				out << "% normal program:" << std::endl;
 				break;
 		}
-		for(StatementVector::iterator it = rules_.begin(); it != rules_.end(); it++)
+		for(StatementVector::const_iterator it = rules_.begin(); it != rules_.end(); it++)
 		{
-			out << (*it) << std::endl;;
+			out << pp(g, *it) << std::endl;;
 		}
 	}
 }
@@ -90,10 +90,10 @@ bool Program::check(Grounder *g)
 					std::cerr << ", ";
 				else
 					comma = true;
-				std::cerr << *j;
+				std::cerr << pp(g, *j);
 			}
 			std::cerr << " }" << std::endl;
-			std::cerr << "	" << (*i) << std::endl;
+			std::cerr << "	" << pp(g, *i) << std::endl;
 			return false;
 		}
 	}
@@ -132,7 +132,7 @@ bool Program::check(Grounder *g)
 					std::cerr << *g->getVarString(*it);
 				}
 				std::cerr << " }" << std::endl;
-				std::cerr << "	" << rules_.back() << std::endl;
+				std::cerr << "	" << pp(g, rules_.back()) << std::endl;
 				return false;
 			}
 		}

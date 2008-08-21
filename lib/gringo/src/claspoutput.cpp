@@ -38,9 +38,9 @@ ClaspOutput::ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::Transfor
 {
 }
 
-void ClaspOutput::initialize(SignatureVector *pred)
+void ClaspOutput::initialize(GlobalStorage *g, SignatureVector *pred)
 {
-	SmodelsConverter::initialize(pred);
+	SmodelsConverter::initialize(g, pred);
 	b_->setCompute(getFalse(), false);
 #ifdef DEBUG_ICLASP
 	g_out << "api.setCompute(t" << getFalse() << ", false);" << NL;
@@ -221,14 +221,14 @@ IClaspOutput::IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::Transf
 {
 }
 
-void IClaspOutput::initialize(SignatureVector *pred)
+void IClaspOutput::initialize(GlobalStorage *g, SignatureVector *pred)
 {
 #ifdef DEBUG_ICLASP
 	g_out << "LitVec assumptions;" << NL << NL;
 	g_out << "solver.undoUntil(0);" << NL;
 	g_out << "api.updateProgram();" << NL;
 #endif
-	ClaspOutput::initialize(pred);
+	ClaspOutput::initialize(g, pred);
 	incUid_ = 0;
 	reinitialize();
 }

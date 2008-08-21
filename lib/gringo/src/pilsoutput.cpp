@@ -27,9 +27,9 @@ PilsOutput::PilsOutput(std::ostream *out, unsigned int normalForm) : Output(out)
 const char* HEADER = "1";
 const char* VERSION = "1";
 
-void PilsOutput::initialize(SignatureVector *pred)
+void PilsOutput::initialize(GlobalStorage *g, SignatureVector *pred)
 {
-	Output::initialize(pred);
+	Output::initialize(g, pred);
 
 	*out_ << HEADER << " " << VERSION << " " << normalForm_ << " " << "0 0" << NL;
 }

@@ -55,9 +55,9 @@ void AssignmentLiteral::createNode(StatementChecker *dg, bool head, bool delayed
 	dg->createNode(needed, provided);
 }
 
-void AssignmentLiteral::print(std::ostream &out)
+void AssignmentLiteral::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << c_ << " = " << t_;
+	out << pp(g, c_) << " = " << pp(g, t_);
 }
 
 bool AssignmentLiteral::isFact(Grounder *g)
@@ -135,7 +135,7 @@ namespace
 	}
 }
 
-IndexedDomain *AssignmentLiteral::createIndexedDomain(VarSet &index)
+IndexedDomain *AssignmentLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
 	if(index.find(c_->getUID()) == index.end())
 		return new IndexedDomainAssign(c_->getUID(), t_);

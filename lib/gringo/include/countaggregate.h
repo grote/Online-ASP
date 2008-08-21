@@ -30,7 +30,7 @@ namespace NS_GRINGO
 		CountAggregate(const CountAggregate &a);
 		virtual Literal *clone() const;
 		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~CountAggregate();
 	};

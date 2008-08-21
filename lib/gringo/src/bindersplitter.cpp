@@ -52,7 +52,7 @@ void BinderSplitter::createNode(StatementChecker *dg, bool head, bool delayed)
 	assert(false);
 }
 
-void BinderSplitter::print(std::ostream &out)
+void BinderSplitter::print(const GlobalStorage *g, std::ostream &out) const
 {
 	out << "true";
 }
@@ -97,6 +97,7 @@ namespace NS_GRINGO
 {
 	namespace
 	{
+		/*
 		std::string print(const ValueVector &v)
 		{
 			std::stringstream ss;
@@ -111,13 +112,14 @@ namespace NS_GRINGO
 			}
 			return ss.str();
 		}
+		*/
 
 		class IndexedDomainBS : public IndexedDomain
 		{
 		private:
 			typedef __gnu_cxx::hash_map<ValueVector, ValueVector, Value::VectorHash, Value::VectorEqual> ValueVectorMap;
 		public:
-			IndexedDomainBS(ValueVectorSet &domain, VarSet &index, TermVector &param, VarVector &relevant)
+			IndexedDomainBS(Grounder *g, ValueVectorSet &domain, VarSet &index, TermVector &param, VarVector &relevant)
 			{
 				VarVector unrelevant;
 				for(int i = 0; i < (int)param.size(); i++)
@@ -168,7 +170,7 @@ namespace NS_GRINGO
 					TermVector::const_iterator p = param.begin();
 					for (ValueVector::const_iterator i = val.begin(); i != val.end(); ++i, ++p)
 					{
-						if (!(*p)->unify(*i, unifyVars, unifyVals))
+						if (!(*p)->unify(g, *i, unifyVars, unifyVals))
 						{
 							doContinue = true;
 							break;
@@ -243,9 +245,9 @@ namespace NS_GRINGO
 	}
 }
 
-IndexedDomain *BinderSplitter::createIndexedDomain(VarSet &index)
+IndexedDomain *BinderSplitter::createIndexedDomain(Grounder *g, VarSet &index)
 {
-	return new IndexedDomainBS(domain_->getDomain(), index, *param_, relevant_);
+	return new IndexedDomainBS(g, domain_->getDomain(), index, *param_, relevant_);
 }
 
 Literal* BinderSplitter::clone() const

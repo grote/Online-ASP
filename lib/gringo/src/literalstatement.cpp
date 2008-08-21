@@ -106,9 +106,9 @@ void LiteralStatement::addDomain(PredicateLiteral *pl)
 	assert(false);
 }
 
-void LiteralStatement::print(std::ostream &out)
+void LiteralStatement::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << lit_ << "." << std::endl;
+	out << pp(g, lit_) << "." << std::endl;
 }
 
 LiteralStatement::~LiteralStatement()
@@ -116,7 +116,7 @@ LiteralStatement::~LiteralStatement()
 	delete lit_;
 }
 
-void LiteralStatement::setIncPart(Grounder *g, IncPart part, std::string *var)
+void LiteralStatement::setIncPart(Grounder *g, IncPart part, int var)
 {
 	std::cerr << "The following statement cant be used with the incremental interface: " << std::endl << "\t" << this << std::endl;
 	throw GrinGoException("Error: unsupported statement.");

@@ -150,7 +150,7 @@ void ComputeLiteral::finish()
 	assert(false);
 }
 
-IndexedDomain *ComputeLiteral::createIndexedDomain(VarSet &index)
+IndexedDomain *ComputeLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
 	assert(false);
 }
@@ -187,7 +187,7 @@ void ComputeLiteral::preprocess(Grounder *g, Expandable *e)
 			(*literals_)[i]->preprocess(g, this);
 }
 
-void ComputeLiteral::print(std::ostream &out)
+void ComputeLiteral::print(const GlobalStorage *g, std::ostream &out) const
 {
 	out << "compute {";
 	bool comma = false;
@@ -197,7 +197,7 @@ void ComputeLiteral::print(std::ostream &out)
 			out << ", ";
 		else
 			comma = true;
-		out << *it;
+		out << pp(g, *it);
 	}
 	out << "}";
 }

@@ -53,7 +53,7 @@ void DLVGrounder::sortLiterals(LDG *dg)
 		VarSet global;
 		global.insert(needed.begin(), needed.end());
 		global.insert(provided_[i].begin(), provided_[i].end());
-		dom_[i] = l->createIndexedDomain(index);
+		dom_[i] = l->createIndexedDomain(g_, index);
 		var_[i].insert(var_[i].end(), global.begin(), global.end());
 		index.insert(provided_[i].begin(), provided_[i].end());
 	}
@@ -65,7 +65,7 @@ void DLVGrounder::reinit()
 	for(size_t i = 0; i < lit_.size(); i++)
 	{
 		Literal *l = lit_[i];
-		dom_[i] = l->createIndexedDomain(index);
+		dom_[i] = l->createIndexedDomain(g_, index);
 		index.insert(provided_[i].begin(), provided_[i].end());
 	}
 }

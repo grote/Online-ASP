@@ -55,10 +55,10 @@ void NormalRule::buildDepGraph(SDG *dg)
 	}
 }
 
-void NormalRule::print(std::ostream &out)
+void NormalRule::print(const GlobalStorage *g, std::ostream &out) const
 {
 	if(head_)
-		out << head_;
+		out << pp(g, head_);
 	if(body_)
 	{
 		out << " :- ";
@@ -69,7 +69,7 @@ void NormalRule::print(std::ostream &out)
 				out << ", ";
 			else
 				comma = true;
-			out << (*it);
+			out << pp(g, *it);
 		}
 	}
 	out << ".";
@@ -243,7 +243,7 @@ bool NormalRule::ground(Grounder *g, GroundStep step)
 			groundOther(g, step, head_, body_);
 			break;
 		case GROUND:
-			//std::cerr << "grounding: " << this << std::endl;
+			//std::cerr << "grounding: " << pp(g, this) << std::endl;
 			if(grounder_)
 			{
 				//std::cerr << "grounding: " << this << std::endl;
@@ -418,7 +418,7 @@ namespace
 		void firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
 		{
 			//std::cerr << "matching with: " << Value(g->g_->getIncStep()) << std::endl;
-			g->g_->setValue(uid_, Value(g->g_->getIncStep()), binder);
+			g->g_->setValue(uid_, Value(Value::INT, g->g_->getIncStep()), binder);
 			status = SuccessfulMatch;
 		}
 		void nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
@@ -476,7 +476,7 @@ namespace
 		{
 			return new LambdaLiteral(*this);
 		}
-		IndexedDomain *createIndexedDomain(VarSet &index)
+		IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index)
 		{
 			if(index.find(c_->getUID()) != index.end())
 			{
@@ -522,9 +522,9 @@ namespace
 		{
 			return 0;
 		}
-		void print(std::ostream &out)
+		void print(const GlobalStorage *g, std::ostream &out) const
 		{
-			out << "lambda(" << c_ << ")";
+			out << "lambda(" << pp(g, c_) << ")";
 		}
  		virtual ~LambdaLiteral()
 		{
@@ -581,7 +581,7 @@ namespace
 		{
 			return new DeltaLiteral(*this);
 		}
-		IndexedDomain *createIndexedDomain(VarSet &index)
+		IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index)
 		{
 			if(index.find(c_->getUID()) != index.end())
 			{
@@ -624,9 +624,9 @@ namespace
 		{
 			return 0;
 		}
-		void print(std::ostream &out)
+		void print(const GlobalStorage *g, std::ostream &out) const
 		{
-			out << "delta(" << c_ << ")";
+			out << "delta(" << pp(g, c_) << ")";
 		}
  		virtual ~DeltaLiteral()
 		{
@@ -637,7 +637,7 @@ namespace
 	};
 }
 
-void NormalRule::setIncPart(Grounder *g, IncPart part, std::string *var)
+void NormalRule::setIncPart(Grounder *g, IncPart part, int var)
 {
 	switch(part)
 	{

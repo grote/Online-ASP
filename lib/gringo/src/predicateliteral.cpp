@@ -37,7 +37,7 @@
 
 using namespace NS_GRINGO;
 		
-PredicateLiteral::PredicateLiteral(Grounder *g, std::string *id, TermVector *variables) : Literal(), uid_(g->createPred(id, variables->size())), predNode_(g->getDomain(uid_)), id_(id), variables_(variables), values_(variables ? variables->size() : 0)
+PredicateLiteral::PredicateLiteral(Grounder *g, int id, TermVector *variables) : Literal(), uid_(g->createPred(id, variables->size())), predNode_(g->getDomain(uid_)), id_(id), variables_(variables), values_(variables ? variables->size() : 0)
 {
 }
 
@@ -107,11 +107,11 @@ void PredicateLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 		dg->createNode(empty, vars);
 }
 
-void PredicateLiteral::print(std::ostream &out)
+void PredicateLiteral::print(const GlobalStorage *g, std::ostream &out) const
 {
 	if(getNeg())
 		out << "not ";
-	out << *id_;
+	out << *g->getString(id_);
 	if(getArity() > 0)
 	{
 		out << "(";
@@ -122,7 +122,7 @@ void PredicateLiteral::print(std::ostream &out)
 				out << ", ";
 			else
 				comma = true;
-			out << *it;
+			out << pp(g, *it);
 		}
 		out << ")";
 	}
@@ -262,7 +262,7 @@ void PredicateLiteral::addDomain(ValueVector &values)
 	predNode_->addDomain(values);
 }
 
-IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
+IndexedDomain *PredicateLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
 	if(!predNode_->complete() || getNeg())
 		return new IndexedDomainMatchOnly(this);
@@ -276,7 +276,7 @@ IndexedDomain *PredicateLiteral::createIndexedDomain(VarSet &index)
 				free.insert(*it);
 		if(free.size() > 0)
 		{
-			return new IndexedDomainNewDefault(predNode_->getDomain(), index, *variables_);
+			return new IndexedDomainNewDefault(g, predNode_->getDomain(), index, *variables_);
 		}
 		else
 			return new IndexedDomainMatchOnly(this);
@@ -316,12 +316,12 @@ void PredicateLiteral::preprocess(Grounder *g, Expandable *e)
 		for(TermVector::iterator it = variables_->begin(); it != variables_->end(); it++)
 			if((*it)->isComplex())
 			{
-				std::string *var = g->createUniqueVar();
+				int var = g->createUniqueVar();
 				e->appendLiteral(new AssignmentLiteral(new Variable(g, var), *it), Expandable::COMPLEXTERM);
 				*it = new Variable(g, var);
 			}
 	}
-	if((*id_)[0] == '-')
+	if((*g->getString(id_))[0] == '-')
 		g->addTrueNegation(id_, variables_ ? variables_->size() : 0);
 }
 
@@ -336,12 +336,12 @@ int PredicateLiteral::getUid()
 	return uid_;
 }
 
-std::string *PredicateLiteral::getId()
+int PredicateLiteral::getId()
 {
 	return id_;
 }
 
-int PredicateLiteral::getArity()
+int PredicateLiteral::getArity() const
 {
 	return variables_->size();
 }

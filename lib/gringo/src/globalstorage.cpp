@@ -36,41 +36,52 @@ DomainVector *GlobalStorage::getDomains() const
 
 GlobalStorage::~GlobalStorage()
 {
-	// TODO: do i really need pointers????
-	StringVector v(stringHash_.begin(), stringHash_.end());
 	stringHash_.clear();
-	for(StringVector::iterator it = v.begin(); it != v.end(); it++)
-		delete *it;
-	FuncSymbolVector x(funcHash_.begin(), funcHash_.end());
 	funcHash_.clear();
-	for(FuncSymbolVector::iterator it = x.begin(); it != x.end(); it++)
+	for(StringVector::iterator it = strings_.begin(); it != strings_.end(); it++)
+		delete *it;
+	for(FuncSymbolVector::iterator it = funcs_.begin(); it != funcs_.end(); it++)
 		delete *it;
 	for(DomainVector::iterator it = domains_.begin(); it != domains_.end(); it++)
 		delete *it;
 }
 
-std::string *GlobalStorage::createString(const std::string &s2)
+const std::string *GlobalStorage::getString(int uid) const
+{
+	return strings_[uid];
+}
+
+const FuncSymbol  *GlobalStorage::getFuncSymbol(int uid) const
+{
+	return funcs_[uid];
+}
+
+int GlobalStorage::createString(const std::string &s2)
 {
 	return createString(new std::string(s2));
 }
 
-std::string *GlobalStorage::createString(std::string *s)
+int GlobalStorage::createString(std::string *s)
 {
-	std::pair<StringHash::iterator, bool> res = stringHash_.insert(s);
+	std::pair<StringHash::iterator, bool> res = stringHash_.insert(std::make_pair(s, strings_.size()));
 	if(!res.second)
 		delete s;
-	return *res.first;
+	else
+		strings_.push_back(s);
+	return res.first->second;
 }
 
-FuncSymbol *GlobalStorage::createFuncSymbol(FuncSymbol* fn)
+int GlobalStorage::createFuncSymbol(FuncSymbol* fn)
 {
-	std::pair<FuncSymbolHash::iterator, bool> res = funcHash_.insert(fn);
+	std::pair<FuncSymbolHash::iterator, bool> res = funcHash_.insert(std::make_pair(fn, funcs_.size()));
 	if (!res.second)
 		delete fn;
-	return *res.first;
+	else
+		funcs_.push_back(fn);
+	return res.first->second;
 }
 
-int GlobalStorage::createPred(std::string *id, int arity)
+int GlobalStorage::createPred(int id, int arity)
 {
 	std::pair<SignatureHash::iterator, bool> res = predHash_.insert(std::make_pair(Signature(id, arity), (int)pred_.size()));
 	if(res.second)

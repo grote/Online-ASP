@@ -25,13 +25,14 @@ using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 
 const char* END_ENTRY = " 0";
-Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(false)
+Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(false), g_(0)
 {
 	
 }
 
-void Output::initialize(SignatureVector *pred)
+void Output::initialize(GlobalStorage *g, SignatureVector *pred)
 {
+	g_ = g;
 	pred_ = pred;
 	visible_.reserve(pred_->size());
 	for(SignatureVector::const_iterator it = pred_->begin(); it != pred_->end(); it++)
@@ -50,15 +51,19 @@ int Output::getIncUid()
 
 std::string Output::atomToString(int id, const ValueVector &values) const
 {
-	const std::string *name = (*pred_)[id].first;
+	int name = (*pred_)[id].first;
 	std::stringstream ss;
-	ss << *name;
+	ss << *g_->getString(name);
 	if(values.size() > 0)
 	{
 		ValueVector::const_iterator it = values.begin();
-		ss << "(" << *it;
+		ss << "(";
+		it->print(g_, ss);
 		for(it++; it != values.end(); it++)
-			ss << "," << *it;
+		{
+			ss << ",";
+			it->print(g_, ss);
+		}
 		ss << ")";
 	}
 	return ss.str();
@@ -91,7 +96,7 @@ void Output::hideAll()
 	hideAll_ = true;
 }
 
-void Output::setVisible(std::string *id, int arity, bool visible)
+void Output::setVisible(int id, int arity, bool visible)
 {
 	hide_[std::make_pair(id, arity)] = !visible;
 }
@@ -101,7 +106,7 @@ bool Output::isVisible(int uid)
 	return visible_[uid];
 }
 
-bool Output::isVisible(std::string *id, int arity)
+bool Output::isVisible(int id, int arity)
 {
 	std::map<Signature, bool>::iterator it = hide_.find(std::make_pair(id, arity));
 	if(it == hide_.end())

@@ -21,6 +21,7 @@
 #include "indexeddomain.h"
 #include "literaldependencygraph.h"
 #include "statementchecker.h"
+#include "grounder.h"
 
 using namespace NS_GRINGO;
 
@@ -53,9 +54,9 @@ void RelationLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 	dg->createNode(needed, provided);
 }
 
-void RelationLiteral::print(std::ostream &out)
+void RelationLiteral::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << a_;
+	out << pp(g, a_);
 	switch(type_)
 	{ 
 		case EQ:
@@ -77,7 +78,7 @@ void RelationLiteral::print(std::ostream &out)
 			out << " < ";
 			break;
 	}
-	out << b_;
+	out << pp(g, b_);
 }
 
 bool RelationLiteral::isFact(Grounder *g)
@@ -116,17 +117,17 @@ bool RelationLiteral::match(Grounder *g)
 	switch(type_)
 	{ 
 		case EQ:
-			return a_->getValue(g) == b_->getValue(g);
+			return a_->getValue(g).equal(b_->getValue(g));
 		case NE:
-			return a_->getValue(g) != b_->getValue(g);
+			return !a_->getValue(g).equal(b_->getValue(g));
 		case GT:
-			return a_->getValue(g) > b_->getValue(g);
+			return a_->getValue(g).compare(g, b_->getValue(g)) > 0;
 		case GE:
-			return a_->getValue(g) >= b_->getValue(g);
+			return a_->getValue(g).compare(g, b_->getValue(g)) >= 0;
 		case LE:
-			return a_->getValue(g) <= b_->getValue(g);
+			return a_->getValue(g).compare(g, b_->getValue(g)) <= 0;
 		case LT:
-			return a_->getValue(g) < b_->getValue(g);
+			return a_->getValue(g).compare(g, b_->getValue(g)) < 0;
 	}
 	assert(false);
 }
@@ -143,7 +144,7 @@ double RelationLiteral::heuristicValue()
 	return 0;
 }
 
-IndexedDomain *RelationLiteral::createIndexedDomain(VarSet &index)
+IndexedDomain *RelationLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
 	return new IndexedDomainMatchOnly(this);
 }

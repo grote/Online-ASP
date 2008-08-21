@@ -17,10 +17,11 @@
 
 #include "funcsymbol.h"
 #include "value.h"
+#include "globalstorage.h"
 
 using namespace NS_GRINGO;
 
-FuncSymbol::FuncSymbol(const std::string* s, const ValueVector& args) : name_(s), args_(args)
+FuncSymbol::FuncSymbol(int s, const ValueVector& args) : name_(s), args_(args)
 {
 }
 
@@ -36,7 +37,7 @@ bool FuncSymbol::operator==(const FuncSymbol& a) const
 		return false;
 
 	for (ValueVector::const_iterator i = args_.begin(), j = a.args_.begin(); i != args_.end(); ++i,++j)
-		if (*i != *j)
+		if (!i->equal(*j))
 			return false;
 	return true;
 }
@@ -58,15 +59,22 @@ size_t FuncSymbol::getHash() const
 	return hash;
 }
 
-void FuncSymbol::print(std::ostream& out) const
+void FuncSymbol::print(const GlobalStorage *g, std::ostream& out) const
 {
-	out << *name_ << "(";
-	for (unsigned int i = 0; i != args_.size()-1; ++i)
-		out << args_[i] << ",";
-	out << args_[args_.size()-1] << ")";
+	out << *g->getString(name_) << "(";
+	bool comma = false;
+	for (ValueVector::const_iterator i = args_.begin(); i != args_.end(); i++)
+	{
+		if(!comma)
+			comma = true;
+		else
+			out << ",";
+		i->print(g, out);
+	}
+	out << ")";
 }
 
-const std::string* FuncSymbol::getName() const
+int FuncSymbol::getName() const
 {
 	return name_;
 }
@@ -75,3 +83,4 @@ const ValueVector& FuncSymbol::getValues() const
 {
 	return args_;
 }
+

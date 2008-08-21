@@ -25,9 +25,9 @@ SmodelsConverter::SmodelsConverter(std::ostream *out) : Output(out), negBoundsWa
 {
 }
 
-void SmodelsConverter::initialize(SignatureVector *pred)
+void SmodelsConverter::initialize(GlobalStorage *g, SignatureVector *pred)
 {
-	Output::initialize(pred);
+	Output::initialize(g, pred);
 	// should get 1 here
 	false_            = newUid();
 }

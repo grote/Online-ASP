@@ -59,7 +59,7 @@ IndexedDomainMatchOnly::~IndexedDomainMatchOnly()
 
 //////////////////////////////// IndexedDomainNewDefault ///////////////////////////////////////
 
-IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet &index, const TermVector &paramNew)
+IndexedDomainNewDefault::IndexedDomainNewDefault(Grounder *g, ValueVectorSet &domain, VarSet &index, const TermVector &paramNew)
 {
 	for(int i = 0; i < (int)paramNew.size(); i++)
 	{
@@ -101,7 +101,7 @@ IndexedDomainNewDefault::IndexedDomainNewDefault(ValueVectorSet &domain, VarSet 
 		TermVector::const_iterator p = paramNew.begin();
 		for (ValueVector::const_iterator i = val.begin(); i != val.end(); ++i, ++p)
 		{
-			if (!(*p)->unify(*i, unifyVars, unifyVals))
+			if (!(*p)->unify(g, *i, unifyVars, unifyVals))
 			{
 				doContinue = true;
 				break;

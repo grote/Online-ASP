@@ -30,8 +30,8 @@ namespace NS_GRINGO
 		MaxAggregate(const MaxAggregate &a);
 		virtual Literal *clone() const;
 		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
-		virtual IndexedDomain *createIndexedDomain(VarSet &index);
-		virtual void print(std::ostream &out);
+		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~MaxAggregate();
 	};

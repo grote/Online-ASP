@@ -25,18 +25,18 @@
 
 using namespace NS_GRINGO;
 
-FuncSymbolTerm::FuncSymbolTerm(Grounder* g, std::string* s, TermVector* tl) : Term(), name_(s), termList_(tl)
+FuncSymbolTerm::FuncSymbolTerm(Grounder* g, int s, TermVector* tl) : Term(), name_(s), termList_(tl)
 {
 }
 
-void FuncSymbolTerm::print(std::ostream &out)
+void FuncSymbolTerm::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << *name_ << "(";
+	out << *g->getString(name_) << "(";
 	for (unsigned int i = 0; i != termList_->size()-1; ++i)
 	{
-		out << *(*termList_)[i] << ",";
+		out << pp(g, (*termList_)[i]) << ",";
 	}
-	out << *(*termList_)[termList_->size()-1] << ")";
+	out << pp(g, (*termList_)[termList_->size()-1]) << ")";
 }
 
 void FuncSymbolTerm::getVars(VarSet &vars) const
@@ -52,7 +52,7 @@ void FuncSymbolTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e
 	for(TermVector::iterator it = termList_->begin(); it != termList_->end(); it++)
 		if((*it)->isComplex())
 		{
-			std::string *var = g->createUniqueVar();
+			int var = g->createUniqueVar();
 			e->appendLiteral(new AssignmentLiteral(new Variable(g, var), *it), Expandable::COMPLEXTERM);
 			*it = new Variable(g, var);
 		}
@@ -76,9 +76,7 @@ Value FuncSymbolTerm::getConstValue(Grounder *g)
 	}
 
 	FuncSymbol* funcSymbol = new FuncSymbol(name_, args);
-
-	funcSymbol = g->createFuncSymbol(funcSymbol);
-	return Value(funcSymbol);
+	return Value(Value::FUNCSYMBOL, g->createFuncSymbol(funcSymbol));
 }
 
 Value FuncSymbolTerm::getValue(Grounder *g)
@@ -90,9 +88,7 @@ Value FuncSymbolTerm::getValue(Grounder *g)
 	}
 
 	FuncSymbol* funcSymbol = new FuncSymbol(name_, args);
-
-	funcSymbol = g->createFuncSymbol(funcSymbol);
-	return Value(funcSymbol);
+	return Value(Value::FUNCSYMBOL, g->createFuncSymbol(funcSymbol));
 }
 
 FuncSymbolTerm::FuncSymbolTerm(const FuncSymbolTerm &f) : name_(f.name_)
@@ -109,20 +105,20 @@ Term* FuncSymbolTerm::clone() const
 	return new FuncSymbolTerm(*this);
 }
 
-bool FuncSymbolTerm::unify(const Value& t, const VarVector& vars, ValueVector& vals) const
+bool FuncSymbolTerm::unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& vals) const
 {
 	if (t.type_ == Value::FUNCSYMBOL)
 	{
-		const std::string* name = t.funcSymbol_->getName();
+		int name = g->getFuncSymbol(t.uid_)->getName();
 		if (name != name_)
 			return false;
-		const ValueVector& values = t.funcSymbol_->getValues();
+		const ValueVector& values = g->getFuncSymbol(t.uid_)->getValues();
 		if (values.size() != termList_->size())
 			return false;
 		TermVector::const_iterator term = termList_->begin();
 		for (ValueVector::const_iterator i = values.begin(); i != values.end(); ++i, ++term)
 		{
-			if (!(*term)->unify(*i, vars, vals))
+			if (!(*term)->unify(g, *i, vars, vals))
 				return false;
 		}
 		return true;

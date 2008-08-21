@@ -27,11 +27,11 @@ namespace NS_GRINGO
 	class Grounder : public GlobalStorage
 	{
 	private:
-		typedef std::pair<std::string*, StringVector*> DomainPredicate;
+		typedef std::pair<int, IntVector*> DomainPredicate;
 		typedef std::vector<DomainPredicate> DomainPredicateVector;
-		typedef std::map<std::string*, int> VariableMap;
-		typedef std::map<std::string*, std::pair<bool, Term*> > ConstTerms;
-		typedef std::vector<std::pair<std::pair<IncPart, std::string*>, int> > IncParts;
+		typedef std::map<int, int> VariableMap;
+		typedef std::map<int, std::pair<bool, Term*> > ConstTerms;
+		typedef std::vector<std::pair<std::pair<IncPart, int>, int> > IncParts;
 	public:
 		struct Options
 		{
@@ -44,29 +44,29 @@ namespace NS_GRINGO
 		Grounder(const Options &opts = Options());
 		void setOutput(NS_OUTPUT::Output *output);
 		void addStatement(Statement *rule);
-		void addDomains(std::string *id, std::vector<StringVector*>* list);
+		void addDomains(int id, std::vector<IntVector*>* list);
 		void start();
 		void iground();
 		void addProgram(Program *scc);
-		void addTrueNegation(std::string *id, int arity);
-		int getVar(std::string *var);
-		std::string *createUniqueVar();
-		std::string *getVarString(int uid);
-		int registerVar(std::string *var);
+		void addTrueNegation(int id, int arity);
+		int getVar(int var);
+		int createUniqueVar();
+		const std::string *getVarString(int uid);
+		int registerVar(int var);
 		// access the current substitution
 		Value getValue(int var);
 		void setValue(int var, const Value &val, int binder);
 		void setTempValue(int var, const Value &val);
 		// access binders
 		int getBinder(int var) const;
-		void setConstValue(std::string *id, Term *p);
-		Value getConstValue(std::string *id);
+		void setConstValue(int id, Term *p);
+		Value getConstValue(int id);
 		void preprocess();
 		NS_OUTPUT::Output *getOutput();
 		Evaluator *getEvaluator();
 		/// Adds a domain that never occurs in any head
 		void addZeroDomain(Domain *d);
-		void setIncPart(IncPart part, std::string *var);
+		void setIncPart(IncPart part, int var);
 		
 		int getIncStep() const;
 		bool isIncGrounding() const;
@@ -79,7 +79,7 @@ namespace NS_GRINGO
 		void reset();
 		void check();
 		void ground();
-		void addDomains(std::string *id, std::vector<StringVector*>::iterator pos, std::vector<StringVector*>::iterator end, StringVector &list);
+		void addDomains(int id, std::vector<IntVector*>::iterator pos, std::vector<IntVector*>::iterator end, IntVector &list);
 	private:
 		Options opts_;
 		IncParts incParts_;

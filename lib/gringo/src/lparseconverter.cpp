@@ -76,7 +76,7 @@ NS_OUTPUT::Output *LparseConverter::getOutput()
 	return output_;
 }
 
-int LparseConverter::createPred(std::string *id, int arity)
+int LparseConverter::createPred(int id, int arity)
 {
 	std::pair<SignatureHash::iterator, bool> res = predHash_.insert(std::make_pair(Signature(id, arity), (int)pred_.size()));
 	if(res.second)

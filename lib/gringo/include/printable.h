@@ -22,6 +22,7 @@
 
 namespace NS_GRINGO
 {
+	typedef std::pair<GlobalStorage *, std::ostream> OutputStream;
 	/**
 	 * Interface for Printable objects like terms, literals or statements.
 	 * This interface is used to print out an internal representation of the problem instance.
@@ -41,27 +42,19 @@ namespace NS_GRINGO
 		 * \brief Prints the object on the given stream
 		 * \param stream The output stream
 		 */
-		virtual void print(std::ostream &stream) = 0;
+		virtual void print(const GlobalStorage *g, std::ostream &out) const = 0;
 	};
-	/**
-	 * \brief Easier printing of the object
-	 * Internally the function Printable::print is called.
-	 *
-	 * \param stream The output stream
-	 * \param p The Printable
-	 * \return Returns a reference to the given stream
-	 */
-	std::ostream &operator<<(std::ostream &stream, Printable &p);
-	/**
-	 * \brief Easier printing of the object
-	 * Internally the function Printable::print is called.
-	 *
-	 * \param stream The output stream
-	 * \param p The Printable
-	 * \return Returns a reference to the given stream
-	 */
-	std::ostream &operator<<(std::ostream &stream, Printable *p);
-
+	
+	inline const std::pair<const GlobalStorage *, const Printable *> pp(const GlobalStorage *g, const Printable *p)
+	{
+		return std::make_pair(g, p);
+	}
+	
+	inline std::ostream &operator<<(std::ostream &out, const std::pair<const GlobalStorage *, const Printable *> &p)
+	{
+		p.second->print(p.first, out);
+		return out;
+	}
 }
 
 #endif

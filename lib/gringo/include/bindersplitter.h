@@ -34,7 +34,7 @@ namespace NS_GRINGO
 		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void createNode(StatementChecker *dg, bool head, bool delayed);
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
@@ -42,7 +42,7 @@ namespace NS_GRINGO
 		virtual bool isFact(Grounder *g);
 		virtual void finish();
 		virtual void evaluate();
-		virtual IndexedDomain *createIndexedDomain(VarSet &index);
+		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual bool match(Grounder *g);
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();

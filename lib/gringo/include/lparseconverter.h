@@ -32,7 +32,7 @@ namespace NS_GRINGO
 		bool parse(NS_OUTPUT::Output *output);
 		GrinGoLexer *getLexer();
 		NS_OUTPUT::Output *getOutput();
-		int createPred(std::string *id, int arity);
+		int createPred(int id, int arity);
 		virtual ~LparseConverter();
 	private:
 		PlainLparseLexer *lexer_;

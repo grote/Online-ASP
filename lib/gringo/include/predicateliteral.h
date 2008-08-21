@@ -29,14 +29,14 @@ namespace NS_GRINGO
 	class PredicateLiteral : public Literal
 	{
 	public:
-		PredicateLiteral(Grounder *g, std::string *id, TermVector *variables);
+		PredicateLiteral(Grounder *g, int id, TermVector *variables);
 		PredicateLiteral(const PredicateLiteral &p);
 		virtual Literal* clone() const;
 		void setWeight(Term *w);
 		virtual SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo);
 		virtual void createNode(LDGBuilder *dg, bool head);
 		virtual void createNode(StatementChecker *dg, bool head, bool delayed);
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual void getVars(VarSet &vars) const;
 		virtual bool checkO(LiteralVector &unsolved);
 		virtual void reset();
@@ -45,17 +45,17 @@ namespace NS_GRINGO
 		bool isFact(const ValueVector &values);
 		virtual void finish();
 		virtual void evaluate();
-		virtual IndexedDomain *createIndexedDomain(VarSet &index);
+		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual bool match(Grounder *g);
 		bool match(const ValueVector &values);
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
 		virtual double heuristicValue();
 		NS_OUTPUT::Object *convert(const ValueVector &values);
-		std::string *getId();
+		int getId();
 		TermVector *getArgs();
 		int getUid();
-		int getArity();
+		int getArity() const;
 		void addDomain(ValueVector &values);
 		Domain *getDomain() const;
 		const ValueVector &getValues();
@@ -64,7 +64,7 @@ namespace NS_GRINGO
 	protected:
 		int           uid_;
 		Domain        *predNode_;
-		std::string   *id_;
+		int           id_;
 		TermVector    *variables_;
 
 		ValueVector values_;

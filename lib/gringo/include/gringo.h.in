@@ -57,7 +57,7 @@ namespace NS_GRINGO
 	class LDG;
 	typedef std::vector<LDG*> LDGVector;
 
-	typedef std::pair<std::string *, int> Signature;
+	typedef std::pair<int, int> Signature;
 	typedef std::vector<Signature> SignatureVector;
 	class Evaluator;
 

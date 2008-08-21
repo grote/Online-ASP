@@ -69,10 +69,10 @@ void MaxAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 	upper = std::max(upper, fixed);
 }
 
-void MaxAggregate::print(std::ostream &out)
+void MaxAggregate::print(const GlobalStorage *g, std::ostream &out) const
 {
 	if(lower_)
-		out << lower_ << " ";
+		out << pp(g, lower_) << " ";
 	out << "max [";
 	bool comma = false;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
@@ -81,11 +81,11 @@ void MaxAggregate::print(std::ostream &out)
 			out << ", ";
 		else
 			comma = true;
-		out << *it;
+		out << pp(g, *it);
 	}
 	out << "]";
 	if(upper_)
-		out << " " << upper_;
+		out << " " << pp(g, upper_);
 }
 
 namespace
@@ -131,7 +131,7 @@ namespace
 		set_.insert(fixed);
 
 		current_ = set_.begin();
-		g->g_->setValue(var_, Value(*current_), binder);
+		g->g_->setValue(var_, Value(Value::INT, *current_), binder);
 		l_->setEqual(*current_); 
 		status = SuccessfulMatch;
 	}
@@ -141,7 +141,7 @@ namespace
 		current_++;
 		if(current_ != set_.end())
 		{
-			g->g_->setValue(var_, Value(*current_), binder);
+			g->g_->setValue(var_, Value(Value::INT, *current_), binder);
 			l_->setEqual(*current_); 
 			status = SuccessfulMatch;
 		}
@@ -154,7 +154,7 @@ namespace
 	}
 }
 
-IndexedDomain *MaxAggregate::createIndexedDomain(VarSet &index)
+IndexedDomain *MaxAggregate::createIndexedDomain(Grounder *g, VarSet &index)
 {
 	if(equal_)
 	{

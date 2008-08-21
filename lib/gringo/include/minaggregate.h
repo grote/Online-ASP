@@ -29,9 +29,9 @@ namespace NS_GRINGO
 		MinAggregate(ConditionalLiteralVector *literals);
 		MinAggregate(const MinAggregate &a);
 		virtual Literal *clone() const;
-		virtual IndexedDomain *createIndexedDomain(VarSet &index);
+		virtual IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index);
 		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~MinAggregate();
 	};

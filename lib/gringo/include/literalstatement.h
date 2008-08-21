@@ -46,9 +46,9 @@ namespace NS_GRINGO
 		virtual void evaluate();
 		virtual bool ground(Grounder *g, GroundStep step);
 		virtual void addDomain(PredicateLiteral *pl);
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual void grounded(Grounder *g);
-		virtual void setIncPart(Grounder *g, IncPart part, std::string *var);
+		virtual void setIncPart(Grounder *g, IncPart part, int var);
 		/// Destructor
 		virtual ~LiteralStatement();
 	protected:

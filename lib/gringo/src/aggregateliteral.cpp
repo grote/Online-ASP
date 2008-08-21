@@ -225,7 +225,7 @@ namespace
 		current_ = lower_;
 		if(current_ <= upper_)
 		{
-			g->g_->setValue(var_, Value(current_), binder);
+			g->g_->setValue(var_, Value(Value::INT, current_), binder);
 			l_->setEqual(current_); 
 			status = SuccessfulMatch;
 		}
@@ -238,7 +238,7 @@ namespace
 		if(current_ < upper_)
 		{
 			current_++;
-			g->g_->setValue(var_, Value(current_), binder);
+			g->g_->setValue(var_, Value(Value::INT, current_), binder);
 			l_->setEqual(current_); 
 			status = SuccessfulMatch;
 		}
@@ -252,7 +252,7 @@ namespace
 	
 }
 
-IndexedDomain *AggregateLiteral::createIndexedDomain(VarSet &index)
+IndexedDomain *AggregateLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
 	if(equal_)
 	{

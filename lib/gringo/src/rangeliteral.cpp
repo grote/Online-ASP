@@ -54,9 +54,9 @@ void RangeLiteral::createNode(StatementChecker *dg, bool head, bool delayed)
 	dg->createNode(needed, provided);
 }
 
-void RangeLiteral::print(std::ostream &out)
+void RangeLiteral::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << var_ << " = [" << lower_ << ", " << upper_ << "]";
+	out << pp(g, var_) << " = [" << pp(g, lower_) << ", " << pp(g, upper_) << "]";
 }
 
 bool RangeLiteral::isFact(Grounder *g)
@@ -123,7 +123,7 @@ namespace
 		current_ = lower_->getValue(g->g_);
 		if(current_ <= end_)
 		{
-			g->g_->setValue(var_, Value(current_), binder);
+			g->g_->setValue(var_, Value(Value::INT, current_), binder);
 			status = SuccessfulMatch;
 		}
 		else
@@ -135,7 +135,7 @@ namespace
 		if(current_ < end_)
 		{
 			current_++;
-			g->g_->setValue(var_, Value(current_), binder);
+			g->g_->setValue(var_, Value(Value::INT, current_), binder);
 			status = SuccessfulMatch;
 		}
 		else
@@ -148,7 +148,7 @@ namespace
 
 }
 
-IndexedDomain *RangeLiteral::createIndexedDomain(VarSet &index)
+IndexedDomain *RangeLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
 	if(index.find(var_->getUID()) == index.end())
 		return new IndexedDomainRange(var_->getUID(), lower_, upper_);

@@ -58,7 +58,7 @@ void DisjunctionAggregate::match(Grounder *g, int &lower, int &upper, int &fixed
 	assert(false);
 }
 
-void DisjunctionAggregate::print(std::ostream &out)
+void DisjunctionAggregate::print(const GlobalStorage *g, std::ostream &out) const
 {
 	bool comma = false;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
@@ -67,7 +67,7 @@ void DisjunctionAggregate::print(std::ostream &out)
 			out << " | ";
 		else
 			comma = true;
-		out << *it;
+		out << pp(g, *it);
 	}
 }
 

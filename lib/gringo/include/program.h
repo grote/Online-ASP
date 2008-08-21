@@ -29,7 +29,7 @@ namespace NS_GRINGO
 		enum Type {FACT=0, BASIC=1, NORMAL=2};
 	public:
 		Program(Type type, StatementVector &rules);
-		void print(std::ostream &out);
+		void print(const GlobalStorage *g, std::ostream &out) const;
 		Evaluator *getEvaluator();
 		bool check(Grounder *g);
 		StatementVector *getStatements();

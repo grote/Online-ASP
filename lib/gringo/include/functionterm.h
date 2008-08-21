@@ -32,12 +32,12 @@ namespace NS_GRINGO
 		FunctionTerm(const FunctionTerm &f);
 		virtual void getVars(VarSet &vars) const;
 		virtual bool isComplex();
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual Value getValue(Grounder *g);
 		virtual Value getConstValue(Grounder *g);
 		virtual Term* clone() const;
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
-		virtual bool unify(const Value& t, const VarVector& vars, ValueVector& subst) const
+		virtual bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& subst) const
 		{
 			assert(false);
 		}

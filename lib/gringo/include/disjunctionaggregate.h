@@ -32,7 +32,7 @@ namespace NS_GRINGO
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual bool match(Grounder *g);
 		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
-		virtual void print(std::ostream &out);
+		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual NS_OUTPUT::Object *convert();
 		virtual ~DisjunctionAggregate();
 	public:

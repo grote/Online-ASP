@@ -28,7 +28,7 @@
 
 using namespace NS_GRINGO;
 		
-ConditionalLiteral::ConditionalLiteral(PredicateLiteral *pred, LiteralVector *conditionals) : Literal(), pred_(pred), conditionals_(conditionals), weight_(0), grounder_(0), dg_(0), clone_(true)
+ConditionalLiteral::ConditionalLiteral(PredicateLiteral *pred, LiteralVector *conditionals) : Literal(), pred_(pred), conditionals_(conditionals), weight_(0), grounder_(0), dg_(0), clone_(0)
 {
 	Literal::setNeg(pred_->getNeg());
 }
@@ -110,14 +110,14 @@ void ConditionalLiteral::createNode(StatementChecker *dg, bool head, bool delaye
 			(*it)->createNode(dg, false, false);
 }
 
-void ConditionalLiteral::print(std::ostream &out)
+void ConditionalLiteral::print(const GlobalStorage *g, std::ostream &out) const
 {
-	out << pred_;
+	out << pp(g, pred_);
 	if(conditionals_)
 		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
-			out << " : " << *it;
+			out << " : " << pp(g, *it);
 	if(weight_)
-		out << " = " << weight_;
+		out << " = " << pp(g, weight_);
 }
 
 bool ConditionalLiteral::match(Grounder *g)
@@ -279,12 +279,12 @@ bool ConditionalLiteral::isEmpty()
 	return values_.size() == 0;
 }
 
-IndexedDomain *ConditionalLiteral::createIndexedDomain(VarSet &index)
+IndexedDomain *ConditionalLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
 	assert(false);
 }
 
-ConditionalLiteral::ConditionalLiteral(const ConditionalLiteral &p) : pred_(p.clone_ ? static_cast<PredicateLiteral*>(p.pred_->clone()) : p.pred_), weight_(p.weight_ ? p.weight_->clone() : 0), grounder_(0), dg_(0), clone_(true)
+ConditionalLiteral::ConditionalLiteral(const ConditionalLiteral &p) : pred_(p.clone_ ? p.clone_ : static_cast<PredicateLiteral*>(p.pred_->clone())), weight_(p.weight_ ? p.weight_->clone() : 0), grounder_(0), dg_(0), clone_(0)
 {
 	if(p.conditionals_)
 	{
@@ -366,11 +366,12 @@ namespace
 			switch(type)
 			{
 				case MATERM:
-					l_->clonePredicate(false);
+				{
+					l_->clonePredicate(static_cast<PredicateLiteral*>(l));
 					e_->appendLiteral(a_->clone(), type);
-					l_->clonePredicate(true);
-					l_->setPredicate(static_cast<PredicateLiteral*>(l));
+					l_->clonePredicate(0);
 					break;
+				}
 				case RANGETERM:
 					e_->appendLiteral(l, type);
 					break;
@@ -386,14 +387,9 @@ namespace
 	};
 }
 
-void ConditionalLiteral::clonePredicate(bool clone)
+void ConditionalLiteral::clonePredicate(PredicateLiteral *clone)
 {
 	clone_ = clone;
-}
-
-void ConditionalLiteral::setPredicate(PredicateLiteral* pred)
-{
-	pred_ = pred;
 }
 
 NS_OUTPUT::Object *ConditionalLiteral::convert()

@@ -47,7 +47,7 @@ namespace NS_GRINGO
 	{
 		typedef __gnu_cxx::hash_map<ValueVector, ValueVector, Value::VectorHash, Value::VectorEqual> ValueVectorMap;
 	public:
-		IndexedDomainNewDefault(ValueVectorSet &domain, VarSet &index, const TermVector &param);
+		IndexedDomainNewDefault(Grounder *g, ValueVectorSet &domain, VarSet &index, const TermVector &param);
 		virtual void firstMatch(int binder, DLVGrounder *g, MatchStatus &status);
 		virtual void nextMatch(int binder, DLVGrounder *g, MatchStatus &status);
 		virtual ~IndexedDomainNewDefault();

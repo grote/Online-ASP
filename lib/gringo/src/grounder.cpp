@@ -45,15 +45,15 @@ void Grounder::addStatement(Statement *rule)
 	rules_.push_back(rule);
 }
 
-void Grounder::addDomains(std::string *id, std::vector<StringVector*>::iterator pos, std::vector<StringVector*>::iterator end, StringVector &list)
+void Grounder::addDomains(int id, std::vector<IntVector*>::iterator pos, std::vector<IntVector*>::iterator end, IntVector &list)
 {
 	if(pos == end)
 	{
-		domains_.push_back(DomainPredicate(id, new StringVector(list)));
+		domains_.push_back(DomainPredicate(id, new IntVector(list)));
 	}
 	else
 	{
-		for(StringVector::iterator it = (*pos)->begin(); it != (*pos)->end(); it++)
+		for(IntVector::iterator it = (*pos)->begin(); it != (*pos)->end(); it++)
 		{
 			list.push_back(*it);
 			addDomains(id, pos + 1, end, list);
@@ -63,9 +63,9 @@ void Grounder::addDomains(std::string *id, std::vector<StringVector*>::iterator 
 	}
 }
 
-void Grounder::addDomains(std::string *id, std::vector<StringVector*>* list)
+void Grounder::addDomains(int id, std::vector<IntVector*>* list)
 {
-	StringVector empty;
+	IntVector empty;
 	addDomains(id, list->begin(), list->end(), empty);
 	delete list;
 }
@@ -98,13 +98,13 @@ void Grounder::addDomains()
 		for(DomainPredicateVector::iterator it = domains_.begin(); it != domains_.end(); it++)
 		{
 			DomainPredicate &dp = *it;
-			for(StringVector::iterator it = dp.second->begin(); it != dp.second->end(); it++)
+			for(IntVector::iterator it = dp.second->begin(); it != dp.second->end(); it++)
 			{
 				if(vars.find(getVar(*it)) != vars.end())
 				{
 					// construct predicate literal
 					TermVector *tv = new TermVector();
-					for(StringVector::iterator vars = dp.second->begin(); vars != dp.second->end(); vars++)
+					for(IntVector::iterator vars = dp.second->begin(); vars != dp.second->end(); vars++)
 						tv->push_back(new Variable(this, *vars));
 					PredicateLiteral *pred = new PredicateLiteral(this, dp.first, tv);
 					rule->addDomain(pred);
@@ -123,7 +123,7 @@ void Grounder::addZeroDomain(Domain *d)
 		if(d == (*getDomains())[uid])
 		{
 			Signature &sig = (*getPred())[uid];
-			std::cerr << "Warning: " << *sig.first << "/" << sig.second << " is never defined." << std::endl;
+			std::cerr << "Warning: " << *getString(sig.first) << "/" << sig.second << " is never defined." << std::endl;
 			break;
 		}
 	}
@@ -212,7 +212,7 @@ void Grounder::iground()
 	incremental_ = true;
 	if(incParts_.size() == 0)
 	{
-		incParts_.push_back(make_pair(std::make_pair(BASE, static_cast<std::string*>(0)), rules_.size()));
+		incParts_.push_back(make_pair(std::make_pair(BASE, 0), rules_.size()));
 		std::cerr << "Warning: There are no #base, #lambda or #delta sections." << std::endl;
 	}
 
@@ -251,11 +251,11 @@ void Grounder::iground()
 	incStep_++;
 }
 
-void Grounder::setIncPart(IncPart part, std::string *var)
+void Grounder::setIncPart(IncPart part, int var)
 {
 	if(incParts_.size() == 0 && rules_.size() > 0)
 	{
-		incParts_.push_back(make_pair(std::make_pair(BASE, static_cast<std::string*>(0)), rules_.size()));
+		incParts_.push_back(make_pair(std::make_pair(BASE, 0), rules_.size()));
 		std::cerr << "Warning: There are statements not within a #base, #lambda or #delta section." << std::endl;
 		std::cerr << "         These Statements are put into the #base section." << std::endl;
 	}
@@ -271,7 +271,7 @@ void Grounder::addProgram(Program *scc)
 void Grounder::ground()
 {
 	if(incStep_ == 1 || !incremental_)
-		output_->initialize(getPred());
+		output_->initialize(this, getPred());
 	else
 		output_->reinitialize();
 	
@@ -306,9 +306,9 @@ void Grounder::ground()
 	output_->finalize(false);
 }
 
-std::string *Grounder::createUniqueVar()
+int Grounder::createUniqueVar()
 {
-	std::string *uid;
+	int uid;
 	do
 	{
 		std::stringstream ss;
@@ -319,17 +319,17 @@ std::string *Grounder::createUniqueVar()
 	return uid;
 }
 
-std::string *Grounder::getVarString(int uid)
+const std::string *Grounder::getVarString(int uid)
 {
 	// inefficient but we need it only for error messages
 	for(VariableMap::iterator it = varMap_.begin(); it != varMap_.end(); it++)
 		if(it->second == uid)
-			return it->first;
+			return getString(it->first);
 	// we should get a string for every variable
 	assert(false);
 }
 
-int Grounder::getVar(std::string *var)
+int Grounder::getVar(int var)
 {
 	VariableMap::iterator it = varMap_.find(var);
 	if(it != varMap_.end())
@@ -338,7 +338,7 @@ int Grounder::getVar(std::string *var)
 		return 0;
 }
 
-int Grounder::registerVar(std::string *var)
+int Grounder::registerVar(int var)
 {
 	int &uid = varMap_[var];
 	if(uid == 0)
@@ -379,17 +379,17 @@ int Grounder::getBinder(int var) const
 	return binder_[var];
 }
 
-void Grounder::setConstValue(std::string *id, Term *t)
+void Grounder::setConstValue(int id, Term *t)
 {
 	std::pair<ConstTerms::iterator, bool> res = constTerms_.insert(std::make_pair(id, std::make_pair(false, t)));
 	if(!res.second)
 	{
-		std::cerr << "Warning: multiple definitions of #const " << *id << std::endl;
+		std::cerr << "Warning: multiple definitions of #const " << *getString(id) << std::endl;
 		delete t;
 	}
 }
 
-Value Grounder::getConstValue(std::string *id)
+Value Grounder::getConstValue(int id)
 {
 	ConstTerms::iterator it = constTerms_.find(id);
 	if(it != constTerms_.end())
@@ -402,7 +402,7 @@ Value Grounder::getConstValue(std::string *id)
 		return v;
 	}
 	else
-		return Value(id);
+		return Value(Value::STRING, id);
 }
 
 Evaluator *Grounder::getEvaluator()
@@ -420,7 +420,7 @@ const Grounder::Options &Grounder::options() const
 	return opts_;
 }
 
-void Grounder::addTrueNegation(std::string *id, int arity)
+void Grounder::addTrueNegation(int id, int arity)
 {
 #ifdef WITH_ICLASP
 	// TODO: this is ugly
@@ -442,11 +442,11 @@ void Grounder::addTrueNegation(std::string *id, int arity)
 		for(int i = 0; i < arity; i++)
 		{
 			// in theory existing vars could be reused
-			std::string *var = createUniqueVar();
+			int var = createUniqueVar();
 			tp->push_back(new Variable(this, var));
 			tn->push_back(new Variable(this, var));
 		}
-		std::string *pos = createString(id->substr(1));
+		int pos = createString(getString(id)->substr(1));
 		PredicateLiteral *p = new PredicateLiteral(this, pos, tp);
 		PredicateLiteral *n = new PredicateLiteral(this, id, tn);
 		LiteralVector *body = new LiteralVector();

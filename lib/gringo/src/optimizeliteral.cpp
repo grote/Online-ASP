@@ -184,7 +184,7 @@ void OptimizeLiteral::finish()
 	assert(false);
 }
 
-IndexedDomain *OptimizeLiteral::createIndexedDomain(VarSet &index)
+IndexedDomain *OptimizeLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 {
 	assert(false);
 }
@@ -221,7 +221,7 @@ void OptimizeLiteral::preprocess(Grounder *g, Expandable *e)
 			(*literals_)[i]->preprocess(g, this);
 }
 
-void OptimizeLiteral::print(std::ostream &out)
+void OptimizeLiteral::print(const GlobalStorage *g, std::ostream &out) const
 {
 	out << (type_ == MINIMIZE ? "minimize" : "maximize") << " " << (setSemantic_ ? "{" : "[");
 	bool comma = false;
@@ -231,7 +231,7 @@ void OptimizeLiteral::print(std::ostream &out)
 			out << ", ";
 		else
 			comma = true;
-		out << *it;
+		out << pp(g, *it);
 	}
 	out << (setSemantic_ ? "}" : "]");
 }

@@ -37,7 +37,7 @@ namespace NS_GRINGO
 		{
 		public:
 			ClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf);
-			virtual void initialize(SignatureVector *pred);
+			virtual void initialize(GlobalStorage *g, SignatureVector *pred);
 			virtual void finalize(bool last);
 			bool addAtom(NS_OUTPUT::Atom *r);
 			int newUid();
@@ -70,7 +70,7 @@ namespace NS_GRINGO
 		public:
 			IClaspOutput(Clasp::ProgramBuilder *b, Clasp::LparseReader::TransformMode tf);
 			void print(NS_OUTPUT::Object *o);
-			void initialize(SignatureVector *pred);
+			void initialize(GlobalStorage *g, SignatureVector *pred);
 			void finalize(bool last);
 			void reinitialize();
 			int getIncUid();

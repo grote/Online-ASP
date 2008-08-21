@@ -26,9 +26,9 @@ SmodelsOutput::SmodelsOutput(std::ostream *out) : SmodelsConverter(out)
 {
 }
 
-void SmodelsOutput::initialize(SignatureVector *pred)
+void SmodelsOutput::initialize(GlobalStorage *g, SignatureVector *pred)
 {
-	SmodelsConverter::initialize(pred);
+	SmodelsConverter::initialize(g, pred);
 	models_ = 1;
 }
 

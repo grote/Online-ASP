@@ -112,7 +112,7 @@ namespace
 		set_.insert(fixed);
 
 		current_ = set_.begin();
-		g->g_->setValue(var_, Value(*current_), binder);
+		g->g_->setValue(var_, Value(Value::INT, *current_), binder);
 		l_->setEqual(*current_); 
 		status = SuccessfulMatch;
 	}
@@ -123,7 +123,7 @@ namespace
 		current_++;
 		if(current_ != set_.end())
 		{
-			g->g_->setValue(var_, Value(*current_), binder);
+			g->g_->setValue(var_, Value(Value::INT, *current_), binder);
 			l_->setEqual(*current_); 
 			status = SuccessfulMatch;
 		}
@@ -136,7 +136,7 @@ namespace
 	}
 }
 
-IndexedDomain *MinAggregate::createIndexedDomain(VarSet &index)
+IndexedDomain *MinAggregate::createIndexedDomain(Grounder *g, VarSet &index)
 {
 	if(equal_)
 	{
@@ -153,10 +153,10 @@ IndexedDomain *MinAggregate::createIndexedDomain(VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 }
 
-void MinAggregate::print(std::ostream &out)
+void MinAggregate::print(const GlobalStorage *g, std::ostream &out) const
 {
 	if(lower_)
-		out << lower_ << " ";
+		out << pp(g, lower_) << " ";
 	out << "min [";
 	bool comma = false;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
@@ -165,11 +165,11 @@ void MinAggregate::print(std::ostream &out)
 			out << ", ";
 		else
 			comma = true;
-		out << *it;
+		out << pp(g, *it);
 	}
 	out << "]";
 	if(upper_)
-		out << " " << upper_;
+		out << " " << pp(g, upper_);
 }
 
 MinAggregate::MinAggregate(const MinAggregate &a) : AggregateLiteral(a)

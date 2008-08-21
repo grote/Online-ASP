@@ -67,10 +67,10 @@ void SumAggregate::match(Grounder *g, int &lower, int &upper, int &fixed)
 	upper+= fixed;
 }
 
-void SumAggregate::print(std::ostream &out)
+void SumAggregate::print(const GlobalStorage *g, std::ostream &out) const
 {
 	if(lower_)
-		out << lower_ << " ";
+		out << pp(g, lower_) << " ";
 	out << "sum [";
 	bool comma = false;
 	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
@@ -79,11 +79,11 @@ void SumAggregate::print(std::ostream &out)
 			out << ", ";
 		else
 			comma = true;
-		out << *it;
+		out << pp(g, *it);
 	}
 	out << "]";
 	if(upper_)
-		out << " " << upper_;
+		out << " " << pp(g, upper_);
 }
 
 SumAggregate::SumAggregate(const SumAggregate &a) : AggregateLiteral(a)

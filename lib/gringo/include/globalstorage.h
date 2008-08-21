@@ -46,16 +46,21 @@ namespace NS_GRINGO
 		{
 			inline size_t operator()(const Signature &a) const;
 		};
-		typedef __gnu_cxx::hash_set<std::string*, string_hash, string_equal> StringHash;
-		typedef __gnu_cxx::hash_set<FuncSymbol*, funcSym_hash, funcSym_equal> FuncSymbolHash;
+		typedef __gnu_cxx::hash_map<std::string*, int, string_hash, string_equal> StringHash;
+		typedef __gnu_cxx::hash_map<FuncSymbol*, int, funcSym_hash, funcSym_equal> FuncSymbolHash;
 		typedef __gnu_cxx::hash_map<Signature, int, sig_hash> SignatureHash;
 	public:
 		GlobalStorage();
 		
-		std::string *createString(std::string *s);
-		std::string *createString(const std::string &s);
-		FuncSymbol* createFuncSymbol(FuncSymbol* fn);
-		int createPred(std::string *id, int arity);
+		const std::string *getString(int uid) const;
+		const FuncSymbol  *getFuncSymbol(int uid) const;
+
+		int createString(std::string *s);
+		int createString(const std::string &s);
+		int createFuncSymbol(FuncSymbol* fn);
+
+		int createPred(int uid, int arity);
+
 		Domain *getDomain(int uid) const;
 		DomainVector *getDomains() const;
 
@@ -68,7 +73,9 @@ namespace NS_GRINGO
 		SignatureHash predHash_;
 		SignatureVector pred_;
 		DomainVector domains_;
-
+		
+		FuncSymbolVector funcs_;
+		StringVector strings_;
 	};
 	
 	bool GlobalStorage::string_equal::operator()(const std::string *a, const std::string *b) const
