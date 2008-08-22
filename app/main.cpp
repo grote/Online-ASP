@@ -168,19 +168,19 @@ int main(int argc, char *argv[])
 				opts.verbose = true;
 			}
 #ifdef WITH_ICLASP
-			else if(strcmp(argv[1], "--ikeepheuristic=off") == 0)
+			else if(strcmp(argv[1], "--iheuristic=forget") == 0)
 			{
 				keepHeuristic = false;
 			}
-			else if(strcmp(argv[1], "--ikeepheuristic=on") == 0)
+			else if(strcmp(argv[1], "--iheuristic=keep") == 0)
 			{
 				keepHeuristic = true;
 			}
-			else if(strcmp(argv[1], "--ikeeplearnts=off") == 0)
+			else if(strcmp(argv[1], "--inogoods=forget") == 0)
 			{
 				keepLearnts = false;
 			}
-			else if(strcmp(argv[1], "--ikeeplearnts=on") == 0)
+			else if(strcmp(argv[1], "--inogoods=keep") == 0)
 			{
 				keepLearnts = true;
 			}
@@ -239,10 +239,10 @@ int main(int argc, char *argv[])
 				std::cerr << "  --imax <num>   : Maximum number of incremental steps" << std::endl;
 				std::cerr << "  --imin <num>   : Minimum number of incremental steps" << std::endl;
 				std::cerr << "  --iunsat       : Stop after first unsatisfiable solution" << std::endl;
-				std::cerr << "  --ikeeplearnts=yes|no" << std::endl;
-				std::cerr << "                 : Keep learnt nogoods in next step (default: yes)" << std::endl;
-				std::cerr << "  --ikeepheuristic=yes|no" << std::endl;
-				std::cerr << "                 : Keep heuristic information in next step (default: no)" << std::endl;
+				std::cerr << "  --inogoods=keep|forget" << std::endl;
+				std::cerr << "                 : Keep learnt nogoods in next step (default: keep)" << std::endl;
+				std::cerr << "  --iheuristic=keep|forget" << std::endl;
+				std::cerr << "                 : Keep heuristic information in next step (default: forget)" << std::endl;
 #else
 				std::cerr << std::endl << "Incremental grounding" << std::endl;
 #endif
