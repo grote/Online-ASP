@@ -425,19 +425,18 @@ namespace ProgramOptions {
 		class CommandLineParser : public OptionParser
 		{
 		public:
-			CommandLineParser(OptionGroup& o, bool allowUnreg, int& argc, char** argv, const char* po)
+			CommandLineParser(OptionGroup& o, bool allowUnreg, int& argc, char** argv, void (*oc)(OptionParser *, const std::string &))
 				: OptionParser(o, allowUnreg)
 				, currentArg_(0)
 				, nextArgNr_(1)
 				, argc_(&argc)
 				, argv_(argv)
-				, posOpt_(getOption(po, long_opt))
+				, oc_(oc)
 			{}
 		private:
 			void doParse()
 			{
 				bool breakEarly = false;
-				string posVal;
 				while (next() && !breakEarly)
 				{
 					switch(getOptionType())
@@ -446,23 +445,15 @@ namespace ProgramOptions {
 					case long_opt:	handleLongOpt(currentArg_ + 2);  break;
 					case end_opt:	breakEarly = true; break;
 					case no_opt:	
-						if (posOpt_)
+						if (oc_)
 						{
-							posVal += currentArg_;
-							posVal += " ";
+							oc_(this, string(currentArg_));
 							removeArgs(1);
 						}
 						break;
 					default:
 						assert(0);
 					}
-				}
-				if (posOpt_ && !posVal.empty())
-				{
-					std::string::size_type pos = posVal.find_last_not_of(" \t");
-					if (pos != std::string::npos)
-						posVal.erase(pos + 1, std::string::npos); 
-					addOptionValue(posOpt_->longName(), posVal);
 				}
 			}
 		private:
@@ -592,7 +583,7 @@ namespace ProgramOptions {
 			int nextArgNr_;
 			int* argc_;
 			char** argv_;
-			const Option* posOpt_;
+			void (*oc_)(OptionParser *, const std::string &);
 		};
 
 		///////////////////////////////////////////////////////////////////////////////
@@ -698,10 +689,9 @@ namespace ProgramOptions {
 
 	}   // end unnamed namespace
 
-	ParsedOptions parseCommandLine(int& argc, char** argv, OptionGroup& o, bool allowUnreg,
-		const char* po)
+	ParsedOptions parseCommandLine(int& argc, char** argv, OptionGroup& o, bool allowUnreg, void (*oc)(OptionParser *, const std::string &))
 	{
-		CommandLineParser pa(o, allowUnreg, argc, argv, po);
+		CommandLineParser pa(o, allowUnreg, argc, argv, oc);
 		return pa.parse();
 	}
 

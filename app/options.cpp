@@ -25,6 +25,7 @@
 #include <ostream>
 #include <algorithm>
 #include <cctype>
+#include <iostream>
 
 using namespace ProgramOptions;
 using namespace std;
@@ -128,42 +129,115 @@ bool mapSatElite(const std::string& s, std::vector<int>& v, std::vector<int>*) {
 	}
 	return v.size() == 3;
 }
+
+bool mapKeepForget(const std::string& s, bool &out, bool*) {
+	std::string temp = toLower(s);
+	if (temp == "keep")   { out = true;  return true; }
+	if (temp == "forget") { out = false; return true; }
+	return false;
+}
+
+bool mapASPils(const std::string& s, int &out, int*) {
+	return parseValue(s, out, 1) && out >= 1 && out <= 7;
+}
+
+bool mapMode(const std::string& s, bool &out, bool*) {
+	std::string temp = toLower(s);
+	if (temp == "grounder") { out = true;  return true; }
+	if (temp == "solver")   { out = false; return true; }
+	return false;
+}
+
+bool parseInt(const std::string &s)
+{
+	char *endptr;
+	strtol(s.c_str(), &endptr, 10);
+	return (endptr != s.c_str() && !*endptr);
+}
+
+void optionCallback(OptionParser *p, const std::string &s)
+{
+	if(parseInt(s))
+		p->addOptionValue("number", s);
+	else
+		p->addOptionValue("files", s);
+}
+
 }
 
 Options::Options() { }
 
 void Options::setDefaults() {
 	satPreParams.assign(3, 0);
-	file							= "";
-	heuristic					= "berkmin";
-	cons							= "";
-	numModels					= 1;
-	seed							= -1;
-	loopRep						= DefaultUnfoundedCheck::common_reason;
-	lookahead					= -1;
-	eqIters						= 5;
-	transExt					= LparseReader::transform_no;
-	help							= false;	
-	version						= false;
-	quiet							= false;
-	initialLookahead	= false;
-	suppModels				= false;
-	stats							= false;
-	dimacs						= false;
-	optimize					= 0;
-	ccmExp						= false;
+	files.clear();
+	heuristic        = "berkmin";
+	cons             = "";
+	numModels        = 1;
+	seed             = -1;
+	loopRep          = DefaultUnfoundedCheck::common_reason;
+	lookahead        = -1;
+	eqIters          = 5;
+	transExt         = LparseReader::transform_no;
+	help             = false;	
+	version          = false;
+	quiet            = false;
+	initialLookahead = false;
+	suppModels       = false;
+	stats            = false;
+	dimacs           = false;
+	optimize         = 0;
+	ccmExp           = false;
 }
 
 void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::OptionGroup& hidden) {
-	OptionGroup common("Common-Options - Not related to the search:\n");
-  common.addOptions()
-		("help,h"		, bool_switch(&help),		"Print help and exit")
+	OptionGroup common("Common-Options:\n");
+	common.addOptions()
+		("help,h"   , bool_switch(&help),   "Print help and exit")
 		("version,v", bool_switch(&version),"Print version and exit")
-		("quiet,q"	, bool_switch(&quiet),	"Do not print answer sets")
-		("stats"		, bool_switch(&stats),	"Print extended statistics")
-		("dimacs"		, bool_switch(&dimacs), "Read DIMACS- instead of Lparse-Format")
-		("file,f"		, value<string>(&file), "Read from <file> instead of from stdin", "<file>")
-		("seed"			, value<int>(&seed),		"Use <num> as seed for the RNG.", "<num>")
+		("stats"    , bool_switch(&stats),  "Print extended statistics")
+		("mode"     , value<bool>(&grounder)->parser(mapMode), "Set the working mode\n"
+			"\tDefault: grounder\n"
+			"\t  grounder : Standard grounding mode\n"
+			"\t  solver   : Pass input directly to clasp")
+	;
+	allOpts.addOptions(common);
+	OptionGroup gringo("\n\nGrinGo-Options:\n");
+	gringo.addOptions()
+		("verbose,V"   , bool_switch(&verbose), "Print extra information")
+		("imin"        , value<int>(&imin)    , "Minimum number of incremental steps", "<num>")
+		("imax"        , value<int>(&imax)    , "Maximum number of incremental steps", "<num>")
+		("ifixed"      , value<int>(&ifixed)  , "Fixed number of incremental steps", "<num>")
+		("ibase"       , bool_switch(&ibase)  , "(not implemented yet)")
+		("iunsat"      , value<bool>(&iunsat)->defaultValue(false), "Stop condition during incremental solving\n"
+			"\tDefault: no\n"
+			"\t  yes : Stop if no solution found\n"
+			"\t  no  : Stop if solution found")
+		("ground,g", bool_switch(&convert), "Parse plain text")
+		("ilearnt" , value<bool>(&keepHeuristic)->parser(mapKeepForget), "How to handle learnt nogoods during incremental solving\n"
+			"\tDefault: forget\n"
+			"\t  keep   : Keep learnt nogoods\n"
+			"\t  forget : Forget heuristic information")
+		("iheuristic", value<bool>(&keepLearnts)->parser(mapKeepForget), "How to handle heuristic information during incremental solving\n"
+			"\tDefault: keep\n"
+			"\t  keep   : Keep heuristic information\n"
+			"\t  forget : Forget heuristic information")
+		("const,c"         , value<vector<string> >(&consts)->setComposing(), "Set constant c to value v", "c=v")
+		("lparse,l"        , bool_switch(&smodelsOut), "Print lparse output format")
+		("text,t"          , bool_switch(&textOut), "Print plain text format")
+		("clasp,C"         , bool_switch(&claspOut), "Use internal clasp interface")
+		("incremental,i"   , bool_switch(&iclaspOut), "Use incremental clasp interface")
+		("aspils,a"        , value<int>(&aspilsOut)->parser(mapASPils), "Print experimental ASPils output in normalform 1-7", "1-7")
+		("bindersplitting" , value<bool>(&bindersplitting), "Enable or disable bindersplitting\n"
+			"\tDefault: yes\n"
+			"\t  yes : Stop if no solution found\n"
+			"\t  no  : Stop if solution found")
+	;
+	allOpts.addOptions(gringo);
+	OptionGroup clasp("\n\nClasp-Options - Not related to the search:\n");
+	clasp.addOptions()
+		("quiet,q"  , bool_switch(&quiet),  "Do not print answer sets")
+		("dimacs"   , bool_switch(&dimacs), "Read DIMACS- instead of Lparse-Format")
+		("seed"     , value<int>(&seed),    "Use <num> as seed for the RNG.", "<num>")
 		("trans-ext", value<int>(&transExt)->parser(mapTransExt),
 			"How to handle extended rules?\n"
 			"\tDefault: no\n"
@@ -180,13 +254,13 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"\t  n1 : Max iterations      (-1 means run to fixpoint)\n"
 			"\t  n2 : Heuristic cutoff    (-1 means no cutoff) \n"
 			"\t  n3 : Max time in seconds (-1 means no time limit)\n")
-		("opt-all", bool_switch(), "When optimizing compute all optimal solutions")
-		("opt-rand",bool_switch(), "When computing one optimal solution randomize search")
+		("opt-all"  , bool_switch(), "When optimizing compute all optimal solutions")
+		("opt-rand" ,bool_switch(), "When computing one optimal solution randomize search")
 		("opt-value", value<std::vector<int> >(&optVals),"Initialize the optimization function")
-		("brave", bool_switch(), "compute the set of brave consequences\n")
-		("cautious", bool_switch(), "compute the set of cautious consequences\n")
+		("brave"    , bool_switch(), "compute the set of brave consequences\n")
+		("cautious" , bool_switch(), "compute the set of cautious consequences\n")
 	;
-	allOpts.addOptions(common);
+	allOpts.addOptions(clasp);
 	OptionGroup basic("\nBasic-Options - Configure the search strategy:\n");
 	basic.addOptions()
 		("number,n",	value<int>(&numModels), "Compute at most <num> models (0 for all)", "<num>")
@@ -263,10 +337,10 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"\t  all  : Check all antecedents\n"
 			"\t  no   : Do not minimize conflict-nogoods")
 		("expensiveccm", bool_switch(&ccmExp), "enhanced conflict clause minimization\n")
-		("contraction,c", value<int>()->defaultValue(250),
+		("contraction", value<int>()->defaultValue(250),
 			"Temporarily omit literals from long learnt nogoods\n"
 			"\tDefault: 250 | Valid: [0...maxInt), 0 means disabled")
-		("loops,l", value<int>(&loopRep)->parser(mapLoops),
+		("loops", value<int>(&loopRep)->parser(mapLoops),
 			"Use <arg> as strategy when creating loop formuals\n"
 			"\tDefault: common | Valid: common, shared, distinct, no\n"
 			"\t For an unfounded set U compute:\n"
@@ -278,6 +352,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 	allOpts.addOptions(lookback);
 	hidden.addOptions()
 		("hParams", value<vector<int> >()->defaultValue(vector<int>()), "Additional parameters for heuristic\n")
+		("files",   value<vector<string> >(&files)->setComposing(), "The files which have to be parsed\n")
 	;
 }
 
@@ -291,7 +366,7 @@ bool Options::parse(int argc, char** argv, std::ostream& os, Solver& s) {
 		allOpts.addOptions(visible).addOptions(hidden);
 		warning_.clear();
 		error_.clear();
-		values.store(parseCommandLine(argc, argv, allOpts, false, "number"));
+		values.store(parseCommandLine(argc, argv, allOpts, false, optionCallback));
 		if (help) { 
 			printHelp(visible, os);
 			return true;

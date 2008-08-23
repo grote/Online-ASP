@@ -1,350 +1,593 @@
-// Copyright (c) 2008, Roland Kaminski
-//
-// This file is part of GrinGo.
-//
-// GrinGo is free software: you can redistribute it and/or modify
+// 
+// Copyright(c) 2006-2007, Benjamin Kaufmann
+// 
+// This file is part of Clasp. See http://www.cs.uni-potsdam.de/clasp/ 
+// 
+// Clasp is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// GrinGo is distributed in the hope that it will be useful,
+// the Free Software Foundation; either version 2 of the License, or
+//(at your option) any later version.
+// 
+// Clasp is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-//
+// 
 // You should have received a copy of the GNU General Public License
-// along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
-
-#include <gringo.h>
+// along with Clasp; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+//
+#include <clasp/include/lparse_reader.h>
+#include <clasp/include/satelite.h>
+#include <clasp/include/unfounded_check.h>
+#include "options.h"
+#include "enumerator.h"
+#include "timer.h"
 #include <iostream>
+#include <iomanip>
+#include <string>
 #include <fstream>
-#include <sstream>
-#include <lparseparser.h>
-#include <lparseconverter.h>
-#include <grounder.h>
-#include <smodelsoutput.h>
-#include <lparseoutput.h>
-#include <pilsoutput.h>
-#include <gringoexception.h>
+#include <numeric>
+#include <signal.h>
 
-#ifdef WITH_CLASP
-#	include <claspoutput.h>
+#if defined(_MSC_VER) &&_MSC_VER >= 1200
+//#define CHECK_HEAP 1;
+#	include <crtdbg.h>
 #endif
 
-const char *GRINGO_VERSION = "2.0.0";
-
-// evil hack :)
-NS_GRINGO::GrinGoParser* parser = 0;
-NS_GRINGO::NS_OUTPUT::Output* output = 0;
-NS_GRINGO::Grounder *grounder = 0;
-
-
-int  imin        = 1;
-int  imax        = std::numeric_limits<int>::max();
-bool iunsat      = false;
-bool convert     = false;
-bool incremental = false;
-
-bool keepLearnts   = true;
-bool keepHeuristic = false;
-
-void start_grounding()
+using namespace std;
+using namespace Clasp;
+struct ClaspApp
 {
-	bool success = parser->parse(output);
-	if(success)
+	Options options;
+	Solver solver;
+	CTimer t_pre;
+	CTimer t_solve;
+	CTimer t_all;
+	enum Mode { ASP_MODE, SAT_MODE } mode;
+	int run(int argc, char **argv);
+private: 
+	enum State { start_read, start_pre, start_solve, end_read, end_pre, end_solve };
+	void setState(State s);
+	void printSatStats() const;
+	void printLpStats() const;
+	void printAspStats(bool more) const;
+	std::string shortName(const std::string &str)
 	{
-		std::cerr << "Parsing successful" << std::endl;
-		if(!convert)
+		if(str.size() < 40)
+			return str;
+		std::string r = "...";
+		r.append(str.end() - 38, str.end());
+		return r;
+	}
+	static void printSatEliteProgress(uint32 i, SatElite::SatElite::Options::Action a)
+	{
+		static const char pro[] = { '/', '-', '\\', '|' };
+		if(a == SatElite::SatElite::Options::pre_start)
+			cout << '|';
+		
+		else if(a == SatElite::SatElite::Options::iter_start)
+			cout << '\b' << pro[i % 4];
+		
+		else if(a == SatElite::SatElite::Options::pre_done)
+			cout << '\b' << "Done";
+		
+		else if(a == SatElite::SatElite::Options::pre_stopped)
+			cout << '\b' << "Stop";
+	}
+	std::istream &getStream()
+	{
+		if(options.files.size() > 0)
 		{
-			grounder->start();
+			if(inFile_.is_open())
+				return inFile_;
+			inFile_.open(options.files[0].c_str());
+			if(!inFile_)
+			{
+				throw std::runtime_error("Can not read from '" + options.files[0] + "'");
+			}
+			return inFile_;
+		}
+		return std::cin;
+	}
+	bool solve();
+	bool parseLparse();
+	bool readSat();
+	std::auto_ptr < LparseStats > lpStats_;
+	std::auto_ptr < PreproStats > preStats_;
+	std::auto_ptr < Enumerator > enum_;
+	std::ifstream inFile_;
+} clasp_g;
+
+// return values
+const int S_UNKNOWN = 0;
+const int S_SATISFIABLE = 10;
+const int S_UNSATISFIABLE = 20;
+const int S_ERROR = EXIT_FAILURE;
+const int S_MEMORY = 107;
+static void sigHandler(int)
+{
+	// ignore further signals
+	signal(SIGINT, SIG_IGN);  // Ctrl + C
+	signal(SIGTERM, SIG_IGN); // kill(but not kill -9)
+	bool satM = clasp_g.mode == ClaspApp::SAT_MODE;
+	printf("\n%s*** INTERRUPTED! ***\n",(satM ? "c " : ""));
+	clasp_g.t_all.Stop();
+	printf("%sTime      : %s\n",(satM ? "c " : ""), clasp_g.t_all.Print().c_str());
+	printf("%sModels    : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.models);
+	printf("%sChoices   : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.choices);
+	printf("%sConflicts : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.conflicts);
+	printf("%sRestarts  : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.restarts);
+	exit(S_UNKNOWN);
+} 
+
+void ClaspApp::setState(State s)
+{
+	bool q = options.quiet;
+	const int width = 13;
+	switch(s)
+	{
+	case start_read:
+		t_pre.Reset();
+		t_pre.Start();
+		if(!q)
+			cout <<(mode == ASP_MODE ? "" : "c ") << left << setw(width) << "Reading" << ": ";
+		break;
+	case end_read:
+		t_pre.Stop();
+		if(!q)
+			cout << "Done(" << t_pre.Print() << "s)\n";
+		break;
+	case start_pre:
+		t_pre.Reset();
+		t_pre.Start();
+		if(!q)
+			cout <<(mode == ASP_MODE ? "" : "c ") << left << setw(width) << "Preprocessing" << ": ";
+		break;
+	case end_pre:
+		t_pre.Stop();
+		if(!q)
+			cout <<(options.satPreParams[0] == 0 ? "Done(" : "(") << t_pre.Print() << "s)\n";
+		break;
+	case start_solve:
+		t_solve.Start();
+		cout <<(mode == ASP_MODE ? "" : "c ") << "Solving...\n";
+		break;
+	case end_solve:
+		t_solve.Stop();
+		break;
+	default:;
+	}
+}
+void ClaspApp::printSatStats() const
+{
+	const SolverStatistics &st = solver.stats;
+	cout << "c Models       : " << st.models << "\n";
+	cout << "c Time         : " << t_all.Print() << "s(Solve: " << t_solve.Print() << "s)\n";
+	if(!options.stats)
+		return;
+	cout << "c Choices      : " << st.choices << "\n";
+	cout << "c Conflicts    : " << st.conflicts << "\n";
+	cout << "c Restarts     : " << st.restarts << "\n";
+	cout << "c Variables    : " << solver.numVars() << "(Eliminated: " << solver.numEliminatedVars() << ")\n";
+	cout << "c Clauses      : " << st.native[0] << "\n";
+	cout << "c   Binary     : " << st.native[1] << "\n";
+	cout << "c   Ternary    : " << st.native[2] << "\n";
+	cout << "c Lemmas       : " << st.learnt[0] << "\n";
+	cout << "c   Binary     : " << st.learnt[1] << "\n";
+	cout << "c   Ternary    : " << st.learnt[2] << "\n";
+}
+static double percent(uint32 y, uint32 from)
+{
+	if(from == 0)
+		return 0;
+	return(static_cast < double >(y) / from) *100.0;
+} 
+
+static double percent(const uint32 * arr, uint32 idx)
+{
+	return percent(arr[idx], arr[0]);
+}
+
+static double compAverage(uint64 x, uint64 y)
+{
+	if(!x || !y)
+		return 0.0;
+	return static_cast < double >(x) / static_cast < double >(y);
+} 
+
+void ClaspApp::printLpStats() const
+{
+	const PreproStats &ps = *preStats_;
+	const LparseStats &lp = *lpStats_;
+	const Options &o = options;
+	uint32 r = lp.rules[0] == 0 
+		? std::accumulate(lp.rules, lp.rules + OPTIMIZERULE + 1, 0) 
+		: lp.rules[0] + lp.rules[1] + lp.rules[OPTIMIZERULE];
+	uint32 a = lp.atoms[0] + lp.atoms[1];
+	cout << left << setw(12) << "Atoms" << ": " << setw(6) << a;
+	if(lp.atoms[1] != 0)
+	{
+		cout << "(Original: " << lp.atoms[0] << " Auxiliary: " << lp.atoms[1] << ")";
+	}
+	cout << "\n";
+	cout << left << setw(12) << "Rules" << ": " << setw(6) << r << "(";
+	for(int i = 1; i != OPTIMIZERULE; ++i)
+	{
+		if(lp.rules[i] != 0)
+		{
+			if(i != 1)
+				cout << " ";
+			cout << i << ": " << lp.rules[i];
+			if(lp.rules[0] != 0)
+			{
+				cout << "/";
+				if(i == 1)
+					cout << lp.rules[1] + lp.rules[0];
+				
+				else if((i == 3 &&(o.transExt &LparseReader::transform_choice) != 0))
+					cout << 0;
+				else if((i == 2 || i == 5) &&(o.transExt &LparseReader::transform_weight) != 0)
+					cout << 0;
+				else
+					cout << lp.rules[i];
+			}
+		}
+	}
+	if(lp.rules[OPTIMIZERULE] != 0)
+	{
+		cout << " " << OPTIMIZERULE << ": " << lp.rules[OPTIMIZERULE];
+	}
+	cout << ")" << "\n";
+	cout << left << setw(12) << "Bodies" << ": " << ps.bodies << "\n";
+	if(ps.numEqs() != 0)
+	{
+		cout << left << setw(12) << "Equivalences" << ": " << setw(6) << ps.numEqs() 
+			<< "(Atom=Atom: " << ps.numEqs(Var_t::atom_var)  
+			<< " Body=Body: " << ps.numEqs(Var_t::body_var) 
+			<< " Other: " << (ps.numEqs() - ps.numEqs(Var_t::body_var) - ps.numEqs(Var_t::atom_var)) <<")" << "\n";
+	}
+	cout << left << setw(12) << "Tight" << ": ";
+	if(!o.suppModels)
+	{
+		if(ps.sccs == 0)
+		{
+			cout << "Yes";
+		}
+		else
+		{
+			cout << setw(6) << "No" << "(SCCs: " << ps.sccs << " Nodes: " << ps.ufsNodes << ")";
 		}
 	}
 	else
 	{
-		throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
+		cout << "N/A";
 	}
+	cout << "\n";
 }
 
-#ifdef WITH_CLASP
-#	include "clasp_main.h"
-#endif
-
-using namespace NS_GRINGO;
-
-int readNum(int &argc, char **&argv, const char *msg)
+void ClaspApp::printAspStats(bool more) const
 {
-	if(argc > 2)
+	cout.precision(1);
+	cout.setf(ios_base::fixed, ios_base::floatfield);
+	const SolverStatistics &st = solver.stats;
+	cout << "\n";
+	uint64 enumerated = st.models;
+	uint64 models = enum_.get() != 0 ? enum_->numModels(solver) : enumerated;
+	cout << left << setw(12) << "Models" << ": ";
+	if(more)
 	{
-		char *endptr;
-		int num = strtol(argv[2], &endptr, 10);
-		if(endptr != argv[2] && !*endptr)
+		char buf[64];
+		int wr = sprintf(buf, "%llu", models);
+		buf[wr] = '+';
+		buf[wr + 1] = 0;
+		cout << setw(6) << buf;
+	}
+	else
+	{
+		cout << setw(6) << models;
+	}
+	if(enumerated != models &&options.stats)
+	{
+		cout << "(Enumerated: " << enumerated << ")";
+	}
+	cout << "\n";
+	cout << left << setw(12) 
+		<< "Time" << ": " << setw(6) << t_all.Print()  
+		<<"(" << "Solving: " << t_solve.Print() << ")" << "\n";
+	if(!options.stats)
+		return;
+	cout << left << setw(12) << "Choices" << ": " << st.choices << "\n";
+	cout << left << setw(12) << "Conflicts" << ": " << st.conflicts << "\n";
+	cout << left << setw(12) << "Restarts" << ": " << st.restarts << "\n";
+	cout << "\n";
+	printLpStats();
+	cout << "\n";
+	uint32 other = st.native[0] - st.native[1] - st.native[2];
+	cout << left << setw(12) 
+		<< "Variables" << ": " << setw(6) << solver.numVars() 
+		<< "(Eliminated: " << right << setw(4) << solver.numEliminatedVars() << ")" << "\n";
+	cout << left << setw(12) 
+		<< "Constraints" << ": " << setw(6) << st.native[0]  
+		<< "(Binary: " << right << setw(4) << percent(st.native, 1) << "% "  
+		<< "Ternary: " << right << setw(4) << percent(st.native, 2) << "% "  
+		<< "Other: " << right << setw(4) << percent(other, st.native[0]) << "%)"  <<"\n";
+	other = st.learnt[0] - st.learnt[1] - st.learnt[2];
+	cout << left << setw(12) 
+		<< "Lemmas" << ": " << setw(6) << st.learnt[0]  
+		<< "(Binary: " << right << setw(4) << percent(st.learnt, 1) << "% " 
+		<< "Ternary: " << right << setw(4) << percent(st.learnt, 2) << "% " 
+		<< "Other: " << right << setw(4) << percent(other, st.learnt[0]) << "%)"  <<"\n";
+	cout << left << setw(12) 
+		<< "  Conflicts" << ": " << setw(6) << st.learnt[0] - st.loops  
+		<<"(Average Length: " << compAverage(st.lits[0], st.learnt[0] - st.loops) << ")\n";
+	cout << left << setw(12) 
+		<< "  Loops" << ": " << setw(6) << st.loops  
+		<< "(Average Length: " << compAverage(st.lits[1], st.loops) << ")\n";
+	
+#if MAINTAIN_JUMP_STATS == 1
+	cout << "\n";
+	cout << "Backtracks          : " << st.conflicts - st.jumps << "\n";
+	cout << "Backjumps           : " << st.jumps << "( Bounded: " << st.bJumps << " )\n";
+	cout << "Skippable Levels    : " << st.jumpSum << "\n";
+	cout << "Levels skipped      : " << st.jumpSum - st.boundSum << "(" << 100 *((st.jumpSum - st.boundSum) / std::max(1.0, (double)st.jumpSum)) << "%)" << "\n";
+	cout << "Max Jump Length     : " << st. maxJump << "( Executed: " << st.maxJumpEx << " )\n";
+	cout << "Max Bound Length    : " << st.maxBound << "\n";
+	cout << "Average Jump Length : " << st.jumpSum / std::max(1.0, (double)st.jumps) 
+		<< "( Executed: " <<(st.jumpSum - st.boundSum) / std::max(1.0, (double)st.jumps) << " )\n";
+	cout << "Average Bound Length: " <<(st.boundSum) / std::max(1.0, (double)st.bJumps) << "\n";
+	cout << "Average Model Length: " <<(st.modLits) / std::max(1.0, (double)st.models) << "\n";
+#endif	/*  */
+	cout << endl;
+} 
+
+int ClaspApp::run(int argc, char **argv)
+{
+	if(!options.parse(argc, argv, std::cout, solver))
+	{
+		throw std::runtime_error(options.getError());
+	}
+	if(!options.getWarning().empty())
+	{
+		cerr << options.getWarning() << endl;
+	}
+	if(options.help || options.version)
+	{
+		return EXIT_SUCCESS;
+	}
+	if(options.seed != -1)
+	{
+		Clasp::srand(options.seed);
+	}
+	mode = options.dimacs ? SAT_MODE : ASP_MODE;
+	if(options.satPreParams[0] != 0)
+	{
+		
+		// enable and configure the sat preprocessor
+		SatElite::SatElite * pre = new SatElite::SatElite(solver);
+		pre->options.maxIters = options.satPreParams[0];
+		pre->options.maxOcc = options.satPreParams[1];
+		pre->options.maxTime = options.satPreParams[2];
+		pre->options.elimPure = options.numModels == 1;
+		pre->options.verbose = options.quiet ? 0 : printSatEliteProgress;
+		solver.strategies().satPrePro.reset(pre);
+	}
+	cout <<(mode == ASP_MODE ? "" : "c ") << "clasp version " << VERSION << " \n";
+	getStream();
+	cout <<(mode == ASP_MODE ? "" : "c ") << "Reading from " << (options.files.size() == 0 ? "stdin" : shortName(options.files[0]).c_str()) << "\n";
+	t_all.Start();
+	bool more = solve();
+	t_all.Stop();
+	if(enum_.get())
+	{
+		enum_.get()->report(solver);
+	}
+	if(mode == ASP_MODE)
+	{
+		printAspStats(more);
+	}
+	else
+	{
+		cout << "s " <<(solver.stats.models != 0 ? "SATISFIABLE" : "UNSATISFIABLE") << "\n";
+		printSatStats();
+	}
+	return solver.stats.models != 0 ? S_SATISFIABLE : S_UNSATISFIABLE;
+}
+
+bool ClaspApp::solve()
+{
+/*
+#ifdef WITH_ICLASP
+	if(incremental)
+	{
+		lpStats_.reset(new LparseStats());
+		preStats_.reset(new PreproStats());
+		ProgramBuilder api;
+		api.startProgram(options.suppModels 
+			? 0 
+			: new DefaultUnfoundedCheck (DefaultUnfoundedCheck:: ReasonStrategy(options.loopRep)), 
+			(uint32) options.eqIters);
+		output = new NS_GRINGO::NS_OUTPUT::IClaspOutput(&api, LparseReader::TransformMode(options. transExt));
+		if(parser->parse(output))
+			std::cerr << "Parsing successful" << std::endl;
+		else
+			throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
+		setState(start_solve);
+		bool more = false;
+		bool ret = false;
+		int steps = 0;
+		solver.strategies().heuristic->reinit(keepHeuristic);
+		
+		do 
 		{
-			argc--;
-			argv++;
-			return num;
+			if(!keepLearnts)
+				solver.reduceLearnts(1.0f);
+			api.updateProgram();
+			grounder->iground();
+			ret = api.endProgram(solver, options.initialLookahead, true);
+			if(ret) 
+			{
+				uint64 models = solver.stats.models;
+				StdOutPrinter printer;
+				if(!options.quiet)
+				{
+					printer.index = &api.stats.index;
+					options.solveParams.enumerator()->setPrinter(&printer);
+				}
+				LitVec assumptions;
+				assumptions.push_back(api.stats.index[static_cast<NS_GRINGO::NS_OUTPUT::IClaspOutput *>(output)->getIncUid()]. lit);
+				more = Clasp::solve(solver, assumptions, options.numModels, options.solveParams);
+				ret = solver.stats.models - models > 0;
+			}
+			steps++;
+		}
+		while(imax-- > 1 &&(imin-- > 1 || ret == iunsat));
+		setState(end_solve);
+		std::cout << "Total Steps : " << steps << std::endl;
+		*lpStats_ = static_cast < NS_GRINGO::NS_OUTPUT::ClaspOutput *>(output)->getStats();
+		return more;
+	}
+	
+#endif
+*/
+	bool res = mode == ASP_MODE ? parseLparse() : readSat();
+	if(res)
+	{
+		StdOutPrinter printer;
+		if(!options.quiet)
+		{
+			if(mode == ASP_MODE)
+				printer.index = &preStats_->index;
+			options.solveParams.enumerator()->
+				setPrinter(&printer);
+		}
+		setState(start_solve);
+		res = Clasp::solve(solver, options.numModels, options.solveParams);
+		setState(end_solve);
+	}
+	return res;
+}
+
+bool ClaspApp::readSat()
+{
+	std::istream &in = getStream();
+	setState(start_read);
+	bool res = parseDimacs(in, solver, options.numModels == 1);
+	setState(end_read);
+	if(res)
+	{
+		setState(start_pre);
+		res = solver.endAddConstraints(options.initialLookahead);
+		setState(end_pre);
+	}
+	return res;
+}
+
+bool ClaspApp::parseLparse()
+{
+	std::istream &in = getStream();
+	lpStats_.reset(new LparseStats());
+	preStats_.reset(new PreproStats());
+	
+	LparseReader reader;
+	reader.setTransformMode(LparseReader::TransformMode(options.transExt));
+	ProgramBuilder api;
+	api.startProgram(options.suppModels 
+		? 0 
+		: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.  loopRep)), 
+		(uint32) options.eqIters );
+	setState(start_read);
+	/*
+	bool ret = true;
+	output = new NS_GRINGO::NS_OUTPUT::ClaspOutput(&api, LparseReader::TransformMode(options. transExt));
+	start_grounding();
+	*/
+	bool ret = reader.parse(in, api);
+	setState(end_read);
+	if(!ret)
+		return ret;
+	if(api.hasMinimize() || !options.cons.empty())
+	{
+		if(api.hasMinimize() &&!options.cons.empty())
+		{
+			cerr << "Warning: Optimize statements are ignored because of '" << options.cons << "'!" << endl;
+		}
+		if(options.numModels != 0)
+		{
+			!options.cons.empty() 
+				? cerr <<
+				"Warning: For computing consequences clasp must be called with '--number=0'!"
+				<< endl  : cerr <<
+				"Warning: For computing optimal solutions clasp must be called with '--number=0'!"
+				<< endl;
 		}
 	}
-	throw GrinGoException(msg);
+	setState(start_pre);
+	ret = api.endProgram(solver, options.initialLookahead, false);
+	*lpStats_ = reader.stats;
+	//*lpStats_ = static_cast <NS_GRINGO::NS_OUTPUT::ClaspOutput *>(output)->getStats();
+	api.stats.moveTo(*preStats_);
+	if(!options.cons.empty())
+	{
+		enum_.reset(new CBConsequences(solver, &preStats_->index,
+			options.cons == "brave" ? CBConsequences::brave_consequences : CBConsequences::cautious_consequences, 
+			options.quiet));
+		options.solveParams.setEnumerator(*enum_);
+	}
+	
+	else if(api.hasMinimize())
+	{
+		MinimizeConstraint * c = api.createMinimize(solver);
+		c->setMode(MinimizeConstraint::Mode(options.optimize &1), options.optimize == 2);
+		if(!options.optVals.empty())
+		{
+			uint32 m = std::min((uint32) options.optVals.size(), c->numRules());
+			for(uint32 x = 0; x != m; ++x)
+			{
+				c->setOptimum(x, options.optVals[x]);
+			}
+		}
+		enum_.reset(new MinimizeEnumerator(c));
+		options.solveParams.setEnumerator(*enum_);
+	}
+	ret = ret && solver.endAddConstraints(options.initialLookahead);
+	setState(end_pre);
+	return ret;
 }
-
-int main(int argc, char *argv[])
+int main(int argc, char **argv) 
 {
-	Grounder::Options opts;
-	char *arg0   = argv[0];
-	bool files   = false;
-
-#ifdef WITH_ICLASP
-	enum Format {SMODELS, GRINGO, CLASP, LPARSE, ICLASP} format = ICLASP;
-#elif defined WITH_CLASP
-	enum Format {SMODELS, GRINGO, CLASP, LPARSE} format = CLASP;
-#else
-	enum Format {SMODELS, GRINGO, LPARSE} format = SMODELS;
-#endif
-	std::stringstream *ss = new std::stringstream();
-	std::vector<std::istream*> streams;
-	streams.push_back(ss);
-	unsigned int normalForm = 7;
+#if defined(_MSC_VER) &&defined(CHECK_HEAP) &&_MSC_VER >= 1200 
+	_CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_LEAK_CHECK_DF | _CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_ALWAYS_DF);
+	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	
+#endif	/*  */
 	try
 	{
-		while(argc > 1)
-		{
-			if(strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-v") == 0)
-			{
-				std::cout << "GrinGo " << GRINGO_VERSION << std::endl;
-				std::cout << "Copyright (C) Roland Kaminski" << std::endl;
-				std::cout << "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>" << std::endl;
-				std::cout << "GrinGo is free software: you are free to change and redistribute it." << std::endl;
-				std::cout << "There is NO WARRANTY, to the extent permitted by law." << std::endl;
-#ifdef WITH_CLASP
-				std::cout << "clasp " << VERSION << std::endl;
-				std::cout << "Copyright (C) Benjamin Kaufmann" << std::endl;
-				std::cout << "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>" << std::endl;
-				std::cout << "clasp is free software: you are free to change and redistribute it." << std::endl;
-				std::cout << "There is NO WARRANTY, to the extent permitted by law." << std::endl;
-#endif
-
-				for(std::vector<std::istream*>::iterator it = streams.begin(); it != streams.end(); it++)
-					delete *it;
-				return 0;
-			}
-			else if(strcmp(argv[1], "--ground") == 0 || strcmp(argv[1], "-G") == 0)
-			{
-				convert = true;
-			}
-			else if(strcmp(argv[1], "-a") == 0)
-			{
-				format = GRINGO;
-				if(argc > 2)
-				{
-					std::istringstream isst;
-					isst.str( argv[2] );
-					char t;
-					if(isst >> normalForm && !isst.get(t))
-						if (normalForm >= 1 && normalForm <= 7)
-						{
-							argc--;
-							argv++;
-						}
-				}
-			}
-			else if(strcmp(argv[1], "-l") == 0)
-			{
-				format = SMODELS;
-			}
-			else if(strcmp(argv[1], "--bindersplitting=off") == 0)
-			{
-				opts.binderSplit = false;
-			}
-			else if(strcmp(argv[1], "--bindersplitting=on") == 0)
-			{
-				opts.binderSplit = true;
-			}
-			else if(strcmp(argv[1], "-t") == 0)
-			{
-				format = LPARSE;
-			}
-			else if(strcmp(argv[1], "--verbose") == 0 || strcmp(argv[1], "-V") == 0)
-			{
-				opts.verbose = true;
-			}
-#ifdef WITH_ICLASP
-			else if(strcmp(argv[1], "--iheuristic=forget") == 0)
-			{
-				keepHeuristic = false;
-			}
-			else if(strcmp(argv[1], "--iheuristic=keep") == 0)
-			{
-				keepHeuristic = true;
-			}
-			else if(strcmp(argv[1], "--inogoods=forget") == 0)
-			{
-				keepLearnts = false;
-			}
-			else if(strcmp(argv[1], "--inogoods=keep") == 0)
-			{
-				keepLearnts = true;
-			}
-			else if(strcmp(argv[1], "--imin") == 0)
-			{
-				imin = readNum(argc, argv, "error: number expected after option --imin");
-			}
-			else if(strcmp(argv[1], "--imax") == 0)
-			{
-				imax = readNum(argc, argv, "error: number expected after option --imax");
-			}
-			else if(strcmp(argv[1], "--ifixed") == 0)
-			{
-				opts.ifixed = readNum(argc, argv, "error: number expected after option --ifixed");
-			}
-			else if(strcmp(argv[1], "--iunsat") == 0)
-			{
-				iunsat = true;
-			}
-			else if(strcmp(argv[1], "--clasp") == 0 || strcmp(argv[1], "-C") == 0)
-			{
-				format = CLASP;
-			}
-#endif
-			else if(strcmp(argv[1], "-c") == 0 || strcmp(argv[1], "--constant") == 0)
-			{
-				if(argc == 2)
-					throw GrinGoException("error: constant missing");
-				argc--;
-				argv++;
-				*ss << "#const " << argv[1] << "." << std::endl;
-			}
-			else if(strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0)
-			{
-#ifdef WITH_CLASP
-				std::cerr << "Usage: " << arg0 << " (gringo option|file)* [--[ clasp options]] " << std::endl << std::endl;
-#else
-				std::cerr << "Usage: " << arg0 << " (gringo option|file)*" << std::endl << std::endl;
-#endif
-				std::cerr << "gringo options are: " << std::endl;
-				std::cerr << "  -h, --help     : Print this help message" << std::endl;
-				std::cerr << "  -v, --version  : Print version information" << std::endl;
-				std::cerr << "  -G, --ground   : Convert already ground program" << std::endl;
-				std::cerr << "  -c, " << std::endl;
-				std::cerr << "  --constant c=v : Pass constant c equal value v to grounder" << std::endl;
-				std::cerr << "  -l             : Print lparse output format" << std::endl;
-				std::cerr << "  -t             : Print plain text format" << std::endl;
-				std::cerr << "  -a [1-7]       : Print experimental ASPils output" << std::endl;
-			        std::cerr << "                   Give an optional normalform number from 1 to 7 (7 if none)" << std::endl;
-			        std::cerr << "  --bindersplitting=on|off " << std::endl;
-				std::cerr << "                 :  Enable or disable bindersplitting" << std::endl;
-#ifdef WITH_ICLASP
-				std::cerr << "  -C, --clasp    : Use non incremental interface to clasp" << std::endl << std::endl;
-
-				std::cerr << "Incremental grounding" << std::endl;
-				std::cerr << "  --imax <num>   : Maximum number of incremental steps" << std::endl;
-				std::cerr << "  --imin <num>   : Minimum number of incremental steps" << std::endl;
-				std::cerr << "  --iunsat       : Stop after first unsatisfiable solution" << std::endl;
-				std::cerr << "  --inogoods=keep|forget" << std::endl;
-				std::cerr << "                 : Keep learnt nogoods in next step (default: keep)" << std::endl;
-				std::cerr << "  --iheuristic=keep|forget" << std::endl;
-				std::cerr << "                 : Keep heuristic information in next step (default: forget)" << std::endl;
-#else
-				std::cerr << std::endl << "Incremental grounding" << std::endl;
-#endif
-				std::cerr << "  --ifixed <num> : Fixed number of incremental steps" << std::endl << std::endl;
-#ifdef WITH_ICLASP
-				std::cerr << "The default output is the incremantal clasp interface" << std::endl;
-#elif defined WITH_CLASP
-				std::cerr << "The default output is the internal clasp interface" << std::endl;
-#else
-				std::cerr << "The default output is lparse output (-l)" << std::endl;
-#endif
-
-#ifdef WITH_CLASP
-				int   argc_c = 2;
-				char *argv_c[] = { arg0, argv[1] };
-				std::cerr << std::endl << "clasp options are: " << std::endl;
-				clasp_main(argc_c, argv_c);
-#endif
-				for(std::vector<std::istream*>::iterator it = streams.begin(); it != streams.end(); it++)
-					delete *it;
-				return 0;
-			}
-			else if(strcmp(argv[1], "--") == 0)
-			{
-				argc--;
-				argv++;
-				break;
-			}
-			else if(strncmp(argv[1], "-", 1) == 0)
-			{
-				throw GrinGoException(std::string("error: unknown option: ") + argv[1]);
-			}
-			else
-			{
-				streams.push_back(new std::fstream(argv[1]));
-				if(streams.back()->fail())
-					throw GrinGoException(std::string("error: could not open file: ") + argv[1]);
-				files = true;
-			}
-			argc--;
-			argv++;
-		}
-#ifdef WITH_ICLASP
-		if(format == ICLASP)
-		{
-			incremental  = true;
-			opts.ifixed = -1;
-		}
-#endif
-		if(!files)
-			streams.push_back(new std::istream(std::cin.rdbuf()));
-		argv[0] = arg0;
-		if(convert && incremental)
-			throw GrinGoException("Error: cannot use both --ground and incremental grounding.");
-
-		if(convert)
-			parser = new LparseConverter(streams);
-		else
-		{
-			grounder = new Grounder(opts);
-			parser   = new LparseParser(grounder, streams);
-		}
-		
-		switch(format)
-		{
-			case SMODELS:
-				output = new NS_OUTPUT::SmodelsOutput(&std::cout);
-				start_grounding();
-				break;
-			case LPARSE:
-				output = new NS_OUTPUT::LparseOutput(&std::cout);
-				start_grounding();
-				break;
-			case GRINGO:
-				output = new NS_OUTPUT::PilsOutput(&std::cout, normalForm);
-				start_grounding();
-				break;
-#ifdef WITH_ICLASP
-			case ICLASP:
-				clasp_main(argc, argv);
-				break;
-#endif
-#ifdef WITH_CLASP
-			case CLASP:
-				clasp_main(argc, argv);
-				break;
-#endif
-		}
+		signal(SIGINT, sigHandler);	// Ctrl + C
+		signal(SIGTERM, sigHandler);	// kill(but not kill -9)
+		return clasp_g.run(argc, argv);
 	}
-	catch(std::exception &e)
+	catch(const ReadError &e)
 	{
-		std::cerr << e.what() << std::endl;
+		cerr << "Failed!\nError(" << e.line_ << "): " << e.
+			what() << endl;
+		return S_ERROR;
 	}
-	if(grounder)
-		delete grounder;
-	if(output)
-		delete output;
-	if(parser)
-		delete parser;
-	for(std::vector<std::istream*>::iterator it = streams.begin(); it != streams.end(); it++)
-		delete *it;
-
-	return 0;
+	catch(const std::bad_alloc &)
+	{
+		cerr << "\nclasp ERROR: out of memory" << endl;
+		return S_MEMORY;
+	}
+	catch(const std::exception &e)
+	{
+		cerr << "\nclasp ERROR: " << e.what() << endl;
+		return S_ERROR;
+	}
+	return S_UNKNOWN;
 }
 

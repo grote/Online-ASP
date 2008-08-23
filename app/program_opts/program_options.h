@@ -244,14 +244,14 @@ public:
 class OptionParser
 {
 public:
-	enum OptionType {short_opt, long_opt, end_opt, no_opt};
-    OptionParser(OptionGroup& o, bool allowUnreg);
+  enum OptionType {short_opt, long_opt, end_opt, no_opt};
+  OptionParser(OptionGroup& o, bool allowUnreg);
   virtual ~OptionParser();
-    ParsedOptions parse();
+  ParsedOptions parse();
+  void addOptionValue(const std::string& name, const std::string& value);
 protected:
     OptionType getOptionType(const char* o) const;
 	const Option* getOption(const char* name, OptionType t);
-    void addOptionValue(const std::string& name, const std::string& value);
 private:
 	virtual void doParse() = 0;
 	ParsedOptions po_;
@@ -277,9 +277,7 @@ private:
  * that does not match any option.
  * \note Use the returned object to populate an OptionValues-Object.
  */
-ParsedOptions parseCommandLine(int& argc, char** argv, OptionGroup& grp,
-							   bool allowUnregistered = true,
-							   const char* positionalOption = 0);
+ParsedOptions parseCommandLine(int& argc, char** argv, OptionGroup& grp, bool allowUnreg = true, void (*oc)(OptionParser *, const std::string &) = 0);
 
 /*!
  * parses a config file having the format key = value.

@@ -37,6 +37,8 @@ const char* const VERSION = "1.1.0";
 namespace Clasp {
 
 class Options {
+private:
+	enum OutputFormat {SMODELS_OUT, GRINGO_OUT, CLASP_OUT, TEXT_OUT, ICLASP_OUT};
 public:
 	Options();
 	void setDefaults();
@@ -48,27 +50,52 @@ public:
 		return warning_;
 	}
 	
-	SolveParams		solveParams;
-	std::vector<int> optVals;				// Values for the optimization function
-	std::vector<int> satPreParams;	// Params for the SatElite-preprocessor
-	std::string		file;							// Default: "" -> read from stdin
-	std::string		heuristic;				// Default: berkmin
-	std::string		cons;							// Default: ""
-	int						seed;							// Default: -1 -> use default seed
-	int						transExt;					// Default: 0 -> do not transform extended rules
-	int						eqIters;					// Default: -1 -> run eq-preprocessing to fixpoint
-	int						numModels;				// Default: 1
-	int						lookahead;				// Default: lookahead_no
-	int						loopRep;					// Default: common
-	int						optimize;					// Default: 0
-	bool					help;							// Default: false
-	bool					version;					// Defailt: false
-	bool					quiet;						// Default: false
-	bool					stats;						// Default: false
-	bool					dimacs;						// Default: false
-	bool					suppModels;				// Default: false
-	bool					initialLookahead;	// Default: false
-	bool					ccmExp;						// Default: false
+	// common stuff
+	bool             help;             // Default: false
+	bool             version;          // Defailt: false
+	bool             stats;            // Default: false
+	std::vector<std::string> files;    // Default: "" -> read from stdin
+
+	// gringo stuff
+	bool             grounder;         // Default: true
+	bool             verbose;          // Default: false
+	int              imin;             // Default: 1
+	int              imax;             // Default: std::numeric_limits<int>::max()
+	int              ifixed;           // Default: -1
+	bool             iunsat;           // Default: false
+	bool             convert;          // Default: false
+	bool             keepLearnts;      // Default: true
+	bool             keepHeuristic;    // Default: false
+	bool             bindersplitting;  // Default: true
+	bool             ibase;            // Default: false
+	std::vector<std::string> consts;
+
+
+	bool             smodelsOut;
+	int              aspilsOut;
+	bool             claspOut;
+	bool             iclaspOut;
+	bool             textOut;
+	OutputFormat     outf;             // Default: depends on build
+
+	// clasp stuff
+	SolveParams      solveParams;
+	std::vector<int> optVals;          // Values for the optimization function
+	std::vector<int> satPreParams;     // Params for the SatElite-preprocessor
+	std::string      heuristic;        // Default: berkmin
+	std::string      cons;             // Default: ""
+	int              seed;             // Default: -1 -> use default seed
+	int              transExt;         // Default: 0 -> do not transform extended rules
+	int              eqIters;          // Default: -1 -> run eq-preprocessing to fixpoint
+	int              numModels;        // Default: 1
+	int              lookahead;        // Default: lookahead_no
+	int              loopRep;          // Default: common
+	int              optimize;         // Default: 0
+	bool             quiet;            // Default: false
+	bool             suppModels;       // Default: false
+	bool             initialLookahead; // Default: false
+	bool             ccmExp;           // Default: false
+	bool             dimacs;           // Default: false
 private:
 	std::vector<double> delDefault() const {
 		std::vector<double> v; v.push_back(3.0); v.push_back(1.1); v.push_back(3.0);
