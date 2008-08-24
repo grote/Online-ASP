@@ -7,10 +7,9 @@ performance:
 - optimize memory consumtion/handling in output classes
   - dont use new/delete for all the output objects everytime a rule is grounded
 - optimize datastructures (in view of memoryconsumption)
-- improve the code for creating the indexeddomains default/bindersplitting
+- it would be better to use a ptr_vector or sth like that instead of std::vector<T*>
 
 code:
-- write a better main app
 - find a better way (a. :- a. ? ) to state that no answer set exists
 - use more c++ exceptions
 
@@ -23,6 +22,8 @@ testing:
 
 todo:
 - handle classical negation in iclaspoutput
+- improve text output
+- print more statistics
 
 bugs:
 - the weights of conditionalliterals are ignored in the literaldependency graph
