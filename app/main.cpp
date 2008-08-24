@@ -35,6 +35,7 @@
 #include <lparseoutput.h>
 #include <pilsoutput.h>
 #include <gringoexception.h>
+#include <claspoutput.h>
 
 #include "enumerator.h"
 #include <clasp/include/lparse_reader.h>
@@ -108,6 +109,7 @@ private:
 		return std::cin;
 	}
 	bool solve();
+	bool solveIncremental();
 	bool parseLparse();
 	bool readSat();
 	std::auto_ptr < LparseStats > lpStats_;
@@ -426,7 +428,12 @@ bool ClaspApp::runClasp()
 	getStream();
 	cout <<(mode == ASP_MODE ? "" : "c ") << "Reading from " << (options.files.size() == 0 ? "stdin" : shortName(options.files[0]).c_str()) << "\n";
 	t_all.Start();
-	bool more = solve();
+
+	bool more;
+	if(options.outf == Options::ICLASP_OUT && options.grounder)
+		more = solveIncremental();
+	else
+		more = solve();
 	t_all.Stop();
 	if(enum_.get())
 	{
@@ -444,7 +451,7 @@ bool ClaspApp::runClasp()
 	return solver.stats.models != 0 ? S_SATISFIABLE : S_UNSATISFIABLE;
 }
 
-void ClaspApp::ground(Output &output)
+namespace
 {
 	// bäh want a ptr_vector_owner or sth like that
 	struct Streams
@@ -455,24 +462,33 @@ void ClaspApp::ground(Output &output)
 			for(vector<istream *>::iterator i = streams.begin(); i != streams.end(); i++)
 				delete *i;
 		}
-	} s;
+	};
 
-	std::stringstream *ss = new std::stringstream();
-	s.streams.push_back(ss);
-	for(vector<string>::iterator i = options.consts.begin(); i != options.consts.end(); i++)
-		*ss << "#const " << *i << ".\n";
-
-	if(options.files.size() > 0)
+	void getStreams(Options &options, Streams &s)
 	{
-		for(vector<string>::iterator i = options.files.begin(); i != options.files.end(); i++)
+		std::stringstream *ss = new std::stringstream();
+		s.streams.push_back(ss);
+		for(vector<string>::iterator i = options.consts.begin(); i != options.consts.end(); i++)
+			*ss << "#const " << *i << ".\n";
+
+		if(options.files.size() > 0)
 		{
-			s.streams.push_back(new std::fstream(i->c_str()));
-			if(s.streams.back()->fail())
-				throw GrinGoException(std::string("Error: could not open file: ") + *i);
+			for(vector<string>::iterator i = options.files.begin(); i != options.files.end(); i++)
+			{
+				s.streams.push_back(new std::fstream(i->c_str()));
+				if(s.streams.back()->fail())
+					throw GrinGoException(std::string("Error: could not open file: ") + *i);
+			}
 		}
+		else
+			s.streams.push_back(new std::istream(std::cin.rdbuf()));
 	}
-	else
-		s.streams.push_back(new std::istream(std::cin.rdbuf()));
+}
+
+void ClaspApp::ground(Output &output)
+{
+	Streams s;
+	getStreams(options, s);
 	if(options.convert)
 	{
 		LparseConverter parser(s.streams);
@@ -489,62 +505,67 @@ void ClaspApp::ground(Output &output)
 	}
 }
 
+bool ClaspApp::solveIncremental()
+{
+	Streams s;
+	getStreams(options, s);
+
+	ProgramBuilder api;
+	IClaspOutput output(&api, LparseReader::TransformMode(options. transExt));
+	Grounder     grounder(options.grounderOptions);
+	LparseParser parser(&grounder, s.streams);
+
+	lpStats_.reset(new LparseStats());
+	preStats_.reset(new PreproStats());
+
+	api.startProgram(options.suppModels 
+		? 0 
+		: new DefaultUnfoundedCheck (DefaultUnfoundedCheck:: ReasonStrategy(options.loopRep)), 
+		(uint32) options.eqIters);
+
+	if(parser.parse(&output))
+		std::cerr << "Parsing successful" << std::endl;
+	else
+		throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
+
+	setState(start_solve);
+	bool more = false;
+	bool ret  = false;
+	int steps = 0;
+	solver.strategies().heuristic->reinit(options.keepHeuristic);
+	
+	do 
+	{
+		if(!options.keepLearnts)
+			solver.reduceLearnts(1.0f);
+		api.updateProgram();
+		grounder.iground();
+		ret = api.endProgram(solver, options.initialLookahead, true);
+		if(ret) 
+		{
+			uint64 models = solver.stats.models;
+			StdOutPrinter printer;
+			if(!options.quiet)
+			{
+				printer.index = &api.stats.index;
+				options.solveParams.enumerator()->setPrinter(&printer);
+			}
+			LitVec assumptions;
+			assumptions.push_back(api.stats.index[output.getIncUid()]. lit);
+			more = Clasp::solve(solver, assumptions, options.numModels, options.solveParams);
+			ret = solver.stats.models - models > 0;
+		}
+		steps++;
+	}
+	while(options.imax-- > 1 &&(options.imin-- > 1 || ret == options.iunsat));
+	setState(end_solve);
+	std::cout << "Total Steps : " << steps << std::endl;
+	*lpStats_ = output.getStats();
+	return more;
+}
+
 bool ClaspApp::solve()
 {
-/*
-#ifdef WITH_ICLASP
-	if(incremental)
-	{
-		lpStats_.reset(new LparseStats());
-		preStats_.reset(new PreproStats());
-		ProgramBuilder api;
-		api.startProgram(options.suppModels 
-			? 0 
-			: new DefaultUnfoundedCheck (DefaultUnfoundedCheck:: ReasonStrategy(options.loopRep)), 
-			(uint32) options.eqIters);
-		output = new NS_GRINGO::NS_OUTPUT::IClaspOutput(&api, LparseReader::TransformMode(options. transExt));
-		if(parser->parse(output))
-			std::cerr << "Parsing successful" << std::endl;
-		else
-			throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
-		setState(start_solve);
-		bool more = false;
-		bool ret = false;
-		int steps = 0;
-		solver.strategies().heuristic->reinit(keepHeuristic);
-		
-		do 
-		{
-			if(!keepLearnts)
-				solver.reduceLearnts(1.0f);
-			api.updateProgram();
-			grounder->iground();
-			ret = api.endProgram(solver, options.initialLookahead, true);
-			if(ret) 
-			{
-				uint64 models = solver.stats.models;
-				StdOutPrinter printer;
-				if(!options.quiet)
-				{
-					printer.index = &api.stats.index;
-					options.solveParams.enumerator()->setPrinter(&printer);
-				}
-				LitVec assumptions;
-				assumptions.push_back(api.stats.index[static_cast<NS_GRINGO::NS_OUTPUT::IClaspOutput *>(output)->getIncUid()]. lit);
-				more = Clasp::solve(solver, assumptions, options.numModels, options.solveParams);
-				ret = solver.stats.models - models > 0;
-			}
-			steps++;
-		}
-		while(imax-- > 1 &&(imin-- > 1 || ret == iunsat));
-		setState(end_solve);
-		std::cout << "Total Steps : " << steps << std::endl;
-		*lpStats_ = static_cast < NS_GRINGO::NS_OUTPUT::ClaspOutput *>(output)->getStats();
-		return more;
-	}
-	
-#endif
-*/
 	bool res = mode == ASP_MODE ? parseLparse() : readSat();
 	if(res)
 	{
@@ -584,23 +605,29 @@ bool ClaspApp::parseLparse()
 	lpStats_.reset(new LparseStats());
 	preStats_.reset(new PreproStats());
 	
-	LparseReader reader;
-	reader.setTransformMode(LparseReader::TransformMode(options.transExt));
 	ProgramBuilder api;
 	api.startProgram(options.suppModels 
 		? 0 
 		: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.  loopRep)), 
 		(uint32) options.eqIters );
+	
 	setState(start_read);
-	/*
-	bool ret = true;
-	output = new NS_GRINGO::NS_OUTPUT::ClaspOutput(&api, LparseReader::TransformMode(options. transExt));
-	start_grounding();
-	*/
-	bool ret = reader.parse(in, api);
+	if(options.grounder)
+	{
+		ClaspOutput output(&api, LparseReader::TransformMode(options. transExt));
+		ground(output);
+		*lpStats_ = output.getStats();
+	}
+	else
+	{
+		LparseReader reader;
+		reader.setTransformMode(LparseReader::TransformMode(options.transExt));
+		if(!reader.parse(in, api))
+			return false;
+		*lpStats_ = reader.stats;
+	}
 	setState(end_read);
-	if(!ret)
-		return ret;
+
 	if(api.hasMinimize() || !options.cons.empty())
 	{
 		if(api.hasMinimize() &&!options.cons.empty())
@@ -610,17 +637,13 @@ bool ClaspApp::parseLparse()
 		if(options.numModels != 0)
 		{
 			!options.cons.empty() 
-				? cerr <<
-				"Warning: For computing consequences clasp must be called with '--number=0'!"
-				<< endl  : cerr <<
-				"Warning: For computing optimal solutions clasp must be called with '--number=0'!"
-				<< endl;
+				? cerr << "Warning: For computing consequences clasp must be called with '--number=0'!" << endl  
+				: cerr << "Warning: For computing optimal solutions clasp must be called with '--number=0'!" << endl;
 		}
 	}
+
 	setState(start_pre);
-	ret = api.endProgram(solver, options.initialLookahead, false);
-	*lpStats_ = reader.stats;
-	//*lpStats_ = static_cast <NS_GRINGO::NS_OUTPUT::ClaspOutput *>(output)->getStats();
+	bool ret = api.endProgram(solver, options.initialLookahead, false);
 	api.stats.moveTo(*preStats_);
 	if(!options.cons.empty())
 	{

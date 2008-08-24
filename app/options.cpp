@@ -534,21 +534,21 @@ bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
 
 
 void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
-	os	<< "clasp " << VERSION
-			<< "\nusage: clasp [number] [options]" << endl;
+	os << "clasp " << VERSION
+		<< "\nusage: clasp [number] [options]" << endl;
 	os << opts << endl;
 	os << "Default commandline:\n"
-			<< "  clasp 1 --trans-ext=no --eq=5 \n"
-			<< "          --lookahead=no --lookback=yes --heuristic=Berkmin\n"
-			<< "          --rand-prop=0.0 --randomize=no --rand-watches=yes\n"
-			<< "          --restarts=100,1.5 --deletion=3,1.1,3.0\n"
-			<< "          --minimize=all --contraction=250 --loops=common"
-			<< endl;
+		<< "  clasp 1 --trans-ext=no --eq=5 \n"
+		<< "          --lookahead=no --lookback=yes --heuristic=Berkmin\n"
+		<< "          --rand-prop=0.0 --randomize=no --rand-watches=yes\n"
+		<< "          --restarts=100,1.5 --deletion=3,1.1,3.0\n"
+		<< "          --minimize=all --contraction=250 --loops=common"
+		<< endl;
 }
 void Options::printVersion(std::ostream& os) const {
 	os << "clasp " << VERSION << "\n";
-  os << "Copyright (C) Benjamin Kaufmann" << "\n";
-  os << "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>\n";
+	os << "Copyright (C) Benjamin Kaufmann" << "\n";
+	os << "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>\n";
 	os << "clasp is free software: you are free to change and redistribute it.\n";
 	os << "There is NO WARRANTY, to the extent permitted by law." << endl; 
 }
