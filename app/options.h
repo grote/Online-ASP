@@ -85,7 +85,9 @@ public:
 
 	bool             smodelsOut;
 	int              aspilsOut;
+#ifdef WITH_CLASP
 	bool             claspOut;
+#endif
 	bool             textOut;
 	OutputFormat     outf;             // Default: depends on build
 

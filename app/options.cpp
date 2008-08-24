@@ -189,7 +189,9 @@ void Options::setDefaults() {
 
 	smodelsOut = false;
 	aspilsOut  = -1;
+#ifdef WITH_CLASP
 	claspOut   = false;
+#endif
 	textOut    = false;
 #ifdef WITH_ICLASP
 	outf       = ICLASP_OUT;
@@ -251,7 +253,9 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("const,c"         , value<vector<string> >(&consts)->setComposing(), "Set constant c to value v", "c=v")
 		("lparse,l"        , bool_switch(&smodelsOut), "Print lparse output format")
 		("text,t"          , bool_switch(&textOut), "Print plain text format")
+#ifdef WITH_CLASP
 		("clasp,C"         , bool_switch(&claspOut), "Use internal clasp interface")
+#endif
 		("aspils,a"        , value<int>(&aspilsOut)->parser(mapASPils), "Print experimental ASPils output in normalform 1-7", "1-7")
 		("bindersplitting" , value<bool>(&grounderOptions.binderSplit), "Enable or disable bindersplitting\n"
 			"\tDefault: yes\n"

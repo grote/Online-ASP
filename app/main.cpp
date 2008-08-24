@@ -193,7 +193,7 @@ void MainApp::setState(State s)
 int MainApp::run(int argc, char **argv)
 {
 	ProgramOptions::OptionValues values;
-	if(!options.parse(argc, argv, std::cerr, values))
+	if(!options.parse(argc, argv, std::cout, values))
 	{
 		throw std::runtime_error(options.getError());
 	}
@@ -250,19 +250,19 @@ int MainApp::run(int argc, char **argv)
 	{
 		case Options::SMODELS_OUT:
 		{
-			SmodelsOutput output(&std::cerr);
+			SmodelsOutput output(&std::cout);
 			ground(output);
 			break;
 		}
 		case Options::GRINGO_OUT:
 		{
-			PilsOutput output(&std::cerr, options.aspilsOut);
+			PilsOutput output(&std::cout, options.aspilsOut);
 			ground(output);
 			break;
 		}
 		case Options::TEXT_OUT:
 		{
-			LparseOutput output(&std::cerr);
+			LparseOutput output(&std::cout);
 			ground(output);
 			break;
 		}
