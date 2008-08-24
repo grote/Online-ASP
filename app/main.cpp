@@ -61,6 +61,8 @@ struct MainApp
 {
 	Options   options;
 	CTimer    t_pre;
+	CTimer    t_read;
+	CTimer    t_ground;
 	CTimer    t_solve;
 	CTimer    t_all;
 #ifdef WITH_CLASP
@@ -70,7 +72,7 @@ struct MainApp
 #endif
 	int run(int argc, char **argv);
 private: 
-	enum State { start_read, start_pre, start_solve, end_read, end_pre, end_solve };
+	enum State { start_read, start_ground, start_pre, start_solve, end_read, end_ground, end_pre, end_solve };
 	void setState(State s);
 	void ground(Output &output);
 #ifdef WITH_CLASP
@@ -152,35 +154,29 @@ static void sigHandler(int)
 void MainApp::setState(State s)
 {
 #ifdef WITH_CLASP
-	bool q = options.quiet;
 	const int width = 13;
 	switch(s)
 	{
 	case start_read:
-		t_pre.Reset();
-		t_pre.Start();
-		if(!q)
-			cerr <<(mode == ASP_MODE ? "" : "c ") << left << setw(width) << "Reading" << ": ";
+		t_read.Start();
 		break;
 	case end_read:
-		t_pre.Stop();
-		if(!q)
-			cerr << "Done(" << t_pre.Print() << "s)\n";
+		t_read.Stop();
+		break;
+	case start_ground:
+		t_ground.Start();
+		break;
+	case end_ground:
+		t_ground.Stop();
 		break;
 	case start_pre:
-		t_pre.Reset();
 		t_pre.Start();
-		if(!q)
-			cerr <<(mode == ASP_MODE ? "" : "c ") << left << setw(width) << "Preprocessing" << ": ";
 		break;
 	case end_pre:
 		t_pre.Stop();
-		if(!q)
-			cerr <<(options.satPreParams[0] == 0 ? "Done(" : "(") << t_pre.Print() << "s)\n";
 		break;
 	case start_solve:
 		t_solve.Start();
-		cerr <<(mode == ASP_MODE ? "" : "c ") << "Solving...\n";
 		break;
 	case end_solve:
 		t_solve.Stop();
@@ -218,14 +214,17 @@ int MainApp::run(int argc, char **argv)
 	if(options.files.size() > 0)
 	{
 		vector<string>::iterator i = options.files.begin();
-		cerr << (mode == ASP_MODE ? "" : "c ") << "Reading from " << *i;
-		for(i++; i != options.files.end(); i++)
-			cerr << ", " << *i;
-		cerr << endl;
+		if(options.verbose)
+		{
+			cerr << (mode == ASP_MODE ? "" : "c ") << "Reading from " << *i;
+			for(i++; i != options.files.end(); i++)
+				cerr << ", " << *i;
+			cerr << "..." << endl;
+		}
 		if(!options.grounder && options.files.size() > 1)
 			cerr << "Warning: only the first file will be used" << endl;
 	}
-	else
+	else if(options.verbose)
 		cerr << (mode == ASP_MODE ? "" : "c ") << "Reading from stdin" << endl;
 #else
 	cerr << EXECUTABLE << " version " << GRINGO_VERSION << endl;
@@ -316,17 +315,26 @@ void MainApp::ground(Output &output)
 	getStreams(options, s);
 	if(options.convert)
 	{
+		setState(start_read);
 		LparseConverter parser(s.streams);
 		if(!parser.parse(&output))
 			throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
+		setState(end_read);
 	}
 	else
 	{
+		setState(start_read);
 		Grounder grounder(options.grounderOptions);
 		LparseParser parser(&grounder, s.streams);
 		if(!parser.parse(&output))
 			throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
-		grounder.start();
+		grounder.prepare(false);
+		setState(end_read);
+		setState(start_ground);
+		if(options.verbose)
+			cerr << "Grounding..." << endl;
+		grounder.ground();
+		setState(end_ground);
 	}
 }
 
@@ -464,11 +472,14 @@ void MainApp::printAspStats(bool more) const
 		cerr << "(Enumerated: " << enumerated << ")";
 	}
 	cerr << "\n";
-	cerr << left << setw(12) 
-		<< "Time" << ": " << setw(6) << t_all.Print()  
-		<<"(" << "Solving: " << t_solve.Print() << ")" << "\n";
+	cerr << left << setw(12) << "Time" << ": " << setw(6) << t_all.Print() << "\n";
 	if(!options.stats)
 		return;
+	cerr << "  Reading   : " << t_read.Print() << "\n";
+	if(options.grounder && !options.convert)
+		cerr << "  Grounding : " << t_ground.Print() << "\n";
+	cerr << "  Prepro.   : " << t_pre.Print() << "\n";
+	cerr << "  Solving   : " << t_solve.Print() << "\n";
 	cerr << left << setw(12) << "Choices" << ": " << st.choices << "\n";
 	cerr << left << setw(12) << "Conflicts" << ": " << st.conflicts << "\n";
 	cerr << left << setw(12) << "Restarts" << ": " << st.restarts << "\n";
@@ -563,6 +574,7 @@ bool MainApp::runClasp()
 #	ifdef WITH_ICLASP
 bool MainApp::solveIncremental()
 {
+	setState(start_read);
 	Streams s;
 	getStreams(options, s);
 
@@ -578,27 +590,37 @@ bool MainApp::solveIncremental()
 		? 0 
 		: new DefaultUnfoundedCheck (DefaultUnfoundedCheck:: ReasonStrategy(options.loopRep)), 
 		(uint32) options.eqIters);
-
-	if(parser.parse(&output))
-		std::cerr << "Parsing successful" << std::endl;
-	else
+	
+	if(!parser.parse(&output))
 		throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
 
-	setState(start_solve);
 	bool more = false;
 	bool ret  = false;
 	int steps = 0;
 	solver.strategies().heuristic->reinit(options.keepHeuristic);
+	grounder.prepare(true);
+	setState(end_read);
 	
 	do 
 	{
+		setState(start_ground);
+		if(options.verbose)
+			cerr << "Grounding step " << (steps + 1) << "..." << endl;
 		if(!options.keepLearnts)
 			solver.reduceLearnts(1.0f);
 		api.updateProgram();
-		grounder.iground();
+		grounder.ground();
+		setState(end_ground);
+		setState(start_pre);
+		if(options.verbose)
+			cerr << "Preprocessing..." << endl;
 		ret = api.endProgram(solver, options.initialLookahead, true);
+		setState(end_pre);
 		if(ret) 
 		{
+			setState(start_solve);
+			if(options.verbose)
+				cerr << "Solving..." << endl;
 			uint64 models = solver.stats.models;
 			StdOutPrinter printer;
 			if(!options.quiet)
@@ -610,13 +632,14 @@ bool MainApp::solveIncremental()
 			assumptions.push_back(api.stats.index[output.getIncUid()]. lit);
 			more = Clasp::solve(solver, assumptions, options.numModels, options.solveParams);
 			ret = solver.stats.models - models > 0;
+			setState(end_solve);
 		}
 		steps++;
 	}
 	while(options.imax-- > 1 &&(options.imin-- > 1 || ret == options.iunsat));
-	setState(end_solve);
 	cerr << "Total Steps : " << steps << std::endl;
 	*lpStats_ = output.getStats();
+	api.stats.moveTo(*preStats_);
 	return more;
 }
 #	endif
@@ -635,6 +658,8 @@ bool MainApp::solve()
 				setPrinter(&printer);
 		}
 		setState(start_solve);
+		if(options.verbose)
+			cerr << (mode == ASP_MODE ? "" : "c ") << "Solving..." << endl;
 		res = Clasp::solve(solver, options.numModels, options.solveParams);
 		setState(end_solve);
 	}
@@ -650,6 +675,8 @@ bool MainApp::readSat()
 	if(res)
 	{
 		setState(start_pre);
+		if(options.verbose)
+			cerr << "c Preprocessing..." << endl;
 		res = solver.endAddConstraints(options.initialLookahead);
 		setState(end_pre);
 	}
@@ -668,7 +695,6 @@ bool MainApp::parseLparse()
 		: new DefaultUnfoundedCheck(DefaultUnfoundedCheck::ReasonStrategy(options.  loopRep)), 
 		(uint32) options.eqIters );
 	
-	setState(start_read);
 	if(options.grounder)
 	{
 		ClaspOutput output(&api, LparseReader::TransformMode(options. transExt));
@@ -677,13 +703,14 @@ bool MainApp::parseLparse()
 	}
 	else
 	{
+		setState(start_read);
 		LparseReader reader;
 		reader.setTransformMode(LparseReader::TransformMode(options.transExt));
 		if(!reader.parse(in, api))
 			return false;
 		*lpStats_ = reader.stats;
+		setState(end_read);
 	}
-	setState(end_read);
 
 	if(api.hasMinimize() || !options.cons.empty())
 	{
@@ -700,6 +727,8 @@ bool MainApp::parseLparse()
 	}
 
 	setState(start_pre);
+	if(options.verbose)
+		cerr << "Preprocessing..." << endl;
 	bool ret = api.endProgram(solver, options.initialLookahead, false);
 	api.stats.moveTo(*preStats_);
 	if(!options.cons.empty())

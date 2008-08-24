@@ -182,6 +182,7 @@ void Options::setDefaults() {
 	stats   = false;
 	help    = false;	
 	version = false;
+	verbose = false;
 
 	grounderOptions = Grounder::Options();
 	convert         = false;
@@ -236,6 +237,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 	common.addOptions()
 		("help,h"   , bool_switch(&help),   "Print help and exit")
 		("version,v", bool_switch(&version),"Print version and exit")
+		("verbose,V", bool_switch(&verbose), "Print extra information")
 		("stats"    , bool_switch(&stats),  "Print extended statistics")
 #ifdef WITH_CLASP
 		("mode"     , value<bool>(&grounder)->parser(mapMode), "Set the working mode\n"
@@ -247,7 +249,6 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 	allOpts.addOptions(common);
 	OptionGroup gringo("\n\nGrinGo-Options:\n");
 	gringo.addOptions()
-		("verbose,V"   , bool_switch(&grounderOptions.verbose), "Print extra information")
 		("ifixed"      , value<int>(&grounderOptions.ifixed)  , "Fixed number of incremental steps", "<num>")
 		("ground,g", bool_switch(&convert), "Parse plain text")
 		("const,c"         , value<vector<string> >(&consts)->setComposing(), "Set constant c to value v", "c=v")
@@ -457,7 +458,7 @@ void Options::checkCommonOptions(const OptionValues& vm) {
 	if(f(smodelsOut) + f(aspilsOut > 0) + f(textOut) > 1)
 #endif
 		throw(GrinGoException("multiple outputs defined"));
-
+	
 	if(smodelsOut)
 		outf = SMODELS_OUT;
 	if(aspilsOut > 0)

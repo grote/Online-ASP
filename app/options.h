@@ -71,6 +71,7 @@ public:
 	bool             help;             // Default: false
 	bool             version;          // Defailt: false
 	bool             stats;            // Default: false
+	bool             verbose;          // Default: false
 	std::vector<std::string> files;    // Default: "" -> read from stdin
 
 	// gringo stuff

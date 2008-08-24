@@ -147,56 +147,6 @@ void Grounder::preprocess()
 		rules_[i]->preprocess(this);
 }
 
-void Grounder::start()
-{
-	if(incParts_.size() > 0 && opts_.ifixed < 0)
-		throw GrinGoException("Error: A fixed number of incremtal steps is needed to ground the program.");
-	if(incParts_.size() > 0)
-	{
-		do
-		{
-			iground();
-		}
-		while(incStep_ <= opts_.ifixed);
-		output_->finalize(true);
-	}
-	else
-	{
-		if(options().verbose)
-			std::cerr << "preprocessing ... " << std::endl;
-		preprocess();
-		if(options().verbose)
-			std::cerr << "done" << std::endl;
-		if(options().verbose)
-			std::cerr << "adding domain predicates ... " << std::endl;
-		addDomains();
-		if(options().verbose)
-		{
-			std::cerr << "done" << std::endl;
-			std::cerr << "building dependencygraph ... " << std::endl;
-		}
-		buildDepGraph();
-		if(options().verbose)
-		{
-			std::cerr << "done" << std::endl;
-			std::cerr << "checking ... " << std::endl;
-		}
-		check();
-		reset();
-		if(options().verbose)
-		{
-			std::cerr << "done" << std::endl;
-			std::cerr << "grounding ... " << std::endl;
-		}
-		substitution_.resize(varMap_.size() + 2);
-		binder_.resize(varMap_.size() + 2, -1);
-		ground();
-		if(options().verbose)
-			std::cerr << "done" << std::endl;
-		output_->finalize(true);
-	}
-}
-
 int Grounder::getIncStep() const
 {
 	return incStep_;
@@ -207,48 +157,55 @@ bool Grounder::isIncGrounding() const
 	return incremental_;
 }
 
-void Grounder::iground()
+void Grounder::prepare(bool incremental)
 {
-	incremental_ = true;
-	if(incParts_.size() == 0)
+	incremental_ = incremental;
+
+	if(incremental_ && incParts_.size() == 0)
 	{
 		incParts_.push_back(make_pair(std::make_pair(BASE, 0), rules_.size()));
 		std::cerr << "Warning: There are no #base, #lambda or #delta sections." << std::endl;
 	}
 
-	if(incStep_ == 1)
+	preprocess();
+	addDomains();
+	buildDepGraph();
+	check();
+
+	substitution_.resize(varMap_.size() + 2);
+	binder_.resize(varMap_.size() + 2, -1);
+}
+
+void Grounder::ground()
+{
+	if(incremental_)
 	{
-		if(options().verbose)
-			std::cerr << "preprocessing ... " << std::endl;
-		preprocess();
-		if(options().verbose)
-		{
-			std::cerr << "done" << std::endl;
-			std::cerr << "adding domain predicates ... " << std::endl;
-		}
-		addDomains();
-		if(options().verbose)
-		{
-			std::cerr << "done" << std::endl;
-			std::cerr << "building dependencygraph ... " << std::endl;
-		}
-		buildDepGraph();
-		if(options().verbose)
-		{
-			std::cerr << "done" << std::endl;
-			std::cerr << "checking ... " << std::endl;
-		}
-		check();
-		if(options().verbose)
-			std::cerr << "done" << std::endl;
+		reset();
+		ground_();
+		incStep_++;
 	}
-	if(options().verbose)
-		std::cerr << "grounding step: " << incStep_ << " ... " << std::endl;
-	reset();
-	ground();
-	if(options().verbose)
-		std::cerr << "done" << std::endl;
-	incStep_++;
+	else
+	{
+		if(incParts_.size() > 0 && opts_.ifixed < 0)
+			throw GrinGoException("Error: A fixed number of incremtal steps is needed to ground the program.");
+		if(incParts_.size() > 0)
+		{
+			do
+			{
+				reset();
+				ground_();
+				incStep_++;
+			}
+			while(incStep_ <= opts_.ifixed);
+			output_->finalize(true);
+		}
+		else
+		{
+			reset();
+			ground_();
+			output_->finalize(true);
+		}
+	}
 }
 
 void Grounder::setIncPart(IncPart part, int var)
@@ -268,7 +225,7 @@ void Grounder::addProgram(Program *scc)
 	sccs_.push_back(scc);
 }
 
-void Grounder::ground()
+void Grounder::ground_()
 {
 	if(incStep_ == 1 || !incremental_)
 		output_->initialize(this, getPred());

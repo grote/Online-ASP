@@ -35,9 +35,8 @@ namespace NS_GRINGO
 	public:
 		struct Options
 		{
-			Options() : binderSplit(true), verbose(false), ifixed(-1) {}
+			Options() : binderSplit(true), ifixed(-1) {}
 			bool binderSplit;
-			bool verbose;
 			int ifixed;
 		};
 	public:
@@ -45,8 +44,8 @@ namespace NS_GRINGO
 		void setOutput(NS_OUTPUT::Output *output);
 		void addStatement(Statement *rule);
 		void addDomains(int id, std::vector<IntVector*>* list);
-		void start();
-		void iground();
+		void prepare(bool incremental);
+		void ground();
 		void addProgram(Program *scc);
 		void addTrueNegation(int id, int arity);
 		int getVar(int var);
@@ -78,7 +77,7 @@ namespace NS_GRINGO
 		void addDomains();
 		void reset();
 		void check();
-		void ground();
+		void ground_();
 		void addDomains(int id, std::vector<IntVector*>::iterator pos, std::vector<IntVector*>::iterator end, IntVector &list);
 	private:
 		Options opts_;
