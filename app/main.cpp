@@ -17,18 +17,29 @@
 // along with Clasp; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
-#include <clasp/include/lparse_reader.h>
-#include <clasp/include/satelite.h>
-#include <clasp/include/unfounded_check.h>
 #include "options.h"
-#include "enumerator.h"
 #include "timer.h"
+
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <fstream>
 #include <numeric>
 #include <signal.h>
+#include <sstream>
+
+#include <lparseparser.h>
+#include <lparseconverter.h>
+#include <grounder.h>
+#include <smodelsoutput.h>
+#include <lparseoutput.h>
+#include <pilsoutput.h>
+#include <gringoexception.h>
+
+#include "enumerator.h"
+#include <clasp/include/lparse_reader.h>
+#include <clasp/include/satelite.h>
+#include <clasp/include/unfounded_check.h>
 
 #if defined(_MSC_VER) &&_MSC_VER >= 1200
 //#define CHECK_HEAP 1;
@@ -37,13 +48,17 @@
 
 using namespace std;
 using namespace Clasp;
+using namespace NS_GRINGO;
+using namespace NS_OUTPUT;
+
 struct ClaspApp
 {
-	Options options;
-	Solver solver;
-	CTimer t_pre;
-	CTimer t_solve;
-	CTimer t_all;
+	Options   options;
+	Solver    solver;
+	CTimer    t_pre;
+	CTimer    t_solve;
+	CTimer    t_all;
+
 	enum Mode { ASP_MODE, SAT_MODE } mode;
 	int run(int argc, char **argv);
 private: 
@@ -52,6 +67,8 @@ private:
 	void printSatStats() const;
 	void printLpStats() const;
 	void printAspStats(bool more) const;
+	bool runClasp();
+	void ground(Output &output);
 	std::string shortName(const std::string &str)
 	{
 		if(str.size() < 40)
@@ -359,10 +376,43 @@ int ClaspApp::run(int argc, char **argv)
 	{
 		Clasp::srand(options.seed);
 	}
+
+	if(!options.grounder)
+		return runClasp();
+
+	switch(options.outf)
+	{
+		case Options::SMODELS_OUT:
+		{
+			SmodelsOutput output(&std::cout);
+			ground(output);
+			break;
+		}
+		case Options::GRINGO_OUT:
+		{
+			PilsOutput output(&std::cout, options.aspilsOut);
+			ground(output);
+			break;
+		}
+		case Options::TEXT_OUT:
+		{
+			LparseOutput output(&std::cout);
+			ground(output);
+			break;
+		}
+		case Options::CLASP_OUT:
+		case Options::ICLASP_OUT:
+			return runClasp();
+	}
+	// TODO: Statistics!!!!
+	return EXIT_SUCCESS;
+}
+
+bool ClaspApp::runClasp()
+{
 	mode = options.dimacs ? SAT_MODE : ASP_MODE;
 	if(options.satPreParams[0] != 0)
 	{
-		
 		// enable and configure the sat preprocessor
 		SatElite::SatElite * pre = new SatElite::SatElite(solver);
 		pre->options.maxIters = options.satPreParams[0];
@@ -392,6 +442,51 @@ int ClaspApp::run(int argc, char **argv)
 		printSatStats();
 	}
 	return solver.stats.models != 0 ? S_SATISFIABLE : S_UNSATISFIABLE;
+}
+
+void ClaspApp::ground(Output &output)
+{
+	// bäh want a ptr_vector_owner or sth like that
+	struct Streams
+	{
+		vector<istream *> streams;
+		~Streams()
+		{
+			for(vector<istream *>::iterator i = streams.begin(); i != streams.end(); i++)
+				delete *i;
+		}
+	} s;
+
+	std::stringstream *ss = new std::stringstream();
+	s.streams.push_back(ss);
+	for(vector<string>::iterator i = options.consts.begin(); i != options.consts.end(); i++)
+		*ss << "#const " << *i << ".\n";
+
+	if(options.files.size() > 0)
+	{
+		for(vector<string>::iterator i = options.files.begin(); i != options.files.end(); i++)
+		{
+			s.streams.push_back(new std::fstream(i->c_str()));
+			if(s.streams.back()->fail())
+				throw GrinGoException(std::string("Error: could not open file: ") + *i);
+		}
+	}
+	else
+		s.streams.push_back(new std::istream(std::cin.rdbuf()));
+	if(options.convert)
+	{
+		LparseConverter parser(s.streams);
+		if(!parser.parse(&output))
+			throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
+	}
+	else
+	{
+		Grounder grounder(options.grounderOptions);
+		LparseParser parser(&grounder, s.streams);
+		if(!parser.parse(&output))
+			throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
+		grounder.start();
+	}
 }
 
 bool ClaspApp::solve()
@@ -564,13 +659,17 @@ int main(int argc, char **argv)
 	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
 	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-	
-#endif	/*  */
+#endif
 	try
 	{
 		signal(SIGINT, sigHandler);	// Ctrl + C
 		signal(SIGTERM, sigHandler);	// kill(but not kill -9)
 		return clasp_g.run(argc, argv);
+	}
+	catch(const GrinGoException &e)
+	{
+		cerr << "\ngringo " << e.what() << endl;
+		return S_ERROR;
 	}
 	catch(const ReadError &e)
 	{

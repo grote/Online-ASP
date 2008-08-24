@@ -26,7 +26,9 @@
 #include <algorithm>
 #include <cctype>
 #include <iostream>
+#include <gringoexception.h>
 
+using namespace NS_GRINGO;
 using namespace ProgramOptions;
 using namespace std;
 
@@ -168,6 +170,24 @@ void optionCallback(OptionParser *p, const std::string &s)
 Options::Options() { }
 
 void Options::setDefaults() {
+	grounderOptions = Grounder::Options();
+	grounder        = true;
+	imin            = 1;
+	imax            = std::numeric_limits<int>::max();
+	iunsat          = false;
+	convert         = false;
+	keepLearnts     = true;
+	keepHeuristic   = false;
+	ibase           = false;
+	consts.clear();
+
+	smodelsOut = false;
+	aspilsOut  = -1;
+	claspOut   = false;
+	iclaspOut  = false;
+	textOut    = false;
+	outf       = ICLASP_OUT;
+
 	satPreParams.assign(3, 0);
 	files.clear();
 	heuristic        = "berkmin";
@@ -203,10 +223,10 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 	allOpts.addOptions(common);
 	OptionGroup gringo("\n\nGrinGo-Options:\n");
 	gringo.addOptions()
-		("verbose,V"   , bool_switch(&verbose), "Print extra information")
+		("verbose,V"   , bool_switch(&grounderOptions.verbose), "Print extra information")
 		("imin"        , value<int>(&imin)    , "Minimum number of incremental steps", "<num>")
 		("imax"        , value<int>(&imax)    , "Maximum number of incremental steps", "<num>")
-		("ifixed"      , value<int>(&ifixed)  , "Fixed number of incremental steps", "<num>")
+		("ifixed"      , value<int>(&grounderOptions.ifixed)  , "Fixed number of incremental steps", "<num>")
 		("ibase"       , bool_switch(&ibase)  , "(not implemented yet)")
 		("iunsat"      , value<bool>(&iunsat)->defaultValue(false), "Stop condition during incremental solving\n"
 			"\tDefault: no\n"
@@ -227,7 +247,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("clasp,C"         , bool_switch(&claspOut), "Use internal clasp interface")
 		("incremental,i"   , bool_switch(&iclaspOut), "Use incremental clasp interface")
 		("aspils,a"        , value<int>(&aspilsOut)->parser(mapASPils), "Print experimental ASPils output in normalform 1-7", "1-7")
-		("bindersplitting" , value<bool>(&bindersplitting), "Enable or disable bindersplitting\n"
+		("bindersplitting" , value<bool>(&grounderOptions.binderSplit), "Enable or disable bindersplitting\n"
 			"\tDefault: yes\n"
 			"\t  yes : Stop if no solution found\n"
 			"\t  no  : Stop if solution found")
@@ -385,11 +405,39 @@ bool Options::parse(int argc, char** argv, std::ostream& os, Solver& s) {
 	return true;
 }
 
+namespace
+{
+	int f(bool b)
+	{
+		return b ? 1 : 0;
+	}
+}
+
 void Options::checkCommonOptions(const OptionValues& vm) {
+	if(f(smodelsOut) + f(aspilsOut > 0) + f(claspOut) + f(iclaspOut) + f(textOut) > 1)
+		throw(GrinGoException("multiple outputs defined"));
+
+	if(smodelsOut)
+		outf = SMODELS_OUT;
+	if(aspilsOut > 0)
+		outf = GRINGO_OUT;
+	if(claspOut)
+		outf = CLASP_OUT;
+	if(iclaspOut)
+		outf = ICLASP_OUT;
+	if(textOut)
+		outf = TEXT_OUT;
+
+	if(grounderOptions.ifixed >= 0 && outf == ICLASP_OUT)
+	{
+		grounderOptions.ifixed = -1;
+		warning_ += "Warning: Option ifixed will be ignored!\n";
+	}
+
 	if (seed < 0 && seed != -1) {
 		warning_ += "Warning: Invalid seed will be ignored!\n";
 		seed = -1;
-	}	
+	}
 	if (numModels < 0) {
 		warning_ += "Warning: Invalid model-number. Forcing 1!\n";
 		numModels = 1;

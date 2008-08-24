@@ -31,13 +31,14 @@
 #include "program_opts/program_options.h"
 #include <clasp/include/solver.h>
 #include <clasp/include/solve_algorithms.h>
+#include <grounder.h>
 
 const char* const VERSION = "1.1.0";
 
 namespace Clasp {
 
 class Options {
-private:
+public:
 	enum OutputFormat {SMODELS_OUT, GRINGO_OUT, CLASP_OUT, TEXT_OUT, ICLASP_OUT};
 public:
 	Options();
@@ -57,19 +58,21 @@ public:
 	std::vector<std::string> files;    // Default: "" -> read from stdin
 
 	// gringo stuff
+
+	// ifixed      => Default: -1
+	// verbose     => Default: false
+	// binderSplit => Default: true
+	NS_GRINGO::Grounder::Options grounderOptions;
+
 	bool             grounder;         // Default: true
-	bool             verbose;          // Default: false
 	int              imin;             // Default: 1
 	int              imax;             // Default: std::numeric_limits<int>::max()
-	int              ifixed;           // Default: -1
 	bool             iunsat;           // Default: false
 	bool             convert;          // Default: false
 	bool             keepLearnts;      // Default: true
 	bool             keepHeuristic;    // Default: false
-	bool             bindersplitting;  // Default: true
 	bool             ibase;            // Default: false
 	std::vector<std::string> consts;
-
 
 	bool             smodelsOut;
 	int              aspilsOut;
