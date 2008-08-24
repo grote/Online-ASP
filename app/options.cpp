@@ -18,21 +18,27 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 #include "options.h"
-#include "program_opts/value.h"  
-#include <clasp/include/unfounded_check.h>
-#include <clasp/include/heuristics.h>
-#include <clasp/include/lparse_reader.h>
+#include "program_opts/value.h"
+
 #include <ostream>
 #include <algorithm>
 #include <cctype>
 #include <iostream>
+
+#ifdef WITH_CLASP
+#	include <clasp/include/unfounded_check.h>
+#	include <clasp/include/heuristics.h>
+#	include <clasp/include/lparse_reader.h>
+#endif
+
 #include <gringoexception.h>
 
 using namespace NS_GRINGO;
 using namespace ProgramOptions;
 using namespace std;
-
-namespace Clasp {
+#ifdef WITH_CLASP
+using namespace Clasp;
+#endif
 
 namespace {
 
@@ -43,6 +49,7 @@ std::string toLower(const std::string& s) {
 	}
 	return ret;
 }
+#ifdef WITH_CLASP
 bool mapTransExt(const std::string& s, int& i, int*) {
 	std::string temp = toLower(s);
 	bool b = temp == "all";
@@ -131,6 +138,7 @@ bool mapSatElite(const std::string& s, std::vector<int>& v, std::vector<int>*) {
 	}
 	return v.size() == 3;
 }
+#endif
 
 bool mapKeepForget(const std::string& s, bool &out, bool*) {
 	std::string temp = toLower(s);
@@ -170,26 +178,40 @@ void optionCallback(OptionParser *p, const std::string &s)
 Options::Options() { }
 
 void Options::setDefaults() {
+	files.clear();
+	stats   = false;
+	help    = false;	
+	version = false;
+
 	grounderOptions = Grounder::Options();
-	grounder        = true;
-	imin            = 1;
-	imax            = std::numeric_limits<int>::max();
-	iunsat          = false;
 	convert         = false;
-	keepLearnts     = true;
-	keepHeuristic   = false;
-	ibase           = false;
 	consts.clear();
 
 	smodelsOut = false;
 	aspilsOut  = -1;
 	claspOut   = false;
-	iclaspOut  = false;
 	textOut    = false;
+#ifdef WITH_ICLASP
 	outf       = ICLASP_OUT;
+#elif defined WITH_CLASP
+	outf       = CLASP_OUT;
+#else
+	outf       = SMODELS_OUT;
+#endif
 
+#ifdef WITH_ICLASP
+	keepLearnts     = true;
+	keepHeuristic   = false;
+	iclaspOut       = false;
+	ibase           = false;
+	imin            = 1;
+	imax            = std::numeric_limits<int>::max();
+	iunsat          = false;
+#endif
+
+#ifdef WITH_CLASP
+	grounder         = true;
 	satPreParams.assign(3, 0);
-	files.clear();
 	heuristic        = "berkmin";
 	cons             = "";
 	numModels        = 1;
@@ -198,15 +220,13 @@ void Options::setDefaults() {
 	lookahead        = -1;
 	eqIters          = 5;
 	transExt         = LparseReader::transform_no;
-	help             = false;	
-	version          = false;
 	quiet            = false;
 	initialLookahead = false;
 	suppModels       = false;
-	stats            = false;
 	dimacs           = false;
 	optimize         = 0;
 	ccmExp           = false;
+#endif
 }
 
 void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::OptionGroup& hidden) {
@@ -215,24 +235,41 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("help,h"   , bool_switch(&help),   "Print help and exit")
 		("version,v", bool_switch(&version),"Print version and exit")
 		("stats"    , bool_switch(&stats),  "Print extended statistics")
+#ifdef WITH_CLASP
 		("mode"     , value<bool>(&grounder)->parser(mapMode), "Set the working mode\n"
 			"\tDefault: grounder\n"
 			"\t  grounder : Standard grounding mode\n"
 			"\t  solver   : Pass input directly to clasp")
+#endif
 	;
 	allOpts.addOptions(common);
 	OptionGroup gringo("\n\nGrinGo-Options:\n");
 	gringo.addOptions()
 		("verbose,V"   , bool_switch(&grounderOptions.verbose), "Print extra information")
+		("ifixed"      , value<int>(&grounderOptions.ifixed)  , "Fixed number of incremental steps", "<num>")
+		("ground,g", bool_switch(&convert), "Parse plain text")
+		("const,c"         , value<vector<string> >(&consts)->setComposing(), "Set constant c to value v", "c=v")
+		("lparse,l"        , bool_switch(&smodelsOut), "Print lparse output format")
+		("text,t"          , bool_switch(&textOut), "Print plain text format")
+		("clasp,C"         , bool_switch(&claspOut), "Use internal clasp interface")
+		("aspils,a"        , value<int>(&aspilsOut)->parser(mapASPils), "Print experimental ASPils output in normalform 1-7", "1-7")
+		("bindersplitting" , value<bool>(&grounderOptions.binderSplit), "Enable or disable bindersplitting\n"
+			"\tDefault: yes\n"
+			"\t  yes : Stop if no solution found\n"
+			"\t  no  : Stop if solution found")
+	;
+	allOpts.addOptions(gringo);
+#ifdef WITH_ICLASP
+	OptionGroup incremental("\n\nOptions for incremental solving:\n");
+	incremental.addOptions()
 		("imin"        , value<int>(&imin)    , "Minimum number of incremental steps", "<num>")
 		("imax"        , value<int>(&imax)    , "Maximum number of incremental steps", "<num>")
-		("ifixed"      , value<int>(&grounderOptions.ifixed)  , "Fixed number of incremental steps", "<num>")
+		("incremental,i"   , bool_switch(&iclaspOut), "Use incremental clasp interface")
 		("ibase"       , bool_switch(&ibase)  , "(not implemented yet)")
 		("iunsat"      , value<bool>(&iunsat)->defaultValue(false), "Stop condition during incremental solving\n"
 			"\tDefault: no\n"
 			"\t  yes : Stop if no solution found\n"
 			"\t  no  : Stop if solution found")
-		("ground,g", bool_switch(&convert), "Parse plain text")
 		("ilearnt" , value<bool>(&keepHeuristic)->parser(mapKeepForget), "How to handle learnt nogoods during incremental solving\n"
 			"\tDefault: forget\n"
 			"\t  keep   : Keep learnt nogoods\n"
@@ -241,18 +278,10 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"\tDefault: keep\n"
 			"\t  keep   : Keep heuristic information\n"
 			"\t  forget : Forget heuristic information")
-		("const,c"         , value<vector<string> >(&consts)->setComposing(), "Set constant c to value v", "c=v")
-		("lparse,l"        , bool_switch(&smodelsOut), "Print lparse output format")
-		("text,t"          , bool_switch(&textOut), "Print plain text format")
-		("clasp,C"         , bool_switch(&claspOut), "Use internal clasp interface")
-		("incremental,i"   , bool_switch(&iclaspOut), "Use incremental clasp interface")
-		("aspils,a"        , value<int>(&aspilsOut)->parser(mapASPils), "Print experimental ASPils output in normalform 1-7", "1-7")
-		("bindersplitting" , value<bool>(&grounderOptions.binderSplit), "Enable or disable bindersplitting\n"
-			"\tDefault: yes\n"
-			"\t  yes : Stop if no solution found\n"
-			"\t  no  : Stop if solution found")
 	;
-	allOpts.addOptions(gringo);
+	allOpts.addOptions(incremental);
+#endif
+#ifdef WITH_CLASP
 	OptionGroup clasp("\n\nClasp-Options - Not related to the search:\n");
 	clasp.addOptions()
 		("quiet,q"  , bool_switch(&quiet),  "Do not print answer sets")
@@ -370,15 +399,18 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"\t  no      : do not learn loop formulas\n")
 	;
 	allOpts.addOptions(lookback);
+#endif
 	hidden.addOptions()
+#ifdef WITH_CLASP
 		("hParams", value<vector<int> >()->defaultValue(vector<int>()), "Additional parameters for heuristic\n")
+#endif
 		("files",   value<vector<string> >(&files)->setComposing(), "The files which have to be parsed\n")
 	;
+
 }
 
-bool Options::parse(int argc, char** argv, std::ostream& os, Solver& s) {
+bool Options::parse(int argc, char** argv, std::ostream& os, OptionValues& values) {
 	setDefaults();
-	OptionValues values;
 	error_.clear();
 	try {
 		OptionGroup allOpts, visible, hidden;
@@ -396,12 +428,11 @@ bool Options::parse(int argc, char** argv, std::ostream& os, Solver& s) {
 			return true;
 		}
 		checkCommonOptions(values);
-		return setSolverStrategies(s, values) && setSolveParams(s, values);
-  }
-  catch(const std::exception& e) {
-    error_ = e.what();
+	}
+	catch(const std::exception& e) {
+		error_ = e.what();
 		return false;
-  }
+	}
 	return true;
 }
 
@@ -414,17 +445,27 @@ namespace
 }
 
 void Options::checkCommonOptions(const OptionValues& vm) {
+#ifdef WITH_ICLASP
 	if(f(smodelsOut) + f(aspilsOut > 0) + f(claspOut) + f(iclaspOut) + f(textOut) > 1)
+#elif defined WITH_CLASP
+	if(f(smodelsOut) + f(aspilsOut > 0) + f(claspOut) + f(textOut) > 1)
+#else
+	if(f(smodelsOut) + f(aspilsOut > 0) + f(textOut) > 1)
+#endif
 		throw(GrinGoException("multiple outputs defined"));
 
 	if(smodelsOut)
 		outf = SMODELS_OUT;
 	if(aspilsOut > 0)
 		outf = GRINGO_OUT;
+#ifdef WITH_CLASP
 	if(claspOut)
 		outf = CLASP_OUT;
+#endif
+#ifdef WITH_ICLASP
 	if(iclaspOut)
 		outf = ICLASP_OUT;
+#endif
 	if(textOut)
 		outf = TEXT_OUT;
 
@@ -434,6 +475,7 @@ void Options::checkCommonOptions(const OptionValues& vm) {
 		warning_ += "Warning: Option ifixed will be ignored!\n";
 	}
 
+#ifdef WITH_CLASP
 	if (seed < 0 && seed != -1) {
 		warning_ += "Warning: Invalid seed will be ignored!\n";
 		seed = -1;
@@ -470,7 +512,15 @@ void Options::checkCommonOptions(const OptionValues& vm) {
 			cons = "";
 		}
 	}
+#endif
 }
+
+#ifdef WITH_CLASP
+bool Options::initSolver(Solver& s, OptionValues &values)
+{
+	return setSolverStrategies(s, values) && setSolveParams(s, values);
+}
+
 bool Options::setSolverStrategies(Solver& s, const OptionValues& vm) {
 	s.strategies().randomWatches = value_cast<bool>(vm["rand-watches"]);
 	s.strategies().search = value_cast<bool>(vm["lookback"]) ? Clasp::SolverStrategies::use_learning : Clasp::SolverStrategies::no_learning;
@@ -532,30 +582,8 @@ bool Options::setSolveParams(Solver& s, const OptionValues& vm) {
 	return true;
 }
 
-
-void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
-	os << "clasp " << VERSION
-		<< "\nusage: clasp [number] [options]" << endl;
-	os << opts << endl;
-	os << "Default commandline:\n"
-		<< "  clasp 1 --trans-ext=no --eq=5 \n"
-		<< "          --lookahead=no --lookback=yes --heuristic=Berkmin\n"
-		<< "          --rand-prop=0.0 --randomize=no --rand-watches=yes\n"
-		<< "          --restarts=100,1.5 --deletion=3,1.1,3.0\n"
-		<< "          --minimize=all --contraction=250 --loops=common"
-		<< endl;
-}
-void Options::printVersion(std::ostream& os) const {
-	os << "clasp " << VERSION << "\n";
-	os << "Copyright (C) Benjamin Kaufmann" << "\n";
-	os << "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>\n";
-	os << "clasp is free software: you are free to change and redistribute it.\n";
-	os << "There is NO WARRANTY, to the extent permitted by law." << endl; 
-}
-
-
 DecisionHeuristic* Options::createHeuristic(const std::vector<int>& heuParams) const {
-	DecisionHeuristic* heu = 0;	
+	DecisionHeuristic* heu = 0;
 	if (heuristic == "berkmin") {
 		bool loops = heuParams.empty() || heuParams[0] == 1;
 		uint32 maxB= heuParams.size() < 2 ? 0 : heuParams[1];
@@ -578,4 +606,51 @@ DecisionHeuristic* Options::createHeuristic(const std::vector<int>& heuParams) c
 	}
 	return heu;
 }
+#endif
+
+void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
+	string indent(strlen(EXECUTABLE) + 5, ' ');
+#ifdef WITH_CLASP
+	os << EXECUTABLE << " version " << GRINGO_VERSION << " (clasp " << CLASP_VERSION << ")\n"
+		<< "usage: " << EXECUTABLE << " [number] [options] [files]" << endl;
+#else
+	os << EXECUTABLE << " version " << GRINGO_VERSION << "\n"
+		<< "usage: " << EXECUTABLE << " [options] [files]" << endl;
+#endif
+	os << opts << endl;
+	os << "Default commandline:\n"
+		<< "  " << EXECUTABLE
+#ifdef WITH_ICLASP
+		<< " 1 --incremental"
+#elif defined WITH_CLASP
+		<< " 1 --clasp"
+#else
+		<< " --lparse"
+#endif
+#ifdef WITH_CLASP
+		<< "\n"
+		<< indent << "--trans-ext=no --eq=5 \n"
+		<< indent << "--lookahead=no --lookback=yes --heuristic=Berkmin\n"
+		<< indent << "--rand-prop=0.0 --randomize=no --rand-watches=yes\n"
+		<< indent << "--restarts=100,1.5 --deletion=3,1.1,3.0\n"
+		<< indent << "--minimize=all --contraction=250 --loops=common"
+#endif
+		<< endl;
 }
+
+void Options::printVersion(std::ostream& os) const {
+	os << "GrinGo " << GRINGO_VERSION << "\n";
+	os << "Copyright (C) Roland Kaminski" << "\n";
+	os << "License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n";
+	os << "GrinGo is free software: you are free to change and redistribute it.\n";
+	os << "There is NO WARRANTY, to the extent permitted by law." << endl; 
+#ifdef WITH_CLASP
+	os << endl;
+	os << "clasp " << CLASP_VERSION << "\n";
+	os << "Copyright (C) Benjamin Kaufmann" << "\n";
+	os << "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>\n";
+	os << "clasp is free software: you are free to change and redistribute it.\n";
+	os << "There is NO WARRANTY, to the extent permitted by law." << endl; 
+#endif
+}
+

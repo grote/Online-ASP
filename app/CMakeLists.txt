@@ -2,7 +2,7 @@ if(WITH_CLASP)
 	file(GLOB GRINGO_SRC *.cpp program_opts/*.cpp)
 	include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ../lib ${GrinGo_BINARY_DIR}/lib/gringo/config)
 else(WITH_CLASP)
-	file(GLOB GRINGO_SRC main.cpp)
+	file(GLOB GRINGO_SRC main.cpp options.cpp timer.cpp program_opts/*.cpp)
 	include_directories (${GrinGo_SOURCE_DIR}/lib/gringo/include ${GrinGo_BINARY_DIR}/lib/gringo/config)
 endif(WITH_CLASP)
 

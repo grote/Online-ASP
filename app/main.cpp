@@ -19,6 +19,7 @@
 //
 #include "options.h"
 #include "timer.h"
+#include "program_opts/program_options.h"
 
 #include <iostream>
 #include <iomanip>
@@ -35,12 +36,14 @@
 #include <lparseoutput.h>
 #include <pilsoutput.h>
 #include <gringoexception.h>
-#include <claspoutput.h>
+#ifdef WITH_CLASP
+#	include <claspoutput.h>
 
-#include "enumerator.h"
-#include <clasp/include/lparse_reader.h>
-#include <clasp/include/satelite.h>
-#include <clasp/include/unfounded_check.h>
+#	include "enumerator.h"
+#	include <clasp/include/lparse_reader.h>
+#	include <clasp/include/satelite.h>
+#	include <clasp/include/unfounded_check.h>
+#endif
 
 #if defined(_MSC_VER) &&_MSC_VER >= 1200
 //#define CHECK_HEAP 1;
@@ -48,50 +51,48 @@
 #endif
 
 using namespace std;
+#ifdef WITH_CLASP
 using namespace Clasp;
+#endif
 using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 
-struct ClaspApp
+struct MainApp
 {
 	Options   options;
-	Solver    solver;
 	CTimer    t_pre;
 	CTimer    t_solve;
 	CTimer    t_all;
+#ifdef WITH_CLASP
+	Solver    solver;
 
 	enum Mode { ASP_MODE, SAT_MODE } mode;
+#endif
 	int run(int argc, char **argv);
 private: 
 	enum State { start_read, start_pre, start_solve, end_read, end_pre, end_solve };
 	void setState(State s);
+	void ground(Output &output);
+#ifdef WITH_CLASP
 	void printSatStats() const;
 	void printLpStats() const;
 	void printAspStats(bool more) const;
 	bool runClasp();
-	void ground(Output &output);
-	std::string shortName(const std::string &str)
-	{
-		if(str.size() < 40)
-			return str;
-		std::string r = "...";
-		r.append(str.end() - 38, str.end());
-		return r;
-	}
+
 	static void printSatEliteProgress(uint32 i, SatElite::SatElite::Options::Action a)
 	{
 		static const char pro[] = { '/', '-', '\\', '|' };
 		if(a == SatElite::SatElite::Options::pre_start)
-			cout << '|';
+			cerr << '|';
 		
 		else if(a == SatElite::SatElite::Options::iter_start)
-			cout << '\b' << pro[i % 4];
+			cerr << '\b' << pro[i % 4];
 		
 		else if(a == SatElite::SatElite::Options::pre_done)
-			cout << '\b' << "Done";
+			cerr << '\b' << "Done";
 		
 		else if(a == SatElite::SatElite::Options::pre_stopped)
-			cout << '\b' << "Stop";
+			cerr << '\b' << "Stop";
 	}
 	std::istream &getStream()
 	{
@@ -109,13 +110,16 @@ private:
 		return std::cin;
 	}
 	bool solve();
+#	ifdef WITH_ICLASP
 	bool solveIncremental();
+#	endif
 	bool parseLparse();
 	bool readSat();
 	std::auto_ptr < LparseStats > lpStats_;
 	std::auto_ptr < PreproStats > preStats_;
 	std::auto_ptr < Enumerator > enum_;
 	std::ifstream inFile_;
+#endif
 } clasp_g;
 
 // return values
@@ -124,12 +128,14 @@ const int S_SATISFIABLE = 10;
 const int S_UNSATISFIABLE = 20;
 const int S_ERROR = EXIT_FAILURE;
 const int S_MEMORY = 107;
+
 static void sigHandler(int)
 {
 	// ignore further signals
 	signal(SIGINT, SIG_IGN);  // Ctrl + C
 	signal(SIGTERM, SIG_IGN); // kill(but not kill -9)
-	bool satM = clasp_g.mode == ClaspApp::SAT_MODE;
+#ifdef WITH_CLASP
+	bool satM = clasp_g.mode == MainApp::SAT_MODE;
 	printf("\n%s*** INTERRUPTED! ***\n",(satM ? "c " : ""));
 	clasp_g.t_all.Stop();
 	printf("%sTime      : %s\n",(satM ? "c " : ""), clasp_g.t_all.Print().c_str());
@@ -137,11 +143,15 @@ static void sigHandler(int)
 	printf("%sChoices   : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.choices);
 	printf("%sConflicts : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.conflicts);
 	printf("%sRestarts  : %u\n",(satM ? "c " : ""), (uint32) clasp_g.solver.stats.restarts);
+#else
+	printf("\n*** INTERRUPTED! ***\n");
+#endif
 	exit(S_UNKNOWN);
 } 
 
-void ClaspApp::setState(State s)
+void MainApp::setState(State s)
 {
+#ifdef WITH_CLASP
 	bool q = options.quiet;
 	const int width = 13;
 	switch(s)
@@ -150,222 +160,49 @@ void ClaspApp::setState(State s)
 		t_pre.Reset();
 		t_pre.Start();
 		if(!q)
-			cout <<(mode == ASP_MODE ? "" : "c ") << left << setw(width) << "Reading" << ": ";
+			cerr <<(mode == ASP_MODE ? "" : "c ") << left << setw(width) << "Reading" << ": ";
 		break;
 	case end_read:
 		t_pre.Stop();
 		if(!q)
-			cout << "Done(" << t_pre.Print() << "s)\n";
+			cerr << "Done(" << t_pre.Print() << "s)\n";
 		break;
 	case start_pre:
 		t_pre.Reset();
 		t_pre.Start();
 		if(!q)
-			cout <<(mode == ASP_MODE ? "" : "c ") << left << setw(width) << "Preprocessing" << ": ";
+			cerr <<(mode == ASP_MODE ? "" : "c ") << left << setw(width) << "Preprocessing" << ": ";
 		break;
 	case end_pre:
 		t_pre.Stop();
 		if(!q)
-			cout <<(options.satPreParams[0] == 0 ? "Done(" : "(") << t_pre.Print() << "s)\n";
+			cerr <<(options.satPreParams[0] == 0 ? "Done(" : "(") << t_pre.Print() << "s)\n";
 		break;
 	case start_solve:
 		t_solve.Start();
-		cout <<(mode == ASP_MODE ? "" : "c ") << "Solving...\n";
+		cerr <<(mode == ASP_MODE ? "" : "c ") << "Solving...\n";
 		break;
 	case end_solve:
 		t_solve.Stop();
 		break;
 	default:;
 	}
-}
-void ClaspApp::printSatStats() const
-{
-	const SolverStatistics &st = solver.stats;
-	cout << "c Models       : " << st.models << "\n";
-	cout << "c Time         : " << t_all.Print() << "s(Solve: " << t_solve.Print() << "s)\n";
-	if(!options.stats)
-		return;
-	cout << "c Choices      : " << st.choices << "\n";
-	cout << "c Conflicts    : " << st.conflicts << "\n";
-	cout << "c Restarts     : " << st.restarts << "\n";
-	cout << "c Variables    : " << solver.numVars() << "(Eliminated: " << solver.numEliminatedVars() << ")\n";
-	cout << "c Clauses      : " << st.native[0] << "\n";
-	cout << "c   Binary     : " << st.native[1] << "\n";
-	cout << "c   Ternary    : " << st.native[2] << "\n";
-	cout << "c Lemmas       : " << st.learnt[0] << "\n";
-	cout << "c   Binary     : " << st.learnt[1] << "\n";
-	cout << "c   Ternary    : " << st.learnt[2] << "\n";
-}
-static double percent(uint32 y, uint32 from)
-{
-	if(from == 0)
-		return 0;
-	return(static_cast < double >(y) / from) *100.0;
-} 
-
-static double percent(const uint32 * arr, uint32 idx)
-{
-	return percent(arr[idx], arr[0]);
+#endif
 }
 
-static double compAverage(uint64 x, uint64 y)
+int MainApp::run(int argc, char **argv)
 {
-	if(!x || !y)
-		return 0.0;
-	return static_cast < double >(x) / static_cast < double >(y);
-} 
-
-void ClaspApp::printLpStats() const
-{
-	const PreproStats &ps = *preStats_;
-	const LparseStats &lp = *lpStats_;
-	const Options &o = options;
-	uint32 r = lp.rules[0] == 0 
-		? std::accumulate(lp.rules, lp.rules + OPTIMIZERULE + 1, 0) 
-		: lp.rules[0] + lp.rules[1] + lp.rules[OPTIMIZERULE];
-	uint32 a = lp.atoms[0] + lp.atoms[1];
-	cout << left << setw(12) << "Atoms" << ": " << setw(6) << a;
-	if(lp.atoms[1] != 0)
-	{
-		cout << "(Original: " << lp.atoms[0] << " Auxiliary: " << lp.atoms[1] << ")";
-	}
-	cout << "\n";
-	cout << left << setw(12) << "Rules" << ": " << setw(6) << r << "(";
-	for(int i = 1; i != OPTIMIZERULE; ++i)
-	{
-		if(lp.rules[i] != 0)
-		{
-			if(i != 1)
-				cout << " ";
-			cout << i << ": " << lp.rules[i];
-			if(lp.rules[0] != 0)
-			{
-				cout << "/";
-				if(i == 1)
-					cout << lp.rules[1] + lp.rules[0];
-				
-				else if((i == 3 &&(o.transExt &LparseReader::transform_choice) != 0))
-					cout << 0;
-				else if((i == 2 || i == 5) &&(o.transExt &LparseReader::transform_weight) != 0)
-					cout << 0;
-				else
-					cout << lp.rules[i];
-			}
-		}
-	}
-	if(lp.rules[OPTIMIZERULE] != 0)
-	{
-		cout << " " << OPTIMIZERULE << ": " << lp.rules[OPTIMIZERULE];
-	}
-	cout << ")" << "\n";
-	cout << left << setw(12) << "Bodies" << ": " << ps.bodies << "\n";
-	if(ps.numEqs() != 0)
-	{
-		cout << left << setw(12) << "Equivalences" << ": " << setw(6) << ps.numEqs() 
-			<< "(Atom=Atom: " << ps.numEqs(Var_t::atom_var)  
-			<< " Body=Body: " << ps.numEqs(Var_t::body_var) 
-			<< " Other: " << (ps.numEqs() - ps.numEqs(Var_t::body_var) - ps.numEqs(Var_t::atom_var)) <<")" << "\n";
-	}
-	cout << left << setw(12) << "Tight" << ": ";
-	if(!o.suppModels)
-	{
-		if(ps.sccs == 0)
-		{
-			cout << "Yes";
-		}
-		else
-		{
-			cout << setw(6) << "No" << "(SCCs: " << ps.sccs << " Nodes: " << ps.ufsNodes << ")";
-		}
-	}
-	else
-	{
-		cout << "N/A";
-	}
-	cout << "\n";
-}
-
-void ClaspApp::printAspStats(bool more) const
-{
-	cout.precision(1);
-	cout.setf(ios_base::fixed, ios_base::floatfield);
-	const SolverStatistics &st = solver.stats;
-	cout << "\n";
-	uint64 enumerated = st.models;
-	uint64 models = enum_.get() != 0 ? enum_->numModels(solver) : enumerated;
-	cout << left << setw(12) << "Models" << ": ";
-	if(more)
-	{
-		char buf[64];
-		int wr = sprintf(buf, "%llu", models);
-		buf[wr] = '+';
-		buf[wr + 1] = 0;
-		cout << setw(6) << buf;
-	}
-	else
-	{
-		cout << setw(6) << models;
-	}
-	if(enumerated != models &&options.stats)
-	{
-		cout << "(Enumerated: " << enumerated << ")";
-	}
-	cout << "\n";
-	cout << left << setw(12) 
-		<< "Time" << ": " << setw(6) << t_all.Print()  
-		<<"(" << "Solving: " << t_solve.Print() << ")" << "\n";
-	if(!options.stats)
-		return;
-	cout << left << setw(12) << "Choices" << ": " << st.choices << "\n";
-	cout << left << setw(12) << "Conflicts" << ": " << st.conflicts << "\n";
-	cout << left << setw(12) << "Restarts" << ": " << st.restarts << "\n";
-	cout << "\n";
-	printLpStats();
-	cout << "\n";
-	uint32 other = st.native[0] - st.native[1] - st.native[2];
-	cout << left << setw(12) 
-		<< "Variables" << ": " << setw(6) << solver.numVars() 
-		<< "(Eliminated: " << right << setw(4) << solver.numEliminatedVars() << ")" << "\n";
-	cout << left << setw(12) 
-		<< "Constraints" << ": " << setw(6) << st.native[0]  
-		<< "(Binary: " << right << setw(4) << percent(st.native, 1) << "% "  
-		<< "Ternary: " << right << setw(4) << percent(st.native, 2) << "% "  
-		<< "Other: " << right << setw(4) << percent(other, st.native[0]) << "%)"  <<"\n";
-	other = st.learnt[0] - st.learnt[1] - st.learnt[2];
-	cout << left << setw(12) 
-		<< "Lemmas" << ": " << setw(6) << st.learnt[0]  
-		<< "(Binary: " << right << setw(4) << percent(st.learnt, 1) << "% " 
-		<< "Ternary: " << right << setw(4) << percent(st.learnt, 2) << "% " 
-		<< "Other: " << right << setw(4) << percent(other, st.learnt[0]) << "%)"  <<"\n";
-	cout << left << setw(12) 
-		<< "  Conflicts" << ": " << setw(6) << st.learnt[0] - st.loops  
-		<<"(Average Length: " << compAverage(st.lits[0], st.learnt[0] - st.loops) << ")\n";
-	cout << left << setw(12) 
-		<< "  Loops" << ": " << setw(6) << st.loops  
-		<< "(Average Length: " << compAverage(st.lits[1], st.loops) << ")\n";
-	
-#if MAINTAIN_JUMP_STATS == 1
-	cout << "\n";
-	cout << "Backtracks          : " << st.conflicts - st.jumps << "\n";
-	cout << "Backjumps           : " << st.jumps << "( Bounded: " << st.bJumps << " )\n";
-	cout << "Skippable Levels    : " << st.jumpSum << "\n";
-	cout << "Levels skipped      : " << st.jumpSum - st.boundSum << "(" << 100 *((st.jumpSum - st.boundSum) / std::max(1.0, (double)st.jumpSum)) << "%)" << "\n";
-	cout << "Max Jump Length     : " << st. maxJump << "( Executed: " << st.maxJumpEx << " )\n";
-	cout << "Max Bound Length    : " << st.maxBound << "\n";
-	cout << "Average Jump Length : " << st.jumpSum / std::max(1.0, (double)st.jumps) 
-		<< "( Executed: " <<(st.jumpSum - st.boundSum) / std::max(1.0, (double)st.jumps) << " )\n";
-	cout << "Average Bound Length: " <<(st.boundSum) / std::max(1.0, (double)st.bJumps) << "\n";
-	cout << "Average Model Length: " <<(st.modLits) / std::max(1.0, (double)st.models) << "\n";
-#endif	/*  */
-	cout << endl;
-} 
-
-int ClaspApp::run(int argc, char **argv)
-{
-	if(!options.parse(argc, argv, std::cout, solver))
+	ProgramOptions::OptionValues values;
+	if(!options.parse(argc, argv, std::cerr, values))
 	{
 		throw std::runtime_error(options.getError());
 	}
+#ifdef WITH_CLASP
+	if(!options.initSolver(solver, values))
+	{
+		throw std::runtime_error(options.getError());
+	}
+#endif
 	if(!options.getWarning().empty())
 	{
 		cerr << options.getWarning() << endl;
@@ -374,81 +211,69 @@ int ClaspApp::run(int argc, char **argv)
 	{
 		return EXIT_SUCCESS;
 	}
-	if(options.seed != -1)
-	{
-		Clasp::srand(options.seed);
-	}
 
+#ifdef WITH_CLASP
+	cerr << (mode == ASP_MODE ? "" : "c ") << EXECUTABLE << " version " << GRINGO_VERSION << " (clasp " << CLASP_VERSION << ")" << endl;
+	getStream();
+	if(options.files.size() > 0)
+	{
+		vector<string>::iterator i = options.files.begin();
+		cerr << (mode == ASP_MODE ? "" : "c ") << "Reading from " << *i;
+		for(i++; i != options.files.end(); i++)
+			cerr << ", " << *i;
+		cerr << endl;
+		if(!options.grounder && options.files.size() > 1)
+			cerr << "Warning: only the first file will be used" << endl;
+	}
+	else
+		cerr << (mode == ASP_MODE ? "" : "c ") << "Reading from stdin" << endl;
+#else
+	cerr << EXECUTABLE << " version " << GRINGO_VERSION << endl;
+	if(options.files.size() > 0)
+	{
+		vector<string>::iterator i = options.files.begin();
+		cerr << "Reading from " << *i;
+		for(i++; i != options.files.end(); i++)
+			cerr << ", " << *i;
+		cerr << "\n";
+	}
+	else
+		cerr << "Reading from stdin" << endl;
+#endif
+
+#ifdef WITH_CLASP
 	if(!options.grounder)
 		return runClasp();
+#endif
 
 	switch(options.outf)
 	{
 		case Options::SMODELS_OUT:
 		{
-			SmodelsOutput output(&std::cout);
+			SmodelsOutput output(&std::cerr);
 			ground(output);
 			break;
 		}
 		case Options::GRINGO_OUT:
 		{
-			PilsOutput output(&std::cout, options.aspilsOut);
+			PilsOutput output(&std::cerr, options.aspilsOut);
 			ground(output);
 			break;
 		}
 		case Options::TEXT_OUT:
 		{
-			LparseOutput output(&std::cout);
+			LparseOutput output(&std::cerr);
 			ground(output);
 			break;
 		}
+#ifdef WITH_CLASP
 		case Options::CLASP_OUT:
 		case Options::ICLASP_OUT:
 			return runClasp();
+#endif
 	}
 	// TODO: Statistics!!!!
 	return EXIT_SUCCESS;
-}
-
-bool ClaspApp::runClasp()
-{
-	mode = options.dimacs ? SAT_MODE : ASP_MODE;
-	if(options.satPreParams[0] != 0)
-	{
-		// enable and configure the sat preprocessor
-		SatElite::SatElite * pre = new SatElite::SatElite(solver);
-		pre->options.maxIters = options.satPreParams[0];
-		pre->options.maxOcc = options.satPreParams[1];
-		pre->options.maxTime = options.satPreParams[2];
-		pre->options.elimPure = options.numModels == 1;
-		pre->options.verbose = options.quiet ? 0 : printSatEliteProgress;
-		solver.strategies().satPrePro.reset(pre);
-	}
-	cout <<(mode == ASP_MODE ? "" : "c ") << "clasp version " << VERSION << " \n";
-	getStream();
-	cout <<(mode == ASP_MODE ? "" : "c ") << "Reading from " << (options.files.size() == 0 ? "stdin" : shortName(options.files[0]).c_str()) << "\n";
-	t_all.Start();
-
-	bool more;
-	if(options.outf == Options::ICLASP_OUT && options.grounder)
-		more = solveIncremental();
-	else
-		more = solve();
-	t_all.Stop();
-	if(enum_.get())
-	{
-		enum_.get()->report(solver);
-	}
-	if(mode == ASP_MODE)
-	{
-		printAspStats(more);
-	}
-	else
-	{
-		cout << "s " <<(solver.stats.models != 0 ? "SATISFIABLE" : "UNSATISFIABLE") << "\n";
-		printSatStats();
-	}
-	return solver.stats.models != 0 ? S_SATISFIABLE : S_UNSATISFIABLE;
 }
 
 namespace
@@ -485,7 +310,7 @@ namespace
 	}
 }
 
-void ClaspApp::ground(Output &output)
+void MainApp::ground(Output &output)
 {
 	Streams s;
 	getStreams(options, s);
@@ -505,7 +330,238 @@ void ClaspApp::ground(Output &output)
 	}
 }
 
-bool ClaspApp::solveIncremental()
+#ifdef WITH_CLASP
+void MainApp::printSatStats() const
+{
+	const SolverStatistics &st = solver.stats;
+	cerr << "c Models       : " << st.models << "\n";
+	cerr << "c Time         : " << t_all.Print() << "s(Solve: " << t_solve.Print() << "s)\n";
+	if(!options.stats)
+		return;
+	cerr << "c Choices      : " << st.choices << "\n";
+	cerr << "c Conflicts    : " << st.conflicts << "\n";
+	cerr << "c Restarts     : " << st.restarts << "\n";
+	cerr << "c Variables    : " << solver.numVars() << "(Eliminated: " << solver.numEliminatedVars() << ")\n";
+	cerr << "c Clauses      : " << st.native[0] << "\n";
+	cerr << "c   Binary     : " << st.native[1] << "\n";
+	cerr << "c   Ternary    : " << st.native[2] << "\n";
+	cerr << "c Lemmas       : " << st.learnt[0] << "\n";
+	cerr << "c   Binary     : " << st.learnt[1] << "\n";
+	cerr << "c   Ternary    : " << st.learnt[2] << "\n";
+}
+static double percent(uint32 y, uint32 from)
+{
+	if(from == 0)
+		return 0;
+	return(static_cast < double >(y) / from) *100.0;
+} 
+
+static double percent(const uint32 * arr, uint32 idx)
+{
+	return percent(arr[idx], arr[0]);
+}
+
+static double compAverage(uint64 x, uint64 y)
+{
+	if(!x || !y)
+		return 0.0;
+	return static_cast < double >(x) / static_cast < double >(y);
+} 
+
+void MainApp::printLpStats() const
+{
+	const PreproStats &ps = *preStats_;
+	const LparseStats &lp = *lpStats_;
+	const Options &o = options;
+	uint32 r = lp.rules[0] == 0 
+		? std::accumulate(lp.rules, lp.rules + OPTIMIZERULE + 1, 0) 
+		: lp.rules[0] + lp.rules[1] + lp.rules[OPTIMIZERULE];
+	uint32 a = lp.atoms[0] + lp.atoms[1];
+	cerr << left << setw(12) << "Atoms" << ": " << setw(6) << a;
+	if(lp.atoms[1] != 0)
+	{
+		cerr << "(Original: " << lp.atoms[0] << " Auxiliary: " << lp.atoms[1] << ")";
+	}
+	cerr << "\n";
+	cerr << left << setw(12) << "Rules" << ": " << setw(6) << r << "(";
+	for(int i = 1; i != OPTIMIZERULE; ++i)
+	{
+		if(lp.rules[i] != 0)
+		{
+			if(i != 1)
+				cerr << " ";
+			cerr << i << ": " << lp.rules[i];
+			if(lp.rules[0] != 0)
+			{
+				cerr << "/";
+				if(i == 1)
+					cerr << lp.rules[1] + lp.rules[0];
+				
+				else if((i == 3 &&(o.transExt &LparseReader::transform_choice) != 0))
+					cerr << 0;
+				else if((i == 2 || i == 5) &&(o.transExt &LparseReader::transform_weight) != 0)
+					cerr << 0;
+				else
+					cerr << lp.rules[i];
+			}
+		}
+	}
+	if(lp.rules[OPTIMIZERULE] != 0)
+	{
+		cerr << " " << OPTIMIZERULE << ": " << lp.rules[OPTIMIZERULE];
+	}
+	cerr << ")" << "\n";
+	cerr << left << setw(12) << "Bodies" << ": " << ps.bodies << "\n";
+	if(ps.numEqs() != 0)
+	{
+		cerr << left << setw(12) << "Equivalences" << ": " << setw(6) << ps.numEqs() 
+			<< "(Atom=Atom: " << ps.numEqs(Var_t::atom_var)  
+			<< " Body=Body: " << ps.numEqs(Var_t::body_var) 
+			<< " Other: " << (ps.numEqs() - ps.numEqs(Var_t::body_var) - ps.numEqs(Var_t::atom_var)) <<")" << "\n";
+	}
+	cerr << left << setw(12) << "Tight" << ": ";
+	if(!o.suppModels)
+	{
+		if(ps.sccs == 0)
+		{
+			cerr << "Yes";
+		}
+		else
+		{
+			cerr << setw(6) << "No" << "(SCCs: " << ps.sccs << " Nodes: " << ps.ufsNodes << ")";
+		}
+	}
+	else
+	{
+		cerr << "N/A";
+	}
+	cerr << "\n";
+}
+
+void MainApp::printAspStats(bool more) const
+{
+	cerr.precision(1);
+	cerr.setf(ios_base::fixed, ios_base::floatfield);
+	const SolverStatistics &st = solver.stats;
+	cerr << "\n";
+	uint64 enumerated = st.models;
+	uint64 models = enum_.get() != 0 ? enum_->numModels(solver) : enumerated;
+	cerr << left << setw(12) << "Models" << ": ";
+	if(more)
+	{
+		char buf[64];
+		int wr = sprintf(buf, "%llu", models);
+		buf[wr] = '+';
+		buf[wr + 1] = 0;
+		cerr << setw(6) << buf;
+	}
+	else
+	{
+		cerr << setw(6) << models;
+	}
+	if(enumerated != models &&options.stats)
+	{
+		cerr << "(Enumerated: " << enumerated << ")";
+	}
+	cerr << "\n";
+	cerr << left << setw(12) 
+		<< "Time" << ": " << setw(6) << t_all.Print()  
+		<<"(" << "Solving: " << t_solve.Print() << ")" << "\n";
+	if(!options.stats)
+		return;
+	cerr << left << setw(12) << "Choices" << ": " << st.choices << "\n";
+	cerr << left << setw(12) << "Conflicts" << ": " << st.conflicts << "\n";
+	cerr << left << setw(12) << "Restarts" << ": " << st.restarts << "\n";
+	cerr << "\n";
+	printLpStats();
+	cerr << "\n";
+	uint32 other = st.native[0] - st.native[1] - st.native[2];
+	cerr << left << setw(12) 
+		<< "Variables" << ": " << setw(6) << solver.numVars() 
+		<< "(Eliminated: " << right << setw(4) << solver.numEliminatedVars() << ")" << "\n";
+	cerr << left << setw(12) 
+		<< "Constraints" << ": " << setw(6) << st.native[0]  
+		<< "(Binary: " << right << setw(4) << percent(st.native, 1) << "% "  
+		<< "Ternary: " << right << setw(4) << percent(st.native, 2) << "% "  
+		<< "Other: " << right << setw(4) << percent(other, st.native[0]) << "%)"  <<"\n";
+	other = st.learnt[0] - st.learnt[1] - st.learnt[2];
+	cerr << left << setw(12) 
+		<< "Lemmas" << ": " << setw(6) << st.learnt[0]  
+		<< "(Binary: " << right << setw(4) << percent(st.learnt, 1) << "% " 
+		<< "Ternary: " << right << setw(4) << percent(st.learnt, 2) << "% " 
+		<< "Other: " << right << setw(4) << percent(other, st.learnt[0]) << "%)"  <<"\n";
+	cerr << left << setw(12) 
+		<< "  Conflicts" << ": " << setw(6) << st.learnt[0] - st.loops  
+		<<"(Average Length: " << compAverage(st.lits[0], st.learnt[0] - st.loops) << ")\n";
+	cerr << left << setw(12) 
+		<< "  Loops" << ": " << setw(6) << st.loops  
+		<< "(Average Length: " << compAverage(st.lits[1], st.loops) << ")\n";
+	
+#if MAINTAIN_JUMP_STATS == 1
+	cerr << "\n";
+	cerr << "Backtracks          : " << st.conflicts - st.jumps << "\n";
+	cerr << "Backjumps           : " << st.jumps << "( Bounded: " << st.bJumps << " )\n";
+	cerr << "Skippable Levels    : " << st.jumpSum << "\n";
+	cerr << "Levels skipped      : " << st.jumpSum - st.boundSum << "(" << 100 *((st.jumpSum - st.boundSum) / std::max(1.0, (double)st.jumpSum)) << "%)" << "\n";
+	cerr << "Max Jump Length     : " << st. maxJump << "( Executed: " << st.maxJumpEx << " )\n";
+	cerr << "Max Bound Length    : " << st.maxBound << "\n";
+	cerr << "Average Jump Length : " << st.jumpSum / std::max(1.0, (double)st.jumps) 
+		<< "( Executed: " <<(st.jumpSum - st.boundSum) / std::max(1.0, (double)st.jumps) << " )\n";
+	cerr << "Average Bound Length: " <<(st.boundSum) / std::max(1.0, (double)st.bJumps) << "\n";
+	cerr << "Average Model Length: " <<(st.modLits) / std::max(1.0, (double)st.models) << "\n";
+#endif
+	cerr << endl;
+} 
+
+bool MainApp::runClasp()
+{
+	if(options.seed != -1)
+	{
+		Clasp::srand(options.seed);
+	}
+
+	mode = options.dimacs ? SAT_MODE : ASP_MODE;
+	if(options.satPreParams[0] != 0)
+	{
+		// enable and configure the sat preprocessor
+		SatElite::SatElite * pre = new SatElite::SatElite(solver);
+		pre->options.maxIters = options.satPreParams[0];
+		pre->options.maxOcc = options.satPreParams[1];
+		pre->options.maxTime = options.satPreParams[2];
+		pre->options.elimPure = options.numModels == 1;
+		pre->options.verbose = options.quiet ? 0 : printSatEliteProgress;
+		solver.strategies().satPrePro.reset(pre);
+	}
+	t_all.Start();
+
+	bool more;
+#	ifdef WITH_ICLASP
+	if(options.outf == Options::ICLASP_OUT && options.grounder)
+		more = solveIncremental();
+	else
+		more = solve();
+#	else
+	more = solve();
+#	endif
+	t_all.Stop();
+	if(enum_.get())
+	{
+		enum_.get()->report(solver);
+	}
+	if(mode == ASP_MODE)
+	{
+		printAspStats(more);
+	}
+	else
+	{
+		cerr << "s " <<(solver.stats.models != 0 ? "SATISFIABLE" : "UNSATISFIABLE") << "\n";
+		printSatStats();
+	}
+	return solver.stats.models != 0 ? S_SATISFIABLE : S_UNSATISFIABLE;
+}
+
+#	ifdef WITH_ICLASP
+bool MainApp::solveIncremental()
 {
 	Streams s;
 	getStreams(options, s);
@@ -559,12 +615,13 @@ bool ClaspApp::solveIncremental()
 	}
 	while(options.imax-- > 1 &&(options.imin-- > 1 || ret == options.iunsat));
 	setState(end_solve);
-	std::cout << "Total Steps : " << steps << std::endl;
+	cerr << "Total Steps : " << steps << std::endl;
 	*lpStats_ = output.getStats();
 	return more;
 }
+#	endif
 
-bool ClaspApp::solve()
+bool MainApp::solve()
 {
 	bool res = mode == ASP_MODE ? parseLparse() : readSat();
 	if(res)
@@ -584,7 +641,7 @@ bool ClaspApp::solve()
 	return res;
 }
 
-bool ClaspApp::readSat()
+bool MainApp::readSat()
 {
 	std::istream &in = getStream();
 	setState(start_read);
@@ -599,7 +656,7 @@ bool ClaspApp::readSat()
 	return res;
 }
 
-bool ClaspApp::parseLparse()
+bool MainApp::parseLparse()
 {
 	std::istream &in = getStream();
 	lpStats_.reset(new LparseStats());
@@ -672,6 +729,9 @@ bool ClaspApp::parseLparse()
 	setState(end_pre);
 	return ret;
 }
+
+#endif
+
 int main(int argc, char **argv) 
 {
 #if defined(_MSC_VER) &&defined(CHECK_HEAP) &&_MSC_VER >= 1200 
@@ -689,15 +749,17 @@ int main(int argc, char **argv)
 		signal(SIGTERM, sigHandler);	// kill(but not kill -9)
 		return clasp_g.run(argc, argv);
 	}
-	catch(const GrinGoException &e)
-	{
-		cerr << "\ngringo " << e.what() << endl;
-		return S_ERROR;
-	}
+#ifdef WITH_CLASP
 	catch(const ReadError &e)
 	{
 		cerr << "Failed!\nError(" << e.line_ << "): " << e.
 			what() << endl;
+		return S_ERROR;
+	}
+#endif
+	catch(const GrinGoException &e)
+	{
+		cerr << "\ngringo " << e.what() << endl;
 		return S_ERROR;
 	}
 	catch(const std::bad_alloc &)

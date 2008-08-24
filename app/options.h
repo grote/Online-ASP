@@ -25,17 +25,30 @@
 #pragma once
 #endif
 
+#include "program_opts/program_options.h"
+
 #include <string>
 #include <utility>
 #include <iosfwd>
-#include "program_opts/program_options.h"
-#include <clasp/include/solver.h>
-#include <clasp/include/solve_algorithms.h>
+
 #include <grounder.h>
 
-const char* const VERSION = "1.1.0";
+#ifdef WITH_CLASP
+#	include <clasp/include/solver.h>
+#	include <clasp/include/solve_algorithms.h>
 
-namespace Clasp {
+#endif
+
+#ifdef WITH_ICLASP
+const char* const EXECUTABLE = "iclingo";
+const char* const CLASP_VERSION = "1.1.0";
+#elif defined WITH_CLASP
+const char* const EXECUTABLE = "clingo";
+const char* const CLASP_VERSION = "1.1.0";
+#else
+const char* const EXECUTABLE = "gringo";
+#endif
+const char* const GRINGO_VERSION = "2.0";
 
 class Options {
 public:
@@ -43,7 +56,10 @@ public:
 public:
 	Options();
 	void setDefaults();
-	bool parse(int argc, char** argv, std::ostream& os, Solver& s);
+	bool parse(int argc, char** argv, std::ostream& os, ProgramOptions::OptionValues &s);
+#ifdef WITH_CLASP
+	bool initSolver(Clasp::Solver &s, ProgramOptions::OptionValues &values);
+#endif
 	const std::string& getError() const {
 		return error_;
 	}
@@ -63,26 +79,29 @@ public:
 	// verbose     => Default: false
 	// binderSplit => Default: true
 	NS_GRINGO::Grounder::Options grounderOptions;
-
 	bool             grounder;         // Default: true
-	int              imin;             // Default: 1
-	int              imax;             // Default: std::numeric_limits<int>::max()
-	bool             iunsat;           // Default: false
 	bool             convert;          // Default: false
-	bool             keepLearnts;      // Default: true
-	bool             keepHeuristic;    // Default: false
-	bool             ibase;            // Default: false
 	std::vector<std::string> consts;
 
 	bool             smodelsOut;
 	int              aspilsOut;
 	bool             claspOut;
-	bool             iclaspOut;
 	bool             textOut;
 	OutputFormat     outf;             // Default: depends on build
 
+#ifdef WITH_ICLASP
+	// incremental stuff
+	bool             iclaspOut;
+	int              imin;             // Default: 1
+	int              imax;             // Default: std::numeric_limits<int>::max()
+	bool             iunsat;           // Default: false
+	bool             keepLearnts;      // Default: true
+	bool             keepHeuristic;    // Default: false
+	bool             ibase;            // Default: false
+#endif
+#ifdef WITH_CLASP
 	// clasp stuff
-	SolveParams      solveParams;
+	Clasp::SolveParams solveParams;
 	std::vector<int> optVals;          // Values for the optimization function
 	std::vector<int> satPreParams;     // Params for the SatElite-preprocessor
 	std::string      heuristic;        // Default: berkmin
@@ -99,7 +118,13 @@ public:
 	bool             initialLookahead; // Default: false
 	bool             ccmExp;           // Default: false
 	bool             dimacs;           // Default: false
+#endif
 private:
+	void initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::OptionGroup& hidden);
+	void checkCommonOptions(const ProgramOptions::OptionValues&);
+	void printHelp(const ProgramOptions::OptionGroup& opts, std::ostream& os) const;
+	void printVersion(std::ostream& os) const;
+#ifdef WITH_CLASP
 	std::vector<double> delDefault() const {
 		std::vector<double> v; v.push_back(3.0); v.push_back(1.1); v.push_back(3.0);
 		return v;
@@ -108,15 +133,11 @@ private:
 		std::vector<double> v; v.push_back(100.0); v.push_back(1.5); v.push_back(0.0);
 		return v;
 	}
-	void initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::OptionGroup& hidden);
-	void checkCommonOptions(const ProgramOptions::OptionValues&);
-	bool setSolverStrategies(Solver& s, const ProgramOptions::OptionValues&);
-	bool setSolveParams(Solver& s, const ProgramOptions::OptionValues&);
-	DecisionHeuristic* createHeuristic(const std::vector<int>&) const;
-	void printHelp(const ProgramOptions::OptionGroup& opts, std::ostream& os) const;
-	void printVersion(std::ostream& os) const;
+	bool setSolverStrategies(Clasp::Solver& s, const ProgramOptions::OptionValues&);
+	bool setSolveParams(Clasp::Solver& s, const ProgramOptions::OptionValues&);
+	Clasp::DecisionHeuristic* createHeuristic(const std::vector<int>&) const;
+#endif
 	std::string error_;
 	std::string warning_;
 };
-}
 #endif
