@@ -260,8 +260,8 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("aspils,a"        , value<int>(&aspilsOut)->parser(mapASPils), "Print experimental ASPils output in normalform 1-7", "1-7")
 		("bindersplitting" , value<bool>(&grounderOptions.binderSplit), "Enable or disable bindersplitting\n"
 			"\tDefault: yes\n"
-			"\t  yes : Stop if no solution found\n"
-			"\t  no  : Stop if solution found")
+			"\t  yes : Enable bindersplitting\n"
+			"\t  no  : Disable bindersplitting")
 	;
 	allOpts.addOptions(gringo);
 #ifdef WITH_ICLASP

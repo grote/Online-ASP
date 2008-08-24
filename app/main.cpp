@@ -153,8 +153,6 @@ static void sigHandler(int)
 
 void MainApp::setState(State s)
 {
-#ifdef WITH_CLASP
-	const int width = 13;
 	switch(s)
 	{
 	case start_read:
@@ -183,7 +181,6 @@ void MainApp::setState(State s)
 		break;
 	default:;
 	}
-#endif
 }
 
 int MainApp::run(int argc, char **argv)
