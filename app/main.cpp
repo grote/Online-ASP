@@ -472,8 +472,10 @@ void MainApp::printAspStats(bool more) const
 		cerr << "(Enumerated: " << enumerated << ")";
 	}
 	cerr << "\n";
+#ifdef WITH_ICLASP
 	if(options.grounder && options.outf == Options::ICLASP_OUT)
 		cerr << "Total Steps : " << steps << std::endl;
+#endif
 	cerr << left << setw(12) << "Time" << ": " << setw(6) << t_all.Print() << "\n";
 	if(!options.stats)
 		return;
