@@ -210,6 +210,7 @@ void Options::setDefaults() {
 	imin            = 1;
 	imax            = std::numeric_limits<int>::max();
 	iunsat          = false;
+	istats          = false;
 #endif
 
 #ifdef WITH_CLASP
@@ -267,6 +268,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 #ifdef WITH_ICLASP
 	OptionGroup incremental("\n\nOptions for incremental solving:\n");
 	incremental.addOptions()
+		("istats"      , bool_switch(&istats) , "Print stats for each incremental step")
 		("imin"        , value<int>(&imin)    , "Minimum number of incremental steps", "<num>")
 		("imax"        , value<int>(&imax)    , "Maximum number of incremental steps", "<num>")
 		("incremental,i"   , bool_switch(&iclaspOut), "Use incremental clasp interface")

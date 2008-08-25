@@ -55,3 +55,9 @@ std::string CTimer::Print () const {
   
   return (in.str());
 }
+
+CTimer::operator double() const
+{
+	return _sec + _msec / 1000.0;
+}
+

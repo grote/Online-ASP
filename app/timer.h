@@ -54,6 +54,8 @@ public:
   //! Resets the timer to zero.
   void Reset ();
 
+  operator double() const;
+
   //! Returns the timer value.
   std::string Print () const;
 

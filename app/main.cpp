@@ -65,6 +65,9 @@ struct MainApp
 	CTimer    t_ground;
 	CTimer    t_solve;
 	CTimer    t_all;
+#ifdef WITH_ICLASP
+	int       steps;
+#endif
 #ifdef WITH_CLASP
 	Solver    solver;
 
@@ -469,6 +472,8 @@ void MainApp::printAspStats(bool more) const
 		cerr << "(Enumerated: " << enumerated << ")";
 	}
 	cerr << "\n";
+	if(options.grounder && options.outf == Options::ICLASP_OUT)
+		cerr << "Total Steps : " << steps << std::endl;
 	cerr << left << setw(12) << "Time" << ": " << setw(6) << t_all.Print() << "\n";
 	if(!options.stats)
 		return;
@@ -593,16 +598,53 @@ bool MainApp::solveIncremental()
 
 	bool more = false;
 	bool ret  = false;
-	int steps = 0;
+	steps = 0;
 	solver.strategies().heuristic->reinit(options.keepHeuristic);
 	grounder.prepare(true);
 	setState(end_read);
-	
+
+	struct IStats
+	{
+		uint32 models;
+		double ttotal;
+		double tground;
+		double tpre;
+		double tsolve;
+		uint32 rules;
+		uint64 choices;
+		uint64 conflicts;
+		IStats() : models(0), ttotal(0), tground(0), tpre(0), tsolve(0), rules(0), choices(0), conflicts(0) {}
+		void print(uint32 models, double ttotal, double tground, double tpre, double tsolve, uint32 rules, uint64 choices, uint64 conflicts)
+		{
+			cerr << endl;
+			cerr << "Models   : " << models - this->models << endl;
+			cerr << fixed << setprecision(3) << "Time     : " << (ttotal - this->ttotal) 
+				<< " (g: " << (tground - this->tground) 
+				<< ", p: " << (tpre - this->tpre) 
+				<< ", s: " << (tsolve - this->tsolve) << ")" << endl;
+			cerr << "Rules    : " << (rules - this->rules) << endl;
+			cerr << "Choices  : " << (choices - this->choices) << endl;
+			cerr << "Conflicts: " << (conflicts - this->conflicts) << endl;
+			this->models    = models;
+			this->ttotal    = ttotal;
+			this->tground   = tground;
+			this->tpre      = tpre;
+			this->tsolve    = tsolve;
+			this->rules     = rules;
+			this->choices   = choices;
+			this->conflicts = conflicts;
+		}
+	} istats;
+
+	CTimer all;
 	do 
 	{
+		all.Start();
 		setState(start_ground);
+		if(options.verbose || options.istats)
+			cerr << "=============== step " << (steps + 1) << " ===============" << endl;
 		if(options.verbose)
-			cerr << "Grounding step " << (steps + 1) << "..." << endl;
+			cerr << "Grounding..." << endl;
 		if(!options.keepLearnts)
 			solver.reduceLearnts(1.0f);
 		api.updateProgram();
@@ -632,9 +674,16 @@ bool MainApp::solveIncremental()
 			setState(end_solve);
 		}
 		steps++;
+		all.Stop();
+		if(options.istats)
+		{
+			uint32 r = output.getStats().rules[0] == 0
+		                ? std::accumulate(output.getStats().rules, output.getStats().rules + OPTIMIZERULE + 1, 0)
+				: output.getStats().rules[0] + output.getStats().rules[1] + output.getStats().rules[OPTIMIZERULE];
+			istats.print(solver.stats.models, all, t_ground, t_pre, t_solve, r, solver.stats.choices, solver.stats.conflicts);
+		}
 	}
 	while(options.imax-- > 1 &&(options.imin-- > 1 || ret == options.iunsat));
-	cerr << "Total Steps : " << steps << std::endl;
 	*lpStats_ = output.getStats();
 	api.stats.moveTo(*preStats_);
 	return more;

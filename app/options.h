@@ -101,6 +101,7 @@ public:
 	bool             keepLearnts;      // Default: true
 	bool             keepHeuristic;    // Default: false
 	bool             ibase;            // Default: false
+	bool             istats;           // Default: false
 #endif
 #ifdef WITH_CLASP
 	// clasp stuff
