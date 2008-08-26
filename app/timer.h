@@ -25,7 +25,9 @@
  ***************************************************************************/
 #include <time.h>
 #include <string>
-#include <sys/resource.h>
+#ifndef WIN32
+#	include <sys/resource.h>
+#endif
 
 /***************************************************************************
  *                                                                         *
@@ -66,8 +68,14 @@ public:
   //! Milliseconds.
   unsigned long _usec;
 
+#ifdef WIN32
+  //! Actual cpu time
+  clock_t _start;
+#else
   //! Actual cpu time
   struct timeval _start;
+#endif
+
 };
 
 #endif

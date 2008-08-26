@@ -27,12 +27,26 @@ CTimer::CTimer () {
 }
 
 void CTimer::Start () {
+#ifdef WIN32
+  _start = clock ();
+#else
   struct rusage ru;
   getrusage(RUSAGE_SELF, &ru);
   _start = ru.ru_utime;
+#endif
 }
 
 void CTimer::Stop () {
+#ifdef WIN32
+  clock_t ticks = clock () - _start;
+  long s = ticks / CLOCKS_PER_SEC;
+  _sec += s;
+  _usec += (ticks - s*CLOCKS_PER_SEC)*1000/CLOCKS_PER_SEC;
+  if (_usec >= 1000) {
+      _usec -= 1000;
+      _sec++;
+  }
+#else
   struct rusage ru;
   getrusage(RUSAGE_SELF, &ru);
   struct timeval stop = ru.ru_utime;
@@ -51,6 +65,7 @@ void CTimer::Stop () {
     _usec-= 1000000;
     _sec++;
   }
+#endif
 }
 
 void CTimer::Reset () {
@@ -63,13 +78,21 @@ std::string CTimer::Print () const {
   std::istringstream in(std::ios::in | std::ios::out);
   std::ostream out(in.rdbuf ());
 
-  out << _sec << '.' << std::setw(3) << std::setfill('0') << _usec / 1000;  
+#ifdef WIN32
+  out << _sec << '.' << std::setw(3) << std::setfill('0') << _usec / 1000; 
+#else
+  out << _sec << '.' << std::setw(3) << std::setfill('0') << _usec; 
+#endif
   
   return (in.str());
 }
 
 CTimer::operator double() const
 {
+#ifdef WIN32
   return _sec + _usec / 1000000.0;
+#else
+  return _sec + _usec / 1000.0;
+#endif
 }
 
