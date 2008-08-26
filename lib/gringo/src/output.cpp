@@ -176,7 +176,11 @@ void Atom::print_plain(Output *o, std::ostream &out)
 void Atom::print(Output *o, std::ostream &out)
 {
 	if(o->addAtom(this))
-		out << "4" << " " << uid_ << " " << o->atomToString(predUid_, values_) << " " << (o->isVisible(predUid_) ? "1" : "") << END_ENTRY << NL;
+		if (o->isVisible(predUid_))
+			out << "4" << " 3 " << uid_ << " " << o->atomToString(predUid_, values_) << " " << "1" << END_ENTRY << NL;
+		else
+			out << "4" << " 2 " << uid_ << " " << o->atomToString(predUid_, values_) << END_ENTRY << NL;
+
 }
 	
 // =============== NS_OUTPUT::Rule ===============
@@ -197,7 +201,7 @@ void Rule::print(Output *o, std::ostream &out)
 	head_->print(o, out);
 	body_->print(o, out);
 	uid_ = o->newUid();
-	out << "5" << " " << uid_ << " " << head_->getUid() << " " << body_->getUid() << END_ENTRY << NL;
+	out << "5" << " 3 " << uid_ << " " << head_->getUid() << " " << body_->getUid() << END_ENTRY << NL;
 }
 
 Rule::~Rule()
@@ -226,7 +230,7 @@ void Fact::print(Output *o, std::ostream &out)
 {
 	head_->print(o, out);
 	uid_ = o->newUid();
-	out << "6" << " " << uid_ << " " << head_->getUid() << END_ENTRY << NL;
+	out << "6" << " 2 " << uid_ << " " << head_->getUid() << END_ENTRY << NL;
 }
 
 Fact::~Fact()
@@ -256,7 +260,7 @@ void Integrity::print(Output *o, std::ostream &out)
 {
 	body_->print(o, out);
 	uid_ = o->newUid();
-	out << "7" << " " << uid_ << " " << body_->getUid() << END_ENTRY << NL;
+	out << "7" << " 2 " << uid_ << " " << body_->getUid() << END_ENTRY << NL;
 }
 
 void Integrity::addDomain(bool fact)
@@ -296,7 +300,7 @@ void Conjunction::print(Output *o, std::ostream &out)
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		(*it)->print(o, out);
 	uid_ = o->newUid();
-	out << "8" << " " << uid_ << " " << lits_.size();
+	out << "8" << " " << lits_.size() + 1 << " " << uid_;
 	//TODO: kann leer sein, für leeres integrity constraint
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
@@ -347,7 +351,7 @@ void Disjunction::print(Output *o, std::ostream &out)
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		(*it)->print(o, out);
 	uid_ = o->newUid();
-	out << "9" << " " << uid_ << " " << lits_.size();
+	out << "9" << " " << lits_.size() + 1 << " " << uid_;
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 		out << " " << (*it)->getUid();
 	out << END_ENTRY << NL;
@@ -454,8 +458,9 @@ void Aggregate::print(Output *o, std::ostream &out)
 		(*it)->print(o, out);
 
 	// at first, create weighted literals for all weight using aggregates
+	// not for count, and not for weight constraints with non trivial bound in Normalforms 3,4,5
 	IntVector uids;
-	if(type_ != COUNT)
+	if((type_ != COUNT) && !(type_ == SUM && (normalForm == 3 || normalForm == 4 || normalForm == 5) && bounds_ != N) )
 	{
 		ObjectVector::iterator lit = lits_.begin();
 		for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++, ++lit)
@@ -463,7 +468,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 			if (*it < 0)
 				negativeWeights = true;
 			unsigned int id = o->newUid();
-			out << "d" << " " << id << " " << (*lit)->getUid() << " " << *it << END_ENTRY << NL;
+			out << "d" << " 3 " << id << " " << (*lit)->getUid() << " " << *it << END_ENTRY << NL;
 			uids.push_back(id);
 		}
 	}
@@ -489,7 +494,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 						throw GrinGoException("Count aggregate/cardinality constraint not allowed with negative lower bound in this normal form, please choose normal form 5-7.");
 
 				}
-				out << "e";
+//				out << "e";
 				break;
 			}
 		case SUM:
@@ -507,7 +512,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 				}
 				if (normalForm == 6 && negativeWeights)
 					throw GrinGoException("Sum aggregate/weight constraint not allowed with negative weights in this normal form, please choose normal form 5 or 7.");
-				out << "f";
+//				out << "f";
 				break;
 			 }
 		case MAX:
@@ -516,7 +521,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 					throw GrinGoException("Max aggregate not allowed in this normal form, please choose normal form 6 or 7.");
 				if (normalForm == 6 && negativeWeights)
 					throw GrinGoException("Max aggregate not allowed with negative weights in this normal form, please choose normal form 7.");
-				out << "10";
+//				out << "10";
 				break;
 			 }
 		case MIN:
@@ -525,7 +530,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 					throw GrinGoException("Min aggregate not allowed in this normal form, please choose normal form 6 or 7.");
 				if (normalForm == 6 && negativeWeights)
 					throw GrinGoException("Min aggregate not allowed with negative weights in this normal form, please choose normal form 7.");
-				out << "11";
+//				out << "11";
 				break;
 			 }
 		case TIMES:
@@ -534,38 +539,211 @@ void Aggregate::print(Output *o, std::ostream &out)
 					throw GrinGoException("Times aggregate not allowed in this normal form, please choose normal form 6 or 7.");
 				if (normalForm == 6 && negativeWeights)
 					throw GrinGoException("Times aggregate not allowed with negative weights in this normal form, please choose normal form 7.");
-				out << "12";
+//				out << "12";
 				break;
 			 }
+		default:
+			 {
+				 assert(false);
+			 }
 	}
-	out << " " << uid_ << " " << bounds_;
-	switch(bounds_)
+
+	switch (type_)
 	{
-		case LU:
-			out << " " << lower_ << " " << upper_;
-			break;
-		case L:
-			out << " " << lower_;
-			break;
-		case U:
-			out << " " << upper_;
-			break;
-		case N:
-			break;
+		case COUNT:
+			{
+				// do write a cardinality constraint
+				if ((normalForm == 3 || normalForm == 4 || normalForm == 5) && bounds_ != N)
+				{
+					//if (bounds_ == U || bounds_ == LU) // already checked
+					out << "b" << " " << uids.size() + 3<< " " << uid_ << " ";
+					unsigned int lower = 0;
+					unsigned int upper = 0;
+					if (bounds_ == L)
+						lower = lower_;
+					// with trivial upper bound for Normalform 3 and 4
+					// or Normalform 5 without upper bound
+					if (normalForm < 5 || (normalForm == 5 && bounds_ == L))
+						upper = uids.size();
+					else
+						upper = upper_;
+					out << lower << " " << upper;
+
+					for(IntVector::iterator it = uids.begin(); it != uids.end(); it++)
+						out << " " << *it;
+					out << END_ENTRY << NL;
+				}
+				else //write a count aggregate
+				{
+					out << "e" << " " << uids.size() + 1 << " " << uid_;
+					for(IntVector::iterator it = uids.begin(); it != uids.end(); it++)
+						out << " " << *it;
+					out << END_ENTRY << NL;
+
+					//write bounds with operators
+
+					//lower
+					if (bounds_ == L || bounds_ == LU)
+					{
+						unsigned int uid = o->newUid();
+
+						out << "1b" << " " << 3 << " " << uid << " " << uid_ << " " << lower_;
+						out << END_ENTRY << NL;
+					}
+
+					if (bounds_ == U || bounds_ == LU)
+					{
+						unsigned int uid = o->newUid();
+
+						out << "19" << " " << 3 << " " << uid << " " << uid_ << " " << upper_;
+						out << END_ENTRY << NL;
+					}
+				}
+				break;
+			}
+		case SUM:
+			{
+				// do write a weight constraint
+				if ((normalForm == 3 || normalForm == 4 || normalForm == 5) && bounds_ != N)
+				{
+					//if (bounds_ == U || bounds_ == LU) // already checked
+					out << "c" << " " << uids.size()*2 + 3<< " " << uid_ << " ";
+					unsigned int lower = 0;
+					unsigned int upper = 0;
+					if (bounds_ == L) // else 0
+						lower = lower_;
+					// with trivial upper bound for Normalform 3 and 4
+					// or Normalform 5 without upper bound
+					if (normalForm < 5 || (normalForm == 5 && bounds_ == L))
+					{
+						//trivial upper bound is summing up all positive weights
+						for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++)
+							if (*it > 0)
+								upper += *it;
+					}
+					else
+						upper = upper_;
+					out << lower << " " << upper;
+
+					for(IntVector::iterator it = uids.begin(); it != uids.end(); it++)
+						out << " " << *it;
+					for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++)
+						out << " " << *it;
+
+					out << END_ENTRY << NL;
+				}
+				else //write a sum aggregate
+				{
+					out << "f" << " " << uids.size() + 1 << " " << uid_;
+					for(IntVector::iterator it = uids.begin(); it != uids.end(); it++)
+						out << " " << *it;
+					out << END_ENTRY << NL;
+
+					//write bounds with operators
+
+					//lower
+					if (bounds_ == L || bounds_ == LU)
+					{
+						unsigned int uid = o->newUid();
+
+						out << "1b" << " " << 3 << " " << uid << " " << uid_ << " " << lower_;
+						out << END_ENTRY << NL;
+					}
+
+					if (bounds_ == U || bounds_ == LU)
+					{
+						unsigned int uid = o->newUid();
+
+						out << "19" << " " << 3 << " " << uid << " " << uid_ << " " << upper_;
+						out << END_ENTRY << NL;
+					}
+				}
+				break;
+			}
+		case MAX:
+			{
+					//write a max aggregate
+					out << "10" << " " << uids.size() + 1 << " " << uid_;
+					for(IntVector::iterator it = uids.begin(); it != uids.end(); it++)
+						out << " " << *it;
+					out << END_ENTRY << NL;
+
+					//write bounds with operators
+
+					//lower
+					if (bounds_ == L || bounds_ == LU)
+					{
+						unsigned int uid = o->newUid();
+
+						out << "1b" << " " << 3 << " " << uid << " " << uid_ << " " << lower_;
+						out << END_ENTRY << NL;
+					}
+
+					if (bounds_ == U || bounds_ == LU)
+					{
+						unsigned int uid = o->newUid();
+
+						out << "19" << " " << 3 << " " << uid << " " << uid_ << " " << upper_;
+						out << END_ENTRY << NL;
+					}
+				break;
+			}
+		case MIN:
+			{
+					//write a min aggregate
+					out << "11" << " " << uids.size() + 1 << " " << uid_;
+					for(IntVector::iterator it = uids.begin(); it != uids.end(); it++)
+						out << " " << *it;
+					out << END_ENTRY << NL;
+
+					//write bounds with operators
+
+					//lower
+					if (bounds_ == L || bounds_ == LU)
+					{
+						unsigned int uid = o->newUid();
+
+						out << "1b" << " " << 3 << " " << uid << " " << uid_ << " " << lower_;
+						out << END_ENTRY << NL;
+					}
+
+					if (bounds_ == U || bounds_ == LU)
+					{
+						unsigned int uid = o->newUid();
+
+						out << "19" << " " << 3 << " " << uid << " " << uid_ << " " << upper_;
+						out << END_ENTRY << NL;
+					}
+				break;
+			}
+		case TIMES:
+			{
+					//write a times aggregate
+					out << "11" << " " << uids.size() + 1 << " " << uid_;
+					for(IntVector::iterator it = uids.begin(); it != uids.end(); it++)
+						out << " " << *it;
+					out << END_ENTRY << NL;
+
+					//write bounds with operators
+
+					//lower
+					if (bounds_ == L || bounds_ == LU)
+					{
+						unsigned int uid = o->newUid();
+
+						out << "1b" << " " << 3 << " " << uid << " " << uid_ << " " << lower_;
+						out << END_ENTRY << NL;
+					}
+
+					if (bounds_ == U || bounds_ == LU)
+					{
+						unsigned int uid = o->newUid();
+
+						out << "19" << " " << 3 << " " << uid << " " << uid_ << " " << upper_;
+						out << END_ENTRY << NL;
+					}
+			}
 	}
-	out << " " << uids.size();
-	//for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
-	//	out << " " << (*it)->getUid();
-	//if(type_ != COUNT)
-	//{
-	//	out << " " << weights_.size();
-	//	for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++)
-	//		out << " " << *it;
-	//}
-	
-	for(IntVector::iterator it = uids.begin(); it != uids.end(); it++)
-		out << " " << *it;
-	out << END_ENTRY << NL;
 }
 
 void Aggregate::addDomain(bool fact)
@@ -607,7 +785,7 @@ void Compute::print(Output *o, std::ostream &out)
 		(*it)->print(o, out);
 	for(ObjectVector::iterator it = lits_.begin(); it != lits_.end(); it++)
 	{
-		out << "7" << " " << o->newUid() << " " << -(*it)->getUid() << END_ENTRY << NL;
+		out << "7" << " 2 " << o->newUid() << " " << -(*it)->getUid() << END_ENTRY << NL;
 	}
 }
 
@@ -663,8 +841,8 @@ void Optimize::print(Output *o, std::ostream &out)
 	for(IntVector::iterator it = weights_.begin(); it != weights_.end(); it++, ++lit)
 	{
 		unsigned int id = o->newUid();
-		out << "d" << " " << id << " " << (*lit)->getUid() << " ";
-	        if(type_ == MAXIMIZE)
+		out << "d" << " 3 " << id << " " << (*lit)->getUid() << " ";
+	   if(type_ == MAXIMIZE)
 			out << -*it;
 		else
 			out << *it;
@@ -673,7 +851,7 @@ void Optimize::print(Output *o, std::ostream &out)
 	}
 
 	uid_ = o->newUid();
-	out << "f" << " " << uid_ << " " << uids.size();
+	out << "f" << " " << uids.size() + 1 << " " << uid_;
 	for (IntVector::const_iterator i = uids.begin(); i != uids.end(); ++i)
 	{
 		out << " " << *i;

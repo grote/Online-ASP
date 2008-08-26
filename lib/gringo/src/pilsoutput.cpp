@@ -31,7 +31,7 @@ void PilsOutput::initialize(GlobalStorage *g, SignatureVector *pred)
 {
 	Output::initialize(g, pred);
 
-	*out_ << HEADER << " " << VERSION << " " << normalForm_ << " " << "0 0" << NL;
+	*out_ << HEADER << " " << "3" << VERSION << " " << normalForm_ << " " << "0 0" << NL;
 }
 
 void PilsOutput::print(NS_OUTPUT::Object *r)
@@ -46,7 +46,7 @@ void PilsOutput::finalize(bool last)
 		//write the optimize statement for all added sums
 		if (optimizedIDs_.size())
 		{
-			*out_ << "1d" << " " << newUid() << " " << "1e" << " " << optimizedIDs_.size();
+			*out_ << "1d" << " " << optimizedIDs_.size() + 2 << " " << newUid() << " " << "1e" << " " << optimizedIDs_.size();
 			for (IntVector::const_iterator i = optimizedIDs_.begin(); i != optimizedIDs_.end(); ++i)
 			{
 				*out_ << " " << *i;
@@ -54,7 +54,7 @@ void PilsOutput::finalize(bool last)
 			*out_ << " 0" << NL;
 		}
 		// end of output
-		*out_ << "0 0" << NL;
+		*out_ << "0 0 0" << NL;
 	}
 }
 
