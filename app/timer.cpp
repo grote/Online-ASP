@@ -51,7 +51,7 @@ void CTimer::Stop () {
   getrusage(RUSAGE_SELF, &ru);
   struct timeval stop = ru.ru_utime;
   _sec+= stop.tv_sec - _start.tv_sec;
-  if(stop.tv_usec > _start.tv_usec)
+  if(stop.tv_usec >= _start.tv_usec)
   {
     _usec+= stop.tv_usec - _start.tv_usec;
   }
@@ -60,7 +60,7 @@ void CTimer::Stop () {
     _usec+= _start.tv_usec - stop.tv_usec;
     _sec--;
   }
-  if(_usec > 1000000)
+  if(_usec >= 1000000)
   {
     _usec-= 1000000;
     _sec++;
@@ -79,9 +79,9 @@ std::string CTimer::Print () const {
   std::ostream out(in.rdbuf ());
 
 #ifdef WIN32
-  out << _sec << '.' << std::setw(3) << std::setfill('0') << _usec / 1000; 
-#else
   out << _sec << '.' << std::setw(3) << std::setfill('0') << _usec; 
+#else
+  out << _sec << '.' << std::setw(3) << std::setfill('0') << _usec / 1000; 
 #endif
   
   return (in.str());
@@ -90,9 +90,9 @@ std::string CTimer::Print () const {
 CTimer::operator double() const
 {
 #ifdef WIN32
-  return _sec + _usec / 1000000.0;
-#else
   return _sec + _usec / 1000.0;
+#else
+  return _sec + _usec / 1000000.0;
 #endif
 }
 

@@ -270,6 +270,7 @@ int MainApp::run(int argc, char **argv)
 		case Options::ICLASP_OUT:
 			return runClasp();
 #endif
+		default:;
 	}
 	// TODO: Statistics!!!!
 	return EXIT_SUCCESS;
@@ -451,6 +452,10 @@ void MainApp::printAspStats(bool more) const
 	cerr.precision(1);
 	cerr.setf(ios_base::fixed, ios_base::floatfield);
 	const SolverStatistics &st = solver.stats;
+#ifdef WITH_ICLASP
+	if(options.grounder && options.outf == Options::ICLASP_OUT && (options.verbose || options.istats))
+		cerr << "=============== Summary ===============" << endl;
+#endif
 	cerr << "\n";
 	uint64 enumerated = st.models;
 	uint64 models = enum_.get() != 0 ? enum_->numModels(solver) : enumerated;
