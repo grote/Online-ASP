@@ -227,7 +227,7 @@ void Grounder::addProgram(Program *scc)
 
 void Grounder::ground_()
 {
-	if(incStep_ == 1 || !incremental_)
+	if(incStep_ == 1)
 		output_->initialize(this, getPred());
 	else
 		output_->reinitialize();
