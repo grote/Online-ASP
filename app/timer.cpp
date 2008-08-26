@@ -23,27 +23,39 @@
 
 CTimer::CTimer () {
   _sec = 0;
-  _msec = 0;
+  _usec = 0;
 }
 
 void CTimer::Start () {
-  _timer = clock ();
+  struct rusage ru;
+  getrusage(RUSAGE_SELF, &ru);
+  _start = ru.ru_utime;
 }
 
 void CTimer::Stop () {
-  clock_t ticks = clock () - _timer;
-  long s = ticks / CLOCKS_PER_SEC;
-  _sec += s;
-  _msec += (ticks - s*CLOCKS_PER_SEC)*1000/CLOCKS_PER_SEC;
-  if (_msec >= 1000) {
-      _msec -= 1000;
-      _sec++;
+  struct rusage ru;
+  getrusage(RUSAGE_SELF, &ru);
+  struct timeval stop = ru.ru_utime;
+  _sec+= stop.tv_sec - _start.tv_sec;
+  if(stop.tv_usec > _start.tv_usec)
+  {
+    _usec+= stop.tv_usec - _start.tv_usec;
+  }
+  else
+  {
+    _usec+= _start.tv_usec - stop.tv_usec;
+    _sec--;
+  }
+  if(_usec > 1000000)
+  {
+    _usec-= 1000000;
+    _sec++;
   }
 }
 
 void CTimer::Reset () {
   _sec = 0;
-  _msec = 0;
+  _usec = 0;
 }
 
 std::string CTimer::Print () const {
@@ -51,13 +63,13 @@ std::string CTimer::Print () const {
   std::istringstream in(std::ios::in | std::ios::out);
   std::ostream out(in.rdbuf ());
 
-  out << _sec << '.' << std::setw(3) << std::setfill('0') << _msec;  
+  out << _sec << '.' << std::setw(3) << std::setfill('0') << _usec / 1000;  
   
   return (in.str());
 }
 
 CTimer::operator double() const
 {
-	return _sec + _msec / 1000.0;
+  return _sec + _usec / 1000000.0;
 }
 

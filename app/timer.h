@@ -25,6 +25,7 @@
  ***************************************************************************/
 #include <time.h>
 #include <string>
+#include <sys/resource.h>
 
 /***************************************************************************
  *                                                                         *
@@ -63,11 +64,11 @@ public:
   unsigned long _sec;
 
   //! Milliseconds.
-  unsigned long _msec;
+  unsigned long _usec;
 
-  //! Timer.
-  clock_t _timer;
-
+  //! Actual cpu time
+  struct timeval _start;
 };
 
 #endif
+
