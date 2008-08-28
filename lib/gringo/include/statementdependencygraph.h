@@ -50,7 +50,7 @@ namespace NS_GRINGO
 		void calcSCCs(Grounder *g);
 		~SDG();
 	private:
-		void calcSCCDep(SDGNode *v1, SCC *scc, bool &root);
+		bool calcSCCDep(SDGNode *v);
 		void tarjan(SDGNode *v, int &index, int &back, std::vector<SDGNode*> &stack);
 	private:
 		int uids_;

@@ -209,7 +209,8 @@ int MainApp::run(int argc, char **argv)
 	}
 
 #ifdef WITH_CLASP
-	cerr << (mode == ASP_MODE ? "" : "c ") << EXECUTABLE << " version " << GRINGO_VERSION << " (clasp " << CLASP_VERSION << ")" << endl;
+	if(options.verbose)
+		cerr << (mode == ASP_MODE ? "" : "c ") << EXECUTABLE << " version " << GRINGO_VERSION << " (clasp " << CLASP_VERSION << ")" << endl;
 	getStream();
 	if(options.files.size() > 0)
 	{
@@ -227,7 +228,8 @@ int MainApp::run(int argc, char **argv)
 	else if(options.verbose)
 		cerr << (mode == ASP_MODE ? "" : "c ") << "Reading from stdin" << endl;
 #else
-	cerr << EXECUTABLE << " version " << GRINGO_VERSION << endl;
+	if(options.verbose)
+		cerr << EXECUTABLE << " version " << GRINGO_VERSION << endl;
 	if(options.files.size() > 0)
 	{
 		vector<string>::iterator i = options.files.begin();

@@ -98,18 +98,17 @@ Start:
 		}
 		if(c.root)
 		{
-			SCC *scc = new SCC();
 			int nodes = 1;
-			v->scc_ = scc;
+			v->scc_ = new SCC();
 			if(v->getStatement())
-				scc->rules_.push_back(v->getStatement());
+				v->scc_->rules_.push_back(v->getStatement());
 			index--;
 			while(!stack.empty() && v->index_ <= stack.back()->index_)
 			{
 				stack.back()->index_ = back;
-				stack.back()->scc_ = scc;
+				stack.back()->scc_ = v->scc_;
 				if(stack.back()->getStatement())
-					scc->rules_.push_back(stack.back()->getStatement());
+					v->scc_->rules_.push_back(stack.back()->getStatement());
 				stack.pop_back();
 				index--;
 				nodes++;
@@ -117,14 +116,12 @@ Start:
 			v->index_ = back;
 			back--;
 			// initialize with fact or basic program
-			scc->type_ = nodes == 1 ? SCC::FACT : SCC::BASIC;
+			v->scc_->type_ = nodes == 1 ? SCC::FACT : SCC::BASIC;
 			//scc->type_ = nodes == 1 ? SCC::FACT : SCC::NORMAL;
-			sccs_.push_back(scc);
-			bool root = true;
+			sccs_.push_back(v->scc_);
 			// calc type and dependency of program
-			calcSCCDep(v, scc, root);
-			if(root)
-				sccRoots_.insert(scc);
+			if(calcSCCDep(v))
+				sccRoots_.insert(v->scc_);
 		}
 		else
 		{
@@ -134,41 +131,51 @@ Start:
 	}
 }
 
-void SDG::calcSCCDep(SDGNode *v1, SCC *scc, bool &root)
+bool SDG::calcSCCDep(SDGNode *v)
 {
+	bool root = true;
+	std::vector<SDGNode*> bfs;
+	bfs.push_back(v);
+
 	// do a depth first search limited to the scc to build a tree of sccs
-	v1->done_ = true;
-	SDGNodeVector *dep = v1->getDependency();
-	// build tree of sccs
-	for(SDGNodeVector::iterator it = dep->begin(); it != dep->end(); it++)
+	while(!bfs.empty())
 	{
-		SDGNode *v2 = *it;
-		assert(v2->scc_);
-		if(v2->scc_ == scc && !v2->done_)
-			calcSCCDep(v2, scc, root);
-		if(v2->scc_ != scc)
+		v = bfs.back();
+		bfs.pop_back();
+		v->done_ = true;
+		SDGNodeVector *dep = v->getDependency();
+		// build tree of sccs
+		for(SDGNodeVector::iterator it = dep->begin(); it != dep->end(); it++)
 		{
-			if(v2->scc_->type_ == SCC::NORMAL)
-				scc->type_ = SCC::NORMAL;
-			if(v2->scc_->sccs_.insert(scc).second)
-				scc->edges_++;
-			root = false;
-		}
-	}
-	// try to find neg dep in scc
-	if(scc->type_ != SCC::NORMAL)
-	{
-		SDGNodeVector *negDep = v1->getNegDependency();
-		for(SDGNodeVector::iterator it = negDep->begin(); it != negDep->end(); it++)
-		{
-			SDGNode *v2 = *it;
-			if(v2->scc_ == scc)
+			SDGNode *w = *it;
+			assert(w->scc_);
+			if(w->scc_ == v->scc_ && !w->done_)
+				bfs.push_back(w);
+			if(w->scc_ != v->scc_)
 			{
-				scc->type_ = SCC::NORMAL;
-				break;
+				if(w->scc_->type_ == SCC::NORMAL)
+					v->scc_->type_ = SCC::NORMAL;
+				if(w->scc_->sccs_.insert(v->scc_).second)
+					v->scc_->edges_++;
+				root = false;
+			}
+		}
+		// try to find neg dep in scc
+		if(v->scc_->type_ != SCC::NORMAL)
+		{
+			SDGNodeVector *negDep = v->getNegDependency();
+			for(SDGNodeVector::iterator it = negDep->begin(); it != negDep->end(); it++)
+			{
+				SDGNode *w = *it;
+				if(w->scc_ == v->scc_)
+				{
+					v->scc_->type_ = SCC::NORMAL;
+					break;
+				}
 			}
 		}
 	}
+	return root;
 }
 
 void SDG::calcSCCs(Grounder *g)
