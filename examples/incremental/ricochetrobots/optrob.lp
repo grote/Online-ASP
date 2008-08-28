@@ -1,6 +1,6 @@
 % Some optimizations
 
-#lambda(T).
+#incremental(T).
 
 % --- forbid redundant return moves
 :- go(R,east,T - 1),go(R,west,T).

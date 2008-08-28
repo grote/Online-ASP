@@ -235,7 +235,7 @@ void Grounder::ground_()
 	for(ProgramVector::iterator it = sccs_.begin(); it != sccs_.end(); it++)
 	{
 		Program *scc = *it;
-		//std::cerr << scc << std::endl;
+		//std::cerr << pp(this, scc) << std::endl;
 		eval_ = scc->getEvaluator();
 		eval_->initialize(this);
 		StatementVector *rules = scc->getStatements();

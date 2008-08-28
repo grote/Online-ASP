@@ -51,7 +51,7 @@ namespace NS_GRINGO
 		~SDG();
 	private:
 		void calcSCCDep(SDGNode *v1, SCC *scc, bool &root);
-		void tarjan(SDGNode *v1, std::stack<SDGNode*> &stack, int &index);
+		void tarjan(SDGNode *v, int &index, int &back, std::vector<SDGNode*> &stack);
 	private:
 		int uids_;
 		SDGNodeVector ruleNodes_;
@@ -78,10 +78,8 @@ namespace NS_GRINGO
 		void addDependency(SDGNode *n, bool neg = false);
 		~SDGNode();
 	private:
-		int lowlink_;
 		int index_;
 		unsigned int type_ : 1;
-		unsigned int stacked_ : 1;
 		unsigned int done_ : 1;
 		SDG::SCC *scc_;
 		union

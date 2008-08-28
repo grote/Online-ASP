@@ -57,55 +57,80 @@ SDGNode *SDG::createPredicateNode(PredicateLiteral *pred)
 	return n;
 }
 
-void SDG::tarjan(SDGNode *v1, std::stack<SDGNode*> &s, int &index)
+namespace
 {
-	// do a depth first search to find the sccs
-	v1->index_ = index;
-	v1->lowlink_ = index;
-	index = index + 1;
-	s.push(v1);
-	v1->stacked_ = true;
-	SDGNodeVector *dep = v1->getDependency();
-	for(SDGNodeVector::iterator it = dep->begin(); it != dep->end(); it++)
+	struct Call
 	{
-		SDGNode *v2 = *it;
-		if(v2->done_)
-			continue;
-		if(v2->index_ == -1)
+		Call(SDGNode *v, SDGNodeVector::iterator w) : v(v), root(true), w(w)
 		{
-			tarjan(v2, s, index);
-			v1->lowlink_ = std::min(v1->lowlink_, v2->lowlink_);
 		}
-		else if (v2->stacked_)
-		{
-			v1->lowlink_ = std::min(v1->lowlink_, v2->index_);
-		}
-	}
-	if (v1->lowlink_ == v1->index_)
+
+		SDGNode *v;
+		bool root;
+		SDGNodeVector::iterator w;
+	};
+}
+
+void SDG::tarjan(SDGNode *v, int &index, int &back, std::vector<SDGNode*> &stack)
+{
+	std::vector<Call> callstack;
+	callstack.push_back(Call(v, v->getDependency()->begin()));
+	v->index_ = index++;
+	while(!callstack.empty())
 	{
-		SCC *scc = new SCC();
-		int nodes = 0;
-		SDGNode *v2;
-		do
+Start:
+		Call &c = callstack.back();
+		v = c.v;
+		for(; c.w != c.v->getDependency()->end(); c.w++)
 		{
-			v2 = s.top();
-			v2->scc_ = scc;
-			if(v2->getStatement())
-				scc->rules_.push_back(v2->getStatement());
-			s.pop();
-			v2->stacked_ = false;
-			nodes++;
+			SDGNode *w = *c.w;
+			if(w->index_ == 0)
+			{
+				callstack.push_back(Call(w, w->getDependency()->begin()));
+				w->index_ = index++;
+				goto Start;
+			}
+			if(w->index_ < v->index_)
+			{
+				v->index_ = (*c.w)->index_;
+				c.root = false;
+			}
 		}
-		while(v1 != v2);
-		// initialize with fact or basic program
-		scc->type_ = nodes == 1 ? SCC::FACT : SCC::BASIC;
-		//scc->type_ = nodes == 1 ? SCC::FACT : SCC::NORMAL;
-		sccs_.push_back(scc);
-		bool root = true;
-		// calc type and dependency of program
-		calcSCCDep(v1, scc, root);
-		if(root)
-			sccRoots_.insert(scc);
+		if(c.root)
+		{
+			SCC *scc = new SCC();
+			int nodes = 1;
+			v->scc_ = scc;
+			if(v->getStatement())
+				scc->rules_.push_back(v->getStatement());
+			index--;
+			while(!stack.empty() && v->index_ <= stack.back()->index_)
+			{
+				stack.back()->index_ = back;
+				stack.back()->scc_ = scc;
+				if(stack.back()->getStatement())
+					scc->rules_.push_back(stack.back()->getStatement());
+				stack.pop_back();
+				index--;
+				nodes++;
+			}
+			v->index_ = back;
+			back--;
+			// initialize with fact or basic program
+			scc->type_ = nodes == 1 ? SCC::FACT : SCC::BASIC;
+			//scc->type_ = nodes == 1 ? SCC::FACT : SCC::NORMAL;
+			sccs_.push_back(scc);
+			bool root = true;
+			// calc type and dependency of program
+			calcSCCDep(v, scc, root);
+			if(root)
+				sccRoots_.insert(scc);
+		}
+		else
+		{
+			stack.push_back(v);
+		}
+		callstack.pop_back();
 	}
 }
 
@@ -148,25 +173,37 @@ void SDG::calcSCCDep(SDGNode *v1, SCC *scc, bool &root)
 
 void SDG::calcSCCs(Grounder *g)
 {
+	int index = 1, back = ruleNodes_.size() + predicateNodes_.size() - 1;
+	std::vector<SDGNode*> stack;
+	/*
+	std::cout << "rule nodes: " << ruleNodes_.size() << std::endl;
+	std::cout << "pred nodes: " << predicateNodes_.size() << std::endl;
+	for(SDGNodeVector::iterator i = ruleNodes_.begin(); i != ruleNodes_.end(); i++)
+	{
+		std::cout << *i << " =>";
+		for(SDGNodeVector::iterator j = (*i)->getDependency()->begin(); j != (*i)->getDependency()->end(); j++)
+			std::cout << " " << *j;
+		std::cout << std::endl;
+	}
+	for(SDGNodeVector::iterator i = predicateNodes_.begin(); i != predicateNodes_.end(); i++)
+	{
+		std::cout << *i << " =>";
+		for(SDGNodeVector::iterator j = (*i)->getDependency()->begin(); j != (*i)->getDependency()->end(); j++)
+			std::cout << " " << *j;
+		std::cout << std::endl;
+	}
+	*/
 	for(SDGNodeVector::iterator it = ruleNodes_.begin(); it != ruleNodes_.end(); it++)
 	{
 		SDGNode *v = *it;
-		if(!v->done_)
-		{
-			int index = 0;
-			std::stack<SDGNode*> stack;
-			tarjan(v, stack, index);
-		}
+		if(v->index_ == 0)
+			tarjan(v, index, back, stack);
 	}
 	for(SDGNodeVector::iterator it = predicateNodes_.begin(); it != predicateNodes_.end(); it++)
 	{
 		SDGNode *v = *it;
-		if(!v->done_)
-		{
-			int index = 0;
-			std::stack<SDGNode*> stack;
-			tarjan(v, stack, index);
-		}
+		if(v->index_ == 0)
+			tarjan(v, index, back, stack);
 		// set the type of the domain
 		v->getDomain()->setType(static_cast<Domain::Type>(v->scc_->type_));
 		if(v->dependency_.size() == 0)
@@ -188,7 +225,9 @@ void SDG::calcSCCs(Grounder *g)
 		// if there is something to ground add it to the grounder
 		if(top->rules_.size() > 0)
 		{
-			g->addProgram(new Program(static_cast<Program::Type>(top->type_), top->rules_));
+			Program *p = new Program(static_cast<Program::Type>(top->type_), top->rules_);
+			//std::cout << pp(g, p) << std::endl;
+			g->addProgram(p);
 		}
 		for(SCCSet::iterator it = top->sccs_.begin(); it != top->sccs_.end(); it++)
 		{
@@ -212,11 +251,11 @@ SDG::~SDG()
 
 // =================================== SDGNode ===========================================
 
-SDGNode::SDGNode(Domain *domain) : lowlink_(-1), index_(-1), type_(PREDICATENODE), stacked_(0), done_(0), scc_(0), dom_(domain)
+SDGNode::SDGNode(Domain *domain) : index_(0), type_(PREDICATENODE), done_(0), scc_(0), dom_(domain)
 {
 }
 
-SDGNode::SDGNode(Statement *rule) : lowlink_(-1), index_(-1), type_(STATEMENTNODE), stacked_(0), done_(0), scc_(0), rule_(rule)
+SDGNode::SDGNode(Statement *rule) : index_(0), type_(STATEMENTNODE), done_(0), scc_(0), rule_(rule)
 {
 }
 
@@ -262,3 +301,4 @@ void SDGNode::addDependency(SDGNode *n, bool neg)
 SDGNode::~SDGNode() 
 {
 }
+
