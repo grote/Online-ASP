@@ -692,6 +692,16 @@ A cyclic assignment that results in an unbound variable is not allowed and is re
 \begin{verbatim}
  a(X) :- X=Y, Y=X.
 \end{verbatim}
+Furthermore the assignment operator can be used with aggregates, for example
+\begin{verbatim}
+ price(apple,5). prices(banana, 6). price(computer, 100).
+ fruit(apple).
+ fruit(banana).
+ max_cost(1..200).
+ costs(C) :- C = [price(X,Y) : fruit(X) : max_cost(Y) = Y].
+\end{verbatim}
+would lead to the fact \texttt{costs(11)} as the price of all fruits.
+$C$ in this example becomes all values that have to be generated for the aggregate.
 
 \paragraph{Classical Negation}
 For classical negation the atom is preceded by a minus sign.
