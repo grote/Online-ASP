@@ -153,8 +153,15 @@ bool mapASPils(const std::string& s, int &out, int*) {
 
 bool mapMode(const std::string& s, bool &out, bool*) {
 	std::string temp = toLower(s);
-	if (temp == "grounder") { out = true;  return true; }
-	if (temp == "solver")   { out = false; return true; }
+	if (temp == "no") { out = true;  return true; }
+	if (temp == "yes")   { out = false; return true; }
+	return false;
+}
+
+bool mapStop(const std::string& s, bool &out, bool*) {
+	std::string temp = toLower(s);
+	if (temp == "unsat") { out = true;  return true; }
+	if (temp == "sat")   { out = false; return true; }
 	return false;
 }
 
@@ -241,10 +248,10 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("verbose,V", bool_switch(&verbose), "Print extra information")
 		("stats"    , bool_switch(&stats),  "Print extended statistics")
 #ifdef WITH_CLASP
-		("mode"     , value<bool>(&grounder)->parser(mapMode), "Set the working mode\n"
-			"\tDefault: grounder\n"
-			"\t  grounder : Standard grounding mode\n"
-			"\t  solver   : Pass input directly to clasp")
+		("solveonly"     , value<bool>(&grounder)->parser(mapMode), "Set the working mode\n"
+			"\tDefault: No\n"
+			"\t  No  : Standard mode\n"
+			"\t  Yes : Pass input directly to clasp (lparse format required)")
 #endif
 	;
 	allOpts.addOptions(common);
@@ -273,14 +280,14 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("imax"        , value<int>(&imax)    , "Maximum number of incremental steps", "<num>")
 		("incremental,i"   , bool_switch(&iclaspOut), "Use incremental clasp interface")
 		("ibase"       , bool_switch(&ibase)  , "(not implemented yet)")
-		("iunsat"      , value<bool>(&iunsat)->defaultValue(false), "Stop condition during incremental solving\n"
-			"\tDefault: no\n"
-			"\t  yes : Stop if no solution found\n"
-			"\t  no  : Stop if solution found")
+		("istop"      , value<bool>(&iunsat)->parser(mapStop), "Stop condition during incremental solving\n"
+			"\tDefault: SAT\n"
+			"\t  UNSAT : Stop if no solution found\n"
+			"\t  SAT   : Stop if solution found")
 		("ilearnt" , value<bool>(&keepHeuristic)->parser(mapKeepForget), "How to handle learnt nogoods during incremental solving\n"
 			"\tDefault: forget\n"
 			"\t  keep   : Keep learnt nogoods\n"
-			"\t  forget : Forget heuristic information")
+			"\t  forget : Forget learnt nogoods")
 		("iheuristic", value<bool>(&keepLearnts)->parser(mapKeepForget), "How to handle heuristic information during incremental solving\n"
 			"\tDefault: keep\n"
 			"\t  keep   : Keep heuristic information\n"
@@ -628,11 +635,11 @@ void Options::printHelp(const OptionGroup& opts, std::ostream& os) const {
 	os << "Default commandline:\n"
 		<< "  " << EXECUTABLE
 #ifdef WITH_ICLASP
-		<< " 1 --incremental"
+		<< " 1 --incremental --istop=SAT --ilearnt=forget --iheuristic=keep"
 #elif defined WITH_CLASP
-		<< " 1 --clasp"
+		<< " 1 --clasp --solveonly=No"
 #else
-		<< " --lparse"
+		<< " --lparse --bindersplitting=Yes"
 #endif
 #ifdef WITH_CLASP
 		<< "\n"
