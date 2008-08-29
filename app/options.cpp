@@ -284,11 +284,11 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 			"\tDefault: SAT\n"
 			"\t  UNSAT : Stop if no solution found\n"
 			"\t  SAT   : Stop if solution found")
-		("ilearnt" , value<bool>(&keepHeuristic)->parser(mapKeepForget), "How to handle learnt nogoods during incremental solving\n"
+		("ilearnt" , value<bool>(&keepLearnts)->parser(mapKeepForget), "How to handle learnt nogoods during incremental solving\n"
 			"\tDefault: forget\n"
 			"\t  keep   : Keep learnt nogoods\n"
 			"\t  forget : Forget learnt nogoods")
-		("iheuristic", value<bool>(&keepLearnts)->parser(mapKeepForget), "How to handle heuristic information during incremental solving\n"
+		("iheuristic", value<bool>(&keepHeuristic)->parser(mapKeepForget), "How to handle heuristic information during incremental solving\n"
 			"\tDefault: keep\n"
 			"\t  keep   : Keep heuristic information\n"
 			"\t  forget : Forget heuristic information")
