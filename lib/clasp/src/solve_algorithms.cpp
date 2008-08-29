@@ -195,7 +195,7 @@ bool solve(Solver& s, const LitVec& assumptions, uint32 maxAs, const SolveParams
 	}
 	for (LitVec::size_type i = 0; i != assumptions.size(); ++i) {
 		Literal p = assumptions[i];
-		if (!s.isTrue(p) && (s.isFalse(p) || !s.assume(p) || !s.propagate())) {
+		if (!s.isTrue(p) && (s.isFalse(p) || !(s.assume(p)&&s.stats.choices--) || !s.propagate())) {
 			s.undoUntil(0);
 			return false;
 		}

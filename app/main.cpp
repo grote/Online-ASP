@@ -229,17 +229,19 @@ int MainApp::run(int argc, char **argv)
 		cerr << (mode == ASP_MODE ? "" : "c ") << "Reading from stdin" << endl;
 #else
 	if(options.verbose)
-		cerr << EXECUTABLE << " version " << GRINGO_VERSION << endl;
-	if(options.files.size() > 0)
 	{
-		vector<string>::iterator i = options.files.begin();
-		cerr << "Reading from " << *i;
-		for(i++; i != options.files.end(); i++)
-			cerr << ", " << *i;
-		cerr << "\n";
+		cerr << EXECUTABLE << " version " << GRINGO_VERSION << endl;
+		if(options.files.size() > 0)
+		{
+			vector<string>::iterator i = options.files.begin();
+			cerr << "Reading from " << *i;
+			for(i++; i != options.files.end(); i++)
+				cerr << ", " << *i;
+			cerr << "\n";
+		}
+		else
+			cerr << "Reading from stdin" << endl;
 	}
-	else
-		cerr << "Reading from stdin" << endl;
 #endif
 
 #ifdef WITH_CLASP
