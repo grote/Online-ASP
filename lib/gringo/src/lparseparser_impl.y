@@ -237,6 +237,7 @@ body(res) ::= body(body) COMMA body_literal(literal). { res = body; res->push_ba
 body(res) ::= body_literal(literal).                  { res = new LiteralVector(); res->push_back(literal); }
 
 conditional(res) ::= predicate(pred).       { res = pred; }
+conditional(res) ::= NOT predicate(pred).   { res = pred; res->setNeg(true); }
 conditional(res) ::= relation_literal(rel). { res = rel; }
 
 conditional_list(res) ::= conditional_list(list) DDOT conditional(cond). { res = list ? list : new LiteralVector(); res->push_back(cond); }
