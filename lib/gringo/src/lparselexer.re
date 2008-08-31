@@ -63,7 +63,7 @@ begin:
 		MINIMIZE        = "#"? 'minimize';
 		MAXIMIZE        = "#"? 'maximize';
 		COMPUTE         = "#"? 'compute';
-		LAMBDA          = "#incremental";
+		LAMBDA          = "#cumulative";
 		BASE            = "#base";
 		DELTA           = "#volatile";
 

@@ -181,10 +181,10 @@ using namespace NS_GRINGO;
 
 start ::= program.
 
-program ::= program BASE DOT.                             { GROUNDER->setIncPart(BASE, 0); }
-program ::= program LAMBDA LPARA VARIABLE(var) RPARA DOT. { GROUNDER->setIncPart(LAMBDA, STRING(var)); }
-program ::= program DELTA LPARA VARIABLE(var) RPARA DOT.  { GROUNDER->setIncPart(DELTA, STRING(var)); }
-program ::= program rule(rule) DOT.                       { if(rule) pParser->getGrounder()->addStatement(rule); }
+program ::= program BASE DOT.                 { GROUNDER->setIncPart(BASE, 0); }
+program ::= program LAMBDA VARIABLE(var) DOT. { GROUNDER->setIncPart(LAMBDA, STRING(var)); }
+program ::= program DELTA VARIABLE(var) DOT.  { GROUNDER->setIncPart(DELTA, STRING(var)); }
+program ::= program rule(rule) DOT.           { if(rule) pParser->getGrounder()->addStatement(rule); }
 program ::= program SHOW show_list DOT.
 program ::= program HIDE hide_list DOT.
 program ::= program DOMAIN domain_list DOT.
