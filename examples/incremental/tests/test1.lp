@@ -1,9 +1,9 @@
 #base.
 p(0).
 
-#incremental(X).
-p(X) :- p(X-1).
+#cumulative k.
+p(k) :- p(k-1).
 
-#volatile(X).
+#volatile k.
  :- not p(4).
 

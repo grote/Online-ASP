@@ -284,7 +284,7 @@ IndexedDomain *ConditionalLiteral::createIndexedDomain(Grounder *g, VarSet &inde
 	assert(false);
 }
 
-ConditionalLiteral::ConditionalLiteral(const ConditionalLiteral &p) : pred_(p.clone_ ? p.clone_ : static_cast<PredicateLiteral*>(p.pred_->clone())), weight_(p.weight_ ? p.weight_->clone() : 0), grounder_(0), dg_(0), clone_(0)
+ConditionalLiteral::ConditionalLiteral(const ConditionalLiteral &p) : Literal(p), pred_(p.clone_ ? p.clone_ : static_cast<PredicateLiteral*>(p.pred_->clone())), weight_(p.weight_ ? p.weight_->clone() : 0), grounder_(0), dg_(0), clone_(0)
 {
 	if(p.conditionals_)
 	{
@@ -420,6 +420,16 @@ void ConditionalLiteral::preprocess(Grounder *g, Expandable *e)
 	}
 	if(weight_)
 		weight_->preprocess(this, weight_, g, e);
+}
+
+void ConditionalLiteral::addIncParam(Grounder *g, const Value &v)
+{
+	pred_->addIncParam(g, v);
+	if(conditionals_)
+		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
+			(*it)->addIncParam(g, v);
+	if(weight_)
+		weight_->addIncParam(g, weight_, v);
 }
 
 double ConditionalLiteral::heuristicValue()

@@ -143,7 +143,7 @@ IndexedDomain *AssignmentLiteral::createIndexedDomain(Grounder *g, VarSet &index
 		return new IndexedDomainMatchOnly(this);
 }
 
-AssignmentLiteral::AssignmentLiteral(const AssignmentLiteral &r) : c_(static_cast<Variable*>(r.c_->clone())), t_(r.t_->clone())
+AssignmentLiteral::AssignmentLiteral(const AssignmentLiteral &r) : Literal(r), c_(static_cast<Variable*>(r.c_->clone())), t_(r.t_->clone())
 {
 }
 
@@ -161,6 +161,12 @@ Literal* AssignmentLiteral::clone() const
 NS_OUTPUT::Object *AssignmentLiteral::convert()
 {
 	assert(false);
+}
+
+void AssignmentLiteral::addIncParam(Grounder *g, const Value &v)
+{
+	// c_ doesnt need to be changed
+	t_->addIncParam(g, t_, v);
 }
 
 AssignmentLiteral::~AssignmentLiteral()

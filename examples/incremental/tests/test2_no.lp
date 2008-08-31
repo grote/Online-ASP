@@ -9,7 +9,7 @@ p(0) :- not -p(0).
 -p(0) :- not p(0).
 :- p(0), -p(0).
 
-%#incremental(K).
+%#cumulative(K).
 
 a(K) :- not -a(K).
 -a(K) :- not a(K).

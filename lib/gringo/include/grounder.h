@@ -31,7 +31,7 @@ namespace NS_GRINGO
 		typedef std::vector<DomainPredicate> DomainPredicateVector;
 		typedef std::map<int, int> VariableMap;
 		typedef std::map<int, std::pair<bool, Term*> > ConstTerms;
-		typedef std::vector<std::pair<std::pair<IncPart, int>, int> > IncParts;
+		typedef std::vector<std::pair<std::pair<IncPart, Value>, int> > IncParts;
 	public:
 		struct Options
 		{
@@ -65,7 +65,7 @@ namespace NS_GRINGO
 		Evaluator *getEvaluator();
 		/// Adds a domain that never occurs in any head
 		void addZeroDomain(Domain *d);
-		void setIncPart(IncPart part, int var);
+		void setIncPart(IncPart part, const Value &v);
 		
 		int getIncStep() const;
 		bool isIncGrounding() const;
@@ -84,6 +84,7 @@ namespace NS_GRINGO
 		IncParts incParts_;
 		bool incremental_;
 		int incStep_;
+		
 
 		int internalVars_;
 		ProgramVector sccs_;

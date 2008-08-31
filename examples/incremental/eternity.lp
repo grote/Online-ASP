@@ -28,12 +28,12 @@ colB(X,Y,C4) :- place(X, Y, N, C1, C2, C3, C4).
 
 %%%%%%%%%%%%%%%%%% test %%%%%%%%%%%%%%%%%%%%%%
 
-#incremental(T).
-check(T, T, 1..T).
-check(T, 1..T, T).
+#cumulative t.
+check(t, t, 1..t).
+check(t, 1..t, t).
 
- :- check(T,X,Y), colL(X,Y,C1), colR(X+1,Y,C2), C1 != C2.
- :- check(T,X,Y), colT(X,Y,C1), colB(X,Y+1,C2), C1 != C2.
+ :- check(t,X,Y), colL(X,Y,C1), colR(X+1,Y,C2), C1 != C2.
+ :- check(t,X,Y), colT(X,Y,C1), colB(X,Y+1,C2), C1 != C2.
 
 #base.
 

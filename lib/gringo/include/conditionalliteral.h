@@ -50,6 +50,7 @@ namespace NS_GRINGO
 		virtual void appendLiteral(Literal *l, ExpansionType type);
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual double heuristicValue();
+		virtual void addIncParam(Grounder *g, const Value &v);
 		void setNeg(bool neg);
 
 		bool hasConditionals();

@@ -409,167 +409,37 @@ void NormalRule::appendLiteral(Literal *l, ExpansionType type)
 
 namespace
 {
-	class IndexedDomainInc : public IndexedDomain
-	{
-	public:
-		IndexedDomainInc(int uid) : uid_(uid)
-		{
-		}
-		void firstMatch(int binder, DLVGrounder *g, MatchStatus &status)
-		{
-			//std::cerr << "matching with: " << Value(g->g_->getIncStep()) << std::endl;
-			g->g_->setValue(uid_, Value(Value::INT, g->g_->getIncStep()), binder);
-			status = SuccessfulMatch;
-		}
-		void nextMatch(int binder, DLVGrounder *g, MatchStatus &status)
-		{
-			status = FailureOnNextMatch;
-		}
-		virtual ~IndexedDomainInc()
-		{
-		}
-	private:
-		int uid_;
-	};
-	
-	class LambdaLiteral : public Literal
-	{
-	public:
-		LambdaLiteral(Variable *c) : c_(c)
-		{
-		}
-		LambdaLiteral(const LambdaLiteral &l) : c_(static_cast<Variable*>(l.c_->clone()))
-		{
-		}
-		void getVars(VarSet &vars) const
-		{
-			c_->getVars(vars);
-		}
-		bool checkO(LiteralVector &unsolved)
-		{
-			return true;
-		}
-		void preprocess(Grounder *g, Expandable *e)
-		{
-		}
-		void reset()
-		{
-			assert(false);
-		}
-		void finish()
-		{
-			assert(false);
-		}
-		void evaluate()
-		{
-			assert(false);
-		}
-		bool solved()
-		{
-			return true;
-		}
-		bool isFact(Grounder *g)
-		{
-			return true;
-		}
-		Literal* clone() const
-		{
-			return new LambdaLiteral(*this);
-		}
-		IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index)
-		{
-			if(index.find(c_->getUID()) != index.end())
-			{
-				return new IndexedDomainMatchOnly(this);
-			}
-			else
-			{
-				return new IndexedDomainInc(c_->getUID());
-			}
-		}
-		bool match(Grounder *g)
-		{
-			return (int)c_->getValue(g) == g->getIncStep();
-		}
-		NS_OUTPUT::Object *convert()
-		{
-			assert(false);
-		}
-		SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
-		{
-			// a rule with a lambda predicate is a normal logic program
-			// cause otherwise ill get problems with the basicprogram evaluater
-			/*
-			assert(todo == ADD_BODY_DEP);
-			prev->addDependency(prev, true);
-			*/
-			return 0;
-		}
-		void createNode(LDGBuilder *dg, bool head)
-		{
-			assert(!head);
-			VarSet needed, provided;
-			c_->getVars(provided);
-			dg->createNode(this, head, needed, provided);
-		}
-		void createNode(StatementChecker *dg, bool head, bool delayed)
-		{
-			VarSet needed, provided;
-			c_->getVars(provided);
-			dg->createNode(needed, provided);
-		}
-		double heuristicValue()
-		{
-			return 0;
-		}
-		void print(const GlobalStorage *g, std::ostream &out) const
-		{
-			out << "lambda(" << pp(g, c_) << ")";
-		}
- 		virtual ~LambdaLiteral()
-		{
-			delete c_;
-		}
-	private:
-		Variable *c_;
-	};
-
 	class DeltaLiteral : public Literal
 	{
 	public:
-		DeltaLiteral(Variable *c) : c_(c)
+		DeltaLiteral() { }
+		DeltaLiteral(const DeltaLiteral &l) : Literal(l) { }
+		void getVars(VarSet &vars) const { }
+		bool checkO(LiteralVector &unsolved) { return true; }
+		void preprocess(Grounder *g, Expandable *e) { }
+		void reset() { assert(false); }
+		void finish() { assert(false); }
+		void evaluate() { assert(false); }
+		bool solved() { return false; }
+		void createNode(StatementChecker *dg, bool head, bool delayed) { }
+		void addIncParam(Grounder *g, const Value &v) { }
+ 		virtual ~DeltaLiteral() { }
+
+		SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo) 
 		{
+			// a rule with a goal is always a normal logic program
+			assert(todo == ADD_BODY_DEP);
+			prev->addDependency(prev, true);
+			return 0;
 		}
-		DeltaLiteral(const DeltaLiteral &l) : c_(static_cast<Variable*>(l.c_->clone()))
-		{
+
+		void createNode(LDGBuilder *dg, bool head) 
+		{ 
+			assert(!head);
+			VarSet empty;
+			dg->createNode(this, head, empty, empty);
 		}
-		void getVars(VarSet &vars) const
-		{
-			c_->getVars(vars);
-		}
-		bool checkO(LiteralVector &unsolved)
-		{
-			return true;
-		}
-		void preprocess(Grounder *g, Expandable *e)
-		{
-		}
-		void reset()
-		{
-			assert(false);
-		}
-		void finish()
-		{
-			assert(false);
-		}
-		void evaluate()
-		{
-			assert(false);
-		}
-		bool solved()
-		{
-			return false;
-		}
+
 		bool isFact(Grounder *g)
 		{
 			if(g->options().ifixed >= 0)
@@ -577,75 +447,45 @@ namespace
 			else
 				return false;
 		}
+
 		Literal* clone() const
 		{
 			return new DeltaLiteral(*this);
 		}
+
 		IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index)
 		{
-			if(index.find(c_->getUID()) != index.end())
-			{
-				return new IndexedDomainMatchOnly(this);
-			}
-			else
-			{
-				return new IndexedDomainInc(c_->getUID());
-			}
+			return new IndexedDomainMatchOnly(this);
 		}
+
 		bool match(Grounder *g)
 		{
-			return (int)c_->getValue(g) == g->getIncStep();
+			return true;
 		}
+
 		NS_OUTPUT::Object *convert()
 		{
 			return new NS_OUTPUT::DeltaObject();
 		}
-		SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo)
-		{
-			// a rule with a goal is always a normal logic program
-			assert(todo == ADD_BODY_DEP);
-			prev->addDependency(prev, true);
-			return 0;
-		}
-		void createNode(LDGBuilder *dg, bool head)
-		{
-			assert(!head);
-			VarSet needed, provided;
-			c_->getVars(provided);
-			dg->createNode(this, head, needed, provided);
-		}
-		void createNode(StatementChecker *dg, bool head, bool delayed)
-		{
-			VarSet needed, provided;
-			c_->getVars(provided);
-			dg->createNode(needed, provided);
-		}
+
 		double heuristicValue()
 		{
 			return 0;
 		}
+
 		void print(const GlobalStorage *g, std::ostream &out) const
 		{
-			out << "delta(" << pp(g, c_) << ")";
+			out << "delta";
 		}
- 		virtual ~DeltaLiteral()
-		{
-			delete c_;
-		}
-	private:
-		Variable *c_;
 	};
 }
 
-void NormalRule::setIncPart(Grounder *g, IncPart part, int var)
+void NormalRule::setIncPart(Grounder *g, IncPart part, const Value &v)
 {
 	switch(part)
 	{
 		case BASE:
 			once_ = 1;
-			break;
-		case LAMBDA:
-			appendLiteral(new LambdaLiteral(new Variable(g, var)), Expandable::COMPLEXTERM);
 			break;
 		case DELTA:
 			if(g->options().ifixed >= 0)
@@ -653,7 +493,16 @@ void NormalRule::setIncPart(Grounder *g, IncPart part, int var)
 				ground_ = 0;
 				last_   = 1;
 			}
-			appendLiteral(new DeltaLiteral(new Variable(g, var)), Expandable::COMPLEXTERM);
+			appendLiteral(new DeltaLiteral(), Expandable::COMPLEXTERM);
+			// no break! //
+		case LAMBDA:
+			if(head_)
+				head_->addIncParam(g, v);
+			if(body_)
+			{
+				for(LiteralVector::iterator it = body_->begin(); it != body_->end(); it++)
+					(*it)->addIncParam(g, v);
+			}
 			break;
 		default:
 			break;

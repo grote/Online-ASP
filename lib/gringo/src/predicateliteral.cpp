@@ -41,7 +41,7 @@ PredicateLiteral::PredicateLiteral(Grounder *g, int id, TermVector *variables) :
 {
 }
 
-PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : uid_(p.uid_), predNode_(p.predNode_), id_(p.id_), values_(p.values_.size())
+PredicateLiteral::PredicateLiteral(const PredicateLiteral &p) : Literal(p), uid_(p.uid_), predNode_(p.predNode_), id_(p.id_), values_(p.values_.size())
 {
         if(p.variables_)
         {
@@ -371,6 +371,12 @@ double PredicateLiteral::heuristicValue()
 		return DBL_MAX;
 }
 
+void PredicateLiteral::addIncParam(Grounder *g, const Value &v)
+{
+	if(variables_)
+		for(TermVector::iterator i = variables_->begin(); i != variables_->end(); i++)
+			(*i)->addIncParam(g, *i, v);
+}
 
 void PredicateLiteral::getVars(VarSet &vars) const
 {

@@ -39,6 +39,7 @@ namespace NS_GRINGO
 	public:
 		/// Constructor initializes neg to false
 		Literal();
+		Literal(const Literal &l);
 		/**
 		 * \brief Sets the sign of the literal
 		 * \param neg The new sign
@@ -143,6 +144,8 @@ namespace NS_GRINGO
 		virtual void createNode(StatementChecker *dg, bool head, bool delayed) = 0;
 		virtual double heuristicValue() = 0;
 		virtual void binderSplit(Expandable *e, const VarSet &relevant);
+		virtual void addIncParam(Grounder *g, const Value &v) = 0;
+
 		/// Destructor
  		virtual ~Literal();
 	protected:

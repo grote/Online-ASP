@@ -48,6 +48,7 @@ bool AggregateLiteral::isFact(Grounder *g)
 
 void AggregateLiteral::setBounds(Term *lower, Term *upper)
 {
+	equal_ = 0;
 	lower_ = lower;
 	upper_ = upper;
 }
@@ -55,8 +56,8 @@ void AggregateLiteral::setBounds(Term *lower, Term *upper)
 void AggregateLiteral::setEqual(Variable *equal)
 {
 	equal_ = equal;
-	lower_ = equal_->clone();
-	upper_ = equal_->clone();
+	lower_ = 0;
+	upper_ = 0;
 }
 
 bool AggregateLiteral::checkO(LiteralVector &unsolved) 
@@ -108,11 +109,16 @@ bool AggregateLiteral::match(Grounder *g)
 void AggregateLiteral::getVars(VarSet &vars) const
 {
 	if(equal_)
+	{
 		equal_->getVars(vars);
-	if(lower_)
-		lower_->getVars(vars);
-	if(upper_)
-		upper_->getVars(vars);
+	}
+	else
+	{
+		if(lower_)
+			lower_->getVars(vars);
+		if(upper_)
+			upper_->getVars(vars);
+	}
 	for(ConditionalLiteralVector::const_iterator it = literals_->begin(); it != literals_->end(); it++)
 		(*it)->getVars(vars);
 }
@@ -140,7 +146,9 @@ void AggregateLiteral::createNode(LDGBuilder *dg, bool head)
 {
 	VarSet needed, provided;
 	if(equal_)
+	{
 		equal_->getVars(provided);
+	}
 	else
 	{
 		if(lower_)
@@ -269,7 +277,7 @@ IndexedDomain *AggregateLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 		return new IndexedDomainMatchOnly(this);
 }
 
-AggregateLiteral::AggregateLiteral(const AggregateLiteral &a) : lower_(a.lower_ ? a.lower_->clone() : 0), upper_(a.upper_ ? a.upper_->clone() : 0), equal_(a.equal_ ? static_cast<Variable*>(equal_->clone()) : 0)
+AggregateLiteral::AggregateLiteral(const AggregateLiteral &a) : Literal(a), lower_(a.lower_ ? a.lower_->clone() : 0), upper_(a.upper_ ? a.upper_->clone() : 0), equal_(a.equal_ ? static_cast<Variable*>(equal_->clone()) : 0)
 {
 	if(a.literals_)
 	{
@@ -294,10 +302,19 @@ void AggregateLiteral::preprocess(Grounder *g, Expandable *e)
 	if(literals_)
 		for(size_t i = 0; i < literals_->size(); i++)
 			(*literals_)[i]->preprocess(g, this);
-	if(upper_)
-		upper_->preprocess(this, upper_, g, e);
-	if(lower_)
-		lower_->preprocess(this, lower_, g, e);
+	if(equal_)
+	{
+		// equal_ doesnt need to be preprocessed
+		lower_ = equal_;
+		upper_ = equal_;
+	}
+	else
+	{
+		if(upper_)
+			upper_->preprocess(this, upper_, g, e);
+		if(lower_)
+			lower_->preprocess(this, lower_, g, e);
+	}
 }
 
 ConditionalLiteralVector *AggregateLiteral::getLiterals() const
@@ -328,14 +345,37 @@ double AggregateLiteral::heuristicValue()
 	return DBL_MAX;
 }
 
+void AggregateLiteral::addIncParam(Grounder *g, const Value &v)
+{
+	if(equal_)
+	{
+		// equal_ doesnt need to be changed
+	}
+	else
+	{
+		if(upper_)
+			upper_->addIncParam(g, upper_, v);
+		if(lower_)
+			lower_->addIncParam(g, lower_, v);
+	}
+	if(literals_)
+		for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+			(*it)->addIncParam(g, v);
+}
+
 AggregateLiteral::~AggregateLiteral()
 {
 	if(equal_)
+	{
 		delete equal_;
-	if(lower_)
-		delete lower_;
-	if(upper_)
-		delete upper_;
+	}
+	else
+	{
+		if(lower_)
+			delete lower_;
+		if(upper_)
+			delete upper_;
+	}
 	if(literals_)
 	{
 		for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)

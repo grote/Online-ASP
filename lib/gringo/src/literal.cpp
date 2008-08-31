@@ -23,6 +23,10 @@ Literal::Literal() : neg_(false)
 {
 }
 
+Literal::Literal(const Literal &l) : neg_(l.neg_)
+{
+}
+
 void Literal::setNeg(bool neg)
 {
 	neg_ = neg;

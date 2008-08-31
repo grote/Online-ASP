@@ -86,6 +86,7 @@ private:
 
 	static void printSatEliteProgress(uint32 i, SatElite::SatElite::Options::Action a)
 	{
+		/*
 		static const char pro[] = { '/', '-', '\\', '|' };
 		if(a == SatElite::SatElite::Options::pre_start)
 			cerr << '|';
@@ -98,6 +99,7 @@ private:
 		
 		else if(a == SatElite::SatElite::Options::pre_stopped)
 			cerr << '\b' << "Stop";
+		*/
 	}
 	std::istream &getStream()
 	{

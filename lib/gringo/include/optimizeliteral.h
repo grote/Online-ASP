@@ -49,6 +49,7 @@ namespace NS_GRINGO
 		virtual Literal *clone() const;
 		virtual NS_OUTPUT::Object *convert();
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
+		virtual void addIncParam(Grounder *g, const Value &v);
 		virtual ~OptimizeLiteral();
 	protected:
 		Type type_;

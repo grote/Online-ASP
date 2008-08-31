@@ -128,6 +128,12 @@ bool FuncSymbolTerm::unify(const GlobalStorage *g, const Value& t, const VarVect
 
 }
 
+void FuncSymbolTerm::addIncParam(Grounder *g, Term *&p, const Value &v)
+{
+	for (TermVector::iterator i = termList_->begin(); i != termList_->end(); ++i)
+		(*i)->addIncParam(g, *i, v);
+}
+
 FuncSymbolTerm::~FuncSymbolTerm()
 {
 	for (TermVector::iterator i = termList_->begin(); i != termList_->end(); ++i)

@@ -36,6 +36,7 @@ namespace NS_GRINGO
  		virtual Term* clone() const;
 		virtual void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e);
 		virtual bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& subst) const;
+		virtual void addIncParam(Grounder *g, Term *&p, const Value &v);
 		virtual ~FuncSymbolTerm();
 	protected:
 		int          name_;

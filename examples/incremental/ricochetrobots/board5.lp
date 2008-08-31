@@ -1,5 +1,4 @@
 #const dimension=5.
-#const lastime=6.
 
 #base.
 
@@ -12,11 +11,11 @@ barrier(1,2,south).
 barrier(4,3,east).
 barrier(2,5,east).
 
-#delta(T).
+#volatile t.
 
-%:- not position(red,3,5,T).
-:- not position(red,4,4,T).
-%:- not position(red,4,5,T).
-%:- not position(red,1,2,T).
-%:- not position(red,4,2,T).
-%:- not position(red,4,2,T).
+%:- not position(red,3,5,t).
+:- not position(red,4,4,t).
+%:- not position(red,4,5,t).
+%:- not position(red,1,2,t).
+%:- not position(red,4,2,t).
+%:- not position(red,4,2,t).

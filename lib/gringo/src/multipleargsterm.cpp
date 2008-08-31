@@ -83,13 +83,17 @@ namespace
 		Value getConstValue(Grounder *g) { assert(false); }
 		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { assert(false); }
 		void print(const GlobalStorage *g, std::ostream &out) const { assert(false); }
-		bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& subst) const
-		{
-			assert(false);
-		}
+		bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& subst) const { assert(false); }
+		void addIncParam(Grounder *g, Term *&p, const Value &v) { assert(false); }
 	protected:
 		Term *a_;
 	};
+}
+
+void MultipleArgsTerm::addIncParam(Grounder *g, Term *&p, const Value &v) 
+{
+	a_->addIncParam(g, a_, v);
+	b_->addIncParam(g, b_, v);
 }
 
 void MultipleArgsTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)

@@ -44,6 +44,7 @@ namespace NS_GRINGO
 		virtual Literal* clone() const;
 		virtual void print(const GlobalStorage *g, std::ostream &out) const;
 		virtual double heuristicValue();
+		virtual void addIncParam(Grounder *g, const Value &v);
 		virtual ~RangeLiteral();
 	protected:
 		Variable *var_;

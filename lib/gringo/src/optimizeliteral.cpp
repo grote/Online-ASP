@@ -189,7 +189,7 @@ IndexedDomain *OptimizeLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 	assert(false);
 }
 
-OptimizeLiteral::OptimizeLiteral(const OptimizeLiteral &a) : type_(a.type_), setSemantic_(a.setSemantic_)
+OptimizeLiteral::OptimizeLiteral(const OptimizeLiteral &a) : Literal(a), type_(a.type_), setSemantic_(a.setSemantic_)
 {
 	if(a.literals_)
 	{
@@ -237,6 +237,11 @@ void OptimizeLiteral::print(const GlobalStorage *g, std::ostream &out) const
 }
 
 double OptimizeLiteral::heuristicValue()
+{
+	assert(false);
+}
+
+void  OptimizeLiteral::addIncParam(Grounder *g, const Value &v)
 {
 	assert(false);
 }

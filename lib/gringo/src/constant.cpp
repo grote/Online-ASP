@@ -70,7 +70,53 @@ Term* Constant::clone() const
 	return new Constant(*this);
 }
 
+namespace
+{
+	class IncTerm : public Term
+	{
+	public:
+		IncTerm() {}
+		IncTerm(const IncTerm &c) {}
+		Term* clone() const
+		{
+			return new IncTerm(*this);
+		}
+
+		bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& subst) const 
+		{
+			return t.equal(Value(Value::INT, static_cast<const Grounder *>(g)->getIncStep()));
+		}
+
+		Value getValue(Grounder *g) 
+		{ 
+			return Value(Value::INT, g->getIncStep()); 
+		}
+
+		Value getConstValue(Grounder *g) 
+		{ 
+			return Value(Value::INT, g->getIncStep()); 
+		}
+
+		void getVars(VarSet &vars) const { }
+		bool isComplex() { return false; }
+		void preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e) { }
+		void print(const GlobalStorage *g, std::ostream &out) const { out << "incremental"; }
+		void addIncParam(Grounder *g, Term *&p, const Value &v) { assert(false); }
+		~IncTerm() { }
+	};
+}
+
+void  Constant::addIncParam(Grounder *g, Term *&p, const Value &v)
+{
+	if(value_.equal(v))
+	{
+		p = new IncTerm();
+		delete this;
+	}
+}
+
 bool Constant::unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& vals) const
 {
 	return t.equal(value_);
 }
+

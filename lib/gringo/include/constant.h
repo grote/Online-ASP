@@ -37,6 +37,7 @@ namespace NS_GRINGO
 		virtual Value getValue(Grounder *g);
 		virtual Term* clone() const;
 		bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& vals) const;
+		virtual void addIncParam(Grounder *g, Term *&p, const Value &v);
  		virtual ~Constant();
 	protected:
 		Value value_;

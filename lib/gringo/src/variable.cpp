@@ -71,6 +71,10 @@ Term* Variable::clone() const
 	return new Variable(*this);
 }
 
+void  Variable::addIncParam(Grounder *g, Term *&p, const Value &v)
+{
+}
+
 bool Variable::unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& vals) const
 {
 	// TODO: constant access would be nice

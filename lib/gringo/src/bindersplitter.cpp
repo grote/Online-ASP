@@ -259,6 +259,11 @@ BinderSplitter::~BinderSplitter()
 {
 }
 
+void  BinderSplitter::addIncParam(Grounder *g, const Value &v)
+{
+	assert(false);
+}
+
 void BinderSplitter::preprocess(Grounder *g, Expandable *e)
 {
 	assert(false);

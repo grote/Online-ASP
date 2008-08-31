@@ -138,6 +138,12 @@ void RelationLiteral::preprocess(Grounder *g, Expandable *e)
 	b_->preprocess(this, b_, g, e);
 }
 
+void RelationLiteral::addIncParam(Grounder *g, const Value &v)
+{
+	a_->addIncParam(g, a_, v);
+	b_->addIncParam(g, b_, v);
+}
+
 double RelationLiteral::heuristicValue()
 {
 	// match it as soon as possible
@@ -149,7 +155,7 @@ IndexedDomain *RelationLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 	return new IndexedDomainMatchOnly(this);
 }
 
-RelationLiteral::RelationLiteral(const RelationLiteral &r) : type_(r.type_), a_(r.a_->clone()), b_(r.b_->clone())
+RelationLiteral::RelationLiteral(const RelationLiteral &r) : Literal(r), type_(r.type_), a_(r.a_->clone()), b_(r.b_->clone())
 {
 }
 

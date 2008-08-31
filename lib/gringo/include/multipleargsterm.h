@@ -39,6 +39,7 @@ namespace NS_GRINGO
 		{
 			assert(false);
 		}
+		virtual void addIncParam(Grounder *g, Term *&p, const Value &v);
 		virtual ~MultipleArgsTerm();
 	protected:
 		Term *a_;

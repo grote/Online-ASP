@@ -47,6 +47,7 @@ namespace NS_GRINGO
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual NS_OUTPUT::Object *convert();
 		virtual double heuristicValue();
+		virtual void addIncParam(Grounder *g, const Value &v);
 		virtual ~BinderSplitter();
 	protected:
 		Domain *domain_;

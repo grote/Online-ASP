@@ -38,6 +38,7 @@ namespace NS_GRINGO
 		int getUID();
 		virtual Term* clone() const;
 		bool unify(const GlobalStorage *g, const Value& t, const VarVector& vars, ValueVector& vals) const;
+		virtual void addIncParam(Grounder *g, Term *&p, const Value &v);
  		virtual ~Variable();
 	protected:
 		int id_;

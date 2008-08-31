@@ -41,6 +41,7 @@ namespace NS_GRINGO
 		{
 			assert(false);
 		}
+		virtual void addIncParam(Grounder *g, Term *&p, const Value &v);
 		virtual ~FunctionTerm();
 	protected:
 		FunctionType type_;

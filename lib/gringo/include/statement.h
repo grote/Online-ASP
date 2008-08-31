@@ -95,7 +95,7 @@ namespace NS_GRINGO
 		 * \param pl The domain predicate
 		 */
 		virtual void addDomain(PredicateLiteral *pl) = 0;
-		virtual void setIncPart(Grounder *g, IncPart part, int var) = 0;
+		virtual void setIncPart(Grounder *g, IncPart part, const Value &v) = 0;
 		/// Destructor
 		virtual ~Statement();
 	};

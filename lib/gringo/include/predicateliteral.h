@@ -60,6 +60,7 @@ namespace NS_GRINGO
 		Domain *getDomain() const;
 		const ValueVector &getValues();
 		virtual void binderSplit(Expandable *e, const VarSet &relevant);
+		virtual void addIncParam(Grounder *g, const Value &v);
 		virtual ~PredicateLiteral();
 	protected:
 		int           uid_;

@@ -1,6 +1,7 @@
-#base.
-#incremental(K).
-d(K).
-K { q(X) : d(X) } K. 
-#volatile(K).
-:- not d(5).
+#cumulative k.
+d(k).
+k { q(X) : d(X) } k. 
+
+#volatile k.
+ :- not q(1..4).
+

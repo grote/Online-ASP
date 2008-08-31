@@ -4,18 +4,18 @@ p(0) :- not -p(0).
 -p(0) :- not p(0).
 :- p(0), -p(0).
 
-#incremental(K).
+#cumulative k.
 
-a(K) :- not -a(K).
--a(K) :- not a(K).
-p(K) :- a(K).
-p(K) :- p(K-1), not -p(K).
--p(K) :- -p(K-1), not p(K).
-:- p(K), -p(K).
-:- a(K), -a(K).
+a(k) :- not -a(k).
+-a(k) :- not a(k).
+p(k) :- a(k).
+p(k) :- p(k-1), not -p(k).
+-p(k) :- -p(k-1), not p(k).
+:- p(k), -p(k).
+:- a(k), -a(k).
 
-#volatile(K).
+#volatile k.
 
 :- not -p(0).
-:- not p(K).
-:- not -a(K).
+:- not p(k).
+:- not -a(k).

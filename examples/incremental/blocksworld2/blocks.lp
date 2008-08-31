@@ -15,26 +15,26 @@ loc(X) :- block(X).
 % initial situation the blocks are stacked
 on(X, X - 1, 0) :- block(X).
 
-#incremental(T).
+#cumulative t.
 
 % move one block
-1 { mv(X,Y,T) : block(X) : loc(Y) : X != Y } 1.
+1 { mv(X,Y,t) : block(X) : loc(Y) : X != Y } 1.
 
 % mark moved blocks
-moved(X, T) :- mv(X,Y,T).
+moved(X, t) :- mv(X,Y,t).
 
 % move the stone
-on(X,Y,T) :- mv(X,Y,T).
+on(X,Y,t) :- mv(X,Y,t).
 % all other stones stay where they are
-on(X,Y,T) :- block(X), loc(Y), not moved(X, T), on(X,Y,T - 1).
+on(X,Y,t) :- block(X), loc(Y), not moved(X, t), on(X,Y,t - 1).
 
 % assert incorrect moves
 % only blocks on top can be moved
- :- mv(X, Y, T), on(Z, X, T-1).
+ :- mv(X, Y, t), on(Z, X, t-1).
 % blocks can only be put on topmost blocks
- :- mv(X, Y, T), block(Y), on(Z, Y, T - 1).
+ :- mv(X, Y, t), block(Y), on(Z, Y, t - 1).
 
-#volatile(T).
+#volatile t.
 % all blocks have to be on the table
- :- block(X), not on(X, 0, T).
+ :- block(X), not on(X, 0, t).
 

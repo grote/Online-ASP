@@ -58,6 +58,7 @@ namespace NS_GRINGO
 		ConditionalLiteralVector *getLiterals() const;
 		Term *getLower() const;
 		Term *getUpper() const;
+		virtual void addIncParam(Grounder *g, const Value &v);
 		virtual ~AggregateLiteral();
 	protected:
 		ConditionalLiteralVector *literals_;

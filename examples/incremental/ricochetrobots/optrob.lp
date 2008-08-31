@@ -1,15 +1,15 @@
 % Some optimizations
 
-#incremental(T).
+#cumulative t.
 
 % --- forbid redundant return moves
-:- go(R,east,T - 1),go(R,west,T).
-:- go(R,west,T - 1),go(R,east,T).
-:- go(R,south,T - 1),go(R,north,T).
-:- go(R,north,T - 1),go(R,south,T).
+:- go(R,east,t - 1),go(R,west,t).
+:- go(R,west,t - 1),go(R,east,t).
+:- go(R,south,t - 1),go(R,north,t).
+:- go(R,north,t - 1),go(R,south,t).
 
 
-%:- not position(red,           1,        1,T),time(T). % don't move red    robot
-%:- not position(green, dimension,        1,T),time(T). % don't move green  robot
-%:- not position(blue,          1,dimension,T),time(T). % don't move blue   robot
-%:- not position(yellow,dimension,dimension,T),time(T). % don't move yellow robot
+%:- not position(red,           1,        1,t),time(t). % don't move red    robot
+%:- not position(green, dimension,        1,t),time(t). % don't move green  robot
+%:- not position(blue,          1,dimension,t),time(t). % don't move blue   robot
+%:- not position(yellow,dimension,dimension,t),time(t). % don't move yellow robot

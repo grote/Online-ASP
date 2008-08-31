@@ -162,12 +162,18 @@ void RangeLiteral::preprocess(Grounder *g, Expandable *e)
 	upper_->preprocess(this, upper_, g, e);
 }
 
+void RangeLiteral::addIncParam(Grounder *g, const Value &v)
+{
+	lower_->addIncParam(g, lower_, v);
+	upper_->addIncParam(g, upper_, v);
+}
+
 NS_OUTPUT::Object *RangeLiteral::convert()
 {
 	assert(false);
 }
 
-RangeLiteral::RangeLiteral(const RangeLiteral &r) : var_(static_cast<Variable*>(r.var_->clone())), lower_(r.lower_->clone()), upper_(r.upper_->clone())
+RangeLiteral::RangeLiteral(const RangeLiteral &r) : Literal(r), var_(static_cast<Variable*>(r.var_->clone())), lower_(r.lower_->clone()), upper_(r.upper_->clone())
 {
 }
 

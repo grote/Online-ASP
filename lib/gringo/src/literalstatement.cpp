@@ -116,7 +116,7 @@ LiteralStatement::~LiteralStatement()
 	delete lit_;
 }
 
-void LiteralStatement::setIncPart(Grounder *g, IncPart part, int var)
+void LiteralStatement::setIncPart(Grounder *g, IncPart part, const Value &v)
 {
 	std::cerr << "The following statement cant be used with the incremental interface: " << std::endl << "\t" << this << std::endl;
 	throw GrinGoException("Error: unsupported statement.");

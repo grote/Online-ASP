@@ -8,7 +8,7 @@ time(1..timesteps).
 
 %#base.
 
-%#incremental(K).
+%#cumulative(K).
 d(K).
 
 {q(X,K)} :- not l(K-1,X), d(X), X<K.

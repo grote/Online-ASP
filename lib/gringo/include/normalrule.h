@@ -50,7 +50,7 @@ namespace NS_GRINGO
 		virtual void grounded(Grounder *g);
 		virtual bool ground(Grounder *g, GroundStep step);
 		virtual void addDomain(PredicateLiteral *pl);
-		virtual void setIncPart(Grounder *g, IncPart part, int var);
+		virtual void setIncPart(Grounder *g, IncPart part, const Value &v);
 	private:
 		/**
 		 * \brief Calculate the relevant vars in the body

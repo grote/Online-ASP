@@ -10,68 +10,70 @@ target_square(X, Y) :- target(X, Y).
 initial_box(X, Y)   :- stone(X, Y).
 initial_at(X, Y)    :- start(X, Y).
 
-#incremental(K).
+direction(u).
+direction(d).
+direction(r).
+direction(l).
 
-direction(u) :- K<2.
-direction(d) :- K<2.
-direction(r) :- K<2.
-direction(l) :- K<2.
+route(X,Y,0) :- initial_at(X,Y).
+route(X,Y,0) :- route(X+1,Y,0), not box(X,Y,0), square(X,Y).
+route(X,Y,0) :- route(X-1,Y,0), not box(X,Y,0), square(X,Y).
+route(X,Y,0) :- route(X,Y+1,0), not box(X,Y,0), square(X,Y).
+route(X,Y,0) :- route(X,Y-1,0), not box(X,Y,0), square(X,Y).
 
-route(X,Y,0) :- initial_at(X,Y), K<2.
-route(X,Y,0) :- route(X+1,Y,0), not box(X,Y,0), square(X,Y), K<2.
-route(X,Y,0) :- route(X-1,Y,0), not box(X,Y,0), square(X,Y), K<2.
-route(X,Y,0) :- route(X,Y+1,0), not box(X,Y,0), square(X,Y), K<2.
-route(X,Y,0) :- route(X,Y-1,0), not box(X,Y,0), square(X,Y), K<2.
-route(X,Y,K) :- at(X,Y,K), square(X,Y).
-route(X,Y,K) :- route(X+1,Y,K), not box(X,Y,K), square(X,Y).
-route(X,Y,K) :- route(X-1,Y,K), not box(X,Y,K), square(X,Y).
-route(X,Y,K) :- route(X,Y+1,K), not box(X,Y,K), square(X,Y).
-route(X,Y,K) :- route(X,Y-1,K), not box(X,Y,K), square(X,Y).
+box(X,Y,0) :- initial_box(X,Y).
 
-1{push_from(X,Y,D,K) : square(X,Y) : direction(D)}1.
-:- push_from(X,Y,D,K), not route(X,Y,K-1), square(X,Y), direction(D).
-:- push_from(X,Y,u,K), not box(X,Y+1,K-1), square(X,Y).
-:- push_from(X,Y,d,K), not box(X,Y-1,K-1), square(X,Y).
-:- push_from(X,Y,r,K), not box(X+1,Y,K-1), square(X,Y).
-:- push_from(X,Y,l,K), not box(X-1,Y,K-1), square(X,Y).
+#cumulative k.
 
-push(X,Y,D,K) :- push_from(X,Y,D,K), square(X,Y), direction(D).
-{push(X,Y+1,u,K)} :- push(X,Y,u,K), square(X,Y).
-{push(X,Y-1,d,K)} :- push(X,Y,d,K), square(X,Y).
-{push(X+1,Y,r,K)} :- push(X,Y,r,K), square(X,Y).
-{push(X-1,Y,l,K)} :- push(X,Y,l,K), square(X,Y).
-:- push(X,Y,u,K), not square(X,Y+2), square(X,Y).
-:- push(X,Y,d,K), not square(X,Y-2), square(X,Y).
-:- push(X,Y,r,K), not square(X+2,Y), square(X,Y).
-:- push(X,Y,l,K), not square(X-2,Y), square(X,Y).
-:- push(X,Y,u,K), box(X,Y+2,K-1), square(X,Y).
-:- push(X,Y,d,K), box(X,Y-2,K-1), square(X,Y).
-:- push(X,Y,r,K), box(X+2,Y,K-1), square(X,Y).
-:- push(X,Y,l,K), box(X-2,Y,K-1), square(X,Y).
+route(X,Y,k) :- at(X,Y,k), square(X,Y).
+route(X,Y,k) :- route(X+1,Y,k), not box(X,Y,k), square(X,Y).
+route(X,Y,k) :- route(X-1,Y,k), not box(X,Y,k), square(X,Y).
+route(X,Y,k) :- route(X,Y+1,k), not box(X,Y,k), square(X,Y).
+route(X,Y,k) :- route(X,Y-1,k), not box(X,Y,k), square(X,Y).
 
-push_to(X,Y,u,K) :- push(X,Y-1,u,K), not push(X,Y,u,K), square(X,Y).
-push_to(X,Y,d,K) :- push(X,Y+1,d,K), not push(X,Y,d,K), square(X,Y).
-push_to(X,Y,r,K) :- push(X-1,Y,r,K), not push(X,Y,r,K), square(X,Y).
-push_to(X,Y,l,K) :- push(X+1,Y,l,K), not push(X,Y,l,K), square(X,Y).
+1{push_from(X,Y,D,k) : square(X,Y) : direction(D)}1.
+:- push_from(X,Y,D,k), not route(X,Y,k-1), square(X,Y), direction(D).
+:- push_from(X,Y,u,k), not box(X,Y+1,k-1), square(X,Y).
+:- push_from(X,Y,d,k), not box(X,Y-1,k-1), square(X,Y).
+:- push_from(X,Y,r,k), not box(X+1,Y,k-1), square(X,Y).
+:- push_from(X,Y,l,k), not box(X-1,Y,k-1), square(X,Y).
 
-at(X,Y,K) :- push_to(X,Y,D,K), square(X,Y), direction(D).
+push(X,Y,D,k) :- push_from(X,Y,D,k), square(X,Y), direction(D).
+{push(X,Y+1,u,k)} :- push(X,Y,u,k), square(X,Y).
+{push(X,Y-1,d,k)} :- push(X,Y,d,k), square(X,Y).
+{push(X+1,Y,r,k)} :- push(X,Y,r,k), square(X,Y).
+{push(X-1,Y,l,k)} :- push(X,Y,l,k), square(X,Y).
+:- push(X,Y,u,k), not square(X,Y+2), square(X,Y).
+:- push(X,Y,d,k), not square(X,Y-2), square(X,Y).
+:- push(X,Y,r,k), not square(X+2,Y), square(X,Y).
+:- push(X,Y,l,k), not square(X-2,Y), square(X,Y).
+:- push(X,Y,u,k), box(X,Y+2,k-1), square(X,Y).
+:- push(X,Y,d,k), box(X,Y-2,k-1), square(X,Y).
+:- push(X,Y,r,k), box(X+2,Y,k-1), square(X,Y).
+:- push(X,Y,l,k), box(X-2,Y,k-1), square(X,Y).
 
-box(X,Y,0) :- initial_box(X,Y), K<2.
-box(X,Y+2,K) :- push(X,Y,u,K), not push(X,Y+1,u,K), square(X,Y).
-box(X,Y-2,K) :- push(X,Y,d,K), not push(X,Y-1,d,K), square(X,Y).
-box(X+2,Y,K) :- push(X,Y,r,K), not push(X+1,Y,r,K), square(X,Y).
-box(X-2,Y,K) :- push(X,Y,l,K), not push(X-1,Y,l,K), square(X,Y).
-box(X,Y,K) :- box(X,Y,K-1), square(X,Y),
-              not push_from(X,Y-1,u,K), not push_from(X,Y+1,d,K), 
-              not push_from(X-1,Y,r,K), not push_from(X+1,Y,l,K).
+push_to(X,Y,u,k) :- push(X,Y-1,u,k), not push(X,Y,u,k), square(X,Y).
+push_to(X,Y,d,k) :- push(X,Y+1,d,k), not push(X,Y,d,k), square(X,Y).
+push_to(X,Y,r,k) :- push(X-1,Y,r,k), not push(X,Y,r,k), square(X,Y).
+push_to(X,Y,l,k) :- push(X+1,Y,l,k), not push(X,Y,l,k), square(X,Y).
 
-:- push_to(X,Y,u,K-1), push_from(X,Y,u,K), square(X,Y).
-:- push_to(X,Y,d,K-1), push_from(X,Y,d,K), square(X,Y).
-:- push_to(X,Y,r,K-1), push_from(X,Y,r,K), square(X,Y).
-:- push_to(X,Y,l,K-1), push_from(X,Y,l,K), square(X,Y).
+at(X,Y,k) :- push_to(X,Y,D,k), square(X,Y), direction(D).
 
-#volatile(K).
-:- target_square(X,Y), not box(X,Y,K).
+box(X,Y+2,k) :- push(X,Y,u,k), not push(X,Y+1,u,k), square(X,Y).
+box(X,Y-2,k) :- push(X,Y,d,k), not push(X,Y-1,d,k), square(X,Y).
+box(X+2,Y,k) :- push(X,Y,r,k), not push(X+1,Y,r,k), square(X,Y).
+box(X-2,Y,k) :- push(X,Y,l,k), not push(X-1,Y,l,k), square(X,Y).
+box(X,Y,k) :- box(X,Y,k-1), square(X,Y),
+              not push_from(X,Y-1,u,k), not push_from(X,Y+1,d,k), 
+              not push_from(X-1,Y,r,k), not push_from(X+1,Y,l,k).
+
+:- push_to(X,Y,u,k-1), push_from(X,Y,u,k), square(X,Y).
+:- push_to(X,Y,d,k-1), push_from(X,Y,d,k), square(X,Y).
+:- push_to(X,Y,r,k-1), push_from(X,Y,r,k), square(X,Y).
+:- push_to(X,Y,l,k-1), push_from(X,Y,l,k), square(X,Y).
+
+#volatile k.
+:- target_square(X,Y), not box(X,Y,k).
 
 #base.
 

@@ -75,6 +75,13 @@ void FunctionTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 		b_->preprocess(l, b_, g, e);
 }
 
+void FunctionTerm::addIncParam(Grounder *g, Term *&p, const Value &v)
+{
+	a_->addIncParam(g, a_, v);
+	if(b_)
+		b_->addIncParam(g, b_, v);
+}
+
 bool FunctionTerm::isComplex()
 {
 	return true;

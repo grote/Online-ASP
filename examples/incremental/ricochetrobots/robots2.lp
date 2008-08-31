@@ -3,7 +3,7 @@
 % http://en.wikipedia.org/wiki/Ricochet_Robot
 % http://www.ricochetrobots.com
 %
-% ASP encoding by Torsten Schaub
+% ASP encoding by torsten Schaub
 %
 % --- remarks
 %   - (1,1) is north-west corner
@@ -15,7 +15,7 @@
 %     given in the respective board description files,
 %      eg. board16-1.
 
-%#domain time(T).
+%#domain time(t).
 
 %time(1..lastime).
 
@@ -52,31 +52,31 @@ dir(east,  1,  0).
 dir(north, 0, -1).
 dir(south, 0,  1).
 
-#incremental(T).
+#cumulative t.
 
 % which places are reachable by a robot
-reachable(R, I + DI, J + DJ, D, T) :- not blocked2(I, J, T), dir(D, DI, DJ), go(R, D, T), position(R, I, J, T - 1), dim(I;J).
-reachable(R, I + DI, J + DJ, D, T) :- not blocked2(I, J, T), reachable(R, I, J, D, T), dir(D, DI, DJ), go(R, D, T), dim(I;J).
+reachable(R, I + DI, J + DJ, D, t) :- not blocked2(I, J, t), dir(D, DI, DJ), go(R, D, t), position(R, I, J, t - 1), dim(I;J).
+reachable(R, I + DI, J + DJ, D, t) :- not blocked2(I, J, t), reachable(R, I, J, D, t), dir(D, DI, DJ), go(R, D, t), dim(I;J).
 
 % no crossing of blockages or robots
-blocked2(I, J, T) :- blocked(I, J, D), go(R, D, T).
-blocked2(I - DI, J - DJ, T) :- position(R, I, J, T - 1), selectDir(D, T), dir(D, DI, DJ).
+blocked2(I, J, t) :- blocked(I, J, D), go(R, D, t).
+blocked2(I - DI, J - DJ, t) :- position(R, I, J, t - 1), selectDir(D, t), dir(D, DI, DJ).
 
 % move it (no stopping if there is neither a blockage nor a robot)
-position(R, I, J, T) :- reachable(R, I, J, D, T), not reachable(R, I + DI, J + DJ, D, T), dir(D, DI, DJ), go(R, D, T).
+position(R, I, J, t) :- reachable(R, I, J, D, t), not reachable(R, I + DI, J + DJ, D, t), dir(D, DI, DJ), go(R, D, t).
 
 % one has to be moved
-moved(T) :- reachable(R, I, J, D, T).
- :- not moved(T).
+moved(t) :- reachable(R, I, J, D, t).
+ :- not moved(t).
 
 % inertia
-position(R, I, J, T) :- position(R, I, J, T - 1), not selectRobot(R, T), robot(R), dim(I;J).
+position(R, I, J, t) :- position(R, I, J, t - 1), not selectRobot(R, t), robot(R), dim(I;J).
 
 % plan generator
-1 { selectRobot(R, T) : robot(R) } 1.
-1 { selectDir(D,T)    : direction(D) } 1.
+1 { selectRobot(R, t) : robot(R) } 1.
+1 { selectDir(D,t)    : direction(D) } 1.
 
-go(R, D, T) :- selectRobot(R, T), selectDir(D,T).
+go(R, D, t) :- selectRobot(R, t), selectDir(D,t).
 
 #hide.
 %#show moved/4.

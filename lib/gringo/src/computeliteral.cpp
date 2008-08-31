@@ -155,7 +155,7 @@ IndexedDomain *ComputeLiteral::createIndexedDomain(Grounder *g, VarSet &index)
 	assert(false);
 }
 
-ComputeLiteral::ComputeLiteral(const ComputeLiteral &a) : number_(a.number_)
+ComputeLiteral::ComputeLiteral(const ComputeLiteral &a) : Literal(a), number_(a.number_)
 {
 	if(a.literals_)
 	{
@@ -203,6 +203,11 @@ void ComputeLiteral::print(const GlobalStorage *g, std::ostream &out) const
 }
 
 double ComputeLiteral::heuristicValue()
+{
+	assert(false);
+}
+
+void  ComputeLiteral::addIncParam(Grounder *g, const Value &v)
 {
 	assert(false);
 }

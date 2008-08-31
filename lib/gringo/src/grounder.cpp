@@ -163,7 +163,7 @@ void Grounder::prepare(bool incremental)
 
 	if(incremental_ && incParts_.size() == 0)
 	{
-		incParts_.push_back(make_pair(std::make_pair(BASE, 0), rules_.size()));
+		incParts_.push_back(make_pair(std::make_pair(BASE, Value()), rules_.size()));
 		std::cerr << "Warning: There are no #base, #lambda or #delta sections." << std::endl;
 	}
 
@@ -208,15 +208,15 @@ void Grounder::ground()
 	}
 }
 
-void Grounder::setIncPart(IncPart part, int var)
+void Grounder::setIncPart(IncPart part, const Value &v)
 {
 	if(incParts_.size() == 0 && rules_.size() > 0)
 	{
-		incParts_.push_back(make_pair(std::make_pair(BASE, 0), rules_.size()));
+		incParts_.push_back(make_pair(std::make_pair(BASE, Value()), rules_.size()));
 		std::cerr << "Warning: There are statements not within a #base, #lambda or #delta section." << std::endl;
 		std::cerr << "         These Statements are put into the #base section." << std::endl;
 	}
-	incParts_.push_back(make_pair(std::make_pair(part, var), 0));
+	incParts_.push_back(make_pair(std::make_pair(part, v), 0));
 }
 
 

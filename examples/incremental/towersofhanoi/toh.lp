@@ -1,24 +1,24 @@
 #hide.
 #show put(M,N,K).
 
-#incremental(K).
+#cumulative k.
 
-1{move(N,K)  : disk(N) : N > 3}1.
-1{where(N,K) : disk(N)}1.
+1{move(N,k)  : disk(N) : N > 3}1.
+1{where(N,k) : disk(N)}1.
 
-on(M,N,K) :- disk(M;N), move(M,K), where(N,K).
-on(M,N,K) :- disk(M;N), on(M,N,K-1), not move(M,K).
+on(M,N,k) :- disk(M;N), move(M,k), where(N,k).
+on(M,N,k) :- disk(M;N), on(M,N,k-1), not move(M,k).
 
-:- disk(N), move(N,K-1), move(N,K).
-:- disk(M;N), on(M,N,K-1), move(N,K).
-:- disk(M;N), on(M,N,K-1), where(N,K).
-:- disk(M;N), on(M,N,K), M <= N.
+:- disk(N), move(N,k-1), move(N,k).
+:- disk(M;N), on(M,N,k-1), move(N,k).
+:- disk(M;N), on(M,N,k-1), where(N,k).
+:- disk(M;N), on(M,N,k), M <= N.
 
-put(M,N,K) :- disk(M;N), move(M,K), where(N,K).
+put(M,N,k) :- disk(M;N), move(M,k), where(N,k).
 
-#volatile(K).
+#volatile k.
 
-:- goal_on(X,Y), not on(X,Y,K).
+:- goal_on(X,Y), not on(X,Y,k).
 
 #base.
 

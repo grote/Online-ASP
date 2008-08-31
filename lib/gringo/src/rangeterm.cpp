@@ -50,6 +50,12 @@ void RangeTerm::preprocess(Literal *l, Term *&p, Grounder *g, Expandable *e)
 	delete this;
 }
 
+void RangeTerm::addIncParam(Grounder *g, Term *&p, const Value &v)
+{
+	lower_->addIncParam(g, lower_, v);
+	upper_->addIncParam(g, upper_, v);
+}
+
 void RangeTerm::print(const GlobalStorage *g, std::ostream &out) const
 {
 	out << pp(g, lower_) << ".." << pp(g, upper_);
