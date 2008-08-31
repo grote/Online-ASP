@@ -652,6 +652,7 @@ bool MainApp::solveIncremental()
 	CTimer all;
 	do 
 	{
+		//solver.stats = SolverStatistics();
 		all.Start();
 		setState(start_ground);
 		if(options.verbose || options.istats)
