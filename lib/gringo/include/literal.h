@@ -44,12 +44,12 @@ namespace NS_GRINGO
 		 * \brief Sets the sign of the literal
 		 * \param neg The new sign
 		 */
-		void setNeg(bool neg);
+		virtual void setNeg(bool neg);
 		/**
 		 * \brief Retrieve the sign ofthe literal.
 		 * \return Returns the sign
 		 */
-		bool getNeg() const;
+		virtual bool getNeg() const;
 		/**
 		 * \brief Retrieve the vars of the literal
 		 * \param vars Reference to a set used to store the result

@@ -28,6 +28,7 @@ namespace NS_GRINGO
 	public:
 		DisjunctionAggregate(ConditionalLiteralVector *literals);
 		DisjunctionAggregate(const DisjunctionAggregate &a);
+		virtual void setNeg(bool neg);
 		virtual Literal *clone() const;
 		virtual void preprocess(Grounder *g, Expandable *e);
 		virtual bool match(Grounder *g);

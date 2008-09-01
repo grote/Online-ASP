@@ -29,6 +29,13 @@ ConjunctionAggregate::ConjunctionAggregate(ConditionalLiteralVector *literals) :
 {
 }
 
+void ConjunctionAggregate::setNeg(bool neg)
+{
+	// the literal itself will never be negative
+	for(ConditionalLiteralVector::iterator it = literals_->begin(); it != literals_->end(); it++)
+		(*it)->setNeg(neg);
+}
+
 bool ConjunctionAggregate::match(Grounder *g)
 {
 	fact_ = true;

@@ -28,6 +28,7 @@ namespace NS_GRINGO
 	public:
 		ConjunctionAggregate(ConditionalLiteralVector *literals);
 		ConjunctionAggregate(const ConjunctionAggregate &a);
+		virtual void setNeg(bool neg);
 		virtual Literal *clone() const;
 		virtual bool match(Grounder *g);
 		virtual void match(Grounder *g, int &lower, int &upper, int &fixed);
