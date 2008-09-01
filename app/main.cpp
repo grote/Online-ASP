@@ -153,7 +153,7 @@ static void sigHandler(int)
 #else
 	printf("\n*** INTERRUPTED! ***\n");
 #endif
-	exit(S_UNKNOWN);
+	_exit(S_UNKNOWN);
 } 
 
 void MainApp::setState(State s)
