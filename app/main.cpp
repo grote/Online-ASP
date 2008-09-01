@@ -703,9 +703,9 @@ bool MainApp::solveIncremental()
 		sstats.restarts += solver.stats.restarts;
 		sstats.choices  += solver.stats.choices;
 		sstats.conflicts+= solver.stats.conflicts;
-		sstats.restarts  = sstats.choices = sstats.conflicts = 0;
+		solver.stats.restarts = solver.stats.choices = solver.stats.conflicts = 0;
 	}
-	while(options.imax-- > 1 &&(options.imin-- > 1 || ret == options.iunsat));
+	while(options.imax-- > 1 && (options.imin-- > 1 || ret == options.iunsat));
 	// for the summary
 	*lpStats_ = output.getStats();
 	api.stats.moveTo(*preStats_);
