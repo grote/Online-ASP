@@ -53,12 +53,12 @@ void CTimer::Stop () {
   _sec+= stop.tv_sec - _start.tv_sec;
   if(stop.tv_usec >= _start.tv_usec)
   {
-    _usec+= stop.tv_usec - _start.tv_usec;
+  	_usec+= stop.tv_usec - _start.tv_usec;
   }
   else
   {
-    _usec+= _start.tv_usec - stop.tv_usec;
-    _sec--;
+  	_usec+= 1000000 - _start.tv_usec + stop.tv_usec;
+	_sec--;
   }
   if(_usec >= 1000000)
   {

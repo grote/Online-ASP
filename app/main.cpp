@@ -615,6 +615,14 @@ bool MainApp::solveIncremental()
 	solver.strategies().heuristic->reinit(options.keepHeuristic);
 	grounder.prepare(true);
 	setState(end_read);
+	
+	struct SStats
+	{
+		uint64 restarts;
+		uint64 choices;
+		uint64 conflicts;
+		SStats() : restarts(0), choices(0), conflicts(0) {}
+	} sstats;
 
 	struct IStats
 	{
@@ -624,9 +632,7 @@ bool MainApp::solveIncremental()
 		double tpre;
 		double tsolve;
 		uint32 rules;
-		uint64 choices;
-		uint64 conflicts;
-		IStats() : models(0), ttotal(0), tground(0), tpre(0), tsolve(0), rules(0), choices(0), conflicts(0) {}
+		IStats() : models(0), ttotal(0), tground(0), tpre(0), tsolve(0), rules(0) {}
 		void print(uint32 models, double ttotal, double tground, double tpre, double tsolve, uint32 rules, uint64 choices, uint64 conflicts)
 		{
 			cerr << endl;
@@ -636,23 +642,27 @@ bool MainApp::solveIncremental()
 				<< ", p: " << (tpre - this->tpre) 
 				<< ", s: " << (tsolve - this->tsolve) << ")" << endl;
 			cerr << "Rules    : " << (rules - this->rules) << endl;
-			cerr << "Choices  : " << (choices - this->choices) << endl;
-			cerr << "Conflicts: " << (conflicts - this->conflicts) << endl;
+			cerr << "Choices  : " << choices << endl;
+			cerr << "Conflicts: " << conflicts << endl;
 			this->models    = models;
 			this->ttotal    = ttotal;
 			this->tground   = tground;
 			this->tpre      = tpre;
 			this->tsolve    = tsolve;
 			this->rules     = rules;
-			this->choices   = choices;
-			this->conflicts = conflicts;
 		}
 	} istats;
+
+	StdOutPrinter printer;
+	if(!options.quiet)
+	{
+		printer.index = &api.stats.index;
+		options.solveParams.enumerator()->setPrinter(&printer);
+	}
 
 	CTimer all;
 	do 
 	{
-		//solver.stats = SolverStatistics();
 		all.Start();
 		setState(start_ground);
 		if(options.verbose || options.istats)
@@ -675,12 +685,6 @@ bool MainApp::solveIncremental()
 			if(options.verbose)
 				cerr << "Solving..." << endl;
 			uint64 models = solver.stats.models;
-			StdOutPrinter printer;
-			if(!options.quiet)
-			{
-				printer.index = &api.stats.index;
-				options.solveParams.enumerator()->setPrinter(&printer);
-			}
 			LitVec assumptions;
 			assumptions.push_back(api.stats.index[output.getIncUid()]. lit);
 			more = Clasp::solve(solver, assumptions, options.numModels, options.solveParams);
@@ -696,10 +700,18 @@ bool MainApp::solveIncremental()
 				: output.getStats().rules[0] + output.getStats().rules[1] + output.getStats().rules[OPTIMIZERULE];
 			istats.print(solver.stats.models, all, t_ground, t_pre, t_solve, r, solver.stats.choices, solver.stats.conflicts);
 		}
+		sstats.restarts += solver.stats.restarts;
+		sstats.choices  += solver.stats.choices;
+		sstats.conflicts+= solver.stats.conflicts;
+		sstats.restarts  = sstats.choices = sstats.conflicts = 0;
 	}
 	while(options.imax-- > 1 &&(options.imin-- > 1 || ret == options.iunsat));
+	// for the summary
 	*lpStats_ = output.getStats();
 	api.stats.moveTo(*preStats_);
+	solver.stats.restarts  = sstats.restarts;
+	solver.stats.choices   = sstats.choices;
+	solver.stats.conflicts = sstats.conflicts;
 	return more;
 }
 #	endif
