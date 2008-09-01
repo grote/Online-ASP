@@ -456,6 +456,120 @@ and we can interpret them as the colors of the vertices
            \color{blue}3&\color{red}4}
 \]
 
+\subsection{How to Write an Incremental Program}
+As in writing a non incremental logic problem, we describe a problem rather than an algorithm.
+The difference between a non incremental and an incremental program is that we can use an incremental constant.
+This constant is set to zero at the beginning and the solver tries to find a solution of the problem. If it can not find a solution it starts to increment the constant by one. At each step the solver searches for a solution to the problem and increments the constant until he finds a valid answer set for the logic program.
+The incremental constant can therefore be used among other things to emulate time steps.
+For example, if the solution for a planning problem can not be found in 3 steps, it is tried to find one in more steps.
+To make it concrete, an incremental encoding for the blocksworld problem is presented.
+This is a very simple problem, where $n$ blocks are stacked on top of each other and you can move only one block at the same time. The goal is to stack the blocks in the inverse order.
+Since an incremental logic program is divided into three parts, we start with the base part.
+All rules that hold in all timesteps that are independent of the incremental constant are put here.
+At first we declare $n$ blocks and that each block is a location where a block can be put on.
+Furthermore we define an extra location, the table. That is the location where the bottom most block is put.
+\begin{verbatim}
+ #base.
+
+ block(1..n).
+ location(X) :- block(X).
+ location(table).
+\end{verbatim}
+Now we stack all blocks on top of each other, so block 1 is on block 2, block 2 is on block 3 etc.
+The last block we put on the table.
+This all holds in the initial state, so a $0$ is appended to the ``\texttt{on}'' predicate.
+\begin{verbatim}
+ on(X,X+1,0) :- block(X), X < n.
+ on(n,table,0).
+\end{verbatim}
+After declaring the base part and describing the initial situation we have to describe valid moves for the blocks. This is done in the cumulative part, since moves can be done in each step. For the incremental constant we choose the name ``\texttt{k}''.
+At first we want to execute at least one move every step, but not more than one. This can be done with a cardinality constraint.
+\begin{verbatim}
+ #cumulative k.
+
+ 1{move(X,Y,k) : block(X) : location(Y) : X != Y}1
+\end{verbatim}
+A move is of the form ``\texttt{move(X,Y,k)}'' where \texttt{X} is the block that is moved, \texttt{Y} the new position of the block and \texttt{k} the step when the moved is executed.
+\newline
+Now that we have exactly one move per step we need to define what happens if we move a block.
+Understandably if we move block \texttt{X} to position \texttt{Y} in step \texttt{k}, the new location of the block shall be \texttt{Y}.
+\begin{verbatim}
+ on(X,Y,k) :- move(X,Y,k), block(X), location(Y).
+\end{verbatim}
+For all other blocks that have not moved, the position shall be the same.
+In ASP a little trick is used to describe such a condition.
+We first define a little helper predicate that states that a block is not on a certain position.
+\begin{verbatim}
+ not_on(X,Y,k) :- on(X,Z,k), Y != Z, block(X), location(Y;Z).
+\end{verbatim}
+Now block \texttt{X} is ``\texttt{not\_on}'' a position, where it is not ``\texttt{on}''.
+With this helping predicate we can define that a block is on the same position in step \texttt{k}, if it was not ``\texttt{not\_on}'' that position in the step before.
+\begin{verbatim}
+ on(X,Y,k) :- on(X,Y,k-1), block(X), location(Y), not not_on(X,Y,k).
+\end{verbatim}
+This trick is often used to describe the state of something that has not changed by an action.
+\newline
+Now we have to restrict our moves, because only one block can be moved at the same time and it can only be moved if no other block is on top of it.
+To restrict the moves, an integrity constraint is used.
+\begin{verbatim}
+ :- move(X,Y,k), on(Z,X,k-1), block(X;Z), location(Y).
+\end{verbatim}
+So it is not allowed to move block \texttt{X} in step k, if there is another block on it in the state before.
+Also you can not move a block to a position where another block is on, so only one block on top of another is allowed.
+\begin{verbatim}
+ :- move(X,Y,k), on(Z,Y,k-1), block(X;Y;Z).
+\end{verbatim}
+The description of the problem is nearly finished. All that has to be done is to formulate a query.
+As a constraint to our solution we want to stop if all blocks are on top of each other in reversed order.
+This query shall only hold in the last step, therefore we write it in the volatile part.
+As always for constraints, we use an integrity constraint to express that all solutions are false where there is not block $n+1$ on the block $n$.
+\begin{verbatim}
+ #volatile k.
+
+ :- not on(X+1,X,k), block(X), X < n.
+\end{verbatim}
+To run this example, iclingo has to be used and the constant $n$ has to be set via command line.
+A potential command line call could look like
+\begin{verbatim}
+ iclingo --const n=10 blocksworld.lp
+\end{verbatim}
+and the answer to the problem can be read from the answer set.
+
+%  1 #hide.
+%  2 #show mv(X,Y,Z).
+%  3
+%  4 #base.
+%  5
+%  6 bl(1..n).
+%% Es gibt "n" Blöcke
+%  7 loc(t).
+%  8 loc(X) :- bl(X).
+%% und die Positionen t=table, 1 ... n
+%  9 
+%% Block 1 ist auf Block 2, 2 auf 3 ... und n auf dem Tisch
+% 11
+% 12 #cumulative k.
+% 13
+% 14 1{mv(X,Y,k) : bl(X) : loc(Y) : X != Y}1.
+%% Wähle jeden Zug einen move von Block X nach Y aus
+% 15 on(X,Y,k) :- mv(X,Y,k), bl(X), loc(Y).
+%% Ein Block X ist auf der Position Y (im Schritt k)falls block X nach Y bewegt wird(in Schritt k).
+% 16 on(X,Y,k) :- on(X,Y,k-1), bl(X), loc(Y), not non(X,Y,k).
+% 17 non(X,Y,k) :- on(X,Z,k), Y != Z, bl(X), loc(Y;Z).
+%% Ein Bock X ist auf Position Y (in Schritt k) wenn er nicht, nicht dort lag.
+%% non(X,Y) gilt im Schritt k, falls X NICHT auf Y liegt.
+% 18 :- mv(X,Y,k), on(Z,X,k-1), bl(X;Z), loc(Y).
+%% move von X nach Y (im Schritt k) ist falsch, falls im vorherigen Schritt ein Block auf X lag. ???
+% 19 :- mv(X,Y,k), on(Z,Y,k-1), bl(X;Y;Z).
+%% move von X nach Y (im Schritt k) ist falsch, falls im vorherigen Schritt ein Block auf Y lag
+% 20
+% 21 #volatile k.
+% 22
+% 23 :- not on(X+1,X,k), bl(X), X < n.
+%% solange keine Antwort, bis n auf n-1 ... 2 auf 1 liegt.
+% 24
+% 25 #base.
+
 \subsection{Meta-Syntax}
 This section is about constructs that do not originally belong to the logic program but can be used to give additional information for example to the solver.
 The ``\#'' sign in front of all meta expressions is optional but is it strongly recommend to use it.
@@ -522,21 +636,25 @@ The compute statement is solver dependent and not supported by every solver.
 Comments included in the input are line based.
 Whenever a ``\texttt{\%}'' occurs in the input, the rest of the line is treated as a comment and is therefore omitted.
 \subsubsection{Meta-Syntax for Incremental Programs}
-Incremental programs must be splitted into 3 parts. The base part, for the information that hold in all steps. The incremental part, where the incremental rules must be set, and the volatile part. In this part the queries to the program are given.
-To seperate the part, three statement exists. Everything beyond such a statement is considered to belong to the specific part.
+Incremental programs must be splitted into 3 parts.
+The base part, for the information that hold in all steps ans is independent of the incremental constant.
+The cumulative part, where the cumulative rules must be set that hold in all steps, but depend on the incremental parameter.
+And finally the volatile part. In this part the queries to the program are given, that must hold in the last state.
+To seperate the parts, three statement exists. Everything beyond such a statement is considered to belong to the specific part.
 To start the base part
 \begin{verbatim}
  #base.
 \end{verbatim}
 must be written. Now all rules of the base part can follow.
-For the incremental part an additional variable has to be passed to the statement.
+The use of the incremental constant is not allowed in this part.
+For the cumulative part an additional constant has to be passed to the statement.
 \begin{verbatim}
- #incremental(X).
+ #cumulative k.
 \end{verbatim}
-Now all incremental rules follow. The incremental variable used for grounding is $X$.
+Now all incremental rules follow. The incremental constant used for grounding is $k$.
 The same holds for the volatile part.
 \begin{verbatim}
- #volatile(X).
+ #volatile k.
 \end{verbatim}
 The ``\#''-sign can not be omitted for these meta statements.
 These statements can also be mixed, only the last statement is important.
@@ -610,6 +728,15 @@ would become
  a(1,3) | a(2,3) :- d(a), d(b), d(c).
 \end{verbatim}
 This operator can be used in aggregates to create a comma separated list of atoms.
+For example
+\begin{verbatim}
+ n(1..9).
+ 1{a(X) : n(X) : X > 3}1.
+\end{verbatim}
+would become
+\begin{verbatim}
+ 1 {a(4), a(5), a(6), a(7), a(8), a(9)} 1.
+\end{verbatim}
 
 \paragraph{Conjunctor ;}
 The conjunctor ``;'' will create a conjunction of its elements.

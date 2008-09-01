@@ -35,7 +35,7 @@ state(1,full,4,5..7).
 state(1,full,5,1..7).
 state(1,full,6..7,1..7).
 
-% Note that simply relying on "not status(full)" would give a more ocmpact representation
+% Note that simply relying on "not status(full)" would give a more compact representation
 
 
 #cumulative k.
