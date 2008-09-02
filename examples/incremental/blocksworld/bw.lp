@@ -1,25 +1,41 @@
 #hide.
-#show mv(X,Y,Z).
+#show mv/3.
 
 #base.
 
+% all blocks
 bl(1..n).
+
+% all possible locations
 loc(t).
 loc(X) :- bl(X).
-on(X,X+1,0) :- bl(X), X < n.
+
+% the initial stack of blocks
 on(n,t,0).
+on(X,X+1,0) :- bl(X), X < n.
 
 #cumulative k.
 
-1{mv(X,Y,k) : bl(X) : loc(Y) : X != Y}1.
-on(X,Y,k) :- mv(X,Y,k), bl(X), loc(Y).
-on(X,Y,k) :- on(X,Y,k-1), bl(X), loc(Y), not non(X,Y,k).
-non(X,Y,k) :- on(X,Z,k), Y != Z, bl(X), loc(Y;Z).
-:- mv(X,Y,k), on(Z,X,k-1), bl(X;Z), loc(Y).
-:- mv(X,Y,k), on(Z,Y,k-1), bl(X;Y;Z).
+% plan generator
+1 { mv(X,Y,k) : bl(X) : loc(Y) : X != Y } 1.
+moved(X, k) :- mv(X, Y, k).
+
+% move the block
+on(X,Y,k) :- mv(X,Y,k).
+% inertia
+on(X,Y,k) :- on(X,Y,k-1), bl(X), loc(Y), not moved(X, k).
+
+% a block is blocked if there is sth. on top of it
+blocked(Y, k) :- bl(Y), on(X, Y, k - 1).
+
+% blocked blocks cannot be moved
+ :- mv(X, Y, k), blocked(X, k).
+% nothing can be put on a blocked block
+ :- mv(X, Y, k), blocked(Y, k).
 
 #volatile k.
 
-:- not on(X+1,X,k), bl(X), X < n.
+% the goal is the reversed stack
+ :- not on(X+1,X,k), bl(X), X < n.
 
 #base.
