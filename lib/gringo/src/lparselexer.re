@@ -22,6 +22,7 @@
 
 #include "lparselexer.h"
 #include "lparseparser.h"
+#include "gringoexception.h"
 #include "lparseparser_impl.h"
 
 #define YYCTYPE         char
@@ -55,7 +56,9 @@ begin:
 		IDENTIFIER      = [a-z_] [a-zA-Z0-9_]*;
 		STRING          = "\"" [^"\n]* "\"";
 		VARIABLE        = [A-Z] [a-zA-Z0-9_]*;
-		COMMENT         = "%" [^\n]* "\n";
+		BEGIN_COMMENT   = "%*";
+		END_COMMENT     = "*%";
+		COMMENT         = "%";
 		SHOW            = "#"? 'show';
 		HIDE            = "#"? 'hide';
 		CONST           = "#"? 'const';
@@ -66,11 +69,12 @@ begin:
 		LAMBDA          = "#cumulative";
 		BASE            = "#base";
 		DELTA           = "#volatile";
-
+		
+		BEGIN_COMMENT   { goto block_comment; }
+		COMMENT         { goto comment; }
 		CONST           { return LPARSEPARSER_CONST; }
 		SHOW            { return LPARSEPARSER_SHOW; }
 		HIDE            { return LPARSEPARSER_HIDE; }
-		COMMENT         { if(eof == cursor) return LPARSEPARSER_EOI; step(); goto begin; }
 		WS              { goto begin; }
 		NL              { if(eof == cursor) return LPARSEPARSER_EOI; step(); goto begin; }
 		IF              { return LPARSEPARSER_IF; }
@@ -122,6 +126,18 @@ begin:
 		">="            { return LPARSEPARSER_GE; }
 		"<="            { return LPARSEPARSER_LE; }
 		ANY             { return LPARSEPARSER_ERROR; }
+	*/
+comment:
+	/*!re2c
+		NL              { if(eof == cursor) return LPARSEPARSER_EOI; step(); goto begin; }
+        	ANY             { goto comment; }
+
+	*/
+block_comment:
+	/*!re2c
+		END_COMMENT     { goto begin; }
+		NL              { if(eof == cursor) throw GrinGoException("error: unclosed block comment"); step(); goto block_comment; }
+        	ANY             { goto block_comment; }
 	*/
 }
 

@@ -21,6 +21,7 @@
 #include <cassert>
 
 #include "plainlparselexer.h"
+#include "gringoexception.h"
 #include "lparseconverter.h"
 #include "lparseconverter_impl.h"
 
@@ -55,16 +56,19 @@ begin:
 		IDENTIFIER      = [a-z_] [a-zA-Z0-9_]*;
 		STRING          = "\"" [^"\n]* "\"";
 		VARIABLE        = [A-Z] [a-zA-Z0-9_]*;
-		COMMENT         = "%" [^\n]* "\n";
+		BEGIN_COMMENT   = "%*";
+		END_COMMENT     = "*%";
+		COMMENT         = "%";
 		SHOW            = "#"? 'show';
 		HIDE            = "#"? 'hide';
 		MINIMIZE        = "#"? 'minimize';
 		MAXIMIZE        = "#"? 'maximize';
 		COMPUTE         = "#"? 'compute';
 
+		BEGIN_COMMENT   { goto block_comment; }
+		COMMENT         { goto comment; }
 		SHOW            { return LPARSECONVERTER_SHOW; }
 		HIDE            { return LPARSECONVERTER_HIDE; }
-		COMMENT         { if(eof == cursor) return LPARSECONVERTER_EOI; step(); goto begin; }
 		WS              { goto begin; }
 		NL              { if(eof == cursor) return LPARSECONVERTER_EOI; step(); goto begin; }
 		IF              { return LPARSECONVERTER_IF; }
@@ -94,6 +98,18 @@ begin:
 		"-"             { return LPARSECONVERTER_MINUS; }
 		"="             { return LPARSECONVERTER_ASSIGN; }
 		ANY             { return LPARSECONVERTER_ERROR; }
+	*/
+comment:
+	/*!re2c
+		NL              { if(eof == cursor) return LPARSECONVERTER_EOI; step(); goto begin; }
+        	ANY             { goto comment; }
+
+	*/
+block_comment:
+	/*!re2c
+		END_COMMENT     { goto begin; }
+		NL              { if(eof == cursor) throw GrinGoException("error: unclosed block comment"); step(); goto block_comment; }
+        	ANY             { goto block_comment; }
 	*/
 }
 
