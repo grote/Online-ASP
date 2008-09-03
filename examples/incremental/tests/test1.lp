@@ -5,5 +5,5 @@ p(0).
 p(k) :- p(k-1).
 
 #volatile k.
- :- p(4).
+ :- not p(4).
 
