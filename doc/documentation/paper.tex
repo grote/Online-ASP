@@ -45,16 +45,6 @@ In this paper, at first, the general restrictions to the input language are stat
 In the next chapter the supported input language is described in detail and a short introduction of how to write a logic program is given. The paper closes with some examples of logic programs and gives an outlook of future work that has to be done in the area of grounding logic programs.
 The syntax of the gringo2.0 input language can be found in the appendix \ref{appendix}.
 
-\section{$\lambda$-Restriction}
-\label{domainrestricted}
-There exist two major grounders for ASP besides gringo1.0, lParse \cite{lparseManual} and  the DLV grounding module\cite{DLV}.
-To ensure the existence of an equivalent ground instantiation of a program both grounders except a subclass of logic programs. For lParse the logic programs must be $\omega$-restricted\cite{omega} while DLV can handle safe programs\cite{safe}.
-gringo2.0 verifies that the input program is $\lambda$-
-restricted \cite{gringopaper}, so that the existence of a finite equivalent ground instantiation is guaranteed. 
-$\lambda$-restrictedness extends the capabilities of $\omega$-restricted programs. The definition of $\lambda$-restrictedness can be found in \cite{gringopaper} and was expanded for aggregates and disjunctions.
-$\lambda$-restrictedness can not be compared with the safe programs of DLV since there exist programs that are safe and not $\lambda$-restricted and vice versa.
-
-
 \section{Using Gringo}
 \subsection{Command Line Interface}
 The gringo tools can be started from the command line and have some parameters that can be useful.
@@ -350,6 +340,37 @@ $$
 where $A_0$ to $A_n$ are atoms. \newline
 A logic program $\Pi$ over $\mathcal{L(P,F,C)}$ is a finite set of rules over $\mathcal{L(P,F,C)}$.
 
+\subsection{$\lambda$-Restriction}
+\label{domainrestricted}
+There exist two major grounders for ASP besides gringo1.0, lParse \cite{lparseManual} and  the DLV grounding module\cite{DLV}.
+To ensure the existence of an equivalent ground instantiation of a program both grounders except a subclass of logic programs. For lParse the logic programs must be $\omega$-restricted\cite{omega} while DLV can handle safe programs\cite{safe}.
+gringo2.0 verifies that the input program is $\lambda$-
+restricted \cite{gringopaper}, so that the existence of a finite equivalent ground instantiation is guaranteed. 
+$\lambda$-restrictedness extends the capabilities of $\omega$-restricted programs. The definition of $\lambda$-restrictedness can be found in \cite{gringopaper} and was expanded for aggregates and disjunctions.
+$\lambda$-restrictedness can not be compared with the safe programs of DLV since there exist programs that are safe and not $\lambda$-restricted and vice versa.
+\newline
+To give a gross impression of what $\lambda$-restriction means for writing a logic program an informal description is given.
+In gringo2.0 every variable used in a rule must have a complete domain. This means that this variable has to occur in at least one predicate whichs domain is completed. Therefore the predicate must be in the head of rules that are already domain restricted. So the grounder has to find a valid order of the rules so that every predicate in the head is completed before it is used as a domain predicate for the next rules.
+To make things more clear, an example is given
+\begin{verbatim}
+ zig(0) :- not zag(0).   zag(0) :- not zig(0).
+ zig(1) :- not zag(1).   zag(1) :- not zig(1).
+ zigzag(X,Y) :- zig(X), zag(Y).
+\end{verbatim}
+The rules of this example can be ordered in the following way.
+At first, the rules with \texttt{zig/1} and \texttt{zag/1} are considered.
+Since these are the only rules \texttt{zig/1} and \texttt{zag/1} occurs in the head, the domains of the predicates are closed. The domains \{\texttt{zig(0)}, \texttt{zig(1)}\} and \{ \texttt{zag(0)}, \texttt{zag(1)}\} are complete, since no other predicates of the form \texttt{zig/1} or \texttt{zag/1} can be derived from the program.
+Now the third rule with \texttt{zigzag/2} in the head can be grounded. The variables \texttt{X} and \texttt{Y} both occur in a domain predicate, and the values $0$ respectively $1$ can substitute the variables.
+\newline
+To give a comparison to the $\omega$-restricted programs of lparse, an extra domain predicate has to be introduced to the example.
+\begin{verbatim}
+ domain(0..1).
+ zig(0) :- not zag(0).   zag(0) :- not zig(0).
+ zig(1) :- not zag(1).   zag(1) :- not zig(1).
+ zigzag(X,Y) :- zig(X), zag(Y), domain(X), domain(Y).
+\end{verbatim}
+\texttt{zig/1} and \texttt{zag/1} can not be used as a domain predicate, since their truth value can not be fully evaluated.
+
 %\paragraph{Function Symbols}
 %A constant is a representation of an entity in the problem domain.
 %A constant is either a name, starting with a lower case letter or an underscore, or a positive integer.
@@ -390,248 +411,6 @@ A logic program $\Pi$ over $\mathcal{L(P,F,C)}$ is a finite set of rules over $\
 %\begin{verbatim}
 % :- body.
 %\end{verbatim}
-
-\subsection{How to Write a Logic Program}
-Writing a logic program to solve a problem is rather describing a problem than describing an algorithm to solve a problem.
-Therefore the problem must be encoded as a set of rules.
-Typically these are divided into a problem description and an instance of the problem.
-The solution to a problem can then be read from the answer sets of the program.
-The procedure of writing a logic program shall now be explained with a little example.
-We want to write a problem encoding for the 3-colorability problem of graph coloring.
-Given an arbitrary graph, no two connected edges may have the same color.
-The most common technique is the ``generate \& test'' approach. Therefore, in the generator, rules are created that can derive a superset of the solution to the problem. In the tester all solutions that do not fit the constraints are omitted.
-\newline
-Usually you start with the with the generator.
-At first, we define the non instance domains, in our example the colors we use.
-\begin{verbatim}
- color(red). color(green). color(blue).
-\end{verbatim}
-Now we have to color all the vertices, but we must give attention that each vertex has only one color.
-We can do this by simply saying that a vertex is colored with one color $C$, and that the same vertex does not have any of the other colors $D$ or $E$.
-\begin{verbatim}
- colored(V,C) :- not colored(V,D), not colored(V,E),
-                 C != D, C != E, D != E,
-                 color(E), color(C), color(D), vertex(V).
-\end{verbatim}
-As you can see, you have to give the domain of the variables in the rule.
-The variable $V$ is used for vertices and the variables $C$, $D$ and $E$ are used for colors.
-After every vertex now has a color we would get all possible solutions of all vertices colorfully painted.
-We now need to restrict our solutions in the tester by saying that two vertices that are connected by an edge should not have the same color.
-We can do this by using an integrity constraint.
-An integrity constraint is a rule with an empty head, and if an assignment of variables fulfills the body, the assignment is not a solution of our problem.
-\begin{verbatim}
- :- edge(V,U), colored(V,C), colored(U,C),
-    vertex(V), vertex(U), color(C).
-\end{verbatim}
-Here we have the edge between two vertices $V$ and $U$, and if both are colored with the same color $C$ the assignment is not a solution to our problem.
-\newline
-We have finally written our problem description, all we need now is a problem instance. This step is fairly simple.
-We just need to define several vertices and edges that do connect the vertices.
-For the following simple graph
-\[
- \xymatrix{1\ar@{-}[dr]\ar@{-}[d]\ar@{-}[r]&2\ar@{-}[dl]\\
-           3&4}
-\]
-
-we could just write
-\begin{verbatim}
- vertex(1..4).
- edge(1,2). edge(1,4).
- edge(3,1). edge(3,2).
-\end{verbatim}
-
-If we give the problem description and the instance to the grounder, it will generate a variable free version of the problem. This can then be solved by a solver and in the answer sets of the solver the ``\texttt{colored}'' predicate states a valid coloring of all vertices.
-We can do this by simply using the internal interface to clasp, to get a solution.
-\begin{verbatim}
- ./gringo -c 3colorability.lp instance1.lp
-\end{verbatim}
-In the first answer set we find the ``\texttt{colored}'' predicates
-\begin{verbatim}
- colored(1,green) colored(2,red) colored(3,blue) colored(4,red)
-\end{verbatim}
-and we can interpret them as the colors of the vertices
- 
-\[
- \xymatrix{\color{green}1\ar@{-}[dr]\ar@{-}[d]\ar@{-}[r]&\color{red}2\ar@{-}[dl]\\
-           \color{blue}3&\color{red}4}
-\]
-
-\subsection{How to Write an Incremental Program}
-As in writing a non incremental logic problem, we describe a problem rather than an algorithm.
-The difference between a non incremental and an incremental program is that we can use an incremental constant.
-This constant is set to zero at the beginning and the solver tries to find a solution of the problem. If it can not find a solution it starts to increment the constant by one. At each step the solver searches for a solution to the problem and increments the constant until he finds a valid answer set for the logic program.
-The incremental constant can therefore be used among other things to emulate time steps.
-For example, if the solution for a planning problem can not be found in 3 steps, it is tried to find one in more steps.
-To make it concrete, an incremental encoding for the blocksworld problem is presented.
-This is a very simple problem, where $n$ blocks are stacked on top of each other and you can move only one block at the same time. The goal is to stack the blocks in the inverse order.
-Since an incremental logic program is divided into three parts, we start with the base part.
-All rules that hold in all timesteps that are independent of the incremental constant are put here.
-At first we declare $n$ blocks and that each block is a location where a block can be put on.
-Furthermore we define an extra location, the table. That is the location where the bottom most block is put.
-\begin{verbatim}
- #base.
-
- block(1..n).
- location(X) :- block(X).
- location(table).
-\end{verbatim}
-Now we stack all blocks on top of each other, so block 1 is on block 2, block 2 is on block 3 etc.
-The last block we put on the table.
-This all holds in the initial state, so a $0$ is appended to the ``\texttt{on}'' predicate.
-\begin{verbatim}
- on(X,X+1,0) :- block(X), X < n.
- on(n,table,0).
-\end{verbatim}
-After declaring the base part and describing the initial situation we have to describe valid moves for the blocks. This is done in the cumulative part, since moves can be done in each step. For the incremental constant we choose the name ``\texttt{k}''.
-At first we want to execute at least one move every step, but not more than one. This can be done with a cardinality constraint.
-\begin{verbatim}
- #cumulative k.
-
- 1{move(X,Y,k) : block(X) : location(Y) : X != Y}1.
-\end{verbatim}
-A move is of the form ``\texttt{move(X,Y,k)}'' where \texttt{X} is the block that is moved, \texttt{Y} the new position of the block and \texttt{k} the step when the moved is executed.
-\newline
-Now that we have exactly one move per step we need to define what happens if we move a block.
-Understandably if we move block \texttt{X} to position \texttt{Y} in step \texttt{k}, the new location of the block shall be \texttt{Y}.
-\begin{verbatim}
- on(X,Y,k) :- move(X,Y,k).
-\end{verbatim}
-For all other blocks that have not moved, the position shall be the same.
-In ASP a little trick is used to describe such a condition.
-We first define a little helper predicate that states that a block has moved.
-\begin{verbatim}
- moved(X, k) :- move(X, Y, k).
-\end{verbatim}
-With this helping predicate we can define that a block is on the same position in step \texttt{k}, if it was not moved.
-\begin{verbatim}
- on(X,Y,k) :- on(X,Y,k-1), block(X), location(Y), not moved(X, k).
-\end{verbatim}
-
-Now we have to restrict our moves, because only one block can be moved at the same time and it can only be moved if no other block is on top of it.
-First we introduce a predicate called ``\texttt{blocked}'' for each block with another block on top of it.
-\begin{verbatim}
- blocked(Y, k) :- block(Y), on(X, Y, k - 1).
-\end{verbatim}
-Now we can restrict the moves with an integrity constraint.
-\begin{verbatim}
- :- move(X, Y, k), blocked(X, k).
-\end{verbatim}
-So it is not allowed to move block \texttt{X} in step k, if it is blocked.
-Also you can not move a block to a position where another block is on, so only one block on top of another is allowed.
-\begin{verbatim}
- :- move(X, Y, k), blocked(Y, k).
-\end{verbatim}
-The description of the problem is nearly finished. All that has to be done is to formulate a query.
-As a constraint to our solution we want to stop if all blocks are on top of each other in reversed order.
-This query shall only hold in the last step, therefore we write it in the volatile part.
-As always for constraints, we use an integrity constraint to express that all solutions are false where there is not block $n+1$ on the block $n$.
-\begin{verbatim}
- #volatile k.
-
- :- not on(X+1,X,k), block(X), X < n.
-\end{verbatim}
-To run this example, iclingo has to be used and the constant $n$ has to be set via command line.
-A potential command line call could look like
-\begin{verbatim}
- iclingo --const n=10 blocksworld.lp
-\end{verbatim}
-and the answer to the problem can be read from the answer set.
-To clean up the answer the ``\texttt{show} and \texttt{hide}'' feature of gringo can be used.
-If the following lines were added to the program, the answer set only consists of \texttt{move/3} predicates.
-\begin{verbatim}
- #hide.
- #show move/3.
-\end{verbatim}
-
-\subsection{Meta-Syntax}
-This section is about constructs that do not originally belong to the logic program but can be used to give additional information for example to the solver.
-The ``\#'' sign in front of all meta expressions is optional but is it strongly recommend to use it.
-It separates the meta directives from the logic program more clearly and can prevent severe mistakes,
- confusing those constructs with atoms as shown in the example.
-\begin{verbatim}
- hide.
- hidden :- hide.
-\end{verbatim}
-This program hides all predicates from the output of the ASP solver instead of deriving the facts \texttt{hide} and \texttt{hidden}.
-
-\paragraph{hide}
-The hide construct is used to hide atoms from the output of the ASP solver.
-Two different syntaxes are supported by gringo2.0.
-The first 
-\begin{verbatim}
- #hide name/arity.
-\end{verbatim}
-and the second
-\begin{verbatim}
- #hide name(X1, ... , Xn).
-\end{verbatim}
-Both variants hide the predicate ``\texttt{name}''.
-The arity of the predicate can be given explicit or implicit with a list of variables.
-The variables are just placeholder and do not unify with other variables. For example \texttt{hide p(X,X)} would also hide the fact \texttt{p(a,b)}. The second syntax is implemented for compatibility reasons only.
-If the predicate that has to be hidden has arity zero the syntax is
-\begin{verbatim}
- #hide name.
-\end{verbatim}
-If you want to express that all but a few predicates shall be hidden the empty hide statement
-in conjunction with the ``\texttt{show}'' statement can be is used.
-With ``\texttt{show}'' all predicates are named that shall be visible.
-So to hide all predicates but $p/3$ the following example can be used.
-\begin{verbatim}
- #hide.
- #show p/3.
-\end{verbatim}
-
-\paragraph{const}
-Within the ``\texttt{const}'' statement, a default value for constants can be defined in the logic program.
-while they are normally defined via the command line options.
-A default value for a constant $n$ can be easily be set.
-\begin{verbatim}
- #const n=5.
-\end{verbatim}
-\paragraph{domain}
-A domain statement states that a specific variable has a global domain restriction.
-The statement
-\begin{verbatim}
- #domain time(T).
-\end{verbatim}
-makes sure that the variable ``\texttt{T}'' is always bound to the domain of ``\texttt{time}''.
-This has the same effect as adding the domain ``\texttt{time(T)}'' to every rule the variable ``\texttt{T}'' occurs in.
-\paragraph{compute}
-The compute statement is a hint for the solver which models to compute.
-It has the syntax
-\begin{verbatim}
- #compute number {a1, ..., aN, not aN+1, ..., not aM}.
-\end{verbatim}
-$number$ is the number of models that shall be computed by the answer set solver and can be omitted. If it is zero, no restriction to the number of models is applied.
-All positive atoms in the compute statement must be in the computed models, and all negated atoms do not have to be in the models of the program.
-The compute statement is solver dependent and not supported by every solver.
-\paragraph{comments}
-Comments included in the input are line based.
-Whenever a ``\texttt{\%}'' occurs in the input, the rest of the line is treated as a comment and is therefore omitted.
-\subsubsection{Meta-Syntax for Incremental Programs}
-Incremental programs must be splitted into 3 parts.
-The base part, for the information that hold in all steps ans is independent of the incremental constant.
-The cumulative part, where the cumulative rules must be set that hold in all steps, but depend on the incremental parameter.
-And finally the volatile part. In this part the queries to the program are given, that must hold in the last state.
-To seperate the parts, three statement exists. Everything beyond such a statement is considered to belong to the specific part.
-To start the base part
-\begin{verbatim}
- #base.
-\end{verbatim}
-must be written. Now all rules of the base part can follow.
-The use of the incremental constant is not allowed in this part.
-For the cumulative part an additional constant has to be passed to the statement.
-\begin{verbatim}
- #cumulative k.
-\end{verbatim}
-Now all incremental rules follow. The incremental constant used for grounding is $k$.
-The same holds for the volatile part.
-\begin{verbatim}
- #volatile k.
-\end{verbatim}
-The ``\#''-sign can not be omitted for these meta statements.
-These statements can also be mixed, only the last statement is important.
-If no statement is given at the beginning of the file, base is assumed.
 
 
 \subsection{Features}
@@ -863,68 +642,312 @@ If there were several minimize/maximize statements in the logic program the latt
 Only after the n'th statement results in the same value for two different answer set, the n-1'th statement is considered.
 
 
+\subsection{Meta-Syntax}
+This section is about constructs that do not originally belong to the logic program but can be used to give additional information for example to the solver.
+The ``\#'' sign in front of all meta expressions is optional but is it strongly recommend to use it.
+It separates the meta directives from the logic program more clearly and can prevent severe mistakes,
+ confusing those constructs with atoms as shown in the example.
+\begin{verbatim}
+ hide.
+ hidden :- hide.
+\end{verbatim}
+This program hides all predicates from the output of the ASP solver instead of deriving the facts \texttt{hide} and \texttt{hidden}.
+
+\paragraph{hide}
+The hide construct is used to hide atoms from the output of the ASP solver.
+Two different syntaxes are supported by gringo2.0.
+The first 
+\begin{verbatim}
+ #hide name/arity.
+\end{verbatim}
+and the second
+\begin{verbatim}
+ #hide name(X1, ... , Xn).
+\end{verbatim}
+Both variants hide the predicate ``\texttt{name}''.
+The arity of the predicate can be given explicit or implicit with a list of variables.
+The variables are just placeholder and do not unify with other variables. For example \texttt{hide p(X,X)} would also hide the fact \texttt{p(a,b)}. The second syntax is implemented for compatibility reasons only.
+If the predicate that has to be hidden has arity zero the syntax is
+\begin{verbatim}
+ #hide name.
+\end{verbatim}
+If you want to express that all but a few predicates shall be hidden the empty hide statement
+in conjunction with the ``\texttt{show}'' statement can be is used.
+With ``\texttt{show}'' all predicates are named that shall be visible.
+So to hide all predicates but $p/3$ the following example can be used.
+\begin{verbatim}
+ #hide.
+ #show p/3.
+\end{verbatim}
+
+\paragraph{const}
+Within the ``\texttt{const}'' statement, a default value for constants can be defined in the logic program.
+while they are normally defined via the command line options.
+A default value for a constant $n$ can be easily be set.
+\begin{verbatim}
+ #const n=5.
+\end{verbatim}
+\paragraph{domain}
+A domain statement states that a specific variable has a global domain restriction.
+The statement
+\begin{verbatim}
+ #domain time(T).
+\end{verbatim}
+makes sure that the variable ``\texttt{T}'' is always bound to the domain of ``\texttt{time}''.
+This has the same effect as adding the domain ``\texttt{time(T)}'' to every rule the variable ``\texttt{T}'' occurs in.
+\paragraph{compute}
+The compute statement is a hint for the solver which models to compute.
+It has the syntax
+\begin{verbatim}
+ #compute number {a1, ..., aN, not aN+1, ..., not aM}.
+\end{verbatim}
+$number$ is the number of models that shall be computed by the answer set solver and can be omitted. If it is zero, no restriction to the number of models is applied.
+All positive atoms in the compute statement must be in the computed models, and all negated atoms do not have to be in the models of the program.
+The compute statement is solver dependent and not supported by every solver.
+\paragraph{comments}
+Comments included in the input are line based.
+Whenever a ``\texttt{\%}'' occurs in the input, the rest of the line is treated as a comment and is therefore omitted.
+TODO: Block comments
+\subsection{Meta-Syntax for Incremental Programs}
+Incremental programs must be splitted into 3 parts.
+The base part, for the information that hold in all steps ans is independent of the incremental constant.
+The cumulative part, where the cumulative rules must be set that hold in all steps, but depend on the incremental parameter.
+And finally the volatile part. In this part the queries to the program are given, that must hold in the last state.
+To seperate the parts, three statement exists. Everything beyond such a statement is considered to belong to the specific part.
+To start the base part
+\begin{verbatim}
+ #base.
+\end{verbatim}
+must be written. Now all rules of the base part can follow.
+The use of the incremental constant is not allowed in this part.
+For the cumulative part an additional constant has to be passed to the statement.
+\begin{verbatim}
+ #cumulative k.
+\end{verbatim}
+Now all incremental rules follow. The incremental constant used for grounding is $k$.
+The same holds for the volatile part.
+\begin{verbatim}
+ #volatile k.
+\end{verbatim}
+The ``\#''-sign can not be omitted for these meta statements.
+These statements can also be mixed, only the last statement is important.
+If no statement is given at the beginning of the file, base is assumed.
+
+
 \section{Examples}
 In this section some encodings for common problems are presented and explained.
-\paragraph{Fastfood}
-This example needs a proper instance to work.
+
+\subsection{How to Write a Logic Program}
+Writing a logic program to solve a problem is rather describing a problem than describing an algorithm to solve a problem.
+Therefore the problem must be encoded as a set of rules.
+Typically these are divided into a problem description and an instance of the problem.
+The solution to a problem can then be read from the answer sets of the program.
+The procedure of writing a logic program shall now be explained with a little example.
+We want to write a problem encoding for the 3-colorability problem of graph coloring.
+Given an arbitrary graph, no two connected edges may have the same color.
+The most common technique is the ``generate \& test'' approach. Therefore, in the generator, rules are created that can derive a superset of the solution to the problem. In the tester all solutions that do not fit the constraints are omitted.
+\newline
+Usually you start with the with the generator.
+At first, we define the non instance domains, in our example the colors we use.
 \begin{verbatim}
-#hide.
-#show altdepot/2.
-#show costs/1.
+ color(red). color(green). color(blue).
+\end{verbatim}
+Now we have to color all the vertices, but we must give attention that each vertex has only one color.
+We can do this by simply saying that a vertex is colored with one color $C$, and that the same vertex does not have any of the other colors $D$ or $E$.
+\begin{verbatim}
+ colored(V,C) :- not colored(V,D), not colored(V,E),
+                 C != D, C != E, D != E,
+                 color(E), color(C), color(D), vertex(V).
+\end{verbatim}
+As you can see, you have to give the domain of the variables in the rule.
+The variable $V$ is used for vertices and the variables $C$, $D$ and $E$ are used for colors.
+After every vertex now has a color we would get all possible solutions of all vertices colorfully painted.
+We now need to restrict our solutions in the tester by saying that two vertices that are connected by an edge should not have the same color.
+We can do this by using an integrity constraint.
+An integrity constraint is a rule with an empty head, and if an assignment of variables fulfills the body, the assignment is not a solution of our problem.
+\begin{verbatim}
+ :- edge(V,U), colored(V,C), colored(U,C),
+    vertex(V), vertex(U), color(C).
+\end{verbatim}
+Here we have the edge between two vertices $V$ and $U$, and if both are colored with the same color $C$ the assignment is not a solution to our problem.
+\newline
+We have finally written our problem description, all we need now is a problem instance. This step is fairly simple.
+We just need to define several vertices and edges that do connect the vertices.
+For the following simple graph
+\[
+ \xymatrix{1\ar@{-}[dr]\ar@{-}[d]\ar@{-}[r]&2\ar@{-}[dl]\\
+           3&4}
+\]
 
-% calculate the number of depots
-depots(X) :- X = { depot(DN, DK) :  depot(DN, DK) }.
-
-% calculate the costs for the initial depots
-% (the grounder can calculate this on its own)
-costs(C) :- C = [ serves(RN, Dist) : restaurant(RN, RK) : dist(Dist) = Dist ].
-
-% choose the closest depot for a restaurant
-% (the grounder can calculate this on its own)
-serves(Rname,Dist) :- restaurant(Rname,RK),
-   Dist = min [ depot(DN1, DK1) : depot(DN1, DK1) = abs(DK1-RK) ].
-
-dist(abs(X-Y)) :- restaurant(A, X), restaurant(B, Y).
-
-% Each restaurant may be an alternative depot or not.
-X { altdepot(R,K) : restaurant(R,K) } X :- depots(X).
-
-% choose the closest depot for a restaurant
-altserves(Rname,Dist) :- restaurant(Rname,RK),
-   Dist = min [ altdepot(DN1, DK1) : restaurant(DN1, DK1) = abs(DK1-RK) ].
-
-% fail if we have not found a better solution
-:- costs(C), C [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
-
-% thats the easiest way to show the calculated costs
-minimize [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
+we could just write
+\begin{verbatim}
+ vertex(1..4).
+ edge(1,2). edge(1,4).
+ edge(3,1). edge(3,2).
 \end{verbatim}
 
-\paragraph{Queens}
+If we give the problem description and the instance to the grounder, it will generate a variable free version of the problem. This can then be solved by a solver and in the answer sets of the solver the ``\texttt{colored}'' predicate states a valid coloring of all vertices.
+We can do this by simply using the internal interface to clasp, to get a solution.
 \begin{verbatim}
-#hide.
-#show q(X,Y).
-
-% this can be set via the command line
-#const queens = 200.
-
-#const diags  = queens * 2 - 1.
-d(1..queens).
-diag(1..diags).
-
-% enumerate the diagonals
-diagX(X,Y,X - Y + queens) :- d(X), d(Y).
-diagY(X,Y,X + Y - 1) :- d(X), d(Y).
-
-% exactly 1 queen in each row/col
-1 { q(X,Y) : d(Y) } 1 :- d(X).
-1 { q(X,Y) : d(X) } 1 :- d(Y).
-
-% at most 1 queen on each diagonal
-{ q(X,Y) : diagX(X,Y,D) } 1 :- diag(D).
-{ q(X,Y) : diagY(X,Y,D) } 1 :- diag(D).
-
+ ./gringo -c 3colorability.lp instance1.lp
 \end{verbatim}
+In the first answer set we find the ``\texttt{colored}'' predicates
+\begin{verbatim}
+ colored(1,green) colored(2,red) colored(3,blue) colored(4,red)
+\end{verbatim}
+and we can interpret them as the colors of the vertices
+ 
+\[
+ \xymatrix{\color{green}1\ar@{-}[dr]\ar@{-}[d]\ar@{-}[r]&\color{red}2\ar@{-}[dl]\\
+           \color{blue}3&\color{red}4}
+\]
+
+\subsection{How to Write an Incremental Program}
+As in writing a non incremental logic problem, we describe a problem rather than an algorithm.
+The difference between a non incremental and an incremental program is that we can use an incremental constant.
+This constant is set to zero at the beginning and the solver tries to find a solution of the problem. If it can not find a solution it starts to increment the constant by one. At each step the solver searches for a solution to the problem and increments the constant until he finds a valid answer set for the logic program.
+The incremental constant can therefore be used among other things to emulate time steps.
+For example, if the solution for a planning problem can not be found in 3 steps, it is tried to find one in more steps.
+To make it concrete, an incremental encoding for the blocksworld problem is presented.
+This is a very simple problem, where $n$ blocks are stacked on top of each other and you can move only one block at the same time. The goal is to stack the blocks in the inverse order.
+Since an incremental logic program is divided into three parts, we start with the base part.
+All rules that hold in all timesteps that are independent of the incremental constant are put here.
+At first we declare $n$ blocks and that each block is a location where a block can be put on.
+Furthermore we define an extra location, the table. That is the location where the bottom most block is put.
+\begin{verbatim}
+ #base.
+
+ block(1..n).
+ location(X) :- block(X).
+ location(table).
+\end{verbatim}
+Now we stack all blocks on top of each other, so block 1 is on block 2, block 2 is on block 3 etc.
+The last block we put on the table.
+This all holds in the initial state, so a $0$ is appended to the ``\texttt{on}'' predicate.
+\begin{verbatim}
+ on(X,X+1,0) :- block(X), X < n.
+ on(n,table,0).
+\end{verbatim}
+After declaring the base part and describing the initial situation we have to describe valid moves for the blocks. This is done in the cumulative part, since moves can be done in each step. For the incremental constant we choose the name ``\texttt{k}''.
+At first we want to execute at least one move every step, but not more than one. This can be done with a cardinality constraint.
+\begin{verbatim}
+ #cumulative k.
+
+ 1{move(X,Y,k) : block(X) : location(Y) : X != Y}1.
+\end{verbatim}
+A move is of the form ``\texttt{move(X,Y,k)}'' where \texttt{X} is the block that is moved, \texttt{Y} the new position of the block and \texttt{k} the step when the moved is executed.
+\newline
+Now that we have exactly one move per step we need to define what happens if we move a block.
+Understandably if we move block \texttt{X} to position \texttt{Y} in step \texttt{k}, the new location of the block shall be \texttt{Y}.
+\begin{verbatim}
+ on(X,Y,k) :- move(X,Y,k).
+\end{verbatim}
+For all other blocks that have not moved, the position shall be the same.
+In ASP a little trick is used to describe such a condition.
+We first define a little helper predicate that states that a block has moved.
+\begin{verbatim}
+ moved(X, k) :- move(X, Y, k).
+\end{verbatim}
+With this helping predicate we can define that a block is on the same position in step \texttt{k}, if it was not moved.
+\begin{verbatim}
+ on(X,Y,k) :- on(X,Y,k-1), block(X), location(Y), not moved(X, k).
+\end{verbatim}
+
+Now we have to restrict our moves, because only one block can be moved at the same time and it can only be moved if no other block is on top of it.
+First we introduce a predicate called ``\texttt{blocked}'' for each block with another block on top of it.
+\begin{verbatim}
+ blocked(Y, k) :- block(Y), on(X, Y, k - 1).
+\end{verbatim}
+Now we can restrict the moves with an integrity constraint.
+\begin{verbatim}
+ :- move(X, Y, k), blocked(X, k).
+\end{verbatim}
+So it is not allowed to move block \texttt{X} in step k, if it is blocked.
+Also you can not move a block to a position where another block is on, so only one block on top of another is allowed.
+\begin{verbatim}
+ :- move(X, Y, k), blocked(Y, k).
+\end{verbatim}
+The description of the problem is nearly finished. All that has to be done is to formulate a query.
+As a constraint to our solution we want to stop if all blocks are on top of each other in reversed order.
+This query shall only hold in the last step, therefore we write it in the volatile part.
+As always for constraints, we use an integrity constraint to express that all solutions are false where there is not block $n+1$ on the block $n$.
+\begin{verbatim}
+ #volatile k.
+
+ :- not on(X+1,X,k), block(X), X < n.
+\end{verbatim}
+To run this example, iclingo has to be used and the constant $n$ has to be set via command line.
+A potential command line call could look like
+\begin{verbatim}
+ iclingo --const n=10 blocksworld.lp
+\end{verbatim}
+and the answer to the problem can be read from the answer set.
+To clean up the answer the ``\texttt{show} and \texttt{hide}'' feature of gringo can be used.
+If the following lines were added to the program, the answer set only consists of \texttt{move/3} predicates.
+\begin{verbatim}
+ #hide.
+ #show move/3.
+\end{verbatim}
+%\paragraph{Fastfood}
+%This example needs a proper instance to work.
+%\begin{verbatim}
+%#hide.
+%#show altdepot/2.
+%#show costs/1.
+%
+%% calculate the number of depots
+%depots(X) :- X = { depot(DN, DK) :  depot(DN, DK) }.
+%
+%% calculate the costs for the initial depots
+%% (the grounder can calculate this on its own)
+%costs(C) :- C = [ serves(RN, Dist) : restaurant(RN, RK) : dist(Dist) = Dist ].
+%
+%% choose the closest depot for a restaurant
+%% (the grounder can calculate this on its own)
+%serves(Rname,Dist) :- restaurant(Rname,RK),
+%   Dist = min [ depot(DN1, DK1) : depot(DN1, DK1) = abs(DK1-RK) ].
+%
+%dist(abs(X-Y)) :- restaurant(A, X), restaurant(B, Y).
+%
+%% Each restaurant may be an alternative depot or not.
+%X { altdepot(R,K) : restaurant(R,K) } X :- depots(X).
+%
+%% choose the closest depot for a restaurant
+%altserves(Rname,Dist) :- restaurant(Rname,RK),
+%   Dist = min [ altdepot(DN1, DK1) : restaurant(DN1, DK1) = abs(DK1-RK) ].
+%
+%% fail if we have not found a better solution
+%:- costs(C), C [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
+%
+%% thats the easiest way to show the calculated costs
+%minimize [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
+%\end{verbatim}
+%
+%\paragraph{Queens}
+%\begin{verbatim}
+%#hide.
+%#show q(X,Y).
+%
+%% this can be set via the command line
+%#const queens = 200.
+%
+%#const diags  = queens * 2 - 1.
+%d(1..queens).
+%diag(1..diags).
+%
+%% enumerate the diagonals
+%diagX(X,Y,X - Y + queens) :- d(X), d(Y).
+%diagY(X,Y,X + Y - 1) :- d(X), d(Y).
+%
+%% exactly 1 queen in each row/col
+%1 { q(X,Y) : d(Y) } 1 :- d(X).
+%1 { q(X,Y) : d(X) } 1 :- d(Y).
+%
+%% at most 1 queen on each diagonal
+%{ q(X,Y) : diagX(X,Y,D) } 1 :- diag(D).
+%{ q(X,Y) : diagY(X,Y,D) } 1 :- diag(D).
+%
+%\end{verbatim}
 
 %\section{Benchmarks}
 %The benchmarks were run on an Athlon XP 1700+ with 1GB of RAM.
