@@ -18,6 +18,8 @@
 %     -------
 %     |o|o|o|
 %     -------
+%
+%
 
 % the field
 field(0, 0).
@@ -47,7 +49,7 @@ field(X, Y, D) :- field(X, Y), field(X + 2 * DX, Y + 2 * DY), dir(D, DX, DY).
 jump(0,-2,south,t) :- t == 1.
 
 % choose one stone
-1 { jump(X, Y, D, t) : field(X, Y, D)  } 1.
+1 { jump(X, Y, D, t) : field(X, Y, D)  }.
 
 % fail if no stone at position
  :- jump(X, Y, D, t), not stone(X, Y, t - 1).
@@ -55,6 +57,11 @@ jump(0,-2,south,t) :- t == 1.
  :- jump(X, Y, D, t), stone(X + 2 * DX, Y + 2 * DY, t - 1), dir(D, DX, DY).
 % fail if no stone to jump over
  :- jump(X, Y, D, t), not stone(X + DX, Y + DY, t - 1), dir(D, DX, DY).
+
+% fail if two stones jumped over the same location
+ :- jump(X1, Y1, D1, t), jump(X2, Y2, D2, t), dir(D1, DX1, DY1), dir(D2, DX2, DY2), X1 + DX1 == X2 + DX2, Y1 + DY1 == Y2 + DY2, D1 != D2.
+% fail if two stones jumped at the same target
+ :- jump(X1, Y1, D1, t), jump(X2, Y2, D2, t), dir(D1, DX1, DY1), dir(D2, DX2, DY2), X1 + 2 * DX1 == X2 + 2 * DX2, Y1 + 2 * DY1 == Y2 + 2 * DY2, D1 != D2.
 
 % place the new stone
 stone(X + 2 * DX, Y + 2 * DY, t) :- jump(X, Y, D, t), dir(D, DX, DY).
@@ -67,9 +74,8 @@ stone(X, Y, t) :- field(X, Y), stone(X, Y, t - 1), not jumped(X, Y, t), not remo
 
 #volatile t.
 
-% the last stone shall be in the center
- :- not stone(0, 0, t).
 % there shall be at least n free places
  :- { not stone(X, Y, t) : field(X, Y) } n.
-
+% the last stone shall be in the center
+ :- not stone(0, 0, t).
 

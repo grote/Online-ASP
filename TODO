@@ -3,7 +3,8 @@ performance:
 - dont use tons of small vectors in domains instead put all values into 1 big vector
   - domains
   - conditional literals
-- use an own vector implementation for value vectors
+- use an own vector implementation for value vectors 
+  (arrays of constant size => size doesnt have to be stored)
 - optimize memory consumtion/handling in output classes
   - dont use new/delete for all the output objects everytime a rule is grounded
 - optimize datastructures (in view of memoryconsumption)
@@ -18,13 +19,18 @@ documentation:
 
 testing:
 - write tests for all allowed language constructs !!!
-- test conformance with lparse/gringo
 
 todo:
 - handle classical negation in iclaspoutput
 - improve text output
 - print more statistics
 
+============================= TODO before Release! ===================================
+
+iclingo:
+- implement the missing option --query=<num>
+
 bugs:
 - the weights of conditionalliterals are ignored in the literaldependency graph
   this could lead to a failure (but only in rare cases)
+
