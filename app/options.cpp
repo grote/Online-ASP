@@ -245,7 +245,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 	common.addOptions()
 		("help,h"   , bool_switch(&help),   "Print help and exit")
 		("version,v", bool_switch(&version),"Print version and exit")
-		("verbose,V", bool_switch(&verbose), "Print extra information")
+		("verbose,V", bool_switch(&verbose), "Print additional information")
 		("stats"    , bool_switch(&stats),  "Print extended statistics")
 #ifdef WITH_CLASP
 		("solveonly"     , value<bool>(&grounder)->parser(mapMode), "Set the working mode\n"

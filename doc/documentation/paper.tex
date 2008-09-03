@@ -12,7 +12,7 @@
 \usepackage{color}
 
 \author{Max Ostrowski}
-\title{Gringo 2.0}
+\title{Gringo 2.0\\--Draft--}
 \date{\today}
 
 \begin{document}
@@ -32,21 +32,22 @@ First, a grounder translates a non-ground problem description into a proposition
 \label{fig:ASP}
 \end{figure}
 gringo2.0 is a state of the art grounder and has many features that makes writing logic programs easy.
-It was developed by Roland Kaminski and is orientated on the ideas of gringo1.0.
-Therefore it supports binder splitting, backjumping and all other features already implemented in gringo1.0.\cite{gringopaper}
+It was developed by Roland Kaminski and is orientated on the ideas of gringo1.0\cite{gringopaper}.
+Therefore it supports binder splitting, backjumping and all other features already implemented in gringo1.0.
 A broad set of potentialities for writing encodings for logic programs exists. Currently, no other grounder supports such a rich featured language.
 The goal of this work is to give an overview of the features supported by gringo2.0 and its derivates.
 Three different packages of gringo exist.
-The first version is gringo2.0, it acts as a grounder and supports several output formats and even a human readable format for debugging purposes. This version can ground logic programs and output them to files or pipe them to the solver.
+The first version is gringo2.0, it acts as a grounder and supports several output formats and even a human readable format for debugging purposes. This version can ground logic programs and output them to files or pipe them to a solver.
 The second version is called clingo and is a grounder with a built-in solver clasp \cite{gekanesc07b}.
 Output can directly be given to the solver and answer sets can be computed.
-The third package is called iclingo, which stands for ``incremental clingo''. In this version the grounder gringo2.0 can be used with clasp incrementally. Detailed information about incremental solving can be found here \cite{gekaosscth08a} 
-In this paper, at first, the general restrictions to the input language are stated. Then a brief description of how to use gringo2.0, clingo and iclingo is given.
-In the next chapter the supported input language is described in detail and a short introduction of how to write a logic program is given. The paper closes with some examples of logic programs and gives an outlook of future work that has to be done in the area of grounding logic programs.
+The third package is called iclingo, which stands for ``incremental clingo''. In this version the grounder gringo2.0 can be used with clasp incrementally. Detailed information about incremental solving can be found in \cite{gekaosscth08a}.
+In this paper, at first, a brief description of how to use the three programs gringo2.0, clingo and iclingo and their options for the commandline is given. 
+In the next chapter the general restrictions to the input language are stated and the supported input language is described in detail. After that, a short introduction of how to write a logic program is given. The paper closes with an outlook of future work that has to be done in the area of grounding logic programs.
 The syntax of the gringo2.0 input language can be found in the appendix \ref{appendix}.
 
 \section{Using Gringo}
 \subsection{Command Line Interface}
+All gringo tools can be downloaded as binary from \cite{download}. To build them from source, an installation guide ``INSTALL'' is included in the tar file.
 The gringo tools can be started from the command line and have some parameters that can be useful.
 All programs are fully backward compatible meaning, all options of gringo2.0 are valid in clingo and iclingo, and all options of clingo are valid in iclingo.
 \subsection{Gringo2.0 Options}
@@ -61,7 +62,7 @@ Gives a short overview of all parameters.
 \paragraph{\texttt{--version,-v}}
 Prints the version information and exists.
 \paragraph{\texttt{--verbose,-V}}
-Prints extra information during processing.
+Prints additional information during processing.
 \paragraph{\texttt{--stats}}
 Prints extended statistic information.
 
@@ -87,7 +88,6 @@ After the parameter ``--const'' you have to give the name of the constant $C$ yo
 the constant $n$ is replaced by $10$ in the logic program.
 \paragraph{\texttt{--bindersplitting=<arg>}}
 With this option you can enable or disable the bindersplitting used by gringo2.0
-%TODO	Default: yes
 \begin{itemize}
  \item yes : Enable bindersplitting
  \item no  : Disable bindersplitting
@@ -96,7 +96,7 @@ With this option you can enable or disable the bindersplitting used by gringo2.0
 An incremental program is required as input. Gringo2.0 grounds the fixed number of steps of the incremental program.
 
 \paragraph{Default Parameters}
-The default command line is ``\texttt{./gringo --lparse}'' to read from standard input and for smodels output.
+The default command line is ``\texttt{./gringo --lparse --bindersplitting=yes}'' to read from standard input and for smodels output.
 
 \subsection{Clingo Options}
 
@@ -127,7 +127,7 @@ If the input shall directly be passed to clasped, it has to be in the valid smod
 \paragraph{Default Parameters}
 The default is to read from standard input and search for one model.
 \begin{verbatim}
- clingo 1 --clasp --solveonly=No
+ clingo 1 --clasp --solveonly=no
            --trans-ext=no --eq=5 
            --lookahead=no --lookback=yes --heuristic=Berkmin
            --rand-prop=0.0 --randomize=no --rand-watches=yes
@@ -141,7 +141,7 @@ Iclingo can be called from the command line via
  iclingo (iclingo option|file)*
 \end{verbatim}
 Iclingo is used for incremental solving. For a detailed description see \cite{gekaosscth08a}.
-It uses the grounder gringo2.0 and the solver clasp, and therefore all options if gringo2.0, clingo and clasp are valid.
+It uses the grounder gringo2.0 and the solver clasp, and therefore all options of gringo2.0, clingo and clasp are valid.
 Additionally some options for controlling the incremental behavior are implemented.
 \paragraph{\texttt{--incremental,-i}}
 Activates the incremental solving. This is the default for iclingo.
@@ -152,10 +152,15 @@ At least \texttt{num} incremental steps are solved, wether an answer set has bee
 \paragraph{\texttt{--imax=<num>}}
 At most \texttt{num} incremental steps are done. After them iclingo stops the search for answer sets.
 \paragraph{\texttt{--ibase}}
-With this option enabled, iclingo solves only the base program and ignores the incremental and query part of the program.
+With this option enabled, iclingo solves only the base program and ignores the cumulative and volatile part of the program.
 This option can be helpful when debugging.
 \paragraph{\texttt{--istop=<arg>}}
-The stop condition during incremental solving be set to ``\texttt{SAT}'' or ``\texttt{UNSAT}'' to stop the search process either if a solution was found (\texttt{SAT} and default) or if no solution was found (\texttt{UNSAT}).
+The stop condition during incremental solving can be set.
+\begin{itemize}
+ \item SAT    : Stop the search process if a solution was found.
+ \item UNSAT  : Stop the search process if no solution was found.
+\end{itemize}
+The default for this option is SAT.
 \paragraph{\texttt{--ilearnt=<arg>}}
 This option influences the behavior of clasp when used incrementally.
 \begin{itemize}
@@ -320,12 +325,10 @@ The set of variables is denoted by $\mathcal{V}$.
 The language over $\mathcal{P}$, $\mathcal{F}$ and $\mathcal{C}$ is denoted by $\mathcal{L(P,F,C)}$.
 \paragraph{Terms}
 The building blocks of the language are terms.
-Each constant $c \in \mathcal{C}$ and each function symbol $f \in \mathcal{F}$ is a term.
-Furthermore $f(t_1, \dots, t_n)$ is a term if $f/n \in \mathcal{F}$ and $t_i \mid i \in \{1 \dots n\}$ are terms.
+Each variable $v \in \mathcal{V}$, constant $c \in \mathcal{C}$ and each function symbol $f \in \mathcal{F}$ is a term.
+Furthermore $f(t_1, \dots, t_n)$ is a term if $f/n \in \mathcal{F}$ and $t_i$ for $i \in \{1 \dots n\}$ are terms.
 Since a term is defined recursively, it can be nested.
-A term with the first parameter being a constant $a$, the others being terms $f(b,X)$ and $g(f(X), Y))$ would be expressed this way.
-\newline
-TODO: This is not a term following the definition, it contains variables!!! Is a variable a Term ?
+A term with the first parameter being a constant $a$, the others being terms $f(b,X)$ and $g(f(X), Y)$ would be expressed this way.
 \begin{verbatim}
  p(a,f(b,X), g(f(X),Y)).
 \end{verbatim}
@@ -350,7 +353,7 @@ $\lambda$-restrictedness extends the capabilities of $\omega$-restricted program
 $\lambda$-restrictedness can not be compared with the safe programs of DLV since there exist programs that are safe and not $\lambda$-restricted and vice versa.
 \newline
 To give a gross impression of what $\lambda$-restriction means for writing a logic program an informal description is given.
-In gringo2.0 every variable used in a rule must have a complete domain. This means that this variable has to occur in at least one predicate whichs domain is completed. Therefore the predicate must be in the head of rules that are already domain restricted. So the grounder has to find a valid order of the rules so that every predicate in the head is completed before it is used as a domain predicate for the next rules.
+In gringo2.0 every variable used in a rule must have a complete domain. This means that this variable has to occur in at least one predicate whose domain is completed. Therefore the predicate must be in the head of rules that are already domain restricted. So the grounder has to find a valid order of the rules so that every predicate in the head is completed before it is used as a domain predicate for the next rules.
 To make things more clear, an example is given
 \begin{verbatim}
  zig(0) :- not zag(0).   zag(0) :- not zig(0).
@@ -412,9 +415,31 @@ To give a comparison to the $\omega$-restricted programs of lparse, an extra dom
 % :- body.
 %\end{verbatim}
 
+\subsection{Basic Language}
+The base building blocks of the language are rules, facts and integrity constraints.
+\paragraph{Rule}
+A rule normally consists of a head and a body and ends with a dot.
+The body is separated from the head using ``:-'' as in
+\begin{verbatim}
+ head :- b1, ..., bN, not c1, ..., cN.
+\end{verbatim}
+The head consists of terms concatenated by a disjunction. For non disjunctive rules only one term is used.
+The body is a comma separated conjunction of terms and their negation.
+The variables used must be restricted to a domain in the body.
+Check (\ref{domainrestricted}) to see the restrictions on domains.
+\paragraph{Fact}
+A rule can occur without a body as a fact, therefore the body is omitted.
+\begin{verbatim}
+ head.
+\end{verbatim}
+\paragraph{Integrity Constraint}
+To express an integrity constraint, a rule with an empty body is used.
+\begin{verbatim}
+ :- body.
+\end{verbatim}
 
-\subsection{Features}
-To ease the process of writing logic programs some features in the input syntax are introduced and are now explained in detail.
+\subsection{Advanced Language Features}
+To ease the process of writing logic programs some advanced features in the input syntax are introduced and are now explained in detail.
 For the most problems it is possible to write a much shorter version of the program with the extended syntax.
 %Even a speedup in solving the instances of the problem can happen TODO ?
 For a full syntax description in EBNF see appendix (\ref{appendix}).
@@ -571,7 +596,7 @@ A cyclic assignment that results in an unbound variable is not allowed and is re
 \begin{verbatim}
  a(X) :- X=Y, Y=X.
 \end{verbatim}
-Furthermore the assignment operator can be used with aggregates, for example
+Furthermore the assignment operator can be used with aggregates. The program
 \begin{verbatim}
  price(apple,5). prices(banana, 6). price(computer, 100).
  fruit(apple).
@@ -653,7 +678,7 @@ It separates the meta directives from the logic program more clearly and can pre
 \end{verbatim}
 This program hides all predicates from the output of the ASP solver instead of deriving the facts \texttt{hide} and \texttt{hidden}.
 
-\paragraph{hide}
+\paragraph{hide and show}
 The hide construct is used to hide atoms from the output of the ASP solver.
 Two different syntaxes are supported by gringo2.0.
 The first 
@@ -705,15 +730,17 @@ $number$ is the number of models that shall be computed by the answer set solver
 All positive atoms in the compute statement must be in the computed models, and all negated atoms do not have to be in the models of the program.
 The compute statement is solver dependent and not supported by every solver.
 \paragraph{comments}
-Comments included in the input are line based.
+Two kinds of comments were supported by gringo2.0.
+Line based comments start with a ``\texttt{\%}''.
 Whenever a ``\texttt{\%}'' occurs in the input, the rest of the line is treated as a comment and is therefore omitted.
-TODO: Block comments
+Block based comments can span over several lines.
+Everything between ``\texttt{\%*}'' and ``\texttt{*\%}'' is treated as a comment.
 \subsection{Meta-Syntax for Incremental Programs}
 Incremental programs must be splitted into 3 parts.
-The base part, for the information that hold in all steps ans is independent of the incremental constant.
+The base part, for the information that hold in all steps and is independent of the incremental constant.
 The cumulative part, where the cumulative rules must be set that hold in all steps, but depend on the incremental parameter.
-And finally the volatile part. In this part the queries to the program are given, that must hold in the last state.
-To seperate the parts, three statement exists. Everything beyond such a statement is considered to belong to the specific part.
+And finally the volatile part. In this part the queries to the program are given, that must hold only in the last state.
+To seperate the parts, three statements exists. Everything beyond such a statement is considered to belong to the specific part.
 To start the base part
 \begin{verbatim}
  #base.
@@ -747,13 +774,13 @@ We want to write a problem encoding for the 3-colorability problem of graph colo
 Given an arbitrary graph, no two connected edges may have the same color.
 The most common technique is the ``generate \& test'' approach. Therefore, in the generator, rules are created that can derive a superset of the solution to the problem. In the tester all solutions that do not fit the constraints are omitted.
 \newline
-Usually you start with the with the generator.
+Usually you start with the generator.
 At first, we define the non instance domains, in our example the colors we use.
 \begin{verbatim}
  color(red). color(green). color(blue).
 \end{verbatim}
 Now we have to color all the vertices, but we must give attention that each vertex has only one color.
-We can do this by simply saying that a vertex is colored with one color $C$, and that the same vertex does not have any of the other colors $D$ or $E$.
+We can do this by simply saying that a vertex $V$ is colored with one color $C$, and that the same vertex does not have any of the other colors $D$ or $E$.
 \begin{verbatim}
  colored(V,C) :- not colored(V,D), not colored(V,E),
                  C != D, C != E, D != E,
@@ -766,8 +793,7 @@ We now need to restrict our solutions in the tester by saying that two vertices 
 We can do this by using an integrity constraint.
 An integrity constraint is a rule with an empty head, and if an assignment of variables fulfills the body, the assignment is not a solution of our problem.
 \begin{verbatim}
- :- edge(V,U), colored(V,C), colored(U,C),
-    vertex(V), vertex(U), color(C).
+ :- edge(V,U), colored(V,C), colored(U,C).
 \end{verbatim}
 Here we have the edge between two vertices $V$ and $U$, and if both are colored with the same color $C$ the assignment is not a solution to our problem.
 \newline
@@ -786,7 +812,7 @@ we could just write
  edge(3,1). edge(3,2).
 \end{verbatim}
 
-If we give the problem description and the instance to the grounder, it will generate a variable free version of the problem. This can then be solved by a solver and in the answer sets of the solver the ``\texttt{colored}'' predicate states a valid coloring of all vertices.
+If we give the problem description and the instance to the grounder, it will generate a variable free version of the problem. This can then be solved by a solver and in the answer sets of the solver the ``\texttt{colored/2}'' predicate states a valid coloring of all vertices.
 We can do this by simply using the internal interface to clasp, to get a solution.
 \begin{verbatim}
  ./gringo -c 3colorability.lp instance1.lp
@@ -801,6 +827,12 @@ and we can interpret them as the colors of the vertices
  \xymatrix{\color{green}1\ar@{-}[dr]\ar@{-}[d]\ar@{-}[r]&\color{red}2\ar@{-}[dl]\\
            \color{blue}3&\color{red}4}
 \]
+To improve the readability of the answerset, all but the \texttt{colored/2} predicates can be hidden with these two lines.
+\begin{verbatim}
+ #hide.
+ #show colored/2.
+\end{verbatim}
+
 
 \subsection{How to Write an Incremental Program}
 As in writing a non incremental logic problem, we describe a problem rather than an algorithm.
