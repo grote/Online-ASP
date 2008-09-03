@@ -815,7 +815,7 @@ we could just write
 If we give the problem description and the instance to the grounder, it will generate a variable free version of the problem. This can then be solved by a solver and in the answer sets of the solver the ``\texttt{colored/2}'' predicate states a valid coloring of all vertices.
 We can do this by simply using the internal interface to clasp, to get a solution.
 \begin{verbatim}
- ./gringo -c 3colorability.lp instance1.lp
+ ./clingo 3colorability.lp instance1.lp
 \end{verbatim}
 In the first answer set we find the ``\texttt{colored}'' predicates
 \begin{verbatim}
