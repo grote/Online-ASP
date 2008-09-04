@@ -3,6 +3,8 @@
 
 #base.
 
+#const n = 10.
+
 %*
 % a more interesting goal
 #const blocks = n * (n + 1) / 2.

@@ -81,7 +81,7 @@ A term with the first parameter being a constant $a$, the others being terms $f(
 \end{verbatim}
 \paragraph{Atoms}
 An atom over $\mathcal{L(P, F, C)}$ is of the form $p(t_1, \dots, t_n)$ where $p/n$ is a predicate
-symbol with arity $n$, and $t_i \mid i \in \{1 \dots n\}$ are terms.
+symbol with arity $n$, and $t_i$ for $i \in \{1 \dots n\}$ are terms.
 \paragraph{Rules}
 A rule over the language $\mathcal{L(P,F,C)}$ has the form
 $$
@@ -589,7 +589,7 @@ We first define a little helper predicate that states that a block has moved.
 \end{verbatim}
 With this helping predicate we can define that a block is on the same position in step \texttt{k}, if it was not moved.
 \begin{verbatim}
- on(X,Y,k) :- on(X,Y,k-1), block(X), location(Y), not moved(X, k).
+ on(X,Y,k) :- on(X,Y,k-1), block(X), location(Y), not moved(X,k).
 \end{verbatim}
 
 Now we have to restrict our moves, because only one block can be moved at the same time and it can only be moved if no other block is on top of it.
@@ -661,8 +661,10 @@ This parameter invokes the new output format for the intermediate language ASPil
 % If no normal form is specified, conglomeration(7)  is assumed.
 
 \paragraph{\texttt{--ground,-g}}
-If this parameter is used, the grounder expects an already grounded program as input.
-For converting an already grounded logic program into an output format supported by gringo2.0 this is the right option. This mode saves a lot of memory but does not ground the program.
+If this parameter is used, gringo expects an already grounded program as input.
+For converting an already grounded logic program into an output format 
+supported by gringo2.0 this is the right option.
+ This mode saves a lot of memory but does not ground the program.
 \paragraph{\texttt{--const,-c C=v}}
 You can set the value of constants defined in your logic program via the command line of gringo2.0.
 After the parameter ``--const'' you have to give the name of the constant $C$ you want to set followed by a ``$=$'' and the value of that constant. The integer value $v$ can even be an arithmetic expression. For example:
@@ -680,7 +682,11 @@ With this option you can enable or disable the binder splitting used by gringo2.
 An incremental program is required as input. Gringo2.0 grounds the fixed number of steps of the incremental program.
 
 \paragraph{Default Parameters}
-The default command line is ``\texttt{./gringo --lparse --bindersplitting=yes}'' to read from standard input and for smodels output.
+The default command line is
+\begin{verbatim}
+ gringo --lparse --bindersplitting=yes
+\end{verbatim}
+to read from standard input and for smodels output.
 
 \subsection{Clingo Options}
 
@@ -712,11 +718,11 @@ If the input shall directly be passed to clasped, it has to be in the valid smod
 The default is to read from standard input and search for one model.
 \begin{verbatim}
  clingo 1 --clasp --solveonly=no
-           --trans-ext=no --eq=5 
-           --lookahead=no --lookback=yes --heuristic=Berkmin
-           --rand-prop=0.0 --randomize=no --rand-watches=yes
-           --restarts=100,1.5 --deletion=3,1.1,3.0
-           --minimize=all --contraction=250 --loops=common
+          --trans-ext=no --eq=5 
+          --lookahead=no --lookback=yes --heuristic=Berkmin
+          --rand-prop=0.0 --randomize=no --rand-watches=yes
+          --restarts=100,1.5 --deletion=3,1.1,3.0
+          --minimize=all --contraction=250 --loops=common
 \end{verbatim}
 
 \subsection{Iclingo Options}
@@ -762,12 +768,12 @@ As default, clasp keeps the heuristic information gathered during the previous s
 \paragraph{Default Parameters}
 The default is to read from standard input and search for one model incrementally.
 \begin{verbatim}
-  iclingo 1 --incremental --istop=SAT --ilearnt=forget --iheuristic=keep
-            --trans-ext=no --eq=5 
-            --lookahead=no --lookback=yes --heuristic=Berkmin
-            --rand-prop=0.0 --randomize=no --rand-watches=yes
-            --restarts=100,1.5 --deletion=3,1.1,3.0
-            --minimize=all --contraction=250 --loops=common
+ iclingo 1 --incremental --istop=SAT --ilearnt=forget 
+           --iheuristic=keep --trans-ext=no --eq=5 
+           --lookahead=no --lookback=yes --heuristic=Berkmin
+           --rand-prop=0.0 --randomize=no --rand-watches=yes
+           --restarts=100,1.5 --deletion=3,1.1,3.0
+           --minimize=all --contraction=250 --loops=common
 
 \end{verbatim}
 
@@ -808,14 +814,17 @@ For converting already ground programs to an output language a special module ha
 If writing an incremental program, the incremental sections\ref{metasyntaxinc} have to be used.
 \item
 \begin{verbatim}
- "Warning: There are statements not within a #base, #lambda or #delta section."
+ "Warning: There are statements not within a #base, #lambda"
+ "         or #delta section."
  "         These Statements are put into the #base section."
 \end{verbatim}
 If writing an incremental program, all statements that are not written in an incremental section are automatically considered to belong to the \texttt{base} part of the program.
 \item
 \begin{verbatim}
- "Warning: Classical negation is not handled correctly in combination with the incremental output."
- "         You have to add rules like: :- a, -a. on your own! (at least for now)"
+ "Warning: Classical negation is not handled correctly in"
+ "         combination with the incremental output."
+ "         You have to add rules like:"
+ "         :- a, -a. on your own! (at least for now)"
 \end{verbatim}
 To use classical negation in an incremental program the described rules have to be added manually. This will be fixed in a later version of gringo.
 \end{itemize}
@@ -849,7 +858,8 @@ The parser can not read the input format. Some unexpected token occurred in the 
 If using clingo or iclingo, this happens if disjunctive rules are used. Please choose another solver that support disjunctive rules.
 \item
 \begin{verbatim}
- "A fixed number of incremental steps is needed to ground the program."
+ "A fixed number of incremental steps is needed"
+ "to ground the program."
 \end{verbatim}
 This error occurs if an incremental program is given to gringo without using the option \texttt{--ifixed} or iclingo.
 \item
@@ -863,7 +873,8 @@ A cyclic definition of a constant is not allowed as shown in the example.
 \end{verbatim}
 \item
 \begin{verbatim}
- "The following statement cant be used with the incremental interface: X."
+ "The following statement cant be used with the"
+ "incremental interface: X."
  "unsupported statement."
 \end{verbatim}
 It is not allowed to use an optimize (\texttt{minimize} or \texttt{maximize}) or \texttt{compute} statement in an incremental program.
