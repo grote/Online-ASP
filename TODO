@@ -24,11 +24,13 @@ todo:
 - handle classical negation in iclaspoutput
 - improve text output
 - print more statistics
+- distinguish head from body literals (additional field in literal)
+  needed for better matching of aggregates in bodies/heads
 
 ============================= TODO before Release! ===================================
 
 iclingo:
-- implement the missing option --query=<num>
+- implement the missing option --query=<num> (done!)
 
 bugs:
 - the weights of conditionalliterals are ignored in the literaldependency graph

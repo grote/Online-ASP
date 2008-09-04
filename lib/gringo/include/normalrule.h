@@ -67,9 +67,10 @@ namespace NS_GRINGO
 		struct
 		{
 			unsigned int ground_   : 1;
-			unsigned int once_     : 1;
-			unsigned int next_     : 1;
+			unsigned int base_     : 1;
 			unsigned int last_     : 1;
+			unsigned int lambda_   : 1;
+			unsigned int delta_    : 1;
 			unsigned int isGround_ : 1;
 		};
 	};

@@ -213,7 +213,6 @@ void Options::setDefaults() {
 	keepLearnts     = true;
 	keepHeuristic   = false;
 	iclaspOut       = false;
-	ibase           = false;
 	imin            = 1;
 	imax            = std::numeric_limits<int>::max();
 	iunsat          = false;
@@ -279,7 +278,7 @@ void Options::initOptions(ProgramOptions::OptionGroup& allOpts, ProgramOptions::
 		("imin"        , value<int>(&imin)    , "Minimum number of incremental steps", "<num>")
 		("imax"        , value<int>(&imax)    , "Maximum number of incremental steps", "<num>")
 		("incremental,i"   , bool_switch(&iclaspOut), "Use incremental clasp interface")
-		("ibase"       , bool_switch(&ibase)  , "(not implemented yet)")
+		("iquery"      , value<int>(&grounderOptions.iquery)  , "Start solving beginning with step num", "<num>")
 		("istop"      , value<bool>(&iunsat)->parser(mapStop), "Stop condition during incremental solving\n"
 			"\tDefault: SAT\n"
 			"\t  UNSAT : Stop if no solution found\n"
@@ -482,6 +481,8 @@ void Options::checkCommonOptions(const OptionValues& vm) {
 #endif
 	if(textOut)
 		outf = TEXT_OUT;
+
+	grounderOptions.iquery = max(grounderOptions.iquery, 0);
 
 	if(grounderOptions.ifixed >= 0 && outf == ICLASP_OUT)
 	{

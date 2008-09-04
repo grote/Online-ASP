@@ -32,7 +32,7 @@
 
 using namespace NS_GRINGO;
 
-NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), grounder_(0), ground_(1), once_(0), next_(0), last_(0), isGround_(0)
+NormalRule::NormalRule(Literal *head, LiteralVector *body) : Statement(), head_(head), body_(body), grounder_(0), ground_(1), base_(0), last_(0), lambda_(0), delta_(0), isGround_(0)
 {
 }
 
@@ -199,9 +199,26 @@ namespace
 bool NormalRule::ground(Grounder *g, GroundStep step)
 {
 	//std::cerr << "grounding: " << this << "(" << step << ")"<< std::endl;
+	// ground the query in the last step
 	if(last_ && g->getIncStep() == g->options().ifixed)
 	{
 		last_   = 0;
+		ground_ = 1;
+		if(step == REINIT)
+			step = PREPARE;
+	}
+	// start grounding cumulative from timestep 1
+	if(lambda_ && g->getIncStep() > 0)
+	{
+		lambda_ = 0;
+		ground_ = 1;
+		if(step == REINIT)
+			step = PREPARE;
+	}
+	// skip queries until iquery is reached
+	if(delta_ && g->getIncStep() >= g->options().iquery)
+	{
+		delta_  = 0;
 		ground_ = 1;
 		if(step == REINIT)
 			step = PREPARE;
@@ -272,7 +289,8 @@ bool NormalRule::ground(Grounder *g, GroundStep step)
 				}
 			}
 			groundOther(g, step, head_, body_);
-			if(once_)
+			// ground the base only one time
+			if(base_)
 				ground_ = 0;
 			break;
 	}
@@ -350,7 +368,6 @@ void NormalRule::grounded(Grounder *g)
 	}
 }
 
-// this looks odd so i hide it :)
 namespace
 {
 	class NormalRuleExpander : public Expandable
@@ -485,7 +502,7 @@ void NormalRule::setIncPart(Grounder *g, IncPart part, const Value &v)
 	switch(part)
 	{
 		case BASE:
-			once_ = 1;
+			base_ = 1;
 			break;
 		case DELTA:
 			if(g->options().ifixed >= 0)
@@ -493,9 +510,19 @@ void NormalRule::setIncPart(Grounder *g, IncPart part, const Value &v)
 				ground_ = 0;
 				last_   = 1;
 			}
+			else
+			{
+				ground_ = 0;
+				delta_  = 1;
+			}
 			appendLiteral(new DeltaLiteral(), Expandable::COMPLEXTERM);
 			// no break! //
 		case LAMBDA:
+			if(part == LAMBDA)
+			{
+				ground_ = 0;
+				lambda_ = 1;
+			}
 			if(head_)
 				head_->addIncParam(g, v);
 			if(body_)

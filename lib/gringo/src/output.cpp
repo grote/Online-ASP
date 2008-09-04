@@ -176,11 +176,12 @@ void Atom::print_plain(Output *o, std::ostream &out)
 void Atom::print(Output *o, std::ostream &out)
 {
 	if(o->addAtom(this))
+	{
 		if (o->isVisible(predUid_))
 			out << "4" << " 3 " << uid_ << " " << o->atomToString(predUid_, values_) << " " << "1" << END_ENTRY << NL;
 		else
 			out << "4" << " 2 " << uid_ << " " << o->atomToString(predUid_, values_) << END_ENTRY << NL;
-
+	}
 }
 	
 // =============== NS_OUTPUT::Rule ===============

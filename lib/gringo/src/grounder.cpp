@@ -29,7 +29,7 @@
 
 using namespace NS_GRINGO;
 
-Grounder::Grounder(const Options &opts) : opts_(opts), incremental_(false), incStep_(1), internalVars_(0), output_(0), eval_(0)
+Grounder::Grounder(const Options &opts) : opts_(opts), incremental_(false), incStep_(0), internalVars_(0), output_(0), eval_(0)
 {
 }
 
@@ -180,6 +180,11 @@ void Grounder::ground()
 {
 	if(incremental_)
 	{
+		for(; incStep_ + 1 <= options().iquery; incStep_++)
+		{
+			reset();
+			ground_();
+		}
 		reset();
 		ground_();
 		incStep_++;
@@ -227,7 +232,7 @@ void Grounder::addProgram(Program *scc)
 
 void Grounder::ground_()
 {
-	if(incStep_ == 1)
+	if(incStep_ == 0)
 		output_->initialize(this, getPred());
 	else
 		output_->reinitialize();
@@ -242,7 +247,7 @@ void Grounder::ground_()
 		for(StatementVector::iterator it = rules->begin(); it !=rules->end(); it++)
 		{
 			Statement *rule = *it;
-			if(incStep_ == 1 || !incremental_)
+			if(incStep_ == 0 || !incremental_)
 				rule->ground(this, PREPARE);
 			else
 				rule->ground(this, REINIT);

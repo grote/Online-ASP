@@ -35,8 +35,9 @@ namespace NS_GRINGO
 	public:
 		struct Options
 		{
-			Options() : binderSplit(true), ifixed(-1) {}
+			Options() : binderSplit(true), iquery(1), ifixed(-1) {}
 			bool binderSplit;
+			int iquery;
 			int ifixed;
 		};
 	public:
