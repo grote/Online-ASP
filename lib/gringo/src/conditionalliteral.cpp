@@ -25,6 +25,7 @@
 #include "literaldependencygraph.h"
 #include "statementchecker.h"
 #include "aggregateliteral.h"
+#include "domain.h"
 
 using namespace NS_GRINGO;
 		
@@ -84,12 +85,71 @@ SDGNode *ConditionalLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd to
 	return n;
 }
 
+namespace
+{
+	// TODO: its better reimplement the LDGBuilder to work similar like the SDGBuilder
+	//       to avoid things like this!!!
+	class HeadNodeHelper : public Literal
+	{
+	public:
+		HeadNodeHelper(PredicateLiteral *pred, const VarSet &vars) : pred_(pred), vars_(vars) {}
+		void createNode(LDGBuilder *dg, bool head) 
+		{
+			assert(head);
+			VarSet needed = vars_, provided;
+			if(head || pred_->getNeg() || !pred_->getDomain()->complete())
+			{
+				if(pred_->getArgs())
+					for(TermVector::iterator it = pred_->getArgs()->begin(); it != pred_->getArgs()->end(); it++)
+						(*it)->getVars(needed);
+			}
+			else
+			{
+				if(pred_->getArgs())
+					for(TermVector::iterator it = pred_->getArgs()->begin(); it != pred_->getArgs()->end(); it++)
+						if((*it)->isComplex())
+							(*it)->getVars(needed);
+						else
+							(*it)->getVars(provided);
+			}
+			dg->createNode(pred_, head, needed, provided);
+			delete this;
+		}
+
+		// not used!
+		void getVars(VarSet &vars) const { assert(false); };
+		bool checkO(LiteralVector &unsolved) { assert(false); }
+		void preprocess(Grounder *g, Expandable *e) { assert(false); }
+		void reset() { assert(false); }
+		void finish() { assert(false); }
+		bool solved() { assert(false); }
+		bool isFact(Grounder *g) { assert(false); }
+		Literal* clone() const { assert(false); }
+		IndexedDomain *createIndexedDomain(Grounder *g, VarSet &index) { assert(false); }
+		bool match(Grounder *g) { assert(false); }
+		NS_OUTPUT::Object *convert() { assert(false); }
+		SDGNode *createNode(SDG *dg, SDGNode *prev, DependencyAdd todo) { assert(false); }
+		void createNode(StatementChecker *dg, bool head, bool delayed) { assert(false); }
+		double heuristicValue() { assert(false); }
+		void addIncParam(Grounder *g, const Value &v) { assert(false); }
+		void print(const GlobalStorage *g, std::ostream &out) const { assert(false); }
+	private:
+		PredicateLiteral *pred_;
+		VarSet vars_;
+	};
+}
+
 void ConditionalLiteral::createNode(LDGBuilder *dgb, bool head)
 {
-	// TODO: dont ignore the weight!!!
 	dg_ = new LDG();
 	LDGBuilder *subDg = new LDGBuilder(dg_);
-	subDg->addHead(pred_);
+	VarSet vars;
+	if(weight_)
+		weight_->getVars(vars);
+	if(vars.size() > 0)
+		subDg->addHead(new HeadNodeHelper(pred_, vars));
+	else
+		subDg->addHead(pred_);
 	if(conditionals_)
 		for(LiteralVector::iterator it = conditionals_->begin(); it != conditionals_->end(); it++)
 			subDg->addToBody(*it);

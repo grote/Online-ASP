@@ -77,7 +77,6 @@ SDGNode *PredicateLiteral::createNode(SDG *dg, SDGNode *prev, DependencyAdd todo
 
 void PredicateLiteral::createNode(LDGBuilder *dg, bool head)
 {
-	// TODO: take the parameter check into consideration
 	VarSet needed, provided;
 	if(head || getNeg() || !predNode_->complete())
 	{

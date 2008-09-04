@@ -21,18 +21,10 @@ testing:
 - write tests for all allowed language constructs !!!
 
 todo:
-- handle classical negation in iclaspoutput
+- handle classical negation in incremental output
 - improve text output
 - print more statistics
 - distinguish head from body literals (additional field in literal)
   needed for better matching of aggregates in bodies/heads
-
-============================= TODO before Release! ===================================
-
-iclingo:
-- implement the missing option --query=<num> (done!)
-
-bugs:
-- the weights of conditionalliterals are ignored in the literaldependency graph
-  this could lead to a failure (but only in rare cases)
+- reimplement the LDGBuilder
 
