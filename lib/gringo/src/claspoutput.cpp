@@ -161,7 +161,7 @@ void ClaspOutput::printMinimizeRule(const IntVector &pos, const IntVector &neg, 
 
 void ClaspOutput::printDisjunctiveRule(const IntVector &head, const IntVector &pos, const IntVector &neg)
 {
-	throw GrinGoException("error: sorry clasp cannot handle disjunctive rules!");
+	throw GrinGoException("Error: sorry clasp cannot handle disjunctive rules!");
 }
 
 void ClaspOutput::printComputeRule(int models, const IntVector &pos, const IntVector &neg)

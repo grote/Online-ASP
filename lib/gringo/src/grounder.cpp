@@ -187,7 +187,7 @@ void Grounder::ground()
 	else
 	{
 		if(incParts_.size() > 0 && opts_.ifixed < 0)
-			throw GrinGoException("Error: A fixed number of incremtal steps is needed to ground the program.");
+			throw GrinGoException("Error: A fixed number of incremental steps is needed to ground the program.");
 		if(incParts_.size() > 0)
 		{
 			do
@@ -387,7 +387,7 @@ void Grounder::addTrueNegation(int id, int arity)
 		if(!warn)
 			return;
 		warn = false;
-		std::cerr << "Warning: Classical negation is not handled correctly in combination with the icremental output." << std::endl;
+		std::cerr << "Warning: Classical negation is not handled correctly in combination with the incremental output." << std::endl;
 		std::cerr << "         You have to add rules like: :- a, -a. on your own! (at least for now)" << std::endl;
 		return;
 	}

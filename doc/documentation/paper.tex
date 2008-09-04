@@ -41,262 +41,9 @@ The first version is gringo2.0, it acts as a grounder and supports several outpu
 The second version is called clingo and is a grounder with a built-in solver clasp \cite{gekanesc07b}.
 Output can directly be given to the solver and answer sets can be computed.
 The third package is called iclingo, which stands for ``incremental clingo''. In this version the grounder gringo2.0 can be used with clasp incrementally. Detailed information about incremental solving can be found in \cite{gekaosscth08a}.
-In this paper, at first, a brief description of how to use the three programs gringo2.0, clingo and iclingo and their options for the commandline is given. 
-In the next chapter the general restrictions to the input language are stated and the supported input language is described in detail. After that, a short introduction of how to write a logic program is given. The paper closes with an outlook of future work that has to be done in the area of grounding logic programs.
+In this paper, at first, the general restrictions to the input language are stated and the supported input language is described in detail. After that, a short introduction of how to write a logic program and how to write an incremental logic program is given. In the next chapter a brief description of how to use the three programs gringo2.0, clingo and iclingo and their options for the command line is given. The paper closes with an outlook of future work that has to be done in the area of grounding logic programs.
 The syntax of the gringo2.0 input language can be found in the appendix \ref{appendix}.
 
-\section{Using Gringo}
-\subsection{Command Line Interface}
-All gringo tools can be downloaded as binary from \cite{download}. To build them from source, an installation guide ``INSTALL'' is included in the tar file.
-The gringo tools can be started from the command line and have some parameters that can be useful.
-All programs are fully backward compatible meaning, all options of gringo2.0 are valid in clingo and iclingo, and all options of clingo are valid in iclingo.
-\subsection{Gringo2.0 Options}
-Gringo2.0 can be called from the command line via
-\begin{verbatim}
- gringo (gringo option|file)*
-\end{verbatim}
-If no filename is given, the standard input is used.
-
-\paragraph{\texttt{--help,-h}}
-Gives a short overview of all parameters.
-\paragraph{\texttt{--version,-v}}
-Prints the version information and exists.
-\paragraph{\texttt{--verbose,-V}}
-Prints additional information during processing.
-\paragraph{\texttt{--stats}}
-Prints extended statistic information.
-
-\paragraph{\texttt{--text,-t}}
-Parameter ``\texttt{--text}'' invokes the text output method, so the output is printed in human readable format, which is also the input format for gringo2.0. The output is variable free and some simplifications on the program were made. To convert a variable free program in plain format into a format readable by a solver use the \texttt{--ground} option.
-\paragraph{\texttt{--lparse,-l}}
-This mode prints lparse conform output. For a definition of the output format see \cite{lparseManual}.
-Since some features of gringo2.0 are not natively supported for this output language, new atoms may be introduced to create an equivalent program.\newline
-Sum aggregates with negative weights are handled like weight constraint in lparse for this output format. So a transformation as explained in \cite{lparseManual} is used to get rid of the negative weights.
-\paragraph{\texttt{--aspils,-a 1-7}}
-This parameter invokes the new output format for the intermediate language ASPils \cite{gejaosscth08b}. The optional number can range from $1$ to $7$ and refers to one of the following normal forms (Simple=1, SModels=2, DisjunctiveLogicProgram=3, CModels=4, CModelsExtended=5, DLV=6, Conglomeration=7).
-% If no normal form is specified, conglomeration(7)  is assumed.
-
-\paragraph{\texttt{--ground,-g}}
-If this parameter is used, the grounder expects an already grounded program as input.
-For converting an already grounded logic program into an output format supported by gringo2.0 this is the right option. This mode saves a lot of memory but does not ground the program.
-\paragraph{\texttt{--const,-c C=v}}
-You can set the value of constants defined in your logic program via the command line of gringo2.0.
-After the parameter ``--const'' you have to give the name of the constant $C$ you want to set followed by a ``$=$'' and the value of that constant. The integer value $v$ can even be an arithmetic expression. For example:
-\begin{verbatim}
- gringo --const n=5*2
-\end{verbatim}
-the constant $n$ is replaced by $10$ in the logic program.
-\paragraph{\texttt{--bindersplitting=<arg>}}
-With this option you can enable or disable the bindersplitting used by gringo2.0
-\begin{itemize}
- \item yes : Enable bindersplitting
- \item no  : Disable bindersplitting
-\end{itemize}
-\paragraph{\texttt{--ifixed=<num>}}
-An incremental program is required as input. Gringo2.0 grounds the fixed number of steps of the incremental program.
-
-\paragraph{Default Parameters}
-The default command line is ``\texttt{./gringo --lparse --bindersplitting=yes}'' to read from standard input and for smodels output.
-
-\subsection{Clingo Options}
-
-Clingo can be called from the command line via
-\begin{verbatim}
- clingo (clingo option|file)*
-\end{verbatim}
-If no filename is given, the standard input is used.
-Since clingo uses gringo2.0 as a grounder in combination with the solver clasp, all options from gringo2.0 and clasp are valid. For a detailed list of the clasp options see the clasp help (also available with \texttt{clingo --help}).
-\paragraph{\texttt{--clasp,-C}}
-In this mode, the output is directly parsed to clasp. For solving logic programs, no intermediate files are produced and the answer sets are printed directly.
-With this option enabled, all parameters for clasp are valid and can be declared in the command line.
-For example:
-\begin{verbatim}
- clingo --clasp --const n=5 --supp-models 3
-\end{verbatim}
-Furthermore all restriction on smodels output hold, as clasps internal interface currently reads smodels format.
-This is default for clingo.
-\paragraph{\texttt{--solveonly=<arg>}}
-This option can be used to set the working mode of clingo to use it as a solver only.
-\begin{itemize}
-\item yes : Pass input directly to clasp
-\item no : Standard mode
-\end{itemize}
-The default is \texttt{--solveonly=no} to ground the logic program first.
-If the input shall directly be passed to clasped, it has to be in the valid smodels input format.
-
-\paragraph{Default Parameters}
-The default is to read from standard input and search for one model.
-\begin{verbatim}
- clingo 1 --clasp --solveonly=no
-           --trans-ext=no --eq=5 
-           --lookahead=no --lookback=yes --heuristic=Berkmin
-           --rand-prop=0.0 --randomize=no --rand-watches=yes
-           --restarts=100,1.5 --deletion=3,1.1,3.0
-           --minimize=all --contraction=250 --loops=common
-\end{verbatim}
-
-\subsection{Iclingo Options}
-Iclingo can be called from the command line via
-\begin{verbatim}
- iclingo (iclingo option|file)*
-\end{verbatim}
-Iclingo is used for incremental solving. For a detailed description see \cite{gekaosscth08a}.
-It uses the grounder gringo2.0 and the solver clasp, and therefore all options of gringo2.0, clingo and clasp are valid.
-Additionally some options for controlling the incremental behavior are implemented.
-\paragraph{\texttt{--incremental,-i}}
-Activates the incremental solving. This is the default for iclingo.
-\paragraph{\texttt{--istats}}
-Prints additional statistics for each incremental step.
-\paragraph{\texttt{--imin=<num>}}
-At least \texttt{num} incremental steps are solved, wether an answer set has been found or not.
-\paragraph{\texttt{--imax=<num>}}
-At most \texttt{num} incremental steps are done. After them iclingo stops the search for answer sets.
-\paragraph{\texttt{--ibase}}
-With this option enabled, iclingo solves only the base program and ignores the cumulative and volatile part of the program.
-This option can be helpful when debugging.
-\paragraph{\texttt{--istop=<arg>}}
-The stop condition during incremental solving can be set.
-\begin{itemize}
- \item SAT    : Stop the search process if a solution was found.
- \item UNSAT  : Stop the search process if no solution was found.
-\end{itemize}
-The default for this option is SAT.
-\paragraph{\texttt{--ilearnt=<arg>}}
-This option influences the behavior of clasp when used incrementally.
-\begin{itemize}
- \item keep   : Learnt nogoods are kept for the next step while solving.
- \item forget : Clasp forgets the learnt nogoods after each incremental step.
-\end{itemize}
-As default, clasp forgets the learnt nogoods.
-\paragraph{\texttt{--iheuristic=<arg>}}
-This option sets how to handle heuristic information during incremental solving.
-\begin{itemize}
- \item keep   : Heuristic information is kept for the next step while solving.
- \item forget : Clasp forgets the heuristic information after each incremental step.
-\end{itemize}
-As default, clasp keeps the heuristic information gathered during the previous steps.
-\paragraph{Default Parameters}
-The default is to read from standard input and search for one model incrementally.
-\begin{verbatim}
-  iclingo 1 --incremental --istop=SAT --ilearnt=forget --iheuristic=keep
-            --trans-ext=no --eq=5 
-            --lookahead=no --lookback=yes --heuristic=Berkmin
-            --rand-prop=0.0 --randomize=no --rand-watches=yes
-            --restarts=100,1.5 --deletion=3,1.1,3.0
-            --minimize=all --contraction=250 --loops=common
-
-\end{verbatim}
-
-
-\subsection{Warnings}
-Several warnings are produced by gringo2.0 to give hints on common mistakes.
-They are all printed to standard error output.
-TODO: Some new warnings and Errors were added lately by Roland
-
-\begin{itemize}
- \item 
-\begin{verbatim}
- "Warning: sum with negative bounds in the body of a rule"
-\end{verbatim}
-This warning occurs if a sum aggregate with negative weights has been found and the output format smodels is used or the output is redirected to clasp. In this format negative bounds are compiled away using the transformation described in \cite{lparseManual}. This may lead to counterintuitive results.
- \item 
-\begin{verbatim}
- "Warning: multiple definitions of #const n"
-\end{verbatim}
-This warning is printed if more than one \#const statement is used to set the same constant.
-The last attached value is used for grounding.
-\item
-\begin{verbatim}
- "Warning: p/3 is never defined"
-\end{verbatim}
-This warnings states that an atom is used in the body of a rule that never occurs in the head.
-The predicate literal is given in the warning. The predicate will be removed through optimization.
-\item
-\begin{verbatim}
- "got ground program i hope u have enough memory :)"
-\end{verbatim}
-Use the command line option ``--ground'' to convert a ground program into another format.
-For converting already ground programs to an output language a special module has been implemented that uses far less memory. Because trying to ground an already variable free program could need a huge amount of memory.
-
-\end{itemize}
-Furthermore all warnings from clasp are included.
-
-\subsection{Errors}
-gringo2.0 stops the execution and prints an error message to standard error output.
-\begin{itemize}
- \item 
-\begin{verbatim}
- "the following rule cannot not be grounded,
-  non domain predicates : { ... }"
-\end{verbatim}
-This error message gives a list of predicates that are not domain restricted.
-You explicitly have to give a domain for those predicates.
- \item 
-\begin{verbatim}
- "the following rule cannot not be grounded,
-  weakly restricted variables: { ... }"
-\end{verbatim}
-This error message gives a list of variables that are not lambda restricted. 
-\item
-\begin{verbatim}
- "syntax error on line Y column Z unexpected token: X"
-\end{verbatim}
-The parser can not read the input format. Some unexpected token occurred in the input file.
-\newline
-\newline
-The next errors all belong to the ASPils output format.
-Some constructs in the input language can not be expressed in certain normal forms.
-Another normal form as to be chosen to support this feature.
-\begin{verbatim}
- "Disjunction not allowed on this normal form,
-  please choose normal form 2 or 4-7."
- "Count aggregate/cardinality constraint not allowed
-  in this normal form,
-  please choose normal form 3-7."
- "Count aggregate/cardinality constraint not allowed 
-  with non trivial upper bound in this normal form,
-  please choose normal form 5-7."
- "Count aggregate/cardinality constraint not allowed 
-  with negative lower bound in this normal form,
-  please choose normal form 5-7."
- "Sum aggregate/weight constraint not allowed
-  in this normal form,
-  please choose normal form 3-7."
- "Sum aggregate/weight constraint not allowed 
-  with non trivial upper bound in this normal form,
-  please choose normal form 5-7."
- "Sum aggregate/weight constraint not allowed 
-  with negative lower bound in this normal form,
-  please choose normal form 5-7"
- "Sum aggregate/weight constraint not allowed
-  with negative weights in this normal form,
-  please choose normal form 5 or 7."
- "Max aggregate not allowed in this normal form,
-  please choose normal form 6 or 7."
- "Max aggregate not allowed
-  with negative weights in this normal form,
-  please choose normal form 7."
- "Min aggregate not allowed in this normal form,
-  please choose normal form 6 or 7."
- "Min aggregate not allowed 
-  with negative weights in this normal form,
-  please choose normal form 7."
- "Optimize statement not allowed in this normal form,
-  please choose normal form 3-7."
-\end{verbatim}
-%\begin{verbatim}
-% "Times aggregate not allowed in this normal form."
-% "Times aggregate not allowed
-%  with negative weights in this normal form."
-%\end{verbatim}
-\end{itemize}
-
-
-%\subsection{Building Gringo2.0 From Source}
-%For compiling gringo2.0, a binary version of ``re2c'' is needed to compile the lexer and the parser.
-%TODO: What about lemon.
-%As the build environment ``cmake'' is used.
-%TODO: How to build gringo2.0, clingo, iclingo etc...
 
 \section{Syntax}
 The basic elements of a logic program and its syntax is now described.
@@ -365,7 +112,7 @@ At first, the rules with \texttt{zig/1} and \texttt{zag/1} are considered.
 Since these are the only rules \texttt{zig/1} and \texttt{zag/1} occurs in the head, the domains of the predicates are closed. The domains \{\texttt{zig(0)}, \texttt{zig(1)}\} and \{ \texttt{zag(0)}, \texttt{zag(1)}\} are complete, since no other predicates of the form \texttt{zig/1} or \texttt{zag/1} can be derived from the program.
 Now the third rule with \texttt{zigzag/2} in the head can be grounded. The variables \texttt{X} and \texttt{Y} both occur in a domain predicate, and the values $0$ respectively $1$ can substitute the variables.
 \newline
-To give a comparison to the $\omega$-restricted programs of lparse, an extra domain predicate has to be introduced to the example.
+To give a comparison to the $\omega$-restricted programs of lParse, an extra domain predicate has to be introduced to the example.
 \begin{verbatim}
  domain(0..1).
  zig(0) :- not zag(0).   zag(0) :- not zig(0).
@@ -373,47 +120,6 @@ To give a comparison to the $\omega$-restricted programs of lparse, an extra dom
  zigzag(X,Y) :- zig(X), zag(Y), domain(X), domain(Y).
 \end{verbatim}
 \texttt{zig/1} and \texttt{zag/1} can not be used as a domain predicate, since their truth value can not be fully evaluated.
-
-%\paragraph{Function Symbols}
-%A constant is a representation of an entity in the problem domain.
-%A constant is either a name, starting with a lower case letter or an underscore, or a positive integer.
-%It also can be encompassed by double quotation marks. When using quotation marks, which is sometimes helpful when using %constants with spaces, it has to be remarked that a constant with quotation marks is never equal to a constant without, so ``$a$'' is not $a$.
-%\paragraph{Variable}
-%A variable is programming construct to simplify writing logic programs.
-%It always starts with a capitalized letter and can contain digits and letters.
-%In the grounding process a variable is replaced by one or more constants.
-%Each variable occurring in a rule must be domain restricted as described in section \ref{domainrestricted}.
-%\paragraph{Atom}
-%An atom is a predicate with a name. The name can consist of letters, digits and the underscore.
-%It has to start with a lower case letter or an underscore.
-%An atom can have several parameters, encapsulated by parenthesis and separated with commas.
-%The parameters are either constants, variables or function symbols.
-%Function symbols do have the same syntax as atoms. This way they can be finitely nested.
-%As an example, an atom with three parameters is given:
-%The first parameter being a constant $a$, the others being function symbols $f(b,X)$ and $g(f(X), Y))$.
-%\begin{verbatim}
-% p(a,f(b,X), g(f(X),Y)).
-%\end{verbatim}
-
-%\paragraph{Rule}
-%A rule normally consists of a head and a body and ends with a dot.
-%The body is separated from the head using ``:-'' as in
-%\begin{verbatim}
-% head :- body.
-%\end{verbatim}
-%The body is a comma separated conjunction of expressions.
-%The supported expressions are introduced in the next section.
-%The variables used in the head must be restricted to a domain in the body.
-%Check (\ref{domainrestricted}) to see the restrictions on domains.
-%\newline
-%A rule can occur without a body as a fact, therefore the body is omitted.
-%\begin{verbatim}
-% head.
-%\end{verbatim}
-%The same can be done with the body to express an integrity constraint.
-%\begin{verbatim}
-% :- body.
-%\end{verbatim}
 
 \subsection{Basic Language}
 The base building blocks of the language are rules, facts and integrity constraints.
@@ -736,11 +442,12 @@ Whenever a ``\texttt{\%}'' occurs in the input, the rest of the line is treated 
 Block based comments can span over several lines.
 Everything between ``\texttt{\%*}'' and ``\texttt{*\%}'' is treated as a comment.
 \subsection{Meta-Syntax for Incremental Programs}
+\label{metasyntaxinc}
 Incremental programs must be splitted into 3 parts.
 The base part, for the information that hold in all steps and is independent of the incremental constant.
 The cumulative part, where the cumulative rules must be set that hold in all steps, but depend on the incremental parameter.
 And finally the volatile part. In this part the queries to the program are given, that must hold only in the last state.
-To seperate the parts, three statements exists. Everything beyond such a statement is considered to belong to the specific part.
+To separate the parts, three statements exists. Everything beyond such a statement is considered to belong to the specific part.
 To start the base part
 \begin{verbatim}
  #base.
@@ -827,7 +534,7 @@ and we can interpret them as the colors of the vertices
  \xymatrix{\color{green}1\ar@{-}[dr]\ar@{-}[d]\ar@{-}[r]&\color{red}2\ar@{-}[dl]\\
            \color{blue}3&\color{red}4}
 \]
-To improve the readability of the answerset, all but the \texttt{colored/2} predicates can be hidden with these two lines.
+To improve the readability of the answer set, all but the \texttt{colored/2} predicates can be hidden with these two lines.
 \begin{verbatim}
  #hide.
  #show colored/2.
@@ -843,7 +550,7 @@ For example, if the solution for a planning problem can not be found in 3 steps,
 To make it concrete, an incremental encoding for the blocksworld problem is presented.
 This is a very simple problem, where $n$ blocks are stacked on top of each other and you can move only one block at the same time. The goal is to stack the blocks in the inverse order.
 Since an incremental logic program is divided into three parts, we start with the base part.
-All rules that hold in all timesteps that are independent of the incremental constant are put here.
+All rules that hold in all time steps that are independent of the incremental constant are put here.
 At first we declare $n$ blocks and that each block is a location where a block can be put on.
 Furthermore we define an extra location, the table. That is the location where the bottom most block is put.
 \begin{verbatim}
@@ -920,72 +627,307 @@ If the following lines were added to the program, the answer set only consists o
  #hide.
  #show move/3.
 \end{verbatim}
-%\paragraph{Fastfood}
-%This example needs a proper instance to work.
-%\begin{verbatim}
-%#hide.
-%#show altdepot/2.
-%#show costs/1.
-%
-%% calculate the number of depots
-%depots(X) :- X = { depot(DN, DK) :  depot(DN, DK) }.
-%
-%% calculate the costs for the initial depots
-%% (the grounder can calculate this on its own)
-%costs(C) :- C = [ serves(RN, Dist) : restaurant(RN, RK) : dist(Dist) = Dist ].
-%
-%% choose the closest depot for a restaurant
-%% (the grounder can calculate this on its own)
-%serves(Rname,Dist) :- restaurant(Rname,RK),
-%   Dist = min [ depot(DN1, DK1) : depot(DN1, DK1) = abs(DK1-RK) ].
-%
-%dist(abs(X-Y)) :- restaurant(A, X), restaurant(B, Y).
-%
-%% Each restaurant may be an alternative depot or not.
-%X { altdepot(R,K) : restaurant(R,K) } X :- depots(X).
-%
-%% choose the closest depot for a restaurant
-%altserves(Rname,Dist) :- restaurant(Rname,RK),
-%   Dist = min [ altdepot(DN1, DK1) : restaurant(DN1, DK1) = abs(DK1-RK) ].
-%
-%% fail if we have not found a better solution
-%:- costs(C), C [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
-%
-%% thats the easiest way to show the calculated costs
-%minimize [ altserves(R,Dist) : dist(Dist) : restaurant(R,RK) = Dist ].
-%\end{verbatim}
-%
-%\paragraph{Queens}
-%\begin{verbatim}
-%#hide.
-%#show q(X,Y).
-%
-%% this can be set via the command line
-%#const queens = 200.
-%
-%#const diags  = queens * 2 - 1.
-%d(1..queens).
-%diag(1..diags).
-%
-%% enumerate the diagonals
-%diagX(X,Y,X - Y + queens) :- d(X), d(Y).
-%diagY(X,Y,X + Y - 1) :- d(X), d(Y).
-%
-%% exactly 1 queen in each row/col
-%1 { q(X,Y) : d(Y) } 1 :- d(X).
-%1 { q(X,Y) : d(X) } 1 :- d(Y).
-%
-%% at most 1 queen on each diagonal
-%{ q(X,Y) : diagX(X,Y,D) } 1 :- diag(D).
-%{ q(X,Y) : diagY(X,Y,D) } 1 :- diag(D).
-%
-%\end{verbatim}
 
-%\section{Benchmarks}
-%The benchmarks were run on an Athlon XP 1700+ with 1GB of RAM.
-%TODO: Official (non internal wiki) link to the instances.
 
-%\input{benchmark2.result}
+\section{Using Gringo}
+\subsection{Command Line Interface}
+All gringo tools can be downloaded as binary from \cite{download}. To build them from source, an installation guide ``INSTALL'' is included in the tar file.
+The gringo tools can be started from the command line and have some parameters that can be useful.
+All programs are fully backward compatible meaning, all options of gringo2.0 are valid in clingo and iclingo, and all options of clingo are valid in iclingo.
+\subsection{Gringo2.0 Options}
+Gringo2.0 can be called from the command line via
+\begin{verbatim}
+ gringo (gringo option|file)*
+\end{verbatim}
+If no filename is given, the standard input is used.
+
+\paragraph{\texttt{--help,-h}}
+Gives a short overview of all parameters.
+\paragraph{\texttt{--version,-v}}
+Prints the version information and exists.
+\paragraph{\texttt{--verbose,-V}}
+Prints additional information during processing.
+\paragraph{\texttt{--stats}}
+Prints extended statistic information.
+
+\paragraph{\texttt{--text,-t}}
+Parameter ``\texttt{--text}'' invokes the text output method, so the output is printed in human readable format, which is also the input format for gringo2.0. The output is variable free and some simplifications on the program were made. To convert a variable free program in plain format into a format readable by a solver use the \texttt{--ground} option.
+\paragraph{\texttt{--lparse,-l}}
+This mode prints lParse conform output. For a definition of the output format see \cite{lparseManual}.
+Since some features of gringo2.0 are not natively supported for this output language, new atoms may be introduced to create an equivalent program.\newline
+Sum aggregates with negative weights are handled like weight constraint in lParse for this output format. So a transformation as explained in \cite{lparseManual} is used to get rid of the negative weights.
+\paragraph{\texttt{--aspils,-a 1-7}}
+This parameter invokes the new output format for the intermediate language ASPils \cite{gejaosscth08b}. The optional number can range from $1$ to $7$ and refers to one of the following normal forms (Simple=1, SModels=2, DisjunctiveLogicProgram=3, CModels=4, CModelsExtended=5, DLV=6, Conglomeration=7).
+% If no normal form is specified, conglomeration(7)  is assumed.
+
+\paragraph{\texttt{--ground,-g}}
+If this parameter is used, the grounder expects an already grounded program as input.
+For converting an already grounded logic program into an output format supported by gringo2.0 this is the right option. This mode saves a lot of memory but does not ground the program.
+\paragraph{\texttt{--const,-c C=v}}
+You can set the value of constants defined in your logic program via the command line of gringo2.0.
+After the parameter ``--const'' you have to give the name of the constant $C$ you want to set followed by a ``$=$'' and the value of that constant. The integer value $v$ can even be an arithmetic expression. For example:
+\begin{verbatim}
+ gringo --const n=5*2
+\end{verbatim}
+the constant $n$ is replaced by $10$ in the logic program.
+\paragraph{\texttt{--bindersplitting=<arg>}}
+With this option you can enable or disable the binder splitting used by gringo2.0
+\begin{itemize}
+ \item yes : Enable binder splitting
+ \item no  : Disable binder splitting
+\end{itemize}
+\paragraph{\texttt{--ifixed=<num>}}
+An incremental program is required as input. Gringo2.0 grounds the fixed number of steps of the incremental program.
+
+\paragraph{Default Parameters}
+The default command line is ``\texttt{./gringo --lparse --bindersplitting=yes}'' to read from standard input and for smodels output.
+
+\subsection{Clingo Options}
+
+Clingo can be called from the command line via
+\begin{verbatim}
+ clingo (clingo option|file)*
+\end{verbatim}
+If no filename is given, the standard input is used.
+Since clingo uses gringo2.0 as a grounder in combination with the solver clasp, all options from gringo2.0 and clasp are valid. For a detailed list of the clasp options see the clasp help (also available with \texttt{clingo --help}).
+\paragraph{\texttt{--clasp,-C}}
+In this mode, the output is directly parsed to clasp. For solving logic programs, no intermediate files are produced and the answer sets are printed directly.
+With this option enabled, all parameters for clasp are valid and can be declared in the command line.
+For example:
+\begin{verbatim}
+ clingo --clasp --const n=5 --supp-models 3
+\end{verbatim}
+Furthermore all restriction on smodels output hold, as clasps internal interface currently reads smodels format.
+This is default for clingo.
+\paragraph{\texttt{--solveonly=<arg>}}
+This option can be used to set the working mode of clingo to use it as a solver only.
+\begin{itemize}
+\item yes : Pass input directly to clasp
+\item no : Standard mode
+\end{itemize}
+The default is \texttt{--solveonly=no} to ground the logic program first.
+If the input shall directly be passed to clasped, it has to be in the valid smodels input format.
+
+\paragraph{Default Parameters}
+The default is to read from standard input and search for one model.
+\begin{verbatim}
+ clingo 1 --clasp --solveonly=no
+           --trans-ext=no --eq=5 
+           --lookahead=no --lookback=yes --heuristic=Berkmin
+           --rand-prop=0.0 --randomize=no --rand-watches=yes
+           --restarts=100,1.5 --deletion=3,1.1,3.0
+           --minimize=all --contraction=250 --loops=common
+\end{verbatim}
+
+\subsection{Iclingo Options}
+Iclingo can be called from the command line via
+\begin{verbatim}
+ iclingo (iclingo option|file)*
+\end{verbatim}
+Iclingo is used for incremental solving. For a detailed description see \cite{gekaosscth08a}.
+It uses the grounder gringo2.0 and the solver clasp, and therefore all options of gringo2.0, clingo and clasp are valid.
+Additionally some options for controlling the incremental behavior are implemented.
+\paragraph{\texttt{--incremental,-i}}
+Activates the incremental solving. This is the default for iclingo.
+\paragraph{\texttt{--istats}}
+Prints additional statistics for each incremental step.
+\paragraph{\texttt{--imin=<num>}}
+At least \texttt{num} incremental steps are solved, whether an answer set has been found or not.
+\paragraph{\texttt{--imax=<num>}}
+At most \texttt{num} incremental steps are done. After them iclingo stops the search for answer sets.
+\paragraph{\texttt{--ibase}}
+With this option enabled, iclingo solves only the base program and ignores the cumulative and volatile part of the program.
+This option can be helpful when debugging.
+\paragraph{\texttt{--istop=<arg>}}
+The stop condition during incremental solving can be set.
+\begin{itemize}
+ \item SAT    : Stop the search process if a solution was found.
+ \item UNSAT  : Stop the search process if no solution was found.
+\end{itemize}
+The default for this option is SAT.
+\paragraph{\texttt{--ilearnt=<arg>}}
+This option influences the behavior of clasp when used incrementally.
+\begin{itemize}
+ \item keep   : Learnt nogoods are kept for the next step while solving.
+ \item forget : Clasp forgets the learnt nogoods after each incremental step.
+\end{itemize}
+As default, clasp forgets the learnt nogoods.
+\paragraph{\texttt{--iheuristic=<arg>}}
+This option sets how to handle heuristic information during incremental solving.
+\begin{itemize}
+ \item keep   : Heuristic information is kept for the next step while solving.
+ \item forget : Clasp forgets the heuristic information after each incremental step.
+\end{itemize}
+As default, clasp keeps the heuristic information gathered during the previous steps.
+\paragraph{Default Parameters}
+The default is to read from standard input and search for one model incrementally.
+\begin{verbatim}
+  iclingo 1 --incremental --istop=SAT --ilearnt=forget --iheuristic=keep
+            --trans-ext=no --eq=5 
+            --lookahead=no --lookback=yes --heuristic=Berkmin
+            --rand-prop=0.0 --randomize=no --rand-watches=yes
+            --restarts=100,1.5 --deletion=3,1.1,3.0
+            --minimize=all --contraction=250 --loops=common
+
+\end{verbatim}
+
+
+\subsection{Warnings}
+Several warnings are produced by gringo2.0 to give hints on common mistakes.
+They are all printed to standard error output.
+TODO: Some new warnings and Errors were added lately by Roland
+
+\begin{itemize}
+ \item 
+\begin{verbatim}
+ "Warning: sum with negative bounds in the body of a rule"
+\end{verbatim}
+This warning occurs if a sum aggregate with negative weights has been found and the output format smodels is used or the output is redirected to clasp. In this format negative bounds are compiled away using the transformation described in \cite{lparseManual}. This may lead to counterintuitive results.
+ \item 
+\begin{verbatim}
+ "Warning: multiple definitions of #const n"
+\end{verbatim}
+This warning is printed if more than one \#const statement is used to set the same constant.
+The last attached value is used for grounding.
+\item
+\begin{verbatim}
+ "Warning: p/3 is never defined"
+\end{verbatim}
+This warnings states that an atom is used in the body of a rule that never occurs in the head.
+The predicate literal is given in the warning. The predicate will be removed through optimization.
+\item
+\begin{verbatim}
+ "got ground program i hope u have enough memory :)"
+\end{verbatim}
+Use the command line option ``--ground'' to convert a ground program into another format.
+For converting already ground programs to an output language a special module has been implemented that uses far less memory. Because trying to ground an already variable free program could need a huge amount of memory.
+\item
+\begin{verbatim}
+ "Warning: There are no #base, #lambda or #delta sections."
+\end{verbatim}
+If writing an incremental program, the incremental sections\ref{metasyntaxinc} have to be used.
+\item
+\begin{verbatim}
+ "Warning: There are statements not within a #base, #lambda or #delta section."
+ "         These Statements are put into the #base section."
+\end{verbatim}
+If writing an incremental program, all statements that are not written in an incremental section are automatically considered to belong to the \texttt{base} part of the program.
+\item
+\begin{verbatim}
+ "Warning: Classical negation is not handled correctly in combination with the incremental output."
+ "         You have to add rules like: :- a, -a. on your own! (at least for now)"
+\end{verbatim}
+To use classical negation in an incremental program the described rules have to be added manually. This will be fixed in a later version of gringo.
+\end{itemize}
+Furthermore all warnings from clasp are included.
+
+\subsection{Errors}
+gringo2.0 stops the execution and prints an error message to standard error output.
+\begin{itemize}
+ \item 
+\begin{verbatim}
+ "the following rule cannot not be grounded,
+  non domain predicates : { ... }"
+\end{verbatim}
+This error message gives a list of predicates that are not domain restricted.
+You explicitly have to give a domain for those predicates.
+ \item 
+\begin{verbatim}
+ "the following rule cannot not be grounded,
+  weakly restricted variables: { ... }"
+\end{verbatim}
+This error message gives a list of variables that are not lambda restricted. 
+\item
+\begin{verbatim}
+ "syntax error on line Y column Z unexpected token: X"
+\end{verbatim}
+The parser can not read the input format. Some unexpected token occurred in the input file.
+\item
+\begin{verbatim}
+ "sorry clasp cannot handle disjunctive rules!"
+\end{verbatim}
+If using clingo or iclingo, this happens if disjunctive rules are used. Please choose another solver that support disjunctive rules.
+\item
+\begin{verbatim}
+ "A fixed number of incremental steps is needed to ground the program."
+\end{verbatim}
+TODO: I dont know.
+\item
+\begin{verbatim}
+ "cyclic constant definition."
+\end{verbatim}
+TODO: I dont know.
+\item
+\begin{verbatim}
+ "The following statement cant be used with the incremental interface: X."
+ "unsupported statement."
+\end{verbatim}
+TODO: I dont know.
+\item
+\begin{verbatim}
+ "output does not support getIncUid."
+\end{verbatim}
+TODO: I dont know.
+\item
+\begin{verbatim}
+ "comparing different types"
+\end{verbatim}
+TODO: I dont know.
+\item
+\begin{verbatim}
+ "comparing function symbols"
+\end{verbatim}
+TODO: I dont know.
+
+\item
+The next errors all belong to the ASPils output format.
+Some constructs in the input language can not be expressed in certain normal forms.
+Another normal form as to be chosen to support this feature.
+\begin{verbatim}
+ "Disjunction not allowed on this normal form,
+  please choose normal form 2 or 4-7."
+ "Count aggregate/cardinality constraint not allowed
+  in this normal form,
+  please choose normal form 3-7."
+ "Count aggregate/cardinality constraint not allowed 
+  with non trivial upper bound in this normal form,
+  please choose normal form 5-7."
+ "Count aggregate/cardinality constraint not allowed 
+  with negative lower bound in this normal form,
+  please choose normal form 5-7."
+ "Sum aggregate/weight constraint not allowed
+  in this normal form,
+  please choose normal form 3-7."
+ "Sum aggregate/weight constraint not allowed 
+  with non trivial upper bound in this normal form,
+  please choose normal form 5-7."
+ "Sum aggregate/weight constraint not allowed 
+  with negative lower bound in this normal form,
+  please choose normal form 5-7"
+ "Sum aggregate/weight constraint not allowed
+  with negative weights in this normal form,
+  please choose normal form 5 or 7."
+ "Max aggregate not allowed in this normal form,
+  please choose normal form 6 or 7."
+ "Max aggregate not allowed
+  with negative weights in this normal form,
+  please choose normal form 7."
+ "Min aggregate not allowed in this normal form,
+  please choose normal form 6 or 7."
+ "Min aggregate not allowed 
+  with negative weights in this normal form,
+  please choose normal form 7."
+ "Optimize statement not allowed in this normal form,
+  please choose normal form 3-7."
+\end{verbatim}
+%\begin{verbatim}
+% "Times aggregate not allowed in this normal form."
+% "Times aggregate not allowed
+%  with negative weights in this normal form."
+%\end{verbatim}
+\end{itemize}
+
+
 \section{Future Work}
 Further research has to be done on features in the input language. Additionally the support of incremental grounding will be improved. To speed up the grounding process research on a bottom up grounding procedure is done. To support an even less restricted input language the support for $\Pi$-restricted programs is planned in a future release of gringo. All these features will lead to more acceptance of ASP-systems as the programs become easier to write and the bottleneck of ASP, the grounding part, will be faster.
 Furthermore the acceptance of a standardized intermediate format for ASP is necessary. gringo2.0 supports the ASPils output format, but many more tools for converting, shuffling and merging must be developed.
@@ -1000,5 +942,4 @@ Furthermore the acceptance of a standardized intermediate format for ASP is nece
 \bibliographystyle{plain}
 \bibliography{bibtex}
 \appendix
-%todo: input grammar in EBNF
 \end{document}
