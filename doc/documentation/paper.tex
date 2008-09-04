@@ -851,33 +851,32 @@ If using clingo or iclingo, this happens if disjunctive rules are used. Please c
 \begin{verbatim}
  "A fixed number of incremental steps is needed to ground the program."
 \end{verbatim}
-TODO: I dont know.
+This error occurs if an incremental program is given to gringo without using the option \texttt{--ifixed} or iclingo.
 \item
 \begin{verbatim}
  "cyclic constant definition."
 \end{verbatim}
-TODO: I dont know.
+A cyclic definition of a constant is not allowed as shown in the example.
+\begin{verbatim}
+ #const x=y.
+ #const y=x.
+\end{verbatim}
 \item
 \begin{verbatim}
  "The following statement cant be used with the incremental interface: X."
  "unsupported statement."
 \end{verbatim}
-TODO: I dont know.
-\item
-\begin{verbatim}
- "output does not support getIncUid."
-\end{verbatim}
-TODO: I dont know.
+It is not allowed to use an optimize (\texttt{minimize} or \texttt{maximize}) or \texttt{compute} statement in an incremental program.
 \item
 \begin{verbatim}
  "comparing different types"
-\end{verbatim}
-TODO: I dont know.
-\item
-\begin{verbatim}
  "comparing function symbols"
 \end{verbatim}
-TODO: I dont know.
+This error occurs if trying to compare non compareable values or function symbols as in
+\begin{verbatim}
+ p :- 1 < s.
+ p :- f(x) < f(y).
+\end{verbatim}
 
 \item
 The next errors all belong to the ASPils output format.
