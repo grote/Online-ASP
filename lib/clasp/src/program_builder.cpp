@@ -313,7 +313,12 @@ bool PrgBodyNode::simplifyBody(ProgramBuilder& prg, uint32 bodyId, std::pair<uin
 					pre.setSimplifyHeads(bodyId);
 				}
 			}
-			else if (extended_) { extended_->bound_ -= weight(i); }
+			else if (extended_) { 
+				// subgoal is true: remove from rule and decrease necessary lower bound
+				weight_t w = weight(i);
+				extended_->sumWeights_	-= w;
+				extended_->bound_				-= w; 
+			}
 		}
 		else if (!mark || !prg.vars_.marked(p)) {
 			if (mark) prg.vars_.mark(p);
