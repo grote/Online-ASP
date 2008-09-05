@@ -77,6 +77,7 @@ bool Output::addAtom(NS_OUTPUT::Atom *r)
 	{
 		res = atoms_[id].insert(std::make_pair(r->values_, newUid())).first;
 		r->uid_     = res->second;
+		++stats_.atoms;
 		return true;
 	}
 	else
@@ -195,6 +196,7 @@ void Rule::print_plain(Output *o, std::ostream &out)
 	out << " :- ";
 	body_->print_plain(o, out);
 	out << "." << NL;
+	++(o->stats_).rules;
 }
 
 void Rule::print(Output *o, std::ostream &out)
@@ -203,6 +205,7 @@ void Rule::print(Output *o, std::ostream &out)
 	body_->print(o, out);
 	uid_ = o->newUid();
 	out << "5" << " 3 " << uid_ << " " << head_->getUid() << " " << body_->getUid() << END_ENTRY << NL;
+	++(o->stats_).rules;
 }
 
 Rule::~Rule()
@@ -225,6 +228,7 @@ void Fact::print_plain(Output *o, std::ostream &out)
 {
 	head_->print_plain(o, out);
 	out << "." << NL;
+	++(o->stats_).rules;
 }
 
 void Fact::print(Output *o, std::ostream &out)
@@ -232,6 +236,7 @@ void Fact::print(Output *o, std::ostream &out)
 	head_->print(o, out);
 	uid_ = o->newUid();
 	out << "6" << " 2 " << uid_ << " " << head_->getUid() << END_ENTRY << NL;
+	++(o->stats_).rules;
 }
 
 Fact::~Fact()
@@ -254,6 +259,7 @@ void Integrity::print_plain(Output *o, std::ostream &out)
 	out << " :- ";
 	body_->print_plain(o, out);
 	out << "." << NL;
+	++(o->stats_).rules;
 
 }
 
@@ -262,6 +268,7 @@ void Integrity::print(Output *o, std::ostream &out)
 	body_->print(o, out);
 	uid_ = o->newUid();
 	out << "7" << " 2 " << uid_ << " " << body_->getUid() << END_ENTRY << NL;
+	++(o->stats_).rules;
 }
 
 void Integrity::addDomain(bool fact)
@@ -414,15 +421,19 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 	{
 		case SUM:
 			out << " [";
+			++(o->stats_).sum;
 			break;
 		case COUNT:
 			out << " {";
+			++(o->stats_).count;
 			break;
 		case MAX:
 			out << " max [";
+			++(o->stats_).max;
 			break;
 		case MIN:
 			out << " min [";
+			++(o->stats_).min;
 			break;
 		case TIMES:
 			out << " times [";
@@ -573,6 +584,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 					for(IntVector::iterator it = uids.begin(); it != uids.end(); it++)
 						out << " " << *it;
 					out << END_ENTRY << NL;
+					++(o->stats_).count;
 				}
 				else //write a count aggregate
 				{
@@ -599,6 +611,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 						out << "19" << " " << 3 << " " << uid << " " << uid_ << " " << upper_;
 						out << END_ENTRY << NL;
 					}
+					++(o->stats_).count;
 				}
 				break;
 			}
@@ -632,6 +645,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 						out << " " << *it;
 
 					out << END_ENTRY << NL;
+					++(o->stats_).sum;
 				}
 				else //write a sum aggregate
 				{
@@ -658,6 +672,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 						out << "19" << " " << 3 << " " << uid << " " << uid_ << " " << upper_;
 						out << END_ENTRY << NL;
 					}
+					++(o->stats_).sum;
 				}
 				break;
 			}
@@ -687,6 +702,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 						out << "19" << " " << 3 << " " << uid << " " << uid_ << " " << upper_;
 						out << END_ENTRY << NL;
 					}
+				++(o->stats_).max;
 				break;
 			}
 		case MIN:
@@ -715,6 +731,7 @@ void Aggregate::print(Output *o, std::ostream &out)
 						out << "19" << " " << 3 << " " << uid << " " << uid_ << " " << upper_;
 						out << END_ENTRY << NL;
 					}
+				++(o->stats_).min;
 				break;
 			}
 		case TIMES:
@@ -778,6 +795,7 @@ void Compute::print_plain(Output *o, std::ostream &out)
 		(*it)->print_plain(o, out);
 	}
 	out << " }." << NL;
+	++(o->stats_).compute;
 }
 
 void Compute::print(Output *o, std::ostream &out)
@@ -788,6 +806,7 @@ void Compute::print(Output *o, std::ostream &out)
 	{
 		out << "7" << " 2 " << o->newUid() << " " << -(*it)->getUid() << END_ENTRY << NL;
 	}
+	++(o->stats_).compute;
 }
 
 Compute::~Compute()
@@ -830,6 +849,7 @@ void Optimize::print_plain(Output *o, std::ostream &out)
 		out << " = " << *itWeights;
 	}
 	out << " ]." << NL;
+	++(o->stats_).optimize;
 }
 
 void Optimize::print(Output *o, std::ostream &out)
@@ -859,6 +879,7 @@ void Optimize::print(Output *o, std::ostream &out)
 	}
 	out << END_ENTRY << NL;
 	static_cast<PilsOutput*>(o)->addOptimizedID(uid_);
+	++(o->stats_).optimize;
 }
 
 Optimize::~Optimize()

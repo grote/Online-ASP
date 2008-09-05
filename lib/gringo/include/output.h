@@ -51,6 +51,18 @@ namespace NS_GRINGO
 			
 			// must be called if predicates are added after initialize has been called
 			void addSignature();
+			struct Stats
+			{
+				unsigned int rules;
+				unsigned int atoms;
+				unsigned int count;
+				unsigned int sum;
+				unsigned int max;
+				unsigned int min;
+				unsigned int compute;
+				unsigned int optimize;
+			};
+			Stats stats_;
 		protected:
 			int uids_;
 			std::ostream *out_;
