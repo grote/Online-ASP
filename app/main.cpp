@@ -334,6 +334,9 @@ void MainApp::ground(Output &output)
 		if(!parser.parse(&output))
 			throw NS_GRINGO::GrinGoException("Error: Parsing failed.");
 		setState(end_read);
+		// just an approximation
+		if (options.outf == Options::TEXT_OUT)
+			output.stats_.atoms = parser.getDomains()->size();
 	}
 	else
 	{
@@ -349,6 +352,9 @@ void MainApp::ground(Output &output)
 			cerr << "Grounding..." << endl;
 		grounder.ground();
 		setState(end_ground);
+		// just an approximation
+		if (options.outf == Options::TEXT_OUT)
+			output.stats_.atoms = grounder.getDomains()->size();
 	}
 }
 
