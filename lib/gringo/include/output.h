@@ -62,7 +62,6 @@ namespace NS_GRINGO
 				unsigned int compute;
 				unsigned int optimize;
 			};
-			Stats stats_;
 		protected:
 			int uids_;
 			std::ostream *out_;
@@ -72,6 +71,8 @@ namespace NS_GRINGO
 			std::map<Signature, bool> hide_;
 			std::vector<bool> visible_;
 			GlobalStorage *g_;
+		public:
+			Stats stats_;
 		};
 	
 		struct Object

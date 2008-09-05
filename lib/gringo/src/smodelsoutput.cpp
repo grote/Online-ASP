@@ -40,6 +40,7 @@ void SmodelsOutput::printBasicRule(int head, const IntVector &pos, const IntVect
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
 		*out_ << " " << *it;
 	*out_ << NL;
+	++stats_.rules;
 }
 
 void SmodelsOutput::printConstraintRule(int head, int bound, const IntVector &pos, const IntVector &neg)
@@ -50,6 +51,8 @@ void SmodelsOutput::printConstraintRule(int head, int bound, const IntVector &po
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
 		*out_ << " " << *it;
 	*out_ << NL;
+	++stats_.count;
+	++stats_.rules;
 }
 
 void SmodelsOutput::printChoiceRule(const IntVector &head, const IntVector &pos, const IntVector &neg)
@@ -63,6 +66,8 @@ void SmodelsOutput::printChoiceRule(const IntVector &head, const IntVector &pos,
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
 		*out_ << " " << *it;
 	*out_ << NL;
+	++stats_.count;
+	++stats_.rules;
 }
 
 void SmodelsOutput::printWeightRule(int head, int bound, const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg)
@@ -77,6 +82,8 @@ void SmodelsOutput::printWeightRule(int head, int bound, const IntVector &pos, c
 	for(IntVector::const_iterator it = wPos.begin(); it != wPos.end(); it++)
 		*out_ << " " << *it;
 	*out_ << NL;
+	++stats_.sum;
+	++stats_.rules;
 }
 
 void SmodelsOutput::printMinimizeRule(const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg)
@@ -91,6 +98,7 @@ void SmodelsOutput::printMinimizeRule(const IntVector &pos, const IntVector &neg
 	for(IntVector::const_iterator it = wPos.begin(); it != wPos.end(); it++)
 		*out_ << " " << *it;
 	*out_ << NL;
+	++stats_.optimize;
 }
 
 void SmodelsOutput::printDisjunctiveRule(const IntVector &head, const IntVector &pos, const IntVector &neg)
@@ -104,6 +112,7 @@ void SmodelsOutput::printDisjunctiveRule(const IntVector &head, const IntVector 
 	for(IntVector::const_iterator it = pos.begin(); it != pos.end(); it++)
 		*out_ << " " << *it;
 	*out_ << NL;
+	++stats_.rules;
 }
 
 void SmodelsOutput::printComputeRule(int models, const IntVector &pos, const IntVector &neg)
@@ -111,6 +120,8 @@ void SmodelsOutput::printComputeRule(int models, const IntVector &pos, const Int
 	models_ = models;
 	compPos_.insert(pos.begin(), pos.end());
 	compNeg_.insert(neg.begin(), neg.end());
+	if (compPos_.size() + compNeg_.size() > 0)
+		++stats_.compute;
 }
 
 void SmodelsOutput::finalize(bool last)

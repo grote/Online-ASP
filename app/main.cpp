@@ -78,6 +78,7 @@ private:
 	enum State { start_read, start_ground, start_pre, start_solve, end_read, end_ground, end_pre, end_solve };
 	void setState(State s);
 	void ground(Output &output);
+	void printGrounderStats(Output& output) const;
 #ifdef WITH_CLASP
 	void printSatStats() const;
 	void printLpStats() const;
@@ -257,18 +258,24 @@ int MainApp::run(int argc, char **argv)
 		{
 			SmodelsOutput output(&std::cout);
 			ground(output);
+			if (options.verbose | options.stats)
+				printGrounderStats(output);
 			break;
 		}
 		case Options::GRINGO_OUT:
 		{
 			PilsOutput output(&std::cout, options.aspilsOut);
 			ground(output);
+			if (options.verbose | options.stats)
+				printGrounderStats(output);
 			break;
 		}
 		case Options::TEXT_OUT:
 		{
 			LparseOutput output(&std::cout);
 			ground(output);
+			if (options.verbose | options.stats)
+				printGrounderStats(output);
 			break;
 		}
 #ifdef WITH_CLASP
@@ -344,6 +351,21 @@ void MainApp::ground(Output &output)
 		setState(end_ground);
 	}
 }
+
+
+void MainApp::printGrounderStats(Output& output) const
+{
+	cerr << "=== Grounder Statistics ===" << std::endl;
+	cerr << "#rules   : " << output.stats_.rules << std::endl;
+	cerr << "#atoms   : " << output.stats_.atoms << std::endl;
+	cerr << "#count   : " << output.stats_.count << std::endl;
+	cerr << "#sum     : " << output.stats_.sum << std::endl;
+	cerr << "#min     : " << output.stats_.min << std::endl;
+	cerr << "#max     : " << output.stats_.max << std::endl;
+	cerr << "#compute : " << output.stats_.compute << std::endl;
+	cerr << "#optimize: " << output.stats_.optimize << std::endl;
+}
+
 
 #ifdef WITH_CLASP
 void MainApp::printSatStats() const

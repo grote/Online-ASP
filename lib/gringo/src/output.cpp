@@ -25,8 +25,21 @@ using namespace NS_GRINGO;
 using namespace NS_OUTPUT;
 
 const char* END_ENTRY = " 0";
-Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(false), g_(0)
+Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(false), g_(0)//,
+//												stats_.rules(0)//, stats_.atoms(0), stats_.count(0),
+//												stats_.sum(0), stats_.max(0), stats_.min(0),
+//												stats_.compute(0), stats_.optimize(0)
+//TODO: Why does this not work
 {
+	stats_.rules    = 0;
+	stats_.atoms    = 0;
+	stats_.count    = 0;
+	stats_.sum      = 0;
+	stats_.count    = 0;
+	stats_.max      = 0;
+	stats_.min      = 0;
+	stats_.compute  = 0;
+	stats_.optimize = 0;
 	
 }
 

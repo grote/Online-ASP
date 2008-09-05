@@ -742,7 +742,9 @@ At least \texttt{num} incremental steps are solved, whether an answer set has be
 \paragraph{\texttt{--imax=<num>}}
 At most \texttt{num} incremental steps are done. After them iclingo stops the search for answer sets.
 \paragraph{\texttt{--iquery=<num>}}
-With this option you can set in which step to start with solving the volatile part of the incremental program.
+With this option you can set in which steps you want to ground without solving.
+Solving the incremental program starts after this step.
+
 \paragraph{\texttt{--istop=<arg>}}
 The stop condition during incremental solving can be set.
 \begin{itemize}
