@@ -442,6 +442,10 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 			out << " {";
 			++(o->stats_).count;
 			break;
+		case EXTERNAL:
+			out << " #external ";
+			++(o->stats_).count;
+			break;
 		case MAX:
 			out << " #max [";
 			++(o->stats_).max;
@@ -469,7 +473,7 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 		else
 			comma = true;
 		(*it)->print_plain(o, out);
-		if(type_ != COUNT && type_ != PARITY)
+		if(type_ != COUNT && type_ != EXTERNAL && type_ != PARITY)
 		{
 			out << " = ";
 			out << *itWeight++;
@@ -477,6 +481,8 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 	}
 	if(type_ == COUNT || type_ == PARITY)
 		out << "} ";
+	else if(type_ == EXTERNAL)
+		out << "";
 	else
 		out << "] ";
 	if((bounds_ == U || bounds_ == LU) && type_ != PARITY)

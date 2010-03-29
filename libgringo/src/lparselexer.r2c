@@ -80,6 +80,7 @@ begin:
 		BASE            = "#base";
 		DELTA           = "#volatile";
 		ISHIFT          = "#ishift";
+		EXTERNAL        = "#external";
 		
 		BEGINCOMMENT    { nested++; goto block_comment; }
 		COMMENT         { goto comment; }
@@ -98,6 +99,7 @@ begin:
 		BASE            { return LPARSEPARSER_BASE; }
 		DELTA           { return LPARSEPARSER_DELTA; }
 		ISHIFT          { return LPARSEPARSER_ISHIFT; }
+		EXTERNAL        { return LPARSEPARSER_EXTERNAL; }
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"#"? "times"    { backwardWarning(); return LPARSEPARSER_TIMES; }

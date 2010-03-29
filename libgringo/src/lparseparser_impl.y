@@ -37,7 +37,8 @@
 #include <gringo/sumaggregate.h>  
 #include <gringo/minaggregate.h>  
 #include <gringo/maxaggregate.h>  
-#include <gringo/countaggregate.h>  
+#include <gringo/countaggregate.h>
+#include <gringo/externalaggregate.h>
 #include <gringo/avgaggregate.h>
 #include <gringo/timesaggregate.h>
 #include <gringo/disjunctionaggregate.h>
@@ -194,7 +195,8 @@ program ::= program DELTA IDENTIFIER(id) DOT.  { GROUNDER->setIncPart(DELTA, Val
 program ::= program rule(rule) DOT.            { if(rule) pParser->getGrounder()->addStatement(rule); }
 program ::= program SHOW show_list DOT.
 program ::= program HIDE hide_list DOT.
-program ::= program ISHIFT shift_list DOT.  
+program ::= program ISHIFT shift_list DOT.
+program ::= program EXTERNAL constr_list(list) DOT. { if(list) pParser->getGrounder()->addStatement(new NormalRule(new ExternalAggregate(list), 0)); }
 program ::= program DOMAIN domain_list DOT.
 program ::= program CONST const_list DOT.
 program ::= .

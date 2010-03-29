@@ -53,13 +53,24 @@ void SmodelsConverter::handleHead(Object *o)
 	else if(dynamic_cast<Aggregate*>(o))
 	{
 		Aggregate *head = static_cast<Aggregate*>(o);
+		bool was_external = false;
+		if(head->type_ == Aggregate::EXTERNAL) {
+			head->type_ = Aggregate::COUNT;
+			was_external = true;
+		}
 		printHead(head);
 		for(ObjectVector::iterator it = head->lits_.begin(); it != head->lits_.end(); it++)
 		{
 			assert(dynamic_cast<Atom*>(*it));
-			addAtom(static_cast<Atom*>(*it));
+			Atom* atom = static_cast<Atom*>(*it);
+			addAtom(atom);
 			if((*it)->getUid() > 0)
 				head_.push_back((*it)->getUid());
+
+			if(was_external) {
+				std::cerr << "UID: " << (*it)->getUid() << std::endl;
+				std::cerr << "PREDUID: " << atom->predUid_ << std::endl;
+			}
 		}
 		if(head_.size() > 0)
 			printChoiceRule(head_, pos_, neg_);
