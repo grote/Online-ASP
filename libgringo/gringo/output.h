@@ -20,6 +20,7 @@
 
 #include <gringo/gringo.h>
 #include <gringo/value.h>
+#include <gringo/externalknowledge.h>
 
 namespace gringo
 {
@@ -48,6 +49,7 @@ namespace gringo
 			void setVisible(int id, int arity, bool visible);
 			bool isVisible(int uid);
 			bool isVisible(int id, int arity);
+			void getExternalKnowledge();
 			
 			// must be called if predicates are added after initialize has been called
 			void addSignature();
@@ -80,6 +82,8 @@ namespace gringo
 			bool hideAll_;
 			std::map<Signature, bool> hide_;
 			std::vector<bool> visible_;
+			UidValueSet externals_;
+			ExternalKnowledge external_knowledge_;
 			GlobalStorage *g_;
 		public:
 			Stats stats_;

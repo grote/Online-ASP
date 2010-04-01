@@ -20,6 +20,8 @@
 #include <gringo/grounder.h>
 #include <gringo/pilsoutput.h>
 #include <gringo/gringoexception.h>
+#include <gringo/externalknowledge.h>
+
 
 using namespace gringo;
 using namespace NS_OUTPUT;
@@ -129,6 +131,11 @@ bool Output::isVisible(int id, int arity)
 		return !hideAll_;
 	else
 		return !it->second;
+}
+
+void Output::getExternalKnowledge()
+{
+	external_knowledge_.get();
 }
 
 void Output::addSignature()
@@ -443,7 +450,7 @@ void Aggregate::print_plain(Output *o, std::ostream &out)
 			++(o->stats_).count;
 			break;
 		case EXTERNAL:
-			out << " #external ";
+			out << "#external ";
 			++(o->stats_).count;
 			break;
 		case MAX:

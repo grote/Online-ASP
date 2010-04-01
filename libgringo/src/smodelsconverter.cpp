@@ -53,12 +53,10 @@ void SmodelsConverter::handleHead(Object *o)
 	else if(dynamic_cast<Aggregate*>(o))
 	{
 		Aggregate *head = static_cast<Aggregate*>(o);
-		bool was_external = false;
-		if(head->type_ == Aggregate::EXTERNAL) {
-			head->type_ = Aggregate::COUNT;
-			was_external = true;
-		}
-		printHead(head);
+
+		if(head->type_ != Aggregate::EXTERNAL)
+			printHead(head);
+
 		for(ObjectVector::iterator it = head->lits_.begin(); it != head->lits_.end(); it++)
 		{
 			assert(dynamic_cast<Atom*>(*it));
@@ -67,12 +65,11 @@ void SmodelsConverter::handleHead(Object *o)
 			if((*it)->getUid() > 0)
 				head_.push_back((*it)->getUid());
 
-			if(was_external) {
-				std::cerr << "UID: " << (*it)->getUid() << std::endl;
-				std::cerr << "PREDUID: " << atom->predUid_ << std::endl;
+			if(head->type_ == Aggregate::EXTERNAL) {
+				externals_.insert(std::make_pair(atom->predUid_, atom->values_));
 			}
 		}
-		if(head_.size() > 0)
+		if(head_.size() > 0 && head->type_ != Aggregate::EXTERNAL)
 			printChoiceRule(head_, pos_, neg_);
 	}
 	else if(dynamic_cast<Disjunction*>(o))
@@ -147,6 +144,8 @@ void SmodelsConverter::printHead(Aggregate *a)
 	{
 		case Aggregate::COUNT:
 			handleCount(a, l, u);
+			break;
+		case Aggregate::EXTERNAL:
 			break;
 		case Aggregate::SUM:
 			handleSum(false, a, l, u);

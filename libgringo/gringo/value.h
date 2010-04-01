@@ -156,6 +156,25 @@ namespace gringo
 		return hash;
 	}
 
+	typedef std::pair<int, ValueVector> GroundAtom;
+	struct Hash
+	{
+		Value::VectorHash hash;
+		size_t operator()(const GroundAtom &k) const
+		{
+			return (size_t)k.first + hash(k.second);
+		}
+	};
+	struct Equal
+	{
+		Value::VectorEqual equal;
+		size_t operator()(const GroundAtom &a, const GroundAtom &b) const
+		{
+			return a.first == b.first && equal(a.second, b.second);
+		}
+	};
+	typedef HashSet<GroundAtom, Hash, Equal>::type UidValueSet;
+
 }
 
 #endif

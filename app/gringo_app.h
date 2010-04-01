@@ -161,6 +161,7 @@ protected:
 	void configureInOut(Streams& s);
 	typedef std::auto_ptr<Clasp::OutputFormat> ClaspOutPtr;
 	typedef std::auto_ptr<Clasp::Input> ClaspInPtr;
+	typedef std::auto_ptr<NS_OUTPUT::Output> OutPtr;
 	Clasp::Solver        solver_;           // solver to use for search
 	Clasp::SolveStats    stats_;            // accumulates clasp solve stats in incremental setting
 	Clasp::ClaspConfig   config_;           // clasp configuration - from command-line
@@ -170,6 +171,7 @@ protected:
 	ClaspOutPtr          out_;              // printer for printing result of search
 	ClaspInPtr           in_;               // input for clasp
 	Clasp::ClaspFacade*  facade_;           // interface to clasp lib
+	OutPtr				 gringo_out_;		// output object from gringo
 };
 #endif
 

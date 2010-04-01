@@ -1,3 +1,4 @@
+// Copyright (c) 2010, Torsten Grote
 // Copyright (c) 2008, Roland Kaminski
 //
 // This file is part of GrinGo.
@@ -17,8 +18,6 @@
 
 #include <gringo/externalaggregate.h>
 #include <gringo/conditionalliteral.h>
-//#include <gringo/aggregateliteral.h>
-#include <gringo/term.h>
 #include <gringo/value.h>
 #include <gringo/output.h>
 
@@ -27,28 +26,6 @@ using namespace gringo;
 
 ExternalAggregate::ExternalAggregate(ConditionalLiteralVector *literals) : CountAggregate(literals)
 {
-}
-
-// TODO inherit???
-namespace
-{
-	struct Hash
-	{
-		Value::VectorHash hash;
-		size_t operator()(const std::pair<int, ValueVector> &k) const
-		{
-			return (size_t)k.first + hash(k.second);
-		}
-	};
-	struct Equal
-	{
-		Value::VectorEqual equal;
-		size_t operator()(const std::pair<int, ValueVector> &a, const std::pair<int, ValueVector> &b) const
-		{
-			return a.first == b.first && equal(a.second, b.second);
-		}
-	};
-	typedef HashSet<std::pair<int, ValueVector>, Hash, Equal>::type UidValueSet;
 }
 
 void ExternalAggregate::doMatch(Grounder *g)

@@ -23,27 +23,6 @@
 
 using namespace gringo;
 
-namespace
-{
-	struct Hash
-	{
-		Value::VectorHash hash;
-		size_t operator()(const std::pair<int, ValueVector> &k) const
-		{
-			return (size_t)k.first + hash(k.second);
-		}
-	};
-	struct Equal
-	{
-		Value::VectorEqual equal;
-		size_t operator()(const std::pair<int, ValueVector> &a, const std::pair<int, ValueVector> &b) const
-		{
-			return a.first == b.first && equal(a.second, b.second);
-		}
-	};
-	typedef HashSet<std::pair<int, ValueVector>, Hash, Equal>::type UidValueSet;
-}
-
 CountAggregate::CountAggregate(ConditionalLiteralVector *literals) : AggregateLiteral(literals)
 {
 }

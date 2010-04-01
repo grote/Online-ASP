@@ -368,7 +368,9 @@ void ClingoApp::configureInOut(Streams& s) {
 	else {
 		GringoApp::addConstStream(s);
 		s.open(generic.input);
-		in_.reset(new FromGringo(opts, s, clingo_.clingoMode));
+		FromGringo* gringo_output = new FromGringo(opts, s, clingo_.clingoMode);
+		gringo_out_ = gringo_output->out;
+		in_.reset(gringo_output);
 	}
 	if (config_.onlyPre) { 
 		if (clingo_.claspMode || clingo_.clingoMode) {
@@ -471,6 +473,9 @@ void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 				out_->printOptimize(*config_.solve.enumerator()->minimize());
 			}
 		}
+		// TODO: get external knowledge
+		//assert(gringo_out_);
+		//gringo_out_->getExternalKnowledge(); // segfault: object gone
 	}
 	else if (e == ClaspFacade::event_p_prepared) {
 		if (config_.onlyPre) {
