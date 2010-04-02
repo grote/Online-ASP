@@ -81,6 +81,7 @@ begin:
 		DELTA           = "#volatile";
 		ISHIFT          = "#ishift";
 		EXTERNAL        = "#external";
+		ONLINE          = "#online";
 		
 		BEGINCOMMENT    { nested++; goto block_comment; }
 		COMMENT         { goto comment; }
@@ -100,6 +101,7 @@ begin:
 		DELTA           { return LPARSEPARSER_DELTA; }
 		ISHIFT          { return LPARSEPARSER_ISHIFT; }
 		EXTERNAL        { return LPARSEPARSER_EXTERNAL; }
+		ONLINE          { return LPARSEPARSER_ONLINE; }
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return LPARSEPARSER_NUMBER; }
 		"#"? "times"    { backwardWarning(); return LPARSEPARSER_TIMES; }

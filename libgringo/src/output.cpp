@@ -27,7 +27,7 @@ using namespace gringo;
 using namespace NS_OUTPUT;
 
 const char* END_ENTRY = " 0";
-Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(false), g_(0)//,
+Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(false), online_(false), g_(0)//,
 //												stats_.rules(0)//, stats_.atoms(0), stats_.count(0),
 //												stats_.sum(0), stats_.max(0), stats_.min(0),
 //												stats_.compute(0), stats_.optimize(0)
@@ -133,9 +133,19 @@ bool Output::isVisible(int id, int arity)
 		return !it->second;
 }
 
-void Output::getExternalKnowledge()
+void Output::getExternalKnowledge(gringo::Grounder* grounder)
 {
-	external_knowledge_.get();
+	external_knowledge_.get(grounder, this);
+}
+
+bool Output::isOnline()
+{
+	return online_;
+}
+
+void Output::setOnline(bool online)
+{
+	online_ = online;
 }
 
 void Output::addSignature()

@@ -369,7 +369,9 @@ void ClingoApp::configureInOut(Streams& s) {
 		GringoApp::addConstStream(s);
 		s.open(generic.input);
 		FromGringo* gringo_output = new FromGringo(opts, s, clingo_.clingoMode);
-		gringo_out_ = gringo_output->out;
+		// save grounder and output for continuing online solving
+		gringo_grounder_ = gringo_output->grounder.get();
+		gringo_out_ = gringo_output->out.get();
 		in_.reset(gringo_output);
 	}
 	if (config_.onlyPre) { 
@@ -473,9 +475,6 @@ void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 				out_->printOptimize(*config_.solve.enumerator()->minimize());
 			}
 		}
-		// TODO: get external knowledge
-		//assert(gringo_out_);
-		//gringo_out_->getExternalKnowledge(); // segfault: object gone
 	}
 	else if (e == ClaspFacade::event_p_prepared) {
 		if (config_.onlyPre) {
@@ -563,7 +562,11 @@ void ClingoApp::printResult(ReasonEnd end) {
 	}
 	if (cmdOpts_.basic.stats) { 
 		out_->printStats(s.stats, en); 
-	}	
+	}
+	// reading external online knowledge if enabled
+	assert(gringo_out_);
+	if(gringo_out_->isOnline())
+		gringo_out_->getExternalKnowledge(gringo_grounder_);
 }
 #undef STATUS
 #endif

@@ -10,6 +10,9 @@ endif()
 RE2C(src/lparselexer lparselexer LIBGRINGO_SRC)
 LEMON(src/lparseparser_impl lparseparser_impl LIBGRINGO_SRC)
 
+RE2C(src/onlinelexer onlinelexer LIBGRINGO_SRC)
+LEMON(src/onlineparser_impl onlineparser_impl LIBGRINGO_SRC)
+
 RE2C(src/plainlparselexer plainlparselexer LIBGRINGO_SRC)
 LEMON(src/lparseconverter_impl lparseconverter_impl LIBGRINGO_SRC)
 

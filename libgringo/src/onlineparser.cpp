@@ -1,0 +1,83 @@
+// Copyright (c) 2010, Torsten Grote
+// Copyright (c) 2008, Roland Kaminski
+//
+// This file is part of GrinGo.
+//
+// GrinGo is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// GrinGo is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
+
+#include <gringo/onlineparser.h>
+#include "onlineparser_impl.h"
+#include <gringo/onlinelexer.h>
+#include <gringo/grounder.h>
+
+using namespace gringo;
+
+void *onlineparserAlloc(void *(*mallocProc)(size_t));
+void onlineparserFree(void *p, void (*freeProc)(void*));
+void onlineparser(void *yyp, int yymajor, std::string* yyminor, OnlineParser *pParser);
+
+OnlineParser::OnlineParser(Grounder *g, std::istream* in) : GrinGoParser(), grounder_(g)
+{
+	lexer_  = new OnlineLexer();
+		pParser = onlineparserAlloc (malloc);
+	streams_.push_back(in);
+}
+
+OnlineParser::OnlineParser(std::istream* in) : GrinGoParser()
+{
+	lexer_  = new OnlineLexer();
+		pParser = onlineparserAlloc (malloc);
+	streams_.push_back(in);
+	grounder_ = NULL; // TODO
+}
+
+OnlineParser::OnlineParser(Grounder *g, std::vector<std::istream*> &in) : GrinGoParser(), grounder_(g)
+{
+	lexer_  = new OnlineLexer();
+		pParser = onlineparserAlloc (malloc);
+	streams_ = in;
+}
+
+bool OnlineParser::parse(NS_OUTPUT::Output *output)
+{
+	int token;
+	std::string *lval;
+	if(grounder_)
+		grounder_->setOutput(output);
+	for(std::vector<std::istream*>::iterator it = streams_.begin(); it != streams_.end(); it++)
+	{
+		lexer_->reset(*it);
+		while((token = lexer_->lex(lval)) != ONLINEPARSER_EOI)
+//		while((token = lexer_->lex(lval)) != ONLINEPARSER_ENDSTEP)
+		{
+			onlineparser(pParser, token, lval, this);
+		}
+	}
+	onlineparser(pParser, 0, lval, this);
+	if(getError())
+		return false;
+	return true;
+}
+
+OnlineParser::~OnlineParser()
+{
+	delete lexer_;
+	onlineparserFree(pParser, free);
+}
+
+GrinGoLexer *OnlineParser::getLexer()
+{
+	return lexer_;
+}
+

@@ -15,22 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef EXTERNALKNOWLEDGE_H
-#define EXTERNALKNOWLEDGE_H
+#include <gringo/externalknowledge.h>
 
-#include <gringo/gringo.h>
-#include <gringo/gringoexception.h>
-#include <gringo/onlineparser.h>
+using namespace gringo;
 
-namespace gringo
+ExternalKnowledge::ExternalKnowledge()
 {
-	class ExternalKnowledge
-	{
-	public:
-		ExternalKnowledge();
-		void get(gringo::Grounder* grounder, NS_OUTPUT::Output* output);
-	};
+
 }
 
-#endif
+void ExternalKnowledge::get(gringo::Grounder* grounder, NS_OUTPUT::Output* output)
+{
+	std::cout << std::endl << "Please enter external ground facts below:" << std::endl;
 
+	OnlineParser parser(grounder, &std::cin);
+	if(!parser.parse(output))
+		throw gringo::GrinGoException("Error: Parsing failed.");
+}

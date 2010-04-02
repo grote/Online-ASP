@@ -1,4 +1,4 @@
-// Copyright (c) 2010, Torsten Grote
+// Copyright (c) 2008, Roland Kaminski
 //
 // This file is part of GrinGo.
 //
@@ -15,20 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef EXTERNALKNOWLEDGE_H
-#define EXTERNALKNOWLEDGE_H
+#ifndef ONLINELEXER_H
+#define ONLINELEXER_H
 
 #include <gringo/gringo.h>
-#include <gringo/gringoexception.h>
-#include <gringo/onlineparser.h>
+#include <gringo/gringolexer.h>
 
 namespace gringo
 {
-	class ExternalKnowledge
+	class OnlineLexer : public GrinGoLexer
 	{
 	public:
-		ExternalKnowledge();
-		void get(gringo::Grounder* grounder, NS_OUTPUT::Output* output);
+		OnlineLexer();
+		int lex(std::string *&val);
+		virtual ~OnlineLexer();
 	};
 }
 
