@@ -16,6 +16,7 @@
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gringo/externalknowledge.h>
+#include <gringo/onlineparser.h>
 
 using namespace gringo;
 

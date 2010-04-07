@@ -20,6 +20,7 @@
 #define ONLINEPARSER_H
 
 #include <gringo/gringo.h>
+#include <gringo/output.h>
 #include <gringo/gringoparser.h>
 #include <gringo/onlinelexer.h>
 
@@ -32,12 +33,14 @@ namespace gringo
 		OnlineParser(Grounder *g, std::istream* = &std::cin);
 		OnlineParser(std::istream* = &std::cin);
 		bool parse(NS_OUTPUT::Output *output);
+		void addExternal(NS_OUTPUT::Fact *fact);
 		GrinGoLexer *getLexer();
 		Grounder *getGrounder() { return grounder_; }
 		virtual ~OnlineParser();
 	private:
 		OnlineLexer *lexer_;
 		Grounder *grounder_;
+		NS_OUTPUT::Output *output_;
 		std::vector<std::istream*> streams_;
 		void *pParser;
 	};

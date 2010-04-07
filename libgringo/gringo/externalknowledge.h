@@ -20,7 +20,7 @@
 
 #include <gringo/gringo.h>
 #include <gringo/gringoexception.h>
-#include <gringo/onlineparser.h>
+//#include <gringo/onlineparser.h>
 
 namespace gringo
 {

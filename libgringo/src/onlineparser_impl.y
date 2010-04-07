@@ -22,29 +22,25 @@
 
 #include <gringo/onlineparser.h>
 
-// literals
-#include <gringo/predicateliteral.h>
-#include <gringo/conditionalliteral.h>
-
 // terms
 #include <gringo/term.h>
-#include <gringo/constant.h>
-#include <gringo/functionterm.h>
-#include <gringo/funcsymbolterm.h>
-
-// statements
-#include <gringo/normalrule.h>
+#include <gringo/value.h>
+#include <gringo/funcsymbol.h>
 
 // misc
+#include <gringo/output.h>
 #include <gringo/grounder.h>
 
 using namespace gringo;
+using namespace NS_OUTPUT;
 
 #define OUTPUT (pParser->getGrounder()->getOutput())
 #define GROUNDER (pParser->getGrounder())
 #define STRING(x) (pParser->getGrounder()->createString(x))
+#define PRED(x,a) (pParser->getGrounder()->createPred(x,a))
+#define FUNCSYM(x) (pParser->getGrounder()->createFuncSymbol(x))
 #define DELETE_PTR(X) { if(X) delete (X); }
-#define DELETE_PTRVECTOR(T, X) { if(X){ for(T::iterator it = (X)->begin(); it != (X)->end(); it++) delete (*it); delete (X); } }
+//#define DELETE_PTRVECTOR(T, X) { if(X){ for(T::iterator it = (X)->begin(); it != (X)->end(); it++) delete (*it); delete (X); } }
 }  
 
 %name onlineparser
@@ -65,69 +61,50 @@ using namespace gringo;
 %token_type { std::string* }
 %token_destructor { DELETE_PTR($$) }
 
-// token types/destructors for nonterminals
-%type fact     { Statement* }
-%destructor rule     { DELETE_PTR($$) }
+%type head_atom		{ Object* }
+%type predicate		{ Object* }
+%type constant_list	{ ValueVector* }
+%type constant		{ Value* }
+%type number		{ int }
 
-%type predicate { PredicateLiteral* }
-%destructor predicate { DELETE_PTR($$) }
+%destructor head_atom		{ DELETE_PTR($$) }
+%destructor predicate		{ DELETE_PTR($$) }
+%destructor constant_list	{ DELETE_PTR($$) }
+%destructor constant		{ DELETE_PTR($$) }
+%destructor number			{ }
 
-%type head_atom          { Literal* }
-%destructor head_atom    { DELETE_PTR($$) }
-
-%type const_termlist { TermVector* }
-%destructor const_termlist { DELETE_PTRVECTOR(TermVector, $$) }
-
-%type term       { Term* }
-%type const_term { Term* }
-%destructor term       { DELETE_PTR($$) }
-%destructor const_term { DELETE_PTR($$) }
-
-%left DOTS.
-%left OR.
-%left XOR.
-%left AND.
-%left PLUS MINUS.
-%left TIMES DIVIDE MOD.
-%right POWER.
-%left UMINUS TILDE.
+%left MINUS.
 
 // this will define the symbols in the header 
 // even though they are not used in the rules
-%nonassoc ERROR EOI OR2.
+%nonassoc ERROR EOI.
 
 %start_symbol start
 
 start ::= program.
 
-program ::= program fact(fact) DOT.            { if(fact) pParser->getGrounder()->addStatement(fact); }
-program ::= program ENDSTEP DOT.
-program ::= program STOP DOT.
+program ::= program fact DOT.
+program ::= program ENDSTEP DOT.	//{ std::cerr << "ENDSTEP\n"; }
+program ::= program STOP DOT.		//{ std::cerr << "STOP\n"; }
 program ::= .
 
-fact(res) ::= head_atom(head) IF .           { res = new NormalRule(head, 0); }
-fact(res) ::= head_atom(head).               { res = new NormalRule(head, 0); }
+fact ::= head_atom(head) IF .	{ Fact r(head); /*OUTPUT->print(&r);*/ /* TODO pParser->addExternal(&r);*/ }
+fact ::= head_atom(head).		{ Fact r(head); /*OUTPUT->print(&r);*/ }
 
-head_atom(res) ::= predicate(pred). { res = new ConditionalLiteral(pred, 0); }
+head_atom(res) ::= predicate(pred). { res = pred; }
 
-predicate(res) ::= IDENTIFIER(id) LPARA const_termlist(list) RPARA.       { res = new PredicateLiteral(GROUNDER, STRING(id), list); }
-predicate(res) ::= IDENTIFIER(id).                                        { res = new PredicateLiteral(GROUNDER, STRING(id), new TermVector()); }
-predicate(res) ::= MINUS IDENTIFIER(id) LPARA const_termlist(list) RPARA. { id->insert(id->begin(), '-'); res = new PredicateLiteral(GROUNDER, STRING(id), list); }
-predicate(res) ::= MINUS IDENTIFIER(id).                                  { id->insert(id->begin(), '-'); res = new PredicateLiteral(GROUNDER, STRING(id), new TermVector()); }
+predicate(res) ::= IDENTIFIER(id) LPARA constant_list(list) RPARA.		{ res = new Atom(false, PRED(STRING(id), list->size()), *list); DELETE_PTR(list); }
+predicate(res) ::= IDENTIFIER(id).										{ res = new Atom(false, PRED(STRING(id), 0)); }
+predicate(res) ::= MINUS IDENTIFIER(id) LPARA constant_list(list) RPARA.{ id->insert(id->begin(), '-'); res = new Atom(false, PRED(STRING(id), list->size()), *list); DELETE_PTR(list); }
+predicate(res) ::= MINUS IDENTIFIER(id).								{ id->insert(id->begin(), '-'); res = new Atom(false, PRED(STRING(id), 0)); }
 
-const_termlist(res) ::= const_termlist(list) COMMA const_term(term). { res = list; res->push_back(term); }
-const_termlist(res) ::= const_term(term).                            { res = new TermVector(); res->push_back(term); }
+constant_list(res) ::= constant_list(list) COMMA constant(val). { res = list; res->push_back(*val); DELETE_PTR(val); }
+constant_list(res) ::= constant(val).                           { res = new ValueVector(); res->push_back(*val); DELETE_PTR(val); }
 
-const_term(res) ::= IDENTIFIER(x). { if(false) res = new Constant(Value(Value::STRING, STRING(x))); }
-const_term(res) ::= STRING(x).     { if(false) res = new Constant(Value(Value::STRING, STRING(x))); }
-const_term(res) ::= NUMBER(x).     { res = new Constant(Value(Value::INT, atol(x->c_str()))); DELETE_PTR(x); }
-const_term(res) ::= LPARA const_term(a) RPARA.           { res = a; }
-const_term(res) ::= const_term(a) MOD const_term(b).     { res = new FunctionTerm(FunctionTerm::MOD, a, b); }
-const_term(res) ::= const_term(a) PLUS const_term(b).    { res = new FunctionTerm(FunctionTerm::PLUS, a, b); }
-const_term(res) ::= const_term(a) TIMES const_term(b).   { res = new FunctionTerm(FunctionTerm::TIMES, a, b); }
-const_term(res) ::= const_term(a) POWER const_term(b).   { res = new FunctionTerm(FunctionTerm::POWER, a, b); }
-const_term(res) ::= const_term(a) MINUS const_term(b).   { res = new FunctionTerm(FunctionTerm::MINUS, a, b); }
-const_term(res) ::= const_term(a) DIVIDE const_term(b).  { res = new FunctionTerm(FunctionTerm::DIVIDE, a, b); }
-const_term(res) ::= MINUS const_term(b). [UMINUS]        { res = new FunctionTerm(FunctionTerm::MINUS, new Constant(Value(Value::INT, 0)), b); }
-const_term(res) ::= ABS LPARA const_term(a) RPARA.       { res = new FunctionTerm(FunctionTerm::ABS, a); }
-const_term(res) ::= IDENTIFIER(id) LPARA const_termlist(list) RPARA. { if(false) res = new FuncSymbolTerm(GROUNDER, STRING(id), list); }
+constant(res) ::= IDENTIFIER(id). { res = new Value(Value::STRING, STRING(id)); }
+constant(res) ::= number(n).      { res = new Value(Value::INT, n); }
+constant(res) ::= STRING(id).     { res = new Value(Value::STRING, STRING(id)); }
+constant(res) ::= IDENTIFIER(id) LPARA constant_list(list) RPARA. { res = new Value(Value::FUNCSYMBOL, FUNCSYM(new FuncSymbol(STRING(id), *list))); DELETE_PTR(list); }
+
+number(res) ::= NUMBER(n).       { res = atol(n->c_str()); DELETE_PTR(n); }
+number(res) ::= MINUS NUMBER(n). { res = -atol(n->c_str()); DELETE_PTR(n); }

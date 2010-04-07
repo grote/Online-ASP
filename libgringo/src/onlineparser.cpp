@@ -27,14 +27,14 @@ void *onlineparserAlloc(void *(*mallocProc)(size_t));
 void onlineparserFree(void *p, void (*freeProc)(void*));
 void onlineparser(void *yyp, int yymajor, std::string* yyminor, OnlineParser *pParser);
 
-OnlineParser::OnlineParser(Grounder *g, std::istream* in) : GrinGoParser(), grounder_(g)
+OnlineParser::OnlineParser(Grounder *g, std::istream* in) : GrinGoParser(), grounder_(g), output_(0)
 {
 	lexer_  = new OnlineLexer();
 		pParser = onlineparserAlloc (malloc);
 	streams_.push_back(in);
 }
 
-OnlineParser::OnlineParser(std::istream* in) : GrinGoParser()
+OnlineParser::OnlineParser(std::istream* in) : GrinGoParser(), output_(0)
 {
 	lexer_  = new OnlineLexer();
 		pParser = onlineparserAlloc (malloc);
@@ -42,7 +42,7 @@ OnlineParser::OnlineParser(std::istream* in) : GrinGoParser()
 	grounder_ = NULL; // TODO
 }
 
-OnlineParser::OnlineParser(Grounder *g, std::vector<std::istream*> &in) : GrinGoParser(), grounder_(g)
+OnlineParser::OnlineParser(Grounder *g, std::vector<std::istream*> &in) : GrinGoParser(), grounder_(g), output_(0)
 {
 	lexer_  = new OnlineLexer();
 		pParser = onlineparserAlloc (malloc);
@@ -51,6 +51,7 @@ OnlineParser::OnlineParser(Grounder *g, std::vector<std::istream*> &in) : GrinGo
 
 bool OnlineParser::parse(NS_OUTPUT::Output *output)
 {
+	output_ = output;
 	int token;
 	std::string *lval;
 	if(grounder_)
@@ -58,10 +59,11 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 	for(std::vector<std::istream*>::iterator it = streams_.begin(); it != streams_.end(); it++)
 	{
 		lexer_->reset(*it);
-		while((token = lexer_->lex(lval)) != ONLINEPARSER_EOI)
-//		while((token = lexer_->lex(lval)) != ONLINEPARSER_ENDSTEP)
+		token = lexer_->lex(lval);
+		while(token != ONLINEPARSER_EOI)
 		{
 			onlineparser(pParser, token, lval, this);
+			token = lexer_->lex(lval);
 		}
 	}
 	onlineparser(pParser, 0, lval, this);
@@ -80,4 +82,3 @@ GrinGoLexer *OnlineParser::getLexer()
 {
 	return lexer_;
 }
-

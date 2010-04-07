@@ -76,7 +76,6 @@ begin:
 		"("             { return ONLINEPARSER_LPARA; }
 		")"             { return ONLINEPARSER_RPARA; }
 		"."             { return ONLINEPARSER_DOT; }
-		".."            { return ONLINEPARSER_DOTS; }
 		","             { return ONLINEPARSER_COMMA; }
 		ANY             { return ONLINEPARSER_ERROR; }
 	*/
