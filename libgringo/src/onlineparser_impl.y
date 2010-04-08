@@ -34,13 +34,10 @@
 using namespace gringo;
 using namespace NS_OUTPUT;
 
-#define OUTPUT (pParser->getGrounder()->getOutput())
-#define GROUNDER (pParser->getGrounder())
 #define STRING(x) (pParser->getGrounder()->createString(x))
 #define PRED(x,a) (pParser->getGrounder()->createPred(x,a))
 #define FUNCSYM(x) (pParser->getGrounder()->createFuncSymbol(x))
 #define DELETE_PTR(X) { if(X) delete (X); }
-//#define DELETE_PTRVECTOR(T, X) { if(X){ for(T::iterator it = (X)->begin(); it != (X)->end(); it++) delete (*it); delete (X); } }
 }  
 
 %name onlineparser
@@ -84,12 +81,12 @@ using namespace NS_OUTPUT;
 start ::= program.
 
 program ::= program fact DOT.
-program ::= program ENDSTEP DOT.	//{ std::cerr << "ENDSTEP\n"; }
-program ::= program STOP DOT.		//{ std::cerr << "STOP\n"; }
+program ::= program ENDSTEP DOT.
+program ::= program STOP DOT.
 program ::= .
 
-fact ::= head_atom(head) IF .	{ Fact r(head); /*OUTPUT->print(&r);*/ /* TODO pParser->addExternal(&r);*/ }
-fact ::= head_atom(head).		{ Fact r(head); /*OUTPUT->print(&r);*/ }
+fact ::= head_atom(head) IF .	{ Fact r(head); pParser->addExternal(&r); }
+fact ::= head_atom(head).		{ Fact r(head); pParser->addExternal(&r); }
 
 head_atom(res) ::= predicate(pred). { res = pred; }
 

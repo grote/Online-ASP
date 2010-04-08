@@ -31,5 +31,22 @@ void ExternalKnowledge::get(gringo::Grounder* grounder, NS_OUTPUT::Output* outpu
 
 	OnlineParser parser(grounder, &std::cin);
 	if(!parser.parse(output))
-		throw gringo::GrinGoException("Error: Parsing failed.");
+		throw gringo::GrinGoException("Parsing failed.");
+}
+
+void ExternalKnowledge::add(GroundAtom external, int uid) {
+	externals_.insert(make_pair(external, uid));
+}
+
+bool ExternalKnowledge::checkExternal(NS_OUTPUT::Object* object) {
+	assert(dynamic_cast<NS_OUTPUT::Atom*>(object));
+	NS_OUTPUT::Atom* atom = static_cast<NS_OUTPUT::Atom*>(object);
+
+	// try to find atom in externals
+	if(externals_.find(std::make_pair(atom->predUid_, atom->values_)) == externals_.end()) {
+		return false;
+	}
+	else {
+		return true;
+	}
 }

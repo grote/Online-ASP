@@ -18,6 +18,9 @@
 #ifndef GRINGO_H
 #define GRINGO_H
 
+//#define WITH_CLASP	// comment in for syntax highlighting in QtCreator
+//#define WITH_ICLASP
+
 #include <cassert>
 #include <iostream>
 #include <iomanip>

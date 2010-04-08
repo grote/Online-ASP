@@ -50,6 +50,7 @@ namespace gringo
 			void printMinimizeRule(const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg);
 			void printDisjunctiveRule(const IntVector &head, const IntVector &pos, const IntVector &neg);
 			void printComputeRule(int models, const IntVector &pos, const IntVector &neg);
+			void printExternalRule(const IntVector &head);
 		protected:
 			Clasp::ProgramBuilder *b_;
 		};

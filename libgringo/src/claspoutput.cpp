@@ -156,6 +156,15 @@ void ClaspOutput::printComputeRule(int models, const IntVector &pos, const IntVe
 		b_->setCompute(*it, true);
 }
 
+void ClaspOutput::printExternalRule(const IntVector &head)
+{
+	for(IntVector::const_iterator it = head.begin(); it != head.end(); it++) {
+		b_->startRule();
+		b_->addHead(*it);
+		b_->endRule();
+	}
+}
+
 void ClaspOutput::finalize(bool)
 {
 

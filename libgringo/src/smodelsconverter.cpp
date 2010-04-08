@@ -66,11 +66,13 @@ void SmodelsConverter::handleHead(Object *o)
 				head_.push_back((*it)->getUid());
 
 			if(head->type_ == Aggregate::EXTERNAL) {
-				externals_.insert(std::make_pair(atom->predUid_, atom->values_));
+				getExternalKnowledge()->add(std::make_pair(atom->predUid_, atom->values_), (*it)->getUid());
 			}
 		}
 		if(head_.size() > 0 && head->type_ != Aggregate::EXTERNAL)
 			printChoiceRule(head_, pos_, neg_);
+		else if(head->type_ == Aggregate::EXTERNAL)
+			printExternalRule(head_);
 	}
 	else if(dynamic_cast<Disjunction*>(o))
 	{

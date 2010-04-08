@@ -298,6 +298,9 @@ struct FromGringo : public Clasp::Input {
 		if (!clingo) {
 			const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
 			a.push_back(i.find(static_cast<NS_OUTPUT::IClaspOutput*>(out.get())->getIncUid())->lit);
+			// TODO
+			//out.get()->getExternalKnowledge()->getExternalIDs();
+			//a.push_back();
 		}
 #endif
 	}
@@ -566,7 +569,7 @@ void ClingoApp::printResult(ReasonEnd end) {
 	// reading external online knowledge if enabled
 	assert(gringo_out_);
 	if(gringo_out_->isOnline())
-		gringo_out_->getExternalKnowledge(gringo_grounder_);
+		gringo_out_->getExternalKnowledge()->get(gringo_grounder_, gringo_out_);
 }
 #undef STATUS
 #endif

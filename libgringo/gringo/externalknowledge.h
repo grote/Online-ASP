@@ -20,7 +20,7 @@
 
 #include <gringo/gringo.h>
 #include <gringo/gringoexception.h>
-//#include <gringo/onlineparser.h>
+#include <gringo/value.h>
 
 namespace gringo
 {
@@ -29,6 +29,10 @@ namespace gringo
 	public:
 		ExternalKnowledge();
 		void get(gringo::Grounder* grounder, NS_OUTPUT::Output* output);
+		void add(GroundAtom external, int uid);
+		bool checkExternal(NS_OUTPUT::Object* object);
+	private:
+		UidValueMap externals_;
 	};
 }
 

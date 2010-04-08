@@ -174,6 +174,7 @@ namespace gringo
 		}
 	};
 	typedef HashSet<GroundAtom, Hash, Equal>::type UidValueSet;
+	typedef HashMap<GroundAtom, int, Hash, Equal>::type UidValueMap;
 
 }
 

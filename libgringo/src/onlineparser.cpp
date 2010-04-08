@@ -72,6 +72,15 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 	return true;
 }
 
+void OnlineParser::addExternal(NS_OUTPUT::Fact *fact) {
+	if(!output_->getExternalKnowledge()->checkExternal(fact->head_)) {
+		error_ = true;
+		std::cerr << "Error: Fact in line " << getLexer()->getLine() << " was not declared external.\n";
+		return;
+	}
+	output_->print(fact);
+}
+
 OnlineParser::~OnlineParser()
 {
 	delete lexer_;

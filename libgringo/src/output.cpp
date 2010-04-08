@@ -133,9 +133,9 @@ bool Output::isVisible(int id, int arity)
 		return !it->second;
 }
 
-void Output::getExternalKnowledge(gringo::Grounder* grounder)
+ExternalKnowledge* Output::getExternalKnowledge()
 {
-	external_knowledge_.get(grounder, this);
+	return &external_knowledge_;
 }
 
 bool Output::isOnline()
