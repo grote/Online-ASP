@@ -125,11 +125,6 @@ void SmodelsOutput::printComputeRule(int models, const IntVector &pos, const Int
 		++stats_.compute;
 }
 
-void SmodelsOutput::printExternalRule(const IntVector &head)
-{
-	// TODO really?
-}
-
 void SmodelsOutput::finalize(bool last)
 {
 	if(last)

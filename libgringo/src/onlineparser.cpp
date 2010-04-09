@@ -32,6 +32,7 @@ OnlineParser::OnlineParser(Grounder *g, std::istream* in) : GrinGoParser(), grou
 	lexer_  = new OnlineLexer();
 		pParser = onlineparserAlloc (malloc);
 	streams_.push_back(in);
+	terminated_ = false;
 }
 
 OnlineParser::OnlineParser(std::istream* in) : GrinGoParser(), output_(0)
@@ -40,6 +41,7 @@ OnlineParser::OnlineParser(std::istream* in) : GrinGoParser(), output_(0)
 		pParser = onlineparserAlloc (malloc);
 	streams_.push_back(in);
 	grounder_ = NULL; // TODO
+	terminated_ = false;
 }
 
 OnlineParser::OnlineParser(Grounder *g, std::vector<std::istream*> &in) : GrinGoParser(), grounder_(g), output_(0)
@@ -47,11 +49,12 @@ OnlineParser::OnlineParser(Grounder *g, std::vector<std::istream*> &in) : GrinGo
 	lexer_  = new OnlineLexer();
 		pParser = onlineparserAlloc (malloc);
 	streams_ = in;
+	terminated_ = false;
 }
 
 bool OnlineParser::parse(NS_OUTPUT::Output *output)
 {
-	output_ = output;
+	output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
 	int token;
 	std::string *lval;
 	if(grounder_)
@@ -72,19 +75,30 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 	return true;
 }
 
-void OnlineParser::addExternal(NS_OUTPUT::Fact *fact) {
+void OnlineParser::addExternal(NS_OUTPUT::Fact* fact) {
 	if(!output_->getExternalKnowledge()->checkExternal(fact->head_)) {
 		error_ = true;
 		std::cerr << "Error: Fact in line " << getLexer()->getLine() << " was not declared external.\n";
 		return;
 	}
+
+	// add fact to program and assign a uid to it
 	output_->print(fact);
+
+	output_->getExternalKnowledge()->addNewFact(fact->head_);
+}
+
+void OnlineParser::terminate() {
+	terminated_ = true;
 }
 
 OnlineParser::~OnlineParser()
 {
 	delete lexer_;
 	onlineparserFree(pParser, free);
+	if(not terminated_) {
+//		throw gringo::GrinGoException("Did not read \"#endstep.\" or \"#stop.\".");
+	}
 }
 
 GrinGoLexer *OnlineParser::getLexer()

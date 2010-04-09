@@ -26,6 +26,7 @@
 #include <gringo/evaluator.h>
 #include <gringo/domain.h>
 #include <gringo/gringoexception.h>
+#include <gringo/claspoutput.h> // TODO remove!
 
 using namespace gringo;
 
@@ -217,10 +218,12 @@ void Grounder::ground()
 			output_->initialize(this, getPred());
 		else
 			output_->reinitialize();
+
 		for(; incStep_ + 1 <= options().iquery; incStep_++)
 		{
 			reset();
 			ground_();
+			static_cast<NS_OUTPUT::IClaspOutput*>(output_)->freezeExternals(incStep_);
 		}
 		reset();
 		ground_();

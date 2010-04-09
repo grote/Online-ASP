@@ -41,7 +41,7 @@ int SmodelsConverter::getFalse() const
 
 void SmodelsConverter::handleHead(Object *o)
 {
-	// no negations in the haed
+	// no negations in the head
 	assert(!o->neg_);
 	if(dynamic_cast<Atom*>(o))
 	{
@@ -71,8 +71,6 @@ void SmodelsConverter::handleHead(Object *o)
 		}
 		if(head_.size() > 0 && head->type_ != Aggregate::EXTERNAL)
 			printChoiceRule(head_, pos_, neg_);
-		else if(head->type_ == Aggregate::EXTERNAL)
-			printExternalRule(head_);
 	}
 	else if(dynamic_cast<Disjunction*>(o))
 	{

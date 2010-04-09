@@ -50,3 +50,21 @@ bool ExternalKnowledge::checkExternal(NS_OUTPUT::Object* object) {
 		return true;
 	}
 }
+
+IntSet* ExternalKnowledge::getExternalIDs() {
+	IntSet* result = new IntSet();
+
+	for(UidValueMap::iterator i = externals_.begin(); i != externals_.end(); ++i) {
+		result->insert(i->second);
+	}
+
+	return result;
+}
+
+void ExternalKnowledge::addNewFact(NS_OUTPUT::Object* fact) {
+	new_facts_.insert(fact->uid_);
+}
+
+IntSet* ExternalKnowledge::getNewFacts() {
+	return &new_facts_;
+}

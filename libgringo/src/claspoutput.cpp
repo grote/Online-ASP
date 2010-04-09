@@ -156,15 +156,6 @@ void ClaspOutput::printComputeRule(int models, const IntVector &pos, const IntVe
 		b_->setCompute(*it, true);
 }
 
-void ClaspOutput::printExternalRule(const IntVector &head)
-{
-	for(IntVector::const_iterator it = head.begin(); it != head.end(); it++) {
-		b_->startRule();
-		b_->addHead(*it);
-		b_->endRule();
-	}
-}
-
 void ClaspOutput::finalize(bool)
 {
 
@@ -237,6 +228,9 @@ void IClaspOutput::reinitialize()
 	incUid_ = newUid();
 	b_->setAtomName(incUid_, "");
 	b_->freeze(incUid_);
+
+	freezeExternals(3); // TODO change whole freezeExternal handling
+
 #ifdef DEBUG_ICLASP
 	g_out << "api.setAtomName(t" << incUid_ << ", \"\");" << NL;
 	g_out << "// delta(" << incUid_ << ")." << NL;
@@ -259,6 +253,30 @@ void IClaspOutput::finalize(bool last)
 	}
 #endif
 	ClaspOutput::finalize(last);
+}
+
+void IClaspOutput::freezeExternals(int incStep) {
+	IntSet* external_ids = getExternalKnowledge()->getExternalIDs();
+	IntSet* new_facts = getExternalKnowledge()->getNewFacts();
+
+	std::cerr << "EXTERNALSIZE: " << external_ids->size() << "\n";
+
+	if(new_facts->size() > 0) {
+		for(IntSet::iterator v = new_facts->begin(); v != new_facts->end(); ++v) {
+			external_ids->erase(*v);
+			b_->unfreeze(*v);
+			std::cerr << "NEW FACTS: " << *v << "\n";
+		}
+	}
+
+	if(incStep < 2) {
+		for(IntSet::iterator v = external_ids->begin(); v != external_ids->end(); ++v) {
+			b_->setAtomName(*v, "");
+			std::cerr << "EXT: " << *v << "\n";
+			b_->freeze(*v);
+		}
+		delete external_ids;
+	}
 }
 
 int IClaspOutput::getIncUid()

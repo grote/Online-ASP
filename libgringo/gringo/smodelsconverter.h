@@ -44,7 +44,6 @@ namespace gringo
 			virtual void printMinimizeRule(const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg) = 0;
 			virtual void printDisjunctiveRule(const IntVector &head, const IntVector &pos, const IntVector &neg) = 0;
 			virtual void printComputeRule(int models, const IntVector &pos, const IntVector &neg) = 0;
-			virtual void printExternalRule(const IntVector &head) = 0;
 		private:
 			void print(Fact *r);
 			void print(Rule *r);

@@ -50,7 +50,6 @@ namespace gringo
 			void printMinimizeRule(const IntVector &pos, const IntVector &neg, const IntVector &wPos, const IntVector &wNeg);
 			void printDisjunctiveRule(const IntVector &head, const IntVector &pos, const IntVector &neg);
 			void printComputeRule(int models, const IntVector &pos, const IntVector &neg);
-			void printExternalRule(const IntVector &head);
 		protected:
 			Clasp::ProgramBuilder *b_;
 		};
@@ -70,6 +69,7 @@ namespace gringo
 			void print(NS_OUTPUT::Object *o);
 			void initialize(GlobalStorage *g, SignatureVector *pred);
 			void finalize(bool last);
+			void freezeExternals(int incStep);
 			void reinitialize();
 			int getIncUid();
 		private:
