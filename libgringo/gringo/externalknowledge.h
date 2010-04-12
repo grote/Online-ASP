@@ -33,17 +33,21 @@ namespace gringo
 	{
 	public:
 		ExternalKnowledge();
-		void add(GroundAtom external, int uid);
+		void initialize(NS_OUTPUT::Output* output);
+		void addExternal(GroundAtom external, int uid);
 		bool checkExternal(NS_OUTPUT::Object* object);
-		IntSet* getExternalIDs();
-		void get(gringo::Grounder* grounder, NS_OUTPUT::Output* output);
+		IntSet* getExternalsUids();
+		void get(gringo::Grounder* grounder);
 		void addNewFact(NS_OUTPUT::Object* fact);
-		IntSet* getNewFacts();
+		IntSet* getAssumptions();
+		void endStep();
 
 	private:
-		UidValueMap externals_;
-		IntSet new_facts_;
+		std::vector<UidValueSet> externals_;
+		std::vector<IntSet> externals_uids_;
+		std::vector<IntSet> new_facts_;
 		NS_OUTPUT::IClaspOutput* output_;
+		int step_;
 	};
 }
 

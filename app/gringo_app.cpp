@@ -301,22 +301,15 @@ struct FromGringo : public Clasp::Input {
 
 			// online: make external facts false
 			if(out.get()->isOnline()) {
-				IntSet* external_ids = out.get()->getExternalKnowledge()->getExternalIDs();
-				IntSet* new_facts = out.get()->getExternalKnowledge()->getNewFacts();
+				IntSet* assumptions = out.get()->getExternalKnowledge()->getAssumptions();
 
-				if(new_facts->size() > 0) {
-					for(IntSet::iterator v = new_facts->begin(); v != new_facts->end(); ++v) {
-						external_ids->erase(*v);
-					}
-				}
-
-				for(IntSet::iterator v = external_ids->begin(); v != external_ids->end(); ++v) {
-					Clasp::Atom* atom = i.find(*v);
+				for(IntSet::iterator ass = assumptions->begin(); ass != assumptions->end(); ++ass) {
+					Clasp::Atom* atom = i.find(*ass);
 					if(atom) { // atom is not in AtomIndex if hidden with #hide
 						a.push_back(~atom->lit);
 					}
 				}
-				delete external_ids;
+				delete assumptions;
 			}
 		}
 #endif
@@ -329,10 +322,16 @@ struct FromGringo : public Clasp::Input {
 			grounder->prepare(!clingo);
 			parser.reset(0);
 		}
-		// TODO improve both conditions
-		if(out.get()->isOnline() && out.get()->getIncUid() > 0) out.get()->getExternalKnowledge()->get(grounder.get(), grounder->getOutput());
-
 		grounder->ground();
+
+		// TODO improve both conditions/ifs
+		if(out.get()->isOnline()) {
+			out.get()->getExternalKnowledge()->initialize(out.get());
+			if(out.get()->getIncUid() > 2)
+				out.get()->getExternalKnowledge()->get(grounder.get());
+			out.get()->getExternalKnowledge()->endStep();
+		}
+
 		release();
 		return true;
 	}

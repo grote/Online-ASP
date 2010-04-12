@@ -99,6 +99,7 @@ OnlineParser::~OnlineParser()
 {
 	delete lexer_;
 	onlineparserFree(pParser, free);
+	// TODO remove terminated, just use #stop
 	if(not terminated_) {
 //		throw gringo::GrinGoException("Did not read \"#endstep.\" or \"#stop.\".");
 	}

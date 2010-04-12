@@ -20,13 +20,21 @@
 
 using namespace gringo;
 
-ExternalKnowledge::ExternalKnowledge()
-{
+ExternalKnowledge::ExternalKnowledge() {
+	step_ = 0;
 
+	externals_.push_back(UidValueSet());
+	externals_uids_.push_back(IntSet());
+	new_facts_.push_back(IntSet());
 }
 
-void ExternalKnowledge::add(GroundAtom external, int uid) {
-	externals_.insert(make_pair(external, uid));
+void ExternalKnowledge::initialize(NS_OUTPUT::Output* output) {
+	output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
+}
+
+void ExternalKnowledge::addExternal(GroundAtom external, int uid) {
+	externals_.at(step_).insert(external);
+	externals_uids_.at(step_).insert(uid);
 }
 
 bool ExternalKnowledge::checkExternal(NS_OUTPUT::Object* object) {
@@ -34,41 +42,55 @@ bool ExternalKnowledge::checkExternal(NS_OUTPUT::Object* object) {
 	NS_OUTPUT::Atom* atom = static_cast<NS_OUTPUT::Atom*>(object);
 
 	// try to find atom in externals
-	if(externals_.find(std::make_pair(atom->predUid_, atom->values_)) == externals_.end()) {
-		return false;
+	for(std::vector<UidValueSet>::iterator i = externals_.begin(); i != externals_.end(); ++i) {
+		if(i->find(std::make_pair(atom->predUid_, atom->values_)) != i->end())
+			return true;
 	}
-	else {
-		return true;
-	}
+	return false;
 }
 
-IntSet* ExternalKnowledge::getExternalIDs() {
-	IntSet* result = new IntSet();
+IntSet* ExternalKnowledge::getExternalsUids() {
+	return &externals_uids_.at(step_);
+}
 
-	for(UidValueMap::iterator i = externals_.begin(); i != externals_.end(); ++i) {
-		result->insert(i->second);
+
+void ExternalKnowledge::get(gringo::Grounder* grounder) {
+	std::cout << std::endl << "Please enter external ground facts below:" << std::endl;
+
+	OnlineParser parser(grounder, &std::cin);
+	if(!parser.parse(output_))
+		throw gringo::GrinGoException("Parsing failed.");
+}
+
+void ExternalKnowledge::addNewFact(NS_OUTPUT::Object* fact) {
+	new_facts_.at(step_).insert(fact->uid_);
+}
+
+IntSet* ExternalKnowledge::getAssumptions() {
+	IntSet* result = new IntSet(externals_uids_.at(step_-1));
+
+	// TODO return externals from all steps
+	for(IntSet::iterator i = new_facts_.at(step_-1).begin(); i != new_facts_.at(step_-1).end(); ++i) {
+		result->erase(*i);
 	}
 
 	return result;
 }
 
+void ExternalKnowledge::endStep() {
+	for(IntSet::iterator i = new_facts_.at(step_).begin(); i != new_facts_.at(step_).end(); ++i) {
+		if(externals_uids_.at(step_).erase(*i) == 0) {
+			output_->unfreezeAtom(*i);
+		}
+	}
 
-void ExternalKnowledge::get(gringo::Grounder* grounder, NS_OUTPUT::Output* output)
-{
-	output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
+	for(IntSet::iterator i = externals_uids_.at(step_).begin(); i != externals_uids_.at(step_).end(); ++i) {
+		output_->printExternalRule(*i);
+	}
 
-	std::cout << std::endl << "Please enter external ground facts below:" << std::endl;
+	step_++;
 
-	OnlineParser parser(grounder, &std::cin);
-	if(!parser.parse(output))
-		throw gringo::GrinGoException("Parsing failed.");
-}
-
-void ExternalKnowledge::addNewFact(NS_OUTPUT::Object* fact) {
-	new_facts_.insert(fact->uid_);
-	output_->unfreezeAtom(fact->uid_);
-}
-
-IntSet* ExternalKnowledge::getNewFacts() {
-	return &new_facts_;
+	externals_.push_back(UidValueSet());
+	externals_uids_.push_back(IntSet());
+	new_facts_.push_back(IntSet());
 }
