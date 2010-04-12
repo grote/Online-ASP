@@ -20,7 +20,6 @@
 #define ONLINEPARSER_H
 
 #include <gringo/gringo.h>
-//#include <gringo/output.h>
 #include <gringo/claspoutput.h>
 #include <gringo/gringoparser.h>
 #include <gringo/onlinelexer.h>

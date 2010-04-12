@@ -81,11 +81,14 @@ void OnlineParser::addExternal(NS_OUTPUT::Fact* fact) {
 		std::cerr << "Error: Fact in line " << getLexer()->getLine() << " was not declared external.\n";
 		return;
 	}
-
+	
+	// add Atom to get a uid assigned to it
+	output_->addAtom(static_cast<NS_OUTPUT::Atom*>(fact->head_));
+	
+	output_->getExternalKnowledge()->addNewFact(fact->head_);
+	
 	// add fact to program and assign a uid to it
 	output_->print(fact);
-
-	output_->getExternalKnowledge()->addNewFact(fact->head_);
 }
 
 void OnlineParser::terminate() {

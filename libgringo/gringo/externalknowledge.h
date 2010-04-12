@@ -24,20 +24,26 @@
 
 namespace gringo
 {
+	namespace NS_OUTPUT
+	{
+		class IClaspOutput;
+	}
+
 	class ExternalKnowledge
 	{
 	public:
 		ExternalKnowledge();
-		void get(gringo::Grounder* grounder, NS_OUTPUT::Output* output);
 		void add(GroundAtom external, int uid);
 		bool checkExternal(NS_OUTPUT::Object* object);
 		IntSet* getExternalIDs();
+		void get(gringo::Grounder* grounder, NS_OUTPUT::Output* output);
 		void addNewFact(NS_OUTPUT::Object* fact);
 		IntSet* getNewFacts();
 
 	private:
 		UidValueMap externals_;
 		IntSet new_facts_;
+		NS_OUTPUT::IClaspOutput* output_;
 	};
 }
 

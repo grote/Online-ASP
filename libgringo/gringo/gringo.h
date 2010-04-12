@@ -25,7 +25,6 @@
 #ifndef WITH_ICLASP
 #define WITH_ICLASP
 #endif
-#define DEBUG_ICLASP
 
 #include <cassert>
 #include <iostream>

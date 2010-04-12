@@ -44,7 +44,7 @@ void ClingoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 		("imin"        , storeTo(inc.minSteps), "Perform at least <num> incremental steps", "<num>")
 		("imax"        , storeTo(inc.maxSteps), "Perform at most <num> incremental steps\n", "<num>")
 
-		("istop"      , storeTo(inc.stopUnsat)->parser(mapStop),
+		("istop"       , storeTo(inc.stopUnsat)->parser(mapStop),
 			"Configure termination condition\n"
 			"      Default: SAT\n"
 			"      Valid:   SAT, UNSAT\n"
@@ -54,6 +54,8 @@ void ClingoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 		("iquery"      , value<int>()->defaultValue(1),
 			"Start solving at step <num>\n"
 			"      Default: 1\n", "<num>")
+
+		("online,o"    , bool_switch(&inc.online), "Perform on-line reasoning\n")
 
 		("ilearnt" , storeTo(inc.keepLearnt)->parser(mapKeepForget),
 			"Configure persistence of learnt nogoods\n"
@@ -99,6 +101,7 @@ bool ClingoOptions::validateOptions(ProgramOptions::OptionValues& values, Gringo
 		opts.grounderOptions.ifixed = -1;
 		m.warning.push_back("Option ifixed will be ignored!");
 	}
+	online.maxSteps = inc.maxSteps;
 #endif
 	return true;
 }
@@ -138,5 +141,18 @@ bool iClingoConfig::nextStep(Clasp::ClaspFacade& f) {
 	return --maxSteps && ((minSteps > 0 && --minSteps) || f.result() != stopRes);
 }
 
+void oClingoConfig::initStep(Clasp::ClaspFacade& f) {
+	if (f.step() == 0) {
+		if (maxSteps == 0) {
+			f.warning("Max incremental steps must be > 0!");
+			maxSteps = 1;
+		}
+	}
+	std::cout << "Step: " << f.step()+1 << std::endl;
+}
+
+bool oClingoConfig::nextStep(Clasp::ClaspFacade& f) {
+	return --maxSteps;
+}
 
 }

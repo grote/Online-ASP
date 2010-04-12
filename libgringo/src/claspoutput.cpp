@@ -229,8 +229,6 @@ void IClaspOutput::reinitialize()
 	b_->setAtomName(incUid_, "");
 	b_->freeze(incUid_);
 
-	freezeExternals(3); // TODO change whole freezeExternal handling
-
 #ifdef DEBUG_ICLASP
 	g_out << "api.setAtomName(t" << incUid_ << ", \"\");" << NL;
 	g_out << "// delta(" << incUid_ << ")." << NL;
@@ -255,28 +253,12 @@ void IClaspOutput::finalize(bool last)
 	ClaspOutput::finalize(last);
 }
 
-void IClaspOutput::freezeExternals(int incStep) {
-	IntSet* external_ids = getExternalKnowledge()->getExternalIDs();
-	IntSet* new_facts = getExternalKnowledge()->getNewFacts();
+void IClaspOutput::unfreezeAtom(int uid) {
+	b_->unfreeze(uid);
+}
 
-	std::cerr << "EXTERNALSIZE: " << external_ids->size() << "\n";
-
-	if(new_facts->size() > 0) {
-		for(IntSet::iterator v = new_facts->begin(); v != new_facts->end(); ++v) {
-			external_ids->erase(*v);
-			b_->unfreeze(*v);
-			std::cerr << "NEW FACTS: " << *v << "\n";
-		}
-	}
-
-	if(incStep < 2) {
-		for(IntSet::iterator v = external_ids->begin(); v != external_ids->end(); ++v) {
-			b_->setAtomName(*v, "");
-			std::cerr << "EXT: " << *v << "\n";
-			b_->freeze(*v);
-		}
-		delete external_ids;
-	}
+void IClaspOutput::printExternalRule(int uid) {
+	b_->freeze(uid);
 }
 
 int IClaspOutput::getIncUid()

@@ -25,15 +25,6 @@ ExternalKnowledge::ExternalKnowledge()
 
 }
 
-void ExternalKnowledge::get(gringo::Grounder* grounder, NS_OUTPUT::Output* output)
-{
-	std::cout << std::endl << "Please enter external ground facts below:" << std::endl;
-
-	OnlineParser parser(grounder, &std::cin);
-	if(!parser.parse(output))
-		throw gringo::GrinGoException("Parsing failed.");
-}
-
 void ExternalKnowledge::add(GroundAtom external, int uid) {
 	externals_.insert(make_pair(external, uid));
 }
@@ -61,8 +52,21 @@ IntSet* ExternalKnowledge::getExternalIDs() {
 	return result;
 }
 
+
+void ExternalKnowledge::get(gringo::Grounder* grounder, NS_OUTPUT::Output* output)
+{
+	output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
+
+	std::cout << std::endl << "Please enter external ground facts below:" << std::endl;
+
+	OnlineParser parser(grounder, &std::cin);
+	if(!parser.parse(output))
+		throw gringo::GrinGoException("Parsing failed.");
+}
+
 void ExternalKnowledge::addNewFact(NS_OUTPUT::Object* fact) {
 	new_facts_.insert(fact->uid_);
+	output_->unfreezeAtom(fact->uid_);
 }
 
 IntSet* ExternalKnowledge::getNewFacts() {

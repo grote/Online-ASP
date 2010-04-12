@@ -299,46 +299,24 @@ struct FromGringo : public Clasp::Input {
 			const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
 			a.push_back(i.find(static_cast<NS_OUTPUT::IClaspOutput*>(out.get())->getIncUid())->lit);
 
-			std::cerr << "IncUid: " << out.get()->getIncUid() << "\n";
-			if(out.get()->getIncUid() == 2) {
-				// online: make external facts false
-				if(out.get()->isOnline()) {
-					/*				IntSet* external_ids = getExternalKnowledge()->getExternalIDs();
-				IntSet* new_facts = getExternalKnowledge()->getNewFacts();
-
-				std::cerr << "EXTERNALSIZE: " << external_ids->size() << "\n";
+			// online: make external facts false
+			if(out.get()->isOnline()) {
+				IntSet* external_ids = out.get()->getExternalKnowledge()->getExternalIDs();
+				IntSet* new_facts = out.get()->getExternalKnowledge()->getNewFacts();
 
 				if(new_facts->size() > 0) {
 					for(IntSet::iterator v = new_facts->begin(); v != new_facts->end(); ++v) {
 						external_ids->erase(*v);
-						b_->unfreeze(*v);
-						std::cerr << "NEW FACTS: " << *v << "\n";
 					}
 				}
 
-				if(incStep < 2) {
-					for(IntSet::iterator v = external_ids->begin(); v != external_ids->end(); ++v) {
-						b_->setAtomName(*v, "");
-						std::cerr << "EXT: " << *v << "\n";
-						b_->freeze(*v);
+				for(IntSet::iterator v = external_ids->begin(); v != external_ids->end(); ++v) {
+					Clasp::Atom* atom = i.find(*v);
+					if(atom) { // atom is not in AtomIndex if hidden with #hide
+						a.push_back(~atom->lit);
 					}
-					delete external_ids;
 				}
-	*/
-					IntSet* external_ids = out.get()->getExternalKnowledge()->getExternalIDs();
-					for(IntSet::iterator v = external_ids->begin(); v != external_ids->end(); ++v) {
-						std::cerr << "UID: " << *v << std::endl;
-						a.push_back(~i.find(*v)->lit);
-					}
-					delete external_ids;
-				}
-			}
-			else {
-				IntSet* new_facts = out.get()->getExternalKnowledge()->getNewFacts();
-				for(IntSet::iterator v = new_facts->begin(); v != new_facts->end(); ++v) {
-					a.push_back(i.find(*v)->lit);
-					std::cerr << "ASSUME FACT: " << *v << "\n";
-				}
+				delete external_ids;
 			}
 		}
 #endif
@@ -351,6 +329,9 @@ struct FromGringo : public Clasp::Input {
 			grounder->prepare(!clingo);
 			parser.reset(0);
 		}
+		// TODO improve both conditions
+		if(out.get()->isOnline() && out.get()->getIncUid() > 0) out.get()->getExternalKnowledge()->get(grounder.get(), grounder->getOutput());
+
 		grounder->ground();
 		release();
 		return true;
@@ -448,7 +429,10 @@ int ClingoApp::doRun() {
 		clasp.solve(*in_, config_, this);
 	}
 	else {
-		clasp.solveIncremental(*in_, config_, clingo_.inc, this);
+		if(clingo_.inc.online)
+			clasp.solveIncremental(*in_, config_, clingo_.online, this);
+		else
+			clasp.solveIncremental(*in_, config_, clingo_.inc, this);
 	}
 	timer_[0].stop();
 	printResult(reason_end);
@@ -516,13 +500,6 @@ void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			if (config_.solve.enumerator()->minimize()) {
 				out_->printOptimize(*config_.solve.enumerator()->minimize());
 			}
-		}	
-		// reading external online knowledge if enabled
-		assert(gringo_out_);
-		if(gringo_out_->isOnline()) {
-			facade_->api()->updateProgram();
-			gringo_out_->getExternalKnowledge()->get(gringo_grounder_, gringo_out_);
-//			facade_->solveIncremental(*in_, config_, clingo_.inc, this);
 		}
 	}
 	else if (e == ClaspFacade::event_p_prepared) {

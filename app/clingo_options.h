@@ -40,9 +40,17 @@ struct iClingoConfig : public Clasp::IncrementalControl {
 	iClingoConfig() : minSteps(1), maxSteps(uint32(-1)), stopUnsat(false), keepLearnt(true), keepHeuristic(false) {}
 	uint32 minSteps;      /**< Perform at least minSteps incremental steps */
 	uint32 maxSteps;      /**< Perform at most maxSteps incremental steps */
+	bool   online;        /**< Perform on-line reasoning */
 	bool   stopUnsat;     /**< Stop on first unsat problem? */
 	bool   keepLearnt;    /**< Keep learnt nogoods between incremental steps? */
 	bool   keepHeuristic; /**< Keep heuristic values between incremental steps? */
+	void initStep(Clasp::ClaspFacade& f);
+	bool nextStep(Clasp::ClaspFacade& f);
+};
+
+struct oClingoConfig : public Clasp::IncrementalControl {
+	oClingoConfig() : maxSteps(uint32(-1)) {}
+	uint32 maxSteps;      /**< Perform at most maxSteps incremental steps */
 	void initStep(Clasp::ClaspFacade& f);
 	bool nextStep(Clasp::ClaspFacade& f);
 };
@@ -58,6 +66,7 @@ struct ClingoOptions {
 	bool clingoMode;// default: true for clingo, false for iclingo
 	bool iStats;
 	iClingoConfig inc;
+	oClingoConfig online;
 };
 
 }
