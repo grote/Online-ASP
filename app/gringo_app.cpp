@@ -500,6 +500,16 @@ void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 				out_->printOptimize(*config_.solve.enumerator()->minimize());
 			}
 		}
+		// TODO procedure
+		string model = "";
+		assert(solver_.strategies().symTab.get());
+		const AtomIndex& index = *solver_.strategies().symTab;
+		for (AtomIndex::const_iterator it = index.begin(); it != index.end(); ++it) {
+			if(solver_.value(it->second.lit.var()) == trueValue(it->second.lit) && !it->second.name.empty()) {
+				model += it->second.name + " ";
+			}
+		}
+		gringo_out_->getExternalKnowledge()->storeModel(model);
 	}
 	else if (e == ClaspFacade::event_p_prepared) {
 		if (config_.onlyPre) {

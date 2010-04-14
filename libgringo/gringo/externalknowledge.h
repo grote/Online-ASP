@@ -18,6 +18,7 @@
 #ifndef EXTERNALKNOWLEDGE_H
 #define EXTERNALKNOWLEDGE_H
 
+#include <boost/asio.hpp>
 #include <gringo/gringo.h>
 #include <gringo/gringoexception.h>
 #include <gringo/value.h>
@@ -37,7 +38,9 @@ namespace gringo
 		void addExternal(GroundAtom external, int uid);
 		bool checkExternal(NS_OUTPUT::Object* object);
 		IntSet* getExternalsUids();
+		void storeModel(std::string);
 		void get(gringo::Grounder* grounder);
+		void startSocket(int port);
 		void addNewFact(NS_OUTPUT::Object* fact);
 		IntSet* getAssumptions();
 		void endStep();
@@ -47,7 +50,10 @@ namespace gringo
 		std::vector<IntSet> externals_uids_;
 		std::vector<IntSet> new_facts_;
 		NS_OUTPUT::IClaspOutput* output_;
+		boost::asio::ip::tcp::socket* socket_;
+		bool socket_started_;
 		int step_;
+		std::string model_;
 	};
 }
 

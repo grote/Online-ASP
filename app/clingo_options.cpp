@@ -152,7 +152,13 @@ void oClingoConfig::initStep(Clasp::ClaspFacade& f) {
 }
 
 bool oClingoConfig::nextStep(Clasp::ClaspFacade& f) {
-	return --maxSteps;
+	if(--maxSteps) {
+		return true;
+	}
+	else {
+		// TODO call ExternalKnowledge()->stopSocket()
+		return false;
+	}
 }
 
 }

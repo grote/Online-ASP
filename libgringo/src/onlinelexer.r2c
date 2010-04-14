@@ -48,7 +48,7 @@ int OnlineLexer::lex(std::string *&lval)
 begin:
 	start = cursor;
 	/*!re2c
-		ANY             = [\000-\377];
+		ANY             = [\001-\377];
 		WS              = [\t\r ]*;
 		NL              = "\n";
 		IF              = ":-";
@@ -60,11 +60,13 @@ begin:
 		BEGINCOMMENT    = "%*";
 		ENDCOMMENT      = "*%";
 		COMMENT         = "%";
+		DELIMITER       = "\000";
 		ENDSTEP         = "#endstep";
 		STOP            = "#stop";
 		
 		BEGINCOMMENT    { nested++; goto block_comment; }
 		COMMENT         { goto comment; }
+		DELIMITER       { return ONLINEPARSER_ENDSTEP; }
 		WS              { goto begin; }
 		NL              { if(eof == cursor) return ONLINEPARSER_EOI; step(); goto begin; }
 		ENDSTEP         { return ONLINEPARSER_ENDSTEP; }

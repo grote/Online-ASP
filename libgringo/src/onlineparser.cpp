@@ -63,7 +63,8 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 	{
 		lexer_->reset(*it);
 		token = lexer_->lex(lval);
-		while(token != ONLINEPARSER_EOI)
+		while(token != ONLINEPARSER_ENDSTEP)
+		//while(token != ONLINEPARSER_EOI)
 		{
 			onlineparser(pParser, token, lval, this);
 			token = lexer_->lex(lval);
