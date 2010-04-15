@@ -310,7 +310,6 @@ struct FromGringo : public Clasp::Input {
 						a.push_back(~atom->lit);
 					}
 				}
-				delete assumptions;
 			}
 		}
 #endif
@@ -518,7 +517,7 @@ void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 				model += it->second.name + " ";
 			}
 		}
-		gringo_out_->getExternalKnowledge()->storeModel(model);
+		gringo_out_->getExternalKnowledge()->sendModel(model);
 	}
 	else if (e == ClaspFacade::event_p_prepared) {
 		if (config_.onlyPre) {

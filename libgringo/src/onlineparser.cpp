@@ -78,19 +78,27 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 }
 
 void OnlineParser::addFact(NS_OUTPUT::Fact* fact) {
-	if(!output_->getExternalKnowledge()->checkExternal(fact->head_)) {
+	if(!output_->getExternalKnowledge()->checkFact(fact->head_)) {
 		error_ = true;
-		std::cerr << "Error: Fact in line " << getLexer()->getLine() << " was not declared external.\n";
+		std::stringstream error_msg;
+		error_msg << "Error: Fact in line " << getLexer()->getLine() << " was not declared external";
+// TODO forgetExternals
+//		if(grounder_->options().forgetExternals)
+//			error_msg << " (in this step)";
+		error_msg << ".\n";
+
+		std::cerr << error_msg.str() << std::endl;
+		output_->getExternalKnowledge()->sendToClient(error_msg.str());
 		return;
 	}
 	
 	// add Atom to get a uid assigned to it
 	output_->addAtom(static_cast<NS_OUTPUT::Atom*>(fact->head_));
 	
-	output_->getExternalKnowledge()->addNewFact(fact->head_);
-	
-	// add fact to program
-	output_->print(fact);
+	if(output_->getExternalKnowledge()->addNewFact(fact->head_, getLexer()->getLine())) {
+		// add fact to program
+		output_->print(fact);
+	}
 }
 
 void OnlineParser::terminate() {

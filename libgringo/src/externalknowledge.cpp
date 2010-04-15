@@ -23,13 +23,16 @@ using namespace gringo;
 
 ExternalKnowledge::ExternalKnowledge() {
 	step_ = 0;
-
-	externals_.push_back(UidValueSet());
-	externals_uids_.push_back(IntSet());
-	new_facts_.push_back(IntSet());
-
 	socket_ = NULL;
 	debug_ = false;
+	port_ = 25277;
+}
+
+ExternalKnowledge::~ExternalKnowledge() {
+	if(socket_) {
+		socket_->close();
+		delete socket_;
+	}
 }
 
 void ExternalKnowledge::initialize(NS_OUTPUT::Output* output) {
@@ -37,41 +40,55 @@ void ExternalKnowledge::initialize(NS_OUTPUT::Output* output) {
 }
 
 void ExternalKnowledge::addExternal(GroundAtom external, int uid) {
-	externals_.at(step_).insert(external);
-	externals_uids_.at(step_).insert(uid);
+	external_preds_.insert(external);
+	externals_.insert(uid);
 }
 
-bool ExternalKnowledge::checkExternal(NS_OUTPUT::Object* object) {
-	assert(dynamic_cast<NS_OUTPUT::Atom*>(object));
-	NS_OUTPUT::Atom* atom = static_cast<NS_OUTPUT::Atom*>(object);
+void ExternalKnowledge::startSocket(int port) {
+	using boost::asio::ip::tcp;
 
-	// try to find atom in externals
-	for(std::vector<UidValueSet>::iterator i = externals_.begin(); i != externals_.end(); ++i) {
-		if(i->find(std::make_pair(atom->predUid_, atom->values_)) != i->end())
-			return true;
+	if(debug_) std::cerr << "Starting socket..." << std::endl;
+
+	try {
+		tcp::acceptor acceptor(io_service_, tcp::endpoint(tcp::v4(), port));
+		socket_ = new tcp::socket(io_service_);
+		acceptor.accept(*socket_);
+
+		if(debug_) std::cerr << "Client connected..." << std::endl;
 	}
-	return false;
+	catch (std::exception& e) {
+		std::cerr << "Warning: " << e.what() << std::endl;
+	}
 }
 
-IntSet* ExternalKnowledge::getExternalsUids() {
-	return &externals_uids_.at(step_);
+void ExternalKnowledge::sendModel(std::string model) {
+	std::stringstream ss;
+	ss << "Step " << step_ << ":\n" << model;
+
+	sendToClient(ss.str());
 }
 
-void ExternalKnowledge::storeModel(std::string model) {
-	model_ = model;
+void ExternalKnowledge::sendToClient(std::string msg) {
+	if(not socket_) startSocket(port_);
+
+	try {
+		boost::asio::write(*socket_, boost::asio::buffer(msg+char(0)), boost::asio::transfer_all());
+	}
+	catch (std::exception& e) {
+		std::cerr << "Warning: Could not send answer set. " << e.what() << std::endl;
+	}
 }
 
 bool ExternalKnowledge::get(gringo::Grounder* grounder) {
 	debug_ = grounder->options().debug;
 	if(debug_) std::cerr << "Getting external knowledge..." << std::endl;
 
-	if(not socket_) startSocket(25277);
+	if(not socket_) startSocket(port_);
 	
 	boost::asio::streambuf b;
 	
 	try {
 		boost::system::error_code error;
-		boost::asio::write(*socket_, boost::asio::buffer(model_+char(0)), boost::asio::transfer_all(), error);
 
 		boost::asio::read_until(*socket_, b, char(0), error);
 	
@@ -96,52 +113,69 @@ bool ExternalKnowledge::get(gringo::Grounder* grounder) {
 		return true;
 }
 
-void ExternalKnowledge::startSocket(int port) {
-	using boost::asio::ip::tcp;
+bool ExternalKnowledge::checkFact(NS_OUTPUT::Object* object) {
+	assert(dynamic_cast<NS_OUTPUT::Atom*>(object));
+	NS_OUTPUT::Atom* atom = static_cast<NS_OUTPUT::Atom*>(object);
+	std::pair<int, ValueVector> pred = std::make_pair(atom->predUid_, atom->values_);
 
-	if(debug_) std::cerr << "Starting socket..." << std::endl;
-
-	try {
-		boost::asio::io_service io_service;
-
-		tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), port));
-		socket_ = new tcp::socket(io_service);
-		acceptor.accept(*socket_);
+	// try to find atom in external predicates
+	if(external_preds_.find(pred) != external_preds_.end() ||
+	   external_preds_old_.find(pred) != external_preds_old_.end()) {
+		return true;
 	}
-	catch (std::exception& e) {
-		std::cerr << "Warning: " << e.what() << std::endl;
-	}
+	return false;
 }
 
-void ExternalKnowledge::addNewFact(NS_OUTPUT::Object* fact) {
-	new_facts_.at(step_).insert(fact->uid_);
+bool ExternalKnowledge::addNewFact(NS_OUTPUT::Object* fact, int line=0) {
+	if(facts_old_.find(fact->uid_) != facts_old_.end()) {
+		std::stringstream error_msg;
+		error_msg << "Warning: Fact in line " << line << " was already added." << std::endl;
+		std::cerr << error_msg.str() << std::endl;
+		sendToClient(error_msg.str());
+		return false;
+	}
+
+	facts_.insert(fact->uid_);
+	externals_.erase(fact->uid_);
+	return true;
 }
 
 IntSet* ExternalKnowledge::getAssumptions() {
-	IntSet* result = new IntSet(externals_uids_.at(step_-1));
-
-	// TODO return externals from all steps
-	for(IntSet::iterator i = new_facts_.at(step_-1).begin(); i != new_facts_.at(step_-1).end(); ++i) {
-		result->erase(*i);
-	}
-
-	return result;
+	return &externals_old_;
 }
 
 void ExternalKnowledge::endStep() {
-	for(IntSet::iterator i = new_facts_.at(step_).begin(); i != new_facts_.at(step_).end(); ++i) {
-		if(externals_uids_.at(step_).erase(*i) == 0) {
+	for(IntSet::iterator i = facts_.begin(); i != facts_.end(); ++i) {
+		if(externals_old_.erase(*i) > 0) {
+			// fact was declared external earlier -> needs unfreezing
 			output_->unfreezeAtom(*i);
 		}
 	}
 
-	for(IntSet::iterator i = externals_uids_.at(step_).begin(); i != externals_uids_.at(step_).end(); ++i) {
+	for(IntSet::iterator i = externals_.begin(); i != externals_.end(); ++i) {
+		// freeze new external atoms
 		output_->printExternalRule(*i);
 	}
 
 	step_++;
 
-	externals_.push_back(UidValueSet());
-	externals_uids_.push_back(IntSet());
-	new_facts_.push_back(IntSet());
+	// TODO forgetExternals
+	bool unfreeze_old_externals_ = false;
+
+	if(unfreeze_old_externals_) {
+		for(IntSet::iterator i = externals_old_.begin(); i != externals_old_.end(); ++i) {
+			output_->unfreezeAtom(*i);
+		}
+		external_preds_old_.swap(external_preds_);
+		externals_old_.swap(externals_);
+	}
+	else {
+		external_preds_old_.insert(external_preds_.begin(), external_preds_.end());
+		externals_old_.insert(externals_.begin(), externals_.end());
+	}
+	external_preds_.clear();
+	externals_.clear();
+
+	facts_old_.insert(facts_.begin(), facts_.end());
+	facts_.clear();
 }
