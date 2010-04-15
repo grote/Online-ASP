@@ -16,6 +16,7 @@
 // along with GrinGo.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <gringo/externalknowledge.h>
+#include <gringo/grounder.h>
 #include <gringo/onlineparser.h>
 
 using namespace gringo;
@@ -28,6 +29,7 @@ ExternalKnowledge::ExternalKnowledge() {
 	new_facts_.push_back(IntSet());
 
 	socket_ = NULL;
+	debug_ = false;
 }
 
 void ExternalKnowledge::initialize(NS_OUTPUT::Output* output) {
@@ -59,46 +61,45 @@ void ExternalKnowledge::storeModel(std::string model) {
 	model_ = model;
 }
 
-void ExternalKnowledge::get(gringo::Grounder* grounder) {
-	std::cerr << "Getting external knowledge...\n";
-
-	using boost::asio::ip::tcp;
+bool ExternalKnowledge::get(gringo::Grounder* grounder) {
+	debug_ = grounder->options().debug;
+	if(debug_) std::cerr << "Getting external knowledge..." << std::endl;
 
 	if(not socket_) startSocket(25277);
 	
 	boost::asio::streambuf b;
 	
 	try {
-		boost::system::error_code ignored_error;
-		boost::asio::write(*socket_, boost::asio::buffer(model_+char(0)), boost::asio::transfer_all(), ignored_error);
+		boost::system::error_code error;
+		boost::asio::write(*socket_, boost::asio::buffer(model_+char(0)), boost::asio::transfer_all(), error);
 
-		boost::asio::read_until(*socket_, b, char(0), ignored_error);
+		boost::asio::read_until(*socket_, b, char(0), error);
 	
-		if(ignored_error == boost::asio::error::eof)
-			std::cerr << "Connection closed cleanly by peer." << std::endl;
-		else if(ignored_error)
-			throw boost::system::system_error(ignored_error);
+		if(error == boost::asio::error::eof)
+			throw gringo::GrinGoException("Connection closed cleanly by client.");
+		else if(error)
+			throw boost::system::system_error(error);
 	}
 	catch (std::exception& e) {
 		std::cerr << "Warning: " << e.what() << std::endl;
 	}
 
 	std::istream is(&b);
-
-//	std::string line;
-//	while(std::getline(is, line)) {
-//		std::cerr << "'" << line << "'\n";
-//	}
-	
 	OnlineParser parser(grounder, &is);
+
 	if(!parser.parse(output_))
 		throw gringo::GrinGoException("Parsing failed.");
+
+	if(parser.isTerminated())
+		return false;
+	else
+		return true;
 }
 
 void ExternalKnowledge::startSocket(int port) {
 	using boost::asio::ip::tcp;
 
-	std::cerr << "Starting socket..." << std::endl;
+	if(debug_) std::cerr << "Starting socket..." << std::endl;
 
 	try {
 		boost::asio::io_service io_service;

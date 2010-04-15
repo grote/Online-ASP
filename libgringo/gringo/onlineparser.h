@@ -33,10 +33,11 @@ namespace gringo
 		OnlineParser(Grounder *g, std::istream* = &std::cin);
 		OnlineParser(std::istream* = &std::cin);
 		bool parse(NS_OUTPUT::Output *output);
-		void addExternal(NS_OUTPUT::Fact *fact);
+		void addFact(NS_OUTPUT::Fact *fact);
 		GrinGoLexer *getLexer();
 		Grounder *getGrounder() { return grounder_; }
 		void terminate();
+		bool isTerminated();
 		virtual ~OnlineParser();
 	private:
 		OnlineLexer* lexer_;

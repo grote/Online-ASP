@@ -81,12 +81,12 @@ using namespace NS_OUTPUT;
 start ::= program.
 
 program ::= program fact DOT.
-program ::= program ENDSTEP DOT.	{ pParser->terminate(); }
-program ::= program STOP DOT.		{ pParser->terminate(); }
+program ::= program ENDSTEP DOT.
+program ::= program STOP DOT.	{ pParser->terminate(); }
 program ::= .
 
-fact ::= head_atom(head) IF .	{ Fact r(head); pParser->addExternal(&r); }
-fact ::= head_atom(head).		{ Fact r(head); pParser->addExternal(&r); }
+fact ::= head_atom(head) IF .	{ Fact r(head); pParser->addFact(&r); }
+fact ::= head_atom(head).		{ Fact r(head); pParser->addFact(&r); }
 
 head_atom(res) ::= predicate(pred). { res = pred; }
 

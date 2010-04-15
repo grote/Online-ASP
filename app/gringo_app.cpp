@@ -300,6 +300,7 @@ struct FromGringo : public Clasp::Input {
 			a.push_back(i.find(static_cast<NS_OUTPUT::IClaspOutput*>(out.get())->getIncUid())->lit);
 
 			// online: make external facts false
+			// TODO keep isOnline?
 			if(out.get()->isOnline()) {
 				IntSet* assumptions = out.get()->getExternalKnowledge()->getAssumptions();
 
@@ -327,8 +328,16 @@ struct FromGringo : public Clasp::Input {
 		// TODO improve both conditions/ifs
 		if(out.get()->isOnline()) {
 			out.get()->getExternalKnowledge()->initialize(out.get());
-			if(out.get()->getIncUid() > 2)
-				out.get()->getExternalKnowledge()->get(grounder.get());
+
+			// get external knowledge after first step
+			if(out.get()->getIncUid() > 2) {
+				// exit if received #stop.
+				if(!out.get()->getExternalKnowledge()->get(grounder.get())) {
+					release();
+					return false;
+				}
+			}
+
 			out.get()->getExternalKnowledge()->endStep();
 		}
 

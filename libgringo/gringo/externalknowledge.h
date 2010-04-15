@@ -39,7 +39,7 @@ namespace gringo
 		bool checkExternal(NS_OUTPUT::Object* object);
 		IntSet* getExternalsUids();
 		void storeModel(std::string);
-		void get(gringo::Grounder* grounder);
+		bool get(gringo::Grounder* grounder);
 		void startSocket(int port);
 		void addNewFact(NS_OUTPUT::Object* fact);
 		IntSet* getAssumptions();
@@ -54,6 +54,7 @@ namespace gringo
 		bool socket_started_;
 		int step_;
 		std::string model_;
+		bool debug_;
 	};
 }
 

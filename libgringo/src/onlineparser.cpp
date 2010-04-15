@@ -63,8 +63,9 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 	{
 		lexer_->reset(*it);
 		token = lexer_->lex(lval);
+
+		// stop at ENDSTEP because socket stream will not return EOI
 		while(token != ONLINEPARSER_ENDSTEP)
-		//while(token != ONLINEPARSER_EOI)
 		{
 			onlineparser(pParser, token, lval, this);
 			token = lexer_->lex(lval);
@@ -76,7 +77,7 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 	return true;
 }
 
-void OnlineParser::addExternal(NS_OUTPUT::Fact* fact) {
+void OnlineParser::addFact(NS_OUTPUT::Fact* fact) {
 	if(!output_->getExternalKnowledge()->checkExternal(fact->head_)) {
 		error_ = true;
 		std::cerr << "Error: Fact in line " << getLexer()->getLine() << " was not declared external.\n";
@@ -88,7 +89,7 @@ void OnlineParser::addExternal(NS_OUTPUT::Fact* fact) {
 	
 	output_->getExternalKnowledge()->addNewFact(fact->head_);
 	
-	// add fact to program and assign a uid to it
+	// add fact to program
 	output_->print(fact);
 }
 
@@ -96,14 +97,14 @@ void OnlineParser::terminate() {
 	terminated_ = true;
 }
 
+bool OnlineParser::isTerminated() {
+	return terminated_;
+}
+
 OnlineParser::~OnlineParser()
 {
 	delete lexer_;
 	onlineparserFree(pParser, free);
-	// TODO remove terminated, just use #stop
-	if(not terminated_) {
-//		throw gringo::GrinGoException("Did not read \"#endstep.\" or \"#stop.\".");
-	}
 }
 
 GrinGoLexer *OnlineParser::getLexer()
