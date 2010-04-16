@@ -27,6 +27,7 @@
 
 #include <string>
 #include <utility>
+//#include <boost/thread.hpp>
 #include <program_opts/app_options.h>
 #include <gringo/grounder.h>
 #include <clasp/clasp_facade.h>

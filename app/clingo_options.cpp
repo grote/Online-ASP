@@ -156,7 +156,8 @@ bool oClingoConfig::nextStep(Clasp::ClaspFacade& f) {
 		return true;
 	}
 	else {
-		// TODO call ExternalKnowledge()->stopSocket()
+		// TODO wait for socket to close
+		//boost::thread::sleep(5);
 		return false;
 	}
 }

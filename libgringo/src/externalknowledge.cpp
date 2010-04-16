@@ -63,7 +63,7 @@ void ExternalKnowledge::startSocket(int port) {
 
 void ExternalKnowledge::sendModel(std::string model) {
 	std::stringstream ss;
-	ss << "Step " << step_ << ":\n" << model;
+	ss << "Step: " << step_ << "\n" << model;
 
 	sendToClient(ss.str());
 }
@@ -83,7 +83,7 @@ bool ExternalKnowledge::get(gringo::Grounder* grounder) {
 	debug_ = grounder->options().debug;
 	if(debug_) std::cerr << "Getting external knowledge..." << std::endl;
 
-	if(not socket_) startSocket(port_);
+	sendToClient("Input:\n");
 	
 	boost::asio::streambuf b;
 	
