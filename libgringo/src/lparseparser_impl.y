@@ -197,7 +197,6 @@ program ::= program SHOW show_list DOT.
 program ::= program HIDE hide_list DOT.
 program ::= program ISHIFT shift_list DOT.
 program ::= program EXTERNAL constr_list(list) DOT. { if(list) pParser->getGrounder()->addStatement(new NormalRule(new ExternalAggregate(list), 0)); }
-program ::= program ONLINE DOT.                { OUTPUT->setOnline(true); }
 program ::= program DOMAIN domain_list DOT.
 program ::= program CONST const_list DOT.
 program ::= .

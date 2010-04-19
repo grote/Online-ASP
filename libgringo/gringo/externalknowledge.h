@@ -39,6 +39,7 @@ namespace gringo
 		void addExternal(GroundAtom external, int uid);
 		void startSocket(int port);
 		void sendModel(std::string);
+		bool hasModel();
 		void sendToClient(std::string msg);
 		bool get(gringo::Grounder* grounder);
 		bool checkFact(NS_OUTPUT::Object* object);
@@ -60,6 +61,7 @@ namespace gringo
 		int port_;
 		bool debug_;
 		boost::asio::io_service io_service_;
+		bool model_;
 	};
 }
 

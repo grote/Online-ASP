@@ -1,0 +1,10 @@
+ext_on(7,1).
+#endstep.
+ext_on(7,2).
+#endstep.
+ext_on(7,3).
+#endstep.
+ext_on(4,7).
+#endstep.
+ext_on(1,11).
+#stop.

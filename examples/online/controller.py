@@ -35,7 +35,6 @@ parser.set_defaults(
 (opt, args) = parser.parse_args()
 
 data_old = ''
-answer_sets = {}
 PARSER = [
 	re.compile("^Step:\ (\d+)$"),
 	re.compile("^(-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\ *)+$"),
@@ -49,8 +48,26 @@ def main():
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		
 		connectToSocket(s)
-		read(s)
-
+		while True:
+			try:
+				try:
+					answer_sets = getAnswerSets(s)
+				except RuntimeWarning as e:
+					print e.args[0]
+				except RuntimeError as e:
+					print e.args[0]
+				except SyntaxError as e:
+					print e.args[0]
+				
+				processAnswerSets(answer_sets)
+				
+				input = getInput()
+				
+				sendInput(s, input)
+			except socket.error:
+				print "Socket was closed."
+				break
+		closeSocket(s)
 		return 0
 #	except Exception, err:
 #		sys.stderr.write('ERROR: %s\n' % str(err))
@@ -62,30 +79,40 @@ def connectToSocket(s):
 	except socket.error:
 		raise EnvironmentError("Could not connect to %s:%d" % (opt.host, opt.port))
 	
-def read(s):
-	step = 0
+def getAnswerSets(s):
+	answer_sets = []
 	while True:
 		try:
-			step = getAnswerSets(s, step)
-
-			print answer_sets
-			
-			input = getInput()
-
-			s.send('%s\0' % input)
+			output = recv_until(s, '\0')
 		except socket.error:
-			print "Socket was closed."
-			break
-
-	try:
-		s.shutdown(1)
-		s.close()
-	except socket.error:
-		print "Socket was already closed."
+			raise EnvironmentError("Socket was closed.")
+		
+		for line in output.splitlines():
+			matched = False
+			for i in range(len(PARSER)):
+				match = PARSER[i].match(line)
+				if match != None:
+					matched = True
+					if i == 0 and opt.debug:
+						print "Found answer set for step %s." % match.group(1)
+					elif i == 1:
+						answer_sets.append(line.split())
+					elif i == 2:
+						return answer_sets
+					elif i == 3:
+						raise RuntimeWarning(line)
+					elif i == 4:
+						raise RuntimeError(line)
+			if not matched:
+				raise SyntaxError("Unkown output received from server: %s" % line)
+	return answer_sets
 
 def recv_until(s, delimiter):
 	global data_old
-	
+
+	if opt.debug:
+		print "Receiving data from socket..."
+
 	data_list = data_old.split(delimiter, 1)
 	
 	if len(data_list) > 1:
@@ -93,9 +120,12 @@ def recv_until(s, delimiter):
 		return data_list[0]
 	else:
 		while True:
+			data = ''
 			try:
 				data = s.recv(2048)
 			except socket.error:
+				if opt.debug:
+					print "Socket was closed. Returning last received data..."
 				return data + data_old
 			data = data_old + data
 			data_list = data.split(delimiter, 1)
@@ -107,66 +137,62 @@ def recv_until(s, delimiter):
 	
 	return data
 
+def processAnswerSets(answer_sets):
+	i = 1
+	for answer_set in answer_sets:
+		print "Answer: %d" % i
+		printAnswerSet(answer_set)
+		i += 1
 
-def getAnswerSets(s, step):
-	global answer_sets
-	new_step = 0
-
-	while True:
-		try:
-			data = recv_until(s, '\0')
-		except socket.error:
-			 "Socket was closed."
-		
-		try:
-			answer_set = parseOutput(data)
-			if len(answer_set) != 2:
-				raise RuntimeError("Malformed answer set received: %s" % repr(answer_set))
-			elif not answer_set[0] in answer_sets:
-				answer_sets[answer_set[0]] = []
-			
-			answer_sets[answer_set[0]].append(answer_set[1])
-			
-			if step == 0:
-				step = answer_set[0]
-			new_step = answer_set[0]
-			if new_step != step:
-				break
-		except RuntimeWarning as e:
-			print e.args[0]
-		except RuntimeError as e:
-			print e.args[0]
-		except SyntaxError as e:
-			print e.args[0]
-		
-	return new_step
+def printAnswerSet(answer_set):
+	"""prints the answer set"""
+	plan = {}
+	# stores all predicates in dictionary plan
+	for predicate in answer_set:
+		match = re.match(".*[(,]([0-9]+)\)$", predicate)
+		if match != None:
+			t = int(match.group(1))
+			if t in plan:
+				plan[t].append(predicate)
+			else:
+				plan[t] = [predicate]
+		else:
+			if 'B' in plan:
+				plan['B'].append(predicate)
+			else:
+				plan['B'] = [predicate]
 	
+	# get predicate lenghts
+	row_len = {}
+	for time in plan:
+		plan[time].sort()
+		row = 0
+		for predicate in plan[time]:
+			if row in row_len:
+				if len(predicate) > row_len[row]:
+					row_len[row] = len(predicate)
+			else:
+				row_len[row] = len(predicate)
+			row += 1
 
+	# prints predicates in rows
+	if 'B' in plan:
+		printRow(plan, row_len, 'B')
+	for time in plan:
+		if time != 'B':
+			printRow(plan, row_len, time)
 
-def parseOutput(output):
-	answer_set = []
-	for line in output.splitlines():
-		matched = False
-		for i in range(len(PARSER)):
-			match = PARSER[i].match(line)
-			if match != None:
-				matched = True
-				if i == 0:
-					answer_set.append(int(match.group(1)))
-				elif i == 1:
-					answer_set.append(line.split())
-				elif i == 2:
-					# TODO improve functions to stop here and return AS
-					print "bla"
-				elif i == 3:
-					raise RuntimeWarning(line)
-				elif i == 4:
-					raise RuntimeError(line)
-		if not matched:
-			raise SyntaxError("Unkown output received from server: %s" % line)
-	return answer_set
+def printRow(plan, row_len, time):
+	time_str = str(time).rjust(len(str(len(plan))))
+	print "  %s. " % time_str,
+	row = 0
+	for predicate in plan[time]:
+		 print predicate.ljust(row_len[row]+1),
+		 row += 1
+	print ""
 
 def getInput():
+	print "Please enter new information, '#endstep.' on its own line to end:"
 	input = ''
 	
 	while True:
@@ -177,18 +203,36 @@ def getInput():
 		elif line == "#stop.\n":
 			input += line
 			break
-		elif re.match("^ *\w+\([\d\w, ]+\)\. *$", line) != None:
+		elif re.match("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.$", line) != None:
 			input += line
 		else:
 			print "Warning: Unknown input."
 	
 	return input
 
+def sendInput(s, input):
+	s.send('%s\0' % input)
+	if re.match("#stop\.", input) != None:
+		endProgram(s)
+
+def endProgram(s):
+	closeSocket(s)
+	if opt.debug:
+		print "Exiting Program..."
+	sys.exit(0)
+
+def closeSocket(s):
+	if opt.debug:
+		print "Closing socket..."
+	try:
+		s.shutdown(1)
+		s.close()
+	except socket.error:
+		print "Socket was already closed."
 
 if __name__ == '__main__':
 	if sys.version < '2.6':
 		print 'You need at least python 2.6'
 		sys.exit(1)
 	sys.exit(main())
-
 

@@ -276,7 +276,7 @@ struct FromGringo : public Clasp::Input {
 	typedef std::auto_ptr<gringo::LparseParser> ParserPtr;
 	typedef std::auto_ptr<NS_OUTPUT::Output> OutputPtr;
 	typedef Clasp::MinimizeConstraint* MinConPtr;
-	FromGringo(const GringoOptions& opts, Streams& str, bool clingoMode) : clingo(clingoMode) {
+	FromGringo(const GringoOptions& opts, Streams& str, bool clingoMode, bool online) : clingo(clingoMode) {
 		grounder.reset(new gringo::Grounder(opts.grounderOptions));
 		parser.reset(new gringo::LparseParser(grounder.get(), str.streams));
 		if (clingo) {
@@ -286,6 +286,7 @@ struct FromGringo : public Clasp::Input {
 		else {
 			out.reset(new NS_OUTPUT::IClaspOutput(0, opts.shift));
 		}
+		this->online = online;
 #endif
 	}
 	Format    format()      const { return Clasp::Input::SMODELS; }
@@ -300,8 +301,7 @@ struct FromGringo : public Clasp::Input {
 			a.push_back(i.find(static_cast<NS_OUTPUT::IClaspOutput*>(out.get())->getIncUid())->lit);
 
 			// online: make external facts false
-			// TODO keep isOnline?
-			if(out.get()->isOnline()) {
+			if(online) {
 				IntSet* assumptions = out.get()->getExternalKnowledge()->getAssumptions();
 
 				for(IntSet::iterator ass = assumptions->begin(); ass != assumptions->end(); ++ass) {
@@ -324,19 +324,16 @@ struct FromGringo : public Clasp::Input {
 		}
 		grounder->ground();
 
-		// TODO improve both conditions/ifs
-		if(out.get()->isOnline()) {
+		if(online) {
 			out.get()->getExternalKnowledge()->initialize(out.get());
-
-			// get external knowledge after first step
-			if(out.get()->getIncUid() > 2) {
-				// exit if received #stop.
+			if(out.get()->getExternalKnowledge()->hasModel()) {
+				// get external knowledge after first step
 				if(!out.get()->getExternalKnowledge()->get(grounder.get())) {
+					// exit if received #stop.
 					release();
 					return false;
 				}
 			}
-
 			out.get()->getExternalKnowledge()->endStep();
 		}
 
@@ -354,6 +351,7 @@ struct FromGringo : public Clasp::Input {
 	OutputPtr              out;
 	Clasp::Solver*         solver;
 	bool                   clingo;
+	bool                   online;
 };
 }
 void ClingoApp::printVersion() const {
@@ -398,10 +396,12 @@ void ClingoApp::configureInOut(Streams& s) {
 	else {
 		GringoApp::addConstStream(s);
 		s.open(generic.input);
-		FromGringo* gringo_output = new FromGringo(opts, s, clingo_.clingoMode);
+		FromGringo* gringo_output = new FromGringo(opts, s, clingo_.clingoMode, clingo_.inc.online);
 		// save grounder and output for continuing online solving
-		gringo_grounder_ = gringo_output->grounder.get();
-		gringo_out_ = gringo_output->out.get();
+		if(clingo_.inc.online) {
+			gringo_grounder_ = gringo_output->grounder.get();
+			gringo_out_ = gringo_output->out.get();
+		}
 		in_.reset(gringo_output);
 	}
 	if (config_.onlyPre) { 

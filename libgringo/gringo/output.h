@@ -50,8 +50,6 @@ namespace gringo
 			bool isVisible(int uid);
 			bool isVisible(int id, int arity);
 			ExternalKnowledge* getExternalKnowledge();
-			bool isOnline();
-			void setOnline(bool);
 			
 			// must be called if predicates are added after initialize has been called
 			void addSignature();
@@ -85,7 +83,6 @@ namespace gringo
 			std::map<Signature, bool> hide_;
 			std::vector<bool> visible_;
 			ExternalKnowledge external_knowledge_;
-			bool online_;
 			GlobalStorage *g_;
 		public:
 			Stats stats_;

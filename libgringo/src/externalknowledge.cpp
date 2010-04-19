@@ -24,8 +24,10 @@ using namespace gringo;
 ExternalKnowledge::ExternalKnowledge() {
 	step_ = 0;
 	socket_ = NULL;
+	output_ = NULL;
 	debug_ = false;
 	port_ = 25277;
+	model_ = false;
 }
 
 ExternalKnowledge::~ExternalKnowledge() {
@@ -36,7 +38,8 @@ ExternalKnowledge::~ExternalKnowledge() {
 }
 
 void ExternalKnowledge::initialize(NS_OUTPUT::Output* output) {
-	output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
+	if(not output_)
+		output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
 }
 
 void ExternalKnowledge::addExternal(GroundAtom external, int uid) {
@@ -66,6 +69,12 @@ void ExternalKnowledge::sendModel(std::string model) {
 	ss << "Step: " << step_ << "\n" << model;
 
 	sendToClient(ss.str());
+
+	model_ = true;
+}
+
+bool ExternalKnowledge::hasModel() {
+	return model_;
 }
 
 void ExternalKnowledge::sendToClient(std::string msg) {
@@ -107,8 +116,12 @@ bool ExternalKnowledge::get(gringo::Grounder* grounder) {
 	if(!parser.parse(output_))
 		throw gringo::GrinGoException("Parsing failed.");
 
-	if(parser.isTerminated())
+	model_ = false;
+
+	if(parser.isTerminated()) {
+		socket_->shutdown(boost::asio::ip::tcp::socket::shutdown_send);
 		return false;
+	}
 	else
 		return true;
 }
@@ -159,7 +172,7 @@ void ExternalKnowledge::endStep() {
 
 	step_++;
 
-	// TODO forgetExternals
+	// TODO forgetOldExternals
 	bool unfreeze_old_externals_ = false;
 
 	if(unfreeze_old_externals_) {

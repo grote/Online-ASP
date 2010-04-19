@@ -1,0 +1,14 @@
+ext_mark(2,1,x,0).
+#endstep.
+ext_mark(0,0,o,1).
+#endstep.
+ext_mark(2,2,x,2).
+#endstep.
+ext_mark(2,0,o,3).
+#endstep.
+ext_mark(1,1,x,4).
+#endstep.
+ext_mark(1,2,o,5).
+#endstep.
+ext_mark(0,1,x,6).
+#stop.
