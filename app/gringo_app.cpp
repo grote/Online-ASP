@@ -325,16 +325,21 @@ struct FromGringo : public Clasp::Input {
 		grounder->ground();
 
 		if(online) {
-			out.get()->getExternalKnowledge()->initialize(out.get());
-			if(out.get()->getExternalKnowledge()->hasModel()) {
-				// get external knowledge after first step
-				if(!out.get()->getExternalKnowledge()->get(grounder.get())) {
-					// exit if received #stop.
-					release();
-					return false;
-				}
+			if(solver->hasConflict()) {
+				out.get()->getExternalKnowledge()->sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
 			}
-			out.get()->getExternalKnowledge()->endStep();
+			else {
+				out.get()->getExternalKnowledge()->initialize(out.get());
+				if(out.get()->getExternalKnowledge()->hasModel()) {
+					// get external knowledge after first step
+					if(!out.get()->getExternalKnowledge()->get(grounder.get())) {
+						// exit if received #stop.
+						release();
+						return false;
+					}
+				}
+				out.get()->getExternalKnowledge()->endStep();
+			}
 		}
 
 		release();
