@@ -17,6 +17,7 @@
 ##########################################################################
 
 import sys
+import os
 import socket
 import re
 from optparse import OptionParser
@@ -35,6 +36,9 @@ parser.set_defaults(
 (opt, args) = parser.parse_args()
 
 data_old = ''
+online_input = [[]]
+FACT  = re.compile("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.?$")
+FACTT = re.compile("^-?[a-z_][a-zA-Z0-9_]*\(.*?,? *(\d+) *\)\.?$")
 PARSER = [
 	re.compile("^Step:\ (\d+)$"),
 	re.compile("^(-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\ *)+$"),
@@ -44,41 +48,76 @@ PARSER = [
 ]
 
 def main():
-#	try:
-		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		
-		connectToSocket(s)
-		while True:
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	
+	connectToSocket(s)
+	prepareInput()
+	
+	while True:
+		try:
 			try:
-				try:
-					answer_sets = getAnswerSets(s)
-				except RuntimeWarning as e:
-					print e.args[0]
-				except RuntimeError as e:
-					print e.args[0]
-				except SyntaxError as e:
-					print e.args[0]
-				
-				processAnswerSets(answer_sets)
-				
-				input = getInput()
-				
-				sendInput(s, input)
-			except socket.error:
-				print "Socket was closed."
-				break
-		closeSocket(s)
-		return 0
-#	except Exception, err:
-#		sys.stderr.write('ERROR: %s\n' % str(err))
-#		return 1
+				answer_sets = getAnswerSets(s)
+			except RuntimeWarning as e:
+				print e.args[0]
+			except SyntaxError as e:
+				print e.args[0]
+			
+			processAnswerSets(answer_sets)
+			
+			input = getInput()
+			
+			print
+			print "Got input:"
+			print input
+			
+			sendInput(s, input)
+		except socket.error:
+			print "Socket was closed."
+			break
+	closeSocket(s)
+	return 0
+
 
 def connectToSocket(s):
 	try:
 		s.connect((opt.host, opt.port))
 	except socket.error:
 		raise EnvironmentError("Could not connect to %s:%d" % (opt.host, opt.port))
-	
+
+def prepareInput():
+	if len(args) == 1:
+		file = args[0]
+		if os.path.exists(file):
+			global online_input
+			
+			f = open(file, 'r')
+			i = 0
+			
+			for line in f:
+				# match end of step and end list
+				if re.match("^#endstep\.\n$", line) != None:
+					i += 1
+					online_input.insert(i, [])
+				# match end of online knowledge
+				elif re.match("^#stop\.\n$", line) != None:
+					if len(online_input[i]) == 0:
+						online_input.pop(i)
+					break
+				# match comment
+				elif re.match("^%.*\n$", line) != None:
+					continue
+				# match ground fact and insert into existing list
+				elif FACT.match(line) != None:
+					online_input[i].append(line)
+				# error: neither fact nor step
+				else:
+					i += 1
+					raise RuntimeError("Invalid ground fact '%s' after step %d in file '%s'." % (line, i, file))
+		else:
+			raise RuntimeError("Could not find file '%s'." % file)
+	elif len(args) > 1:
+		raise RuntimeError("More than one online file was given")
+
 def getAnswerSets(s):
 	answer_sets = []
 	while True:
@@ -149,7 +188,7 @@ def printAnswerSet(answer_set):
 	plan = {}
 	# stores all predicates in dictionary plan
 	for predicate in answer_set:
-		match = re.match(".*[(,]([0-9]+)\)$", predicate)
+		match = FACTT.match(predicate)
 		if match != None:
 			t = int(match.group(1))
 			if t in plan:
@@ -192,22 +231,33 @@ def printRow(plan, row_len, time):
 	print ""
 
 def getInput():
+	if len(args) == 1:
+		if len(online_input) > 0:
+			result = ''.join(online_input[0])
+			online_input.pop(0)
+			return result
+		else:
+			return "#stop.\n"
+	else:
+		return getInputFromSTDIN()
+
+def getInputFromSTDIN():
 	print "Please enter new information, '#endstep.' on its own line to end:"
 	input = ''
-	
+
 	while True:
 		line = sys.stdin.readline()
-		
+
 		if line == "#endstep.\n":
 			break
 		elif line == "#stop.\n":
 			input += line
 			break
-		elif re.match("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.$", line) != None:
+		elif FACT.match(line) != None:
 			input += line
 		else:
 			print "Warning: Unknown input."
-	
+
 	return input
 
 def sendInput(s, input):
@@ -234,5 +284,12 @@ if __name__ == '__main__':
 	if sys.version < '2.6':
 		print 'You need at least python 2.6'
 		sys.exit(1)
-	sys.exit(main())
-
+	
+	if opt.debug:
+		sys.exit(main())
+	else:
+		try:
+			sys.exit(main())
+		except Exception, err:
+			sys.stderr.write('ERROR: %s\n' % str(err))
+			sys.exit(1)
