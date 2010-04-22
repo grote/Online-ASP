@@ -1,4 +1,3 @@
-ext_on(7,1).
 #endstep.
 ext_on(7,2).
 #endstep.

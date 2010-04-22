@@ -27,6 +27,7 @@ closed(0).
 #hide.
 #show up/1.
 #show down/1.
+#show goal/1.
 %#show board/1.
 %#show depart/1.
 #show currentFloor/2.
@@ -128,8 +129,8 @@ closed(t) :- depart(t).
 % turn light off after departed from floor
 off(F, t) :- depart(t), currentFloor(F, t).
 
-% don't sit around idle
-:- not up(t-1), not down(t-1), not board(t-1), t>1.
+% don't sit around idle, if there's work to do
+:- not up(t-1), not down(t-1), not board(t-1), t>1, not goal(t-1).
 
 % don't be at two floors at the same time
 :- currentFloor(F1, t), currentFloor(F2, t), F1!=F2.
