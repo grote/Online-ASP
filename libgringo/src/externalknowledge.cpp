@@ -139,25 +139,39 @@ bool ExternalKnowledge::checkFact(NS_OUTPUT::Object* object) {
 	return false;
 }
 
-bool ExternalKnowledge::addNewFact(NS_OUTPUT::Object* fact, int line=0) {
-	if(facts_old_.find(fact->uid_) != facts_old_.end()) {
+void ExternalKnowledge::addNewFact(NS_OUTPUT::Fact* fact, int line=0) {
+	// add Atom to get a uid assigned to it
+	output_->addAtom(static_cast<NS_OUTPUT::Atom*>(fact->head_));
+
+	if(facts_old_.find(fact->head_->uid_) != facts_old_.end()) {
 		std::stringstream error_msg;
 		error_msg << "Warning: Fact in line " << line << " was already added." << std::endl;
 		std::cerr << error_msg.str() << std::endl;
 		sendToClient(error_msg.str());
-		return false;
 	}
+	else {
+		facts_.insert(fact->head_->uid_);
+		externals_.erase(fact->head_->uid_);
 
-	facts_.insert(fact->uid_);
-	externals_.erase(fact->uid_);
-	return true;
+		// add fact to program
+		output_->print(fact);
+	}
+	delete fact;
+}
+
+void ExternalKnowledge::addPrematureFact(NS_OUTPUT::Fact* fact) {
+	premature_facts_.push_back(fact);
+}
+
+bool ExternalKnowledge::hasFactsWaiting() {
+	return !premature_facts_.empty();
 }
 
 IntSet* ExternalKnowledge::getAssumptions() {
 	return &externals_old_;
 }
 
-void ExternalKnowledge::endStep() {
+void ExternalKnowledge::endIteration() {
 	for(IntSet::iterator i = facts_.begin(); i != facts_.end(); ++i) {
 		if(externals_old_.erase(*i) > 0) {
 			// fact was declared external earlier -> needs unfreezing
@@ -165,8 +179,27 @@ void ExternalKnowledge::endStep() {
 		}
 	}
 
+	facts_old_.insert(facts_.begin(), facts_.end());
+	facts_.clear();
+}
+
+void ExternalKnowledge::endStep() {
+	// add previously added premature facts
+	for(std::vector<NS_OUTPUT::Fact*>::iterator i = premature_facts_.begin(); i!= premature_facts_.end(); ++i) {
+		if(checkFact((*i)->head_)) {
+			addNewFact(*i);
+		} else {
+			std::cerr << "Warning: Fact added last step was still not declared external and is now lost." << std::endl;
+			sendToClient("Warning: Fact added last step was still not declared external and is now lost.");
+			delete *i;
+		}
+	}
+	premature_facts_.clear();
+
+	endIteration();
+
 	for(IntSet::iterator i = externals_.begin(); i != externals_.end(); ++i) {
-		// freeze new external atoms
+		// freeze new external atoms, facts have been deleted already in addNewFact()
 		output_->printExternalRule(*i);
 	}
 
@@ -189,6 +222,4 @@ void ExternalKnowledge::endStep() {
 	external_preds_.clear();
 	externals_.clear();
 
-	facts_old_.insert(facts_.begin(), facts_.end());
-	facts_.clear();
 }

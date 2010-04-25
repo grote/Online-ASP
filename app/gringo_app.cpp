@@ -322,7 +322,6 @@ struct FromGringo : public Clasp::Input {
 			grounder->prepare(!clingo);
 			parser.reset(0);
 		}
-		grounder->ground();
 
 		if(online) {
 			if(solver->hasConflict()) {
@@ -330,6 +329,7 @@ struct FromGringo : public Clasp::Input {
 			}
 			else {
 				out.get()->getExternalKnowledge()->initialize(out.get());
+				// do only iteration if there's a model or we have not declared facts waiting
 				if(out.get()->getExternalKnowledge()->hasModel()) {
 					// get external knowledge after first step
 					if(!out.get()->getExternalKnowledge()->get(grounder.get())) {
@@ -337,9 +337,21 @@ struct FromGringo : public Clasp::Input {
 						release();
 						return false;
 					}
+					if(out.get()->getExternalKnowledge()->hasFactsWaiting()) {
+						grounder->ground();
+						out.get()->getExternalKnowledge()->endStep();
+					} else {
+						out.get()->getExternalKnowledge()->endIteration();
+					}
 				}
-				out.get()->getExternalKnowledge()->endStep();
+				else {
+					grounder->ground();
+					out.get()->getExternalKnowledge()->endStep();
+				}
 			}
+		}
+		else {
+			grounder->ground();
 		}
 
 		release();

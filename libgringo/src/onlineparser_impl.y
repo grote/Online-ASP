@@ -85,8 +85,8 @@ program ::= program ENDSTEP DOT.
 program ::= program STOP DOT.	{ pParser->terminate(); }
 program ::= .
 
-fact ::= head_atom(head) IF .	{ Fact r(head); pParser->addFact(&r); }
-fact ::= head_atom(head).		{ Fact r(head); pParser->addFact(&r); }
+fact ::= head_atom(head) IF .	{ pParser->addFact(new Fact(head)); }
+fact ::= head_atom(head).		{ pParser->addFact(new Fact(head)); }
 
 head_atom(res) ::= predicate(pred). { res = pred; }
 

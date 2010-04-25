@@ -28,6 +28,7 @@ namespace gringo
 	namespace NS_OUTPUT
 	{
 		class IClaspOutput;
+		struct Fact;
 	}
 
 	class ExternalKnowledge
@@ -43,8 +44,11 @@ namespace gringo
 		void sendToClient(std::string msg);
 		bool get(gringo::Grounder* grounder);
 		bool checkFact(NS_OUTPUT::Object* object);
-		bool addNewFact(NS_OUTPUT::Object* fact, int line);
+		void addNewFact(NS_OUTPUT::Fact* fact, int line);
+		void addPrematureFact(NS_OUTPUT::Fact* fact);
+		bool hasFactsWaiting();
 		IntSet* getAssumptions();
+		void endIteration();
 		void endStep();
 
 	private:
@@ -62,6 +66,7 @@ namespace gringo
 		bool debug_;
 		boost::asio::io_service io_service_;
 		bool model_;
+		std::vector<NS_OUTPUT::Fact*> premature_facts_;
 	};
 }
 

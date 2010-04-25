@@ -142,13 +142,11 @@ bool iClingoConfig::nextStep(Clasp::ClaspFacade& f) {
 }
 
 void oClingoConfig::initStep(Clasp::ClaspFacade& f) {
-	if (f.step() == 0) {
-		if (maxSteps == 0) {
-			f.warning("Max incremental steps must be > 0!");
-			maxSteps = 1;
-		}
+	if (f.step() == 0 && maxSteps == 0) {
+		f.warning("Max incremental steps must be > 0!");
+		maxSteps = 1;
 	}
-	std::cout << "Step: " << f.step()+1 << std::endl;
+	std::cout << "Iteration: " << f.step()+1 << std::endl;
 }
 
 bool oClingoConfig::nextStep(Clasp::ClaspFacade& f) {
