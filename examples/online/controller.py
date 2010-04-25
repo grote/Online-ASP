@@ -59,6 +59,7 @@ def main():
 				answer_sets = getAnswerSets(s)
 			except RuntimeWarning as e:
 				print e.args[0]
+				continue
 			except SyntaxError as e:
 				print e.args[0]
 			
