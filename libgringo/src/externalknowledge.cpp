@@ -43,8 +43,7 @@ void ExternalKnowledge::initialize(NS_OUTPUT::Output* output) {
 }
 
 void ExternalKnowledge::addExternal(GroundAtom external, int uid) {
-	external_preds_.insert(external);
-	externals_.insert(uid);
+	externals_.insert(std::make_pair(external, uid));
 }
 
 void ExternalKnowledge::startSocket(int port) {
@@ -132,8 +131,8 @@ bool ExternalKnowledge::checkFact(NS_OUTPUT::Object* object) {
 	std::pair<int, ValueVector> pred = std::make_pair(atom->predUid_, atom->values_);
 
 	// try to find atom in external predicates
-	if(external_preds_.find(pred) != external_preds_.end() ||
-	   external_preds_old_.find(pred) != external_preds_old_.end()) {
+	if(externals_.find(pred) != externals_.end() ||
+	   externals_old_.find(pred) != externals_old_.end()) {
 		return true;
 	}
 	return false;
@@ -151,7 +150,7 @@ void ExternalKnowledge::addNewFact(NS_OUTPUT::Fact* fact, int line=0) {
 	}
 	else {
 		facts_.insert(fact->head_->uid_);
-		externals_.erase(fact->head_->uid_);
+		eraseUidFromExternals(&externals_, fact->head_->uid_);
 
 		// add fact to program
 		output_->print(fact);
@@ -167,13 +166,19 @@ bool ExternalKnowledge::hasFactsWaiting() {
 	return !premature_facts_.empty();
 }
 
-IntSet* ExternalKnowledge::getAssumptions() {
-	return &externals_old_;
+IntSet ExternalKnowledge::getAssumptions() {
+	IntSet result;
+
+	for(UidValueMap::iterator i = externals_old_.begin(); i != externals_old_.end(); ++i) {
+		result.insert(i->second);
+	}
+
+	return result;
 }
 
 void ExternalKnowledge::endIteration() {
 	for(IntSet::iterator i = facts_.begin(); i != facts_.end(); ++i) {
-		if(externals_old_.erase(*i) > 0) {
+		if(eraseUidFromExternals(&externals_old_, *i) > 0) {
 			// fact was declared external earlier -> needs unfreezing
 			output_->unfreezeAtom(*i);
 		}
@@ -198,9 +203,9 @@ void ExternalKnowledge::endStep() {
 
 	endIteration();
 
-	for(IntSet::iterator i = externals_.begin(); i != externals_.end(); ++i) {
+	for(UidValueMap::iterator i = externals_.begin(); i != externals_.end(); ++i) {
 		// freeze new external atoms, facts have been deleted already in addNewFact()
-		output_->printExternalRule(*i);
+		output_->printExternalRule(i->second, i->first.first);
 	}
 
 	step_++;
@@ -209,17 +214,31 @@ void ExternalKnowledge::endStep() {
 	bool unfreeze_old_externals_ = false;
 
 	if(unfreeze_old_externals_) {
-		for(IntSet::iterator i = externals_old_.begin(); i != externals_old_.end(); ++i) {
-			output_->unfreezeAtom(*i);
+		for(UidValueMap::iterator i = externals_old_.begin(); i != externals_old_.end(); ++i) {
+			output_->unfreezeAtom(i->second);
 		}
-		external_preds_old_.swap(external_preds_);
 		externals_old_.swap(externals_);
 	}
 	else {
-		external_preds_old_.insert(external_preds_.begin(), external_preds_.end());
 		externals_old_.insert(externals_.begin(), externals_.end());
 	}
-	external_preds_.clear();
 	externals_.clear();
 
+}
+
+// TODO is there any better way to do it?
+int ExternalKnowledge::eraseUidFromExternals(UidValueMap* ext, int uid) {
+	std::vector<UidValueMap::iterator> del;
+
+	for(UidValueMap::iterator i = ext->begin(); i != ext->end(); ++i) {
+		if(i->second == uid) {
+			del.push_back(i);
+		}
+	}
+
+	for(std::vector<UidValueMap::iterator>::iterator i = del.begin(); i != del.end(); ++i) {
+		ext->erase(*i);
+	}
+
+	return del.size();
 }

@@ -257,8 +257,12 @@ void IClaspOutput::unfreezeAtom(int uid) {
 	b_->unfreeze(uid);
 }
 
-void IClaspOutput::printExternalRule(int uid) {
-	b_->freeze(uid);
+void IClaspOutput::printExternalRule(int uid, int pred_uid) {
+	if(isVisible(pred_uid)) {
+		b_->freeze(uid);
+	} else {
+		throw GrinGoException("External facts can not be hidden.");
+	}
 }
 
 int IClaspOutput::getIncUid()

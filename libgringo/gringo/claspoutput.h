@@ -73,7 +73,7 @@ namespace gringo
 			void unfreezeAtom(int uid);
 			void reinitialize();
 			int getIncUid();
-			void printExternalRule(int uid);
+			void printExternalRule(int uid, int pred_uid);
 		private:
 			int incUid_;
 		};

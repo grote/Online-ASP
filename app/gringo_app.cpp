@@ -302,9 +302,9 @@ struct FromGringo : public Clasp::Input {
 
 			// online: make external facts false
 			if(online) {
-				IntSet* assumptions = out.get()->getExternalKnowledge()->getAssumptions();
+				IntSet assumptions = out.get()->getExternalKnowledge()->getAssumptions();
 
-				for(IntSet::iterator ass = assumptions->begin(); ass != assumptions->end(); ++ass) {
+				for(IntSet::iterator ass = assumptions.begin(); ass != assumptions.end(); ++ass) {
 					Clasp::Atom* atom = i.find(*ass);
 					if(atom) { // atom is not in AtomIndex if hidden with #hide
 						a.push_back(~atom->lit);

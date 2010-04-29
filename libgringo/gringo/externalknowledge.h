@@ -47,15 +47,14 @@ namespace gringo
 		void addNewFact(NS_OUTPUT::Fact* fact, int line);
 		void addPrematureFact(NS_OUTPUT::Fact* fact);
 		bool hasFactsWaiting();
-		IntSet* getAssumptions();
+		IntSet getAssumptions();
 		void endIteration();
 		void endStep();
+		int eraseUidFromExternals(UidValueMap* ext, int uid);
 
 	private:
-		UidValueSet external_preds_;
-		UidValueSet external_preds_old_;
-		IntSet externals_;
-		IntSet externals_old_;
+		UidValueMap externals_;
+		UidValueMap externals_old_;
 		IntSet facts_;
 		IntSet facts_old_;
 		NS_OUTPUT::IClaspOutput* output_;
