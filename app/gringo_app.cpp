@@ -328,11 +328,11 @@ struct FromGringo : public Clasp::Input {
 				out.get()->getExternalKnowledge()->sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
 			}
 			else {
-				out.get()->getExternalKnowledge()->initialize(out.get());
+				out.get()->getExternalKnowledge()->initialize(out.get(), grounder.get());
 				// do only iteration if there's a model or we have not declared facts waiting
 				if(out.get()->getExternalKnowledge()->hasModel()) {
 					// get external knowledge after first step
-					if(!out.get()->getExternalKnowledge()->get(grounder.get())) {
+					if(!out.get()->getExternalKnowledge()->get()) {
 						// exit if received #stop.
 						release();
 						return false;

@@ -22,9 +22,10 @@
 using namespace gringo;
 
 ExternalKnowledge::ExternalKnowledge() {
+	output_ = NULL;
+	grounder_ = NULL;
 	step_ = 0;
 	socket_ = NULL;
-	output_ = NULL;
 	debug_ = false;
 	port_ = 25277;
 	model_ = false;
@@ -37,9 +38,11 @@ ExternalKnowledge::~ExternalKnowledge() {
 	}
 }
 
-void ExternalKnowledge::initialize(NS_OUTPUT::Output* output) {
+void ExternalKnowledge::initialize(NS_OUTPUT::Output* output, Grounder* grounder) {
 	if(not output_)
 		output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
+	if(not grounder_)
+		grounder_ = grounder;
 }
 
 void ExternalKnowledge::addExternal(GroundAtom external, int uid) {
@@ -87,8 +90,8 @@ void ExternalKnowledge::sendToClient(std::string msg) {
 	}
 }
 
-bool ExternalKnowledge::get(gringo::Grounder* grounder) {
-	debug_ = grounder->options().debug;
+bool ExternalKnowledge::get() {
+	debug_ = grounder_->options().debug;
 	if(debug_) std::cerr << "Getting external knowledge..." << std::endl;
 
 	sendToClient("Input:\n");
@@ -110,7 +113,7 @@ bool ExternalKnowledge::get(gringo::Grounder* grounder) {
 	}
 
 	std::istream is(&b);
-	OnlineParser parser(grounder, &is);
+	OnlineParser parser(grounder_, &is);
 
 	if(!parser.parse(output_))
 		throw gringo::GrinGoException("Parsing failed.");

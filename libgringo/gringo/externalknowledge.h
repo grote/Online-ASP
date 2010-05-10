@@ -36,13 +36,13 @@ namespace gringo
 	public:
 		ExternalKnowledge();
 		virtual ~ExternalKnowledge();
-		void initialize(NS_OUTPUT::Output* output);
+		void initialize(NS_OUTPUT::Output* output, Grounder* grounder);
 		void addExternal(GroundAtom external, int uid);
 		void startSocket(int port);
 		void sendModel(std::string);
 		bool hasModel();
 		void sendToClient(std::string msg);
-		bool get(gringo::Grounder* grounder);
+		bool get();
 		bool checkFact(NS_OUTPUT::Object* object);
 		void addNewFact(NS_OUTPUT::Fact* fact, int line);
 		void addPrematureFact(NS_OUTPUT::Fact* fact);
@@ -53,11 +53,12 @@ namespace gringo
 		int eraseUidFromExternals(UidValueMap* ext, int uid);
 
 	private:
+		NS_OUTPUT::IClaspOutput* output_;
+		Grounder* grounder_;
 		UidValueMap externals_;
 		UidValueMap externals_old_;
 		IntSet facts_;
 		IntSet facts_old_;
-		NS_OUTPUT::IClaspOutput* output_;
 		boost::asio::ip::tcp::socket* socket_;
 		bool socket_started_;
 		int step_;
