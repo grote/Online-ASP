@@ -13,7 +13,7 @@
 #const height=4.
 #const width=4.
 
-field(1..height, 1..width).
+field(1..width, 1..height).
 #hide field/2.
 
 start(1, 1).
