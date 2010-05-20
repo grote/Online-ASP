@@ -20,17 +20,20 @@ import sys
 import os
 import socket
 import re
+import time
 from optparse import OptionParser
 
 # Parse Command Line Options
 usage = "usage: %prog [online.lp] [options]"
 parser = OptionParser(usage=usage, version="%prog 0.1")
-parser.add_option("-n", "--hostname", dest="host", help="Hostname of the online iClingo server", metavar="HOST")
-parser.add_option("-p", "--port", dest="port", help="Port the online iClingo server is listening to", metavar="PORT")
+parser.add_option("-n", "--hostname", dest="host", help="Hostname of the online iClingo server. Default: %default", metavar="HOST")
+parser.add_option("-p", "--port", dest="port", help="Port the online iClingo server is listening to. Default: %default", metavar="PORT")
+parser.add_option("-t", "--time", dest="time", help="Time delay in seconds between sending input from online.lp to server. Default: %default", metavar="TIME")
 parser.add_option("-d", "--debug", dest="debug", help="show debugging output", action="store_true")
 parser.set_defaults(
 	host = 'localhost',
 	port = 25277,
+	time = 1,
 	debug = False
 )
 (opt, args) = parser.parse_args()
@@ -77,7 +80,6 @@ def main():
 			break
 	closeSocket(s)
 	return 0
-
 
 def connectToSocket(s):
 	try:
@@ -233,6 +235,7 @@ def printRow(plan, row_len, time):
 
 def getInput():
 	if len(args) == 1:
+		time.sleep(float(opt.time))
 		if len(online_input) > 0:
 			result = ''.join(online_input[0])
 			online_input.pop(0)
