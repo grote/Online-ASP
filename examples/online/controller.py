@@ -22,22 +22,26 @@ import socket
 import re
 import time
 from optparse import OptionParser
+from threading import Thread
 
 # Parse Command Line Options
 usage = "usage: %prog [online.lp] [options]"
 parser = OptionParser(usage=usage, version="%prog 0.1")
-parser.add_option("-n", "--hostname", dest="host", help="Hostname of the online iClingo server. Default: %default", metavar="HOST")
-parser.add_option("-p", "--port", dest="port", help="Port the online iClingo server is listening to. Default: %default", metavar="PORT")
-parser.add_option("-t", "--time", dest="time", help="Time delay in seconds between sending input from online.lp to server. Default: %default", metavar="TIME")
+parser.add_option("-n", "--host", dest="host", help="Hostname of the online iClingo server. Default: %default")
+parser.add_option("-p", "--port", dest="port", help="Port the online iClingo server is listening to. Default: %default")
+parser.add_option("-t", "--time", dest="time", help="Time delay in seconds between sending input from online.lp to server. Default: %default")
+parser.add_option("-w", "--wait", dest="wait", choices=["yes","no"], help="Wait for answer set before sending new input, yes or no. Default: %default")
 parser.add_option("-d", "--debug", dest="debug", help="show debugging output", action="store_true")
 parser.set_defaults(
 	host = 'localhost',
 	port = 25277,
 	time = 1,
+	wait = "yes",
 	debug = False
 )
 (opt, args) = parser.parse_args()
 
+exit = False
 data_old = ''
 online_input = [[]]
 FACT  = re.compile("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.?$")
@@ -46,6 +50,7 @@ PARSER = [
 	re.compile("^Step:\ (\d+)$"),
 	re.compile("^(-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\ *)+$"),
 	re.compile("^Input:$"),
+	re.compile("^End of Step.$"),
 	re.compile("^Warning: (?P<series>.+)$"),
 	re.compile("^Error: (?P<series>.+)$"),
 ]
@@ -56,7 +61,11 @@ def main():
 	connectToSocket(s)
 	prepareInput()
 	
-	while True:
+	if opt.wait == "no":
+		thread = InputThread(s)
+		thread.start()
+	
+	while not exit:
 		try:
 			try:
 				answer_sets = getAnswerSets(s)
@@ -68,13 +77,15 @@ def main():
 			
 			processAnswerSets(answer_sets)
 			
-			input = getInput()
-			
-			print
-			print "Got input:"
-			print input
-			
-			sendInput(s, input)
+			if opt.wait == "yes":
+				input = getInput()
+				sendInput(s, input)
+			else:
+				# just in case, should be done before thread terminates
+				if not thread.is_alive():
+					sendInput(s, "#stop.\n")
+					break
+				
 		except socket.error:
 			print "Socket was closed."
 			break
@@ -123,7 +134,7 @@ def prepareInput():
 
 def getAnswerSets(s):
 	answer_sets = []
-	while True:
+	while not exit:
 		try:
 			output = recv_until(s, '\0')
 		except socket.error:
@@ -139,35 +150,37 @@ def getAnswerSets(s):
 						print "Found answer set for step %s." % match.group(1)
 					elif i == 1:
 						answer_sets.append(line.split())
-					elif i == 2:
-						return answer_sets
 					elif i == 3:
-						raise RuntimeWarning(line)
+						return answer_sets
 					elif i == 4:
+						raise RuntimeWarning(line)
+					elif i == 5:
 						raise RuntimeError(line)
 			if not matched:
 				raise SyntaxError("Unkown output received from server: %s" % line)
 	return answer_sets
 
 def recv_until(s, delimiter):
-	global data_old
+	global data_old, exit
 
 	if opt.debug:
 		print "Receiving data from socket..."
 
 	data_list = data_old.split(delimiter, 1)
+	data = ''
 	
 	if len(data_list) > 1:
 		data_old = data_list[1]
 		return data_list[0]
 	else:
-		while True:
+		while not exit:
 			data = ''
 			try:
 				data = s.recv(2048)
 			except socket.error:
 				if opt.debug:
 					print "Socket was closed. Returning last received data..."
+				exit = True
 				return data + data_old
 			data = data_old + data
 			data_list = data.split(delimiter, 1)
@@ -233,17 +246,22 @@ def printRow(plan, row_len, time):
 		 row += 1
 	print ""
 
+# is called by InputThread, make the main thread is not accessing at the same time
 def getInput():
 	if len(args) == 1:
 		time.sleep(float(opt.time))
 		if len(online_input) > 0:
 			result = ''.join(online_input[0])
 			online_input.pop(0)
-			return result
 		else:
-			return "#stop.\n"
+			result = "#stop.\n"
 	else:
-		return getInputFromSTDIN()
+		result = getInputFromSTDIN()
+	
+	print "Got input:"
+	print result
+
+	return result
 
 def getInputFromSTDIN():
 	print "Please enter new information, '#endstep.' on its own line to end:"
@@ -266,6 +284,7 @@ def getInputFromSTDIN():
 
 def sendInput(s, input):
 	s.send('%s\0' % input)
+	
 	if re.match("#stop\.", input) != None:
 		endProgram(s)
 
@@ -284,6 +303,23 @@ def closeSocket(s):
 	except socket.error:
 		print "Socket was already closed."
 
+
+class InputThread(Thread):
+	def __init__ (self, s):
+		Thread.__init__(self)
+		self.s = s
+	def run(self):
+		global exit
+		while 1:
+			input = getInput()
+			if input == "#stop.\n":
+				exit = True
+				endProgram(self.s)
+				break
+			else:
+				sendInput(self.s, input)
+		return
+
 if __name__ == '__main__':
 	if sys.version < '2.6':
 		print 'You need at least python 2.6'
@@ -297,3 +333,7 @@ if __name__ == '__main__':
 		except Exception, err:
 			sys.stderr.write('ERROR: %s\n' % str(err))
 			sys.exit(1)
+
+
+
+

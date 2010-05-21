@@ -18,10 +18,15 @@
 #ifndef EXTERNALKNOWLEDGE_H
 #define EXTERNALKNOWLEDGE_H
 
-#include <boost/asio.hpp>
 #include <gringo/gringo.h>
 #include <gringo/gringoexception.h>
 #include <gringo/value.h>
+
+#include <clasp/solver.h>
+#include <clasp/constraint.h>
+
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
 
 namespace gringo
 {
@@ -36,37 +41,61 @@ namespace gringo
 	public:
 		ExternalKnowledge();
 		virtual ~ExternalKnowledge();
-		void initialize(NS_OUTPUT::Output* output, Grounder* grounder);
+		void initialize(NS_OUTPUT::Output* output, Grounder* grounder, Clasp::Solver* s);
 		void addExternal(GroundAtom external, int uid);
 		void startSocket(int port);
 		void sendModel(std::string);
 		bool hasModel();
 		void sendToClient(std::string msg);
-		bool get();
+		int poll();
+		void get();
+		void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
+		bool addInput();
 		bool checkFact(NS_OUTPUT::Object* object);
 		void addNewFact(NS_OUTPUT::Fact* fact, int line);
 		void addPrematureFact(NS_OUTPUT::Fact* fact);
 		bool hasFactsWaiting();
+		bool isFirstIteration();
 		IntSet getAssumptions();
 		void endIteration();
 		void endStep();
 		int eraseUidFromExternals(UidValueMap* ext, int uid);
+	protected:
+		struct PostPropagator : public Clasp::PostPropagator {
+		public:
+			PostPropagator(ExternalKnowledge* ext);
+			bool propagate(Clasp::Solver &s);
+			uint32 priority() const { return Clasp::PostPropagator::priority_lowest - 1; }
+		private:
+			ExternalKnowledge* ext_;
+		};
 
 	private:
 		NS_OUTPUT::IClaspOutput* output_;
 		Grounder* grounder_;
+		Clasp::Solver* solver_;
+
+		// external fact handling
 		UidValueMap externals_;
 		UidValueMap externals_old_;
 		IntSet facts_;
 		IntSet facts_old_;
-		boost::asio::ip::tcp::socket* socket_;
-		bool socket_started_;
-		int step_;
-		int port_;
-		bool debug_;
-		boost::asio::io_service io_service_;
-		bool model_;
 		std::vector<NS_OUTPUT::Fact*> premature_facts_;
+
+		// socket stuff
+		boost::asio::io_service io_service_;
+		boost::asio::ip::tcp::socket* socket_;
+		boost::asio::streambuf b_;
+		int port_;
+		bool reading_;
+		bool new_input_;
+
+		PostPropagator* post_;
+		bool solver_stopped_;
+
+		int step_;
+		bool model_;
+		bool debug_;
 	};
 }
 

@@ -24,11 +24,19 @@ using namespace gringo;
 ExternalKnowledge::ExternalKnowledge() {
 	output_ = NULL;
 	grounder_ = NULL;
-	step_ = 0;
+	solver_ = NULL;
+
 	socket_ = NULL;
-	debug_ = false;
 	port_ = 25277;
+	reading_ = false;
+	new_input_ = false;
+
+	post_ = new ExternalKnowledge::PostPropagator(this);
+	solver_stopped_ = false;
+
+	step_ = 0;
 	model_ = false;
+	debug_ = false;
 }
 
 ExternalKnowledge::~ExternalKnowledge() {
@@ -36,13 +44,20 @@ ExternalKnowledge::~ExternalKnowledge() {
 		socket_->close();
 		delete socket_;
 	}
+	// don't delete post_ because it now belongs to solver
 }
 
-void ExternalKnowledge::initialize(NS_OUTPUT::Output* output, Grounder* grounder) {
+void ExternalKnowledge::initialize(NS_OUTPUT::Output* output, Grounder* grounder, Clasp::Solver* s) {
 	if(not output_)
 		output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
-	if(not grounder_)
+	if(not grounder_) {
 		grounder_ = grounder;
+		debug_ = grounder_->options().debug;
+	}
+	if(not solver_) {
+		solver_ = s;
+		solver_->addPost(post_);
+	}
 }
 
 void ExternalKnowledge::addExternal(GroundAtom external, int uid) {
@@ -90,42 +105,68 @@ void ExternalKnowledge::sendToClient(std::string msg) {
 	}
 }
 
-bool ExternalKnowledge::get() {
-	debug_ = grounder_->options().debug;
-	if(debug_) std::cerr << "Getting external knowledge..." << std::endl;
+int ExternalKnowledge::poll() {
+	io_service_.reset();
+	int result = io_service_.poll_one();
+	if(result)
+		std::cerr << "Polled for input and started " << result << " handler." << std::endl;
 
-	sendToClient("Input:\n");
-	
-	boost::asio::streambuf b;
-	
+	return result;
+}
+
+void ExternalKnowledge::get() {
 	try {
-		boost::system::error_code error;
+		if(!reading_) {
+			if(debug_) std::cerr << "Getting external knowledge..." << std::endl;
 
-		boost::asio::read_until(*socket_, b, char(0), error);
-	
-		if(error == boost::asio::error::eof)
-			throw gringo::GrinGoException("Connection closed cleanly by client.");
-		else if(error)
-			throw boost::system::system_error(error);
+			sendToClient("Input:\n");
+
+			std::cerr << "Reading from socket..." << std::endl;
+			reading_ = true;
+			boost::asio::async_read_until(*socket_, b_, char(0), boost::bind(&ExternalKnowledge::readUntilHandler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+		}
 	}
 	catch (std::exception& e) {
 		std::cerr << "Warning: " << e.what() << std::endl;
 	}
+}
 
-	std::istream is(&b);
-	OnlineParser parser(grounder_, &is);
-
-	if(!parser.parse(output_))
-		throw gringo::GrinGoException("Parsing failed.");
-
-	model_ = false;
-
-	if(parser.isTerminated()) {
-		socket_->shutdown(boost::asio::ip::tcp::socket::shutdown_send);
-		return false;
+void ExternalKnowledge::readUntilHandler(const boost::system::error_code& e, size_t bytesT) {
+	if (!e)	{
+		new_input_ = true;
+		reading_ = false;
 	}
+	else if(e == boost::asio::error::eof)
+		throw gringo::GrinGoException("Connection closed cleanly by client.");
 	else
-		return true;
+		throw boost::system::system_error(e);
+}
+
+bool ExternalKnowledge::addInput() {
+	if(model_)
+		sendToClient("End of Step.\n");
+
+	if(!new_input_ && model_ && step_) {
+		io_service_.reset();
+		io_service_.run_one();
+	}
+
+	if(new_input_) {
+		new_input_ = false;
+		model_ = false;
+
+		std::istream is(&b_);
+		OnlineParser parser(grounder_, &is);
+
+		if(!parser.parse(output_))
+			throw gringo::GrinGoException("Parsing failed.");
+
+		if(parser.isTerminated()) {
+			socket_->shutdown(boost::asio::ip::tcp::socket::shutdown_send);
+			return false;
+		}
+	}
+	return true;
 }
 
 bool ExternalKnowledge::checkFact(NS_OUTPUT::Object* object) {
@@ -167,6 +208,10 @@ void ExternalKnowledge::addPrematureFact(NS_OUTPUT::Fact* fact) {
 
 bool ExternalKnowledge::hasFactsWaiting() {
 	return !premature_facts_.empty();
+}
+
+bool ExternalKnowledge::isFirstIteration() {
+	return !step_;
 }
 
 IntSet ExternalKnowledge::getAssumptions() {
@@ -244,4 +289,28 @@ int ExternalKnowledge::eraseUidFromExternals(UidValueMap* ext, int uid) {
 	}
 
 	return del.size();
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// ExternalKnowledge::PostPropagator
+//////////////////////////////////////////////////////////////////////////////
+
+ExternalKnowledge::PostPropagator::PostPropagator(ExternalKnowledge* ext) {
+	ext_ = ext;
+}
+
+bool ExternalKnowledge::PostPropagator::propagate(Clasp::Solver &s) {
+	if(ext_->poll()) {
+		std::cerr << "Stopping solver..." << std::endl;
+		s.setStopConflict();
+	}
+
+	// TODO fix bug where iClingo stops and just UNSATISFIABLE is returned
+
+	if(s.hasConflict())	{
+		assert(s.hasConflict());
+		return false;
+	}
+	return true;
 }

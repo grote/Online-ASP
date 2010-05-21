@@ -328,19 +328,22 @@ struct FromGringo : public Clasp::Input {
 				out.get()->getExternalKnowledge()->sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
 			}
 			else {
-				out.get()->getExternalKnowledge()->initialize(out.get(), grounder.get());
+				// initialize external knowledge module
+				if (out.get()->getExternalKnowledge()->isFirstIteration())
+					out.get()->getExternalKnowledge()->initialize(out.get(), grounder.get(), solver);
+
+				if(!out.get()->getExternalKnowledge()->addInput()) {
+					// exit if received #stop.
+					release();
+					return false;
+				}
 				// do only iteration if there's a model or we have not declared facts waiting
 				if(out.get()->getExternalKnowledge()->hasModel()) {
-					// get external knowledge after first step
-					if(!out.get()->getExternalKnowledge()->get()) {
-						// exit if received #stop.
-						release();
-						return false;
-					}
-					if(out.get()->getExternalKnowledge()->hasFactsWaiting()) {
+					if(out.get()->getExternalKnowledge()->hasFactsWaiting() || out.get()->getExternalKnowledge()->isFirstIteration()) {
 						grounder->ground();
 						out.get()->getExternalKnowledge()->endStep();
 					} else {
+						grounder->ground();
 						out.get()->getExternalKnowledge()->endIteration();
 					}
 				}
@@ -349,6 +352,7 @@ struct FromGringo : public Clasp::Input {
 					out.get()->getExternalKnowledge()->endStep();
 				}
 			}
+			out.get()->getExternalKnowledge()->get();
 		}
 		else {
 			grounder->ground();
