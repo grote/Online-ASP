@@ -31,6 +31,8 @@ ClingoOptions::ClingoOptions()
 	inc.minSteps      = 1;
 	inc.maxSteps      = ~uint32(0);
 	inc.stopUnsat     = false;
+	inc.online        = false;
+	inc.keep_externals= false;
 }
 
 void ClingoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden) {
@@ -55,7 +57,8 @@ void ClingoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 			"Start solving at step <num>\n"
 			"      Default: 1\n", "<num>")
 
-		("online,o"    , bool_switch(&inc.online), "Perform on-line reasoning\n")
+		("online,o"    , bool_switch(&inc.online), "Perform on-line reasoning")
+		("keep-externals",bool_switch(&inc.keep_externals), "Keep externals which have been defined in earlier steps\n")
 
 		("ilearnt" , storeTo(inc.keepLearnt)->parser(mapKeepForget),
 			"Configure persistence of learnt nogoods\n"

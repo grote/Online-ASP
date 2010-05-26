@@ -375,6 +375,11 @@ struct FromGringo : public Clasp::Input {
 	bool                   online;
 };
 }
+
+ClingoApp::~ClingoApp() {
+	delete gringo_out_->getExternalKnowledge();
+}
+
 void ClingoApp::printVersion() const {
 	GringoApp::printVersion();
 	cout << endl;
@@ -422,6 +427,7 @@ void ClingoApp::configureInOut(Streams& s) {
 		if(clingo_.inc.online) {
 			gringo_grounder_ = gringo_output->grounder.get();
 			gringo_out_ = gringo_output->out.get();
+			gringo_out_->setExternalKnowledge(new ExternalKnowledge(clingo_.inc.keep_externals));
 		}
 		in_.reset(gringo_output);
 	}

@@ -39,7 +39,7 @@ namespace gringo
 	class ExternalKnowledge
 	{
 	public:
-		ExternalKnowledge();
+		ExternalKnowledge(bool keep_externals);
 		virtual ~ExternalKnowledge();
 		void initialize(NS_OUTPUT::Output* output, Grounder* grounder, Clasp::Solver* s);
 		void addExternal(GroundAtom external, int uid);
@@ -81,6 +81,7 @@ namespace gringo
 		IntSet facts_;
 		IntSet facts_old_;
 		std::vector<NS_OUTPUT::Fact*> premature_facts_;
+		bool keep_externals_;
 
 		// socket stuff
 		boost::asio::io_service io_service_;

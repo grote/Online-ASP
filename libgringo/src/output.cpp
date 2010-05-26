@@ -135,7 +135,12 @@ bool Output::isVisible(int id, int arity)
 
 ExternalKnowledge* Output::getExternalKnowledge()
 {
-	return &external_knowledge_;
+	return external_knowledge_;
+}
+
+void Output::setExternalKnowledge(ExternalKnowledge* ext)
+{
+	external_knowledge_ = ext;
 }
 
 void Output::addSignature()

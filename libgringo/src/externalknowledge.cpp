@@ -21,10 +21,11 @@
 
 using namespace gringo;
 
-ExternalKnowledge::ExternalKnowledge() {
+ExternalKnowledge::ExternalKnowledge(bool keep_externals) {
 	output_ = NULL;
 	grounder_ = NULL;
 	solver_ = NULL;
+	keep_externals_ = keep_externals;
 
 	socket_ = NULL;
 	port_ = 25277;
@@ -258,10 +259,8 @@ void ExternalKnowledge::endStep() {
 
 	step_++;
 
-	// TODO forgetOldExternals
-	bool unfreeze_old_externals_ = false;
-
-	if(unfreeze_old_externals_) {
+	// unfreeze old externals for simplification by clasp
+	if(!keep_externals_) {
 		for(UidValueMap::iterator i = externals_old_.begin(); i != externals_old_.end(); ++i) {
 			output_->unfreezeAtom(i->second);
 		}
