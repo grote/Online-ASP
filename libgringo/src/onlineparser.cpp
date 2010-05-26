@@ -70,6 +70,7 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 			onlineparser(pParser, token, lval, this);
 			token = lexer_->lex(lval);
 		}
+		endStep();
 	}
 	onlineparser(pParser, 0, lval, this);
 	if(getError())
@@ -83,11 +84,7 @@ void OnlineParser::addFact(NS_OUTPUT::Fact* fact) {
 		output_->getExternalKnowledge()->addPrematureFact(fact);
 
 		std::stringstream warning_msg;
-		warning_msg << "Warning: Fact in line " << getLexer()->getLine() << " was not (yet) declared external";
-// TODO forgetExternals
-//		if(grounder_->options().forgetExternals)
-//			warning_msg << " (in this step)";
-		warning_msg << ".\n";
+		warning_msg << "Warning: Fact in line " << getLexer()->getLine() << " was not (yet) declared external.\n";
 
 		std::cerr << warning_msg.str() << std::endl;
 		output_->getExternalKnowledge()->sendToClient(warning_msg.str());
@@ -95,6 +92,10 @@ void OnlineParser::addFact(NS_OUTPUT::Fact* fact) {
 	else {
 		output_->getExternalKnowledge()->addNewFact(fact, getLexer()->getLine());
 	}
+}
+
+void OnlineParser::endStep() {
+	output_->getExternalKnowledge()->endControllerStep();
 }
 
 void OnlineParser::terminate() {

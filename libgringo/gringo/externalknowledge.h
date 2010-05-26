@@ -60,6 +60,7 @@ namespace gringo
 		void endIteration();
 		void endStep();
 		int eraseUidFromExternals(UidValueMap* ext, int uid);
+		void endControllerStep();
 	protected:
 		struct PostPropagator : public Clasp::PostPropagator {
 		public:
@@ -78,6 +79,7 @@ namespace gringo
 		// external fact handling
 		UidValueMap externals_;
 		UidValueMap externals_old_;
+		std::vector<IntSet> externals_per_step_;
 		IntSet facts_;
 		IntSet facts_old_;
 		std::vector<NS_OUTPUT::Fact*> premature_facts_;
@@ -95,6 +97,7 @@ namespace gringo
 		bool solver_stopped_;
 
 		int step_;
+		int controller_step_;
 		bool model_;
 		bool debug_;
 	};

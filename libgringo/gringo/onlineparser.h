@@ -36,6 +36,7 @@ namespace gringo
 		void addFact(NS_OUTPUT::Fact *fact);
 		GrinGoLexer *getLexer();
 		Grounder *getGrounder() { return grounder_; }
+		void endStep();
 		void terminate();
 		bool isTerminated();
 		virtual ~OnlineParser();

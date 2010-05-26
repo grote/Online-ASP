@@ -81,8 +81,8 @@ using namespace NS_OUTPUT;
 start ::= program.
 
 program ::= program fact DOT.
-program ::= program ENDSTEP DOT.
-program ::= program STOP DOT.	{ pParser->terminate(); }
+program ::= program ENDSTEP DOT.	{ pParser->endStep(); }
+program ::= program STOP DOT.		{ pParser->terminate(); }
 program ::= .
 
 fact ::= head_atom(head) IF .	{ pParser->addFact(new Fact(head)); }

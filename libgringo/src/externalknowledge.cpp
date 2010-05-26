@@ -27,6 +27,9 @@ ExternalKnowledge::ExternalKnowledge(bool keep_externals) {
 	solver_ = NULL;
 	keep_externals_ = keep_externals;
 
+	externals_per_step_.push_back(IntSet());
+	externals_per_step_.push_back(IntSet());
+
 	socket_ = NULL;
 	port_ = 25277;
 	reading_ = false;
@@ -35,7 +38,8 @@ ExternalKnowledge::ExternalKnowledge(bool keep_externals) {
 	post_ = new ExternalKnowledge::PostPropagator(this);
 	solver_stopped_ = false;
 
-	step_ = 0;
+	step_ = 1;
+	controller_step_ = 0;
 	model_ = false;
 	debug_ = false;
 }
@@ -63,6 +67,7 @@ void ExternalKnowledge::initialize(NS_OUTPUT::Output* output, Grounder* grounder
 
 void ExternalKnowledge::addExternal(GroundAtom external, int uid) {
 	externals_.insert(std::make_pair(external, uid));
+	externals_per_step_.at(step_).insert(uid);
 }
 
 void ExternalKnowledge::startSocket(int port) {
@@ -147,7 +152,7 @@ bool ExternalKnowledge::addInput() {
 	if(model_)
 		sendToClient("End of Step.\n");
 
-	if(!new_input_ && model_ && step_) {
+	if(!new_input_ && model_ && step_ > 1) {
 		io_service_.reset();
 		io_service_.run_one();
 	}
@@ -212,7 +217,7 @@ bool ExternalKnowledge::hasFactsWaiting() {
 }
 
 bool ExternalKnowledge::isFirstIteration() {
-	return !step_;
+	return step_ == 1;
 }
 
 IntSet ExternalKnowledge::getAssumptions() {
@@ -257,20 +262,21 @@ void ExternalKnowledge::endStep() {
 		output_->printExternalRule(i->second, i->first.first);
 	}
 
-	step_++;
-
 	// unfreeze old externals for simplification by clasp
 	if(!keep_externals_) {
-		for(UidValueMap::iterator i = externals_old_.begin(); i != externals_old_.end(); ++i) {
-			output_->unfreezeAtom(i->second);
+		for(IntSet::iterator i = externals_per_step_.at(controller_step_).begin(); i != externals_per_step_.at(controller_step_).end(); ++i) {
+			if(eraseUidFromExternals(&externals_old_, *i) > 0) {
+				// external was still old, so needs unfreezing
+				output_->unfreezeAtom(*i);
+			}
 		}
-		externals_old_.swap(externals_);
+		externals_per_step_.at(controller_step_).clear();
 	}
-	else {
-		externals_old_.insert(externals_.begin(), externals_.end());
-	}
+	externals_old_.insert(externals_.begin(), externals_.end());
 	externals_.clear();
 
+	step_++;
+	externals_per_step_.push_back(IntSet());
 }
 
 // TODO is there any better way to do it?
@@ -290,6 +296,9 @@ int ExternalKnowledge::eraseUidFromExternals(UidValueMap* ext, int uid) {
 	return del.size();
 }
 
+void ExternalKnowledge::endControllerStep() {
+	controller_step_++;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // ExternalKnowledge::PostPropagator

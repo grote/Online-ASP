@@ -3,7 +3,15 @@ ext_on(7,2).
 #endstep.
 ext_on(7,3).
 #endstep.
+#endstep.
+#endstep.
+#endstep.
 ext_on(4,7).
 #endstep.
+#endstep.
+#endstep.
+#endstep.
 ext_on(1,11).
+#endstep.
+#endstep.
 #stop.

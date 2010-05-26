@@ -253,6 +253,7 @@ def getInput():
 		if len(online_input) > 0:
 			result = ''.join(online_input[0])
 			online_input.pop(0)
+			result += "#endstep.\n"
 		else:
 			result = "#stop.\n"
 	else:
@@ -271,6 +272,7 @@ def getInputFromSTDIN():
 		line = sys.stdin.readline()
 
 		if line == "#endstep.\n":
+			input += line
 			break
 		elif line == "#stop.\n":
 			input += line
