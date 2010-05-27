@@ -117,7 +117,6 @@ protected:
 class ClingoApp : public GringoApp, public Clasp::ClaspFacade::Callback {
 public:
 	void printVersion() const;
-	~ClingoApp();
 protected:
 	// ---------------------------------------------------------------------------------------
 	// AppOptions interface

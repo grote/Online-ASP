@@ -328,28 +328,23 @@ struct FromGringo : public Clasp::Input {
 				out.get()->getExternalKnowledge()->sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
 			}
 			else {
-				// initialize external knowledge module
-				if (out.get()->getExternalKnowledge()->isFirstIteration())
-					out.get()->getExternalKnowledge()->initialize(out.get(), grounder.get(), solver);
+				// initialize external knowledge module with solver
+				out.get()->getExternalKnowledge()->initialize(solver);
 
+				// add new facts and check for termination condition
 				if(!out.get()->getExternalKnowledge()->addInput()) {
 					// exit if received #stop.
 					release();
 					return false;
 				}
-				// do only iteration if there's a model or we have not declared facts waiting
-				if(out.get()->getExternalKnowledge()->hasModel()) {
-					if(out.get()->getExternalKnowledge()->hasFactsWaiting() || out.get()->getExternalKnowledge()->isFirstIteration()) {
-						grounder->ground();
-						out.get()->getExternalKnowledge()->endStep();
-					} else {
-						grounder->ground();
-						out.get()->getExternalKnowledge()->endIteration();
-					}
-				}
-				else {
+
+				// do new step if there's a model or we have not declared facts waiting or first step or controller need new step
+				if(!out.get()->getExternalKnowledge()->hasModel() || out.get()->getExternalKnowledge()->needsNewStep()) {
 					grounder->ground();
 					out.get()->getExternalKnowledge()->endStep();
+				}
+				else {
+					out.get()->getExternalKnowledge()->endIteration();
 				}
 			}
 			out.get()->getExternalKnowledge()->get();
@@ -374,10 +369,6 @@ struct FromGringo : public Clasp::Input {
 	bool                   clingo;
 	bool                   online;
 };
-}
-
-ClingoApp::~ClingoApp() {
-	delete gringo_out_->getExternalKnowledge();
 }
 
 void ClingoApp::printVersion() const {
@@ -427,7 +418,7 @@ void ClingoApp::configureInOut(Streams& s) {
 		if(clingo_.inc.online) {
 			gringo_grounder_ = gringo_output->grounder.get();
 			gringo_out_ = gringo_output->out.get();
-			gringo_out_->setExternalKnowledge(new ExternalKnowledge(clingo_.inc.keep_externals));
+			gringo_out_->setExternalKnowledge(new ExternalKnowledge(gringo_grounder_, gringo_out_, clingo_.inc.keep_externals));
 		}
 		in_.reset(gringo_output);
 	}

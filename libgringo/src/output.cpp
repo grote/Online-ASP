@@ -44,7 +44,8 @@ Output::Output(std::ostream *out) : uids_(1), out_(out), pred_(0), hideAll_(fals
 	stats_.min      = 0;
 	stats_.compute  = 0;
 	stats_.optimize = 0;
-	
+
+	external_knowledge_ = NULL;
 }
 
 void Output::initialize(GlobalStorage *g, SignatureVector *pred)
@@ -151,6 +152,7 @@ void Output::addSignature()
 
 Output::~Output()
 {
+	delete external_knowledge_;
 }
 
 // =============== NS_OUTPUT::Object ===============

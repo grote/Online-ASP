@@ -21,9 +21,9 @@
 
 using namespace gringo;
 
-ExternalKnowledge::ExternalKnowledge(bool keep_externals) {
-	output_ = NULL;
-	grounder_ = NULL;
+ExternalKnowledge::ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, bool keep_externals) {
+	output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
+	grounder_ = grounder;
 	solver_ = NULL;
 	keep_externals_ = keep_externals;
 
@@ -41,7 +41,7 @@ ExternalKnowledge::ExternalKnowledge(bool keep_externals) {
 	step_ = 1;
 	controller_step_ = 0;
 	model_ = false;
-	debug_ = false;
+	debug_ = grounder_->options().debug;
 }
 
 ExternalKnowledge::~ExternalKnowledge() {
@@ -52,13 +52,7 @@ ExternalKnowledge::~ExternalKnowledge() {
 	// don't delete post_ because it now belongs to solver
 }
 
-void ExternalKnowledge::initialize(NS_OUTPUT::Output* output, Grounder* grounder, Clasp::Solver* s) {
-	if(not output_)
-		output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
-	if(not grounder_) {
-		grounder_ = grounder;
-		debug_ = grounder_->options().debug;
-	}
+void ExternalKnowledge::initialize(Clasp::Solver* s) {
 	if(not solver_) {
 		solver_ = s;
 		solver_->addPost(post_);
@@ -159,7 +153,6 @@ bool ExternalKnowledge::addInput() {
 
 	if(new_input_) {
 		new_input_ = false;
-		model_ = false;
 
 		std::istream is(&b_);
 		OnlineParser parser(grounder_, &is);
@@ -212,12 +205,10 @@ void ExternalKnowledge::addPrematureFact(NS_OUTPUT::Fact* fact) {
 	premature_facts_.push_back(fact);
 }
 
-bool ExternalKnowledge::hasFactsWaiting() {
-	return !premature_facts_.empty();
-}
-
-bool ExternalKnowledge::isFirstIteration() {
-	return step_ == 1;
+bool ExternalKnowledge::needsNewStep() {
+	return !premature_facts_.empty() ||	// has facts waiting to be added
+			step_ == 1 ||				// is first iteration
+			controller_step_ >= step_;	// controller wants to progress step count
 }
 
 IntSet ExternalKnowledge::getAssumptions() {
@@ -240,6 +231,9 @@ void ExternalKnowledge::endIteration() {
 
 	facts_old_.insert(facts_.begin(), facts_.end());
 	facts_.clear();
+
+	// set model to false not only after completed step, but also after iterations
+	model_ = false;
 }
 
 void ExternalKnowledge::endStep() {

@@ -39,9 +39,9 @@ namespace gringo
 	class ExternalKnowledge
 	{
 	public:
-		ExternalKnowledge(bool keep_externals);
+		ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, bool keep_externals);
 		virtual ~ExternalKnowledge();
-		void initialize(NS_OUTPUT::Output* output, Grounder* grounder, Clasp::Solver* s);
+		void initialize(Clasp::Solver* s);
 		void addExternal(GroundAtom external, int uid);
 		void startSocket(int port);
 		void sendModel(std::string);
@@ -54,8 +54,7 @@ namespace gringo
 		bool checkFact(NS_OUTPUT::Object* object);
 		void addNewFact(NS_OUTPUT::Fact* fact, int line);
 		void addPrematureFact(NS_OUTPUT::Fact* fact);
-		bool hasFactsWaiting();
-		bool isFirstIteration();
+		bool needsNewStep();
 		IntSet getAssumptions();
 		void endIteration();
 		void endStep();
