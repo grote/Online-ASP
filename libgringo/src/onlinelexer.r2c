@@ -63,14 +63,20 @@ begin:
 		DELIMITER       = "\000";
 		ENDSTEP         = "#endstep";
 		STOP            = "#stop";
+		CUMULATIVE      = "#cumulative";
+		VOLATILE        = "#volatile";
 		
 		BEGINCOMMENT    { nested++; goto block_comment; }
 		COMMENT         { goto comment; }
 		DELIMITER       { return ONLINEPARSER_ENDSTEP; }
 		WS              { goto begin; }
 		NL              { if(eof == cursor) return ONLINEPARSER_EOI; step(); goto begin; }
+		IF              { return ONLINEPARSER_IF; }
+		NOT             { return ONLINEPARSER_NOT; }
 		ENDSTEP         { return ONLINEPARSER_ENDSTEP; }
 		STOP            { return ONLINEPARSER_STOP; }
+		CUMULATIVE      { return ONLINEPARSER_CUMULATIVE; }
+		VOLATILE        { return ONLINEPARSER_VOLATILE; }
 		DIGIT1 DIGIT*   { lval = new std::string(start, cursor); return ONLINEPARSER_NUMBER; }
 		"0"             { lval = new std::string(start, cursor); return ONLINEPARSER_NUMBER; }
 		STRING          { lval = new std::string(start, cursor); return ONLINEPARSER_STRING; }

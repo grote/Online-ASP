@@ -66,7 +66,7 @@ void SmodelsConverter::handleHead(Object *o)
 				head_.push_back((*it)->getUid());
 
 			if(head->type_ == Aggregate::EXTERNAL && getExternalKnowledge()) {
-				getExternalKnowledge()->addExternal(std::make_pair(atom->predUid_, atom->values_), (*it)->getUid());
+				getExternalKnowledge()->addExternal(std::make_pair(atom->predUid_, atom->values_), atom->getUid());
 			}
 		}
 		if(head_.size() > 0 && head->type_ != Aggregate::EXTERNAL)

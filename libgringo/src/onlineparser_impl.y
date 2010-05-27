@@ -35,7 +35,7 @@ using namespace gringo;
 using namespace NS_OUTPUT;
 
 #define STRING(x) (pParser->getGrounder()->createString(x))
-#define PRED(x,a) (pParser->getGrounder()->createPred(x,a))
+#define PRED(x,a) (pParser->getGrounder()->createPred(x,a) + pParser->addSignature())
 #define FUNCSYM(x) (pParser->getGrounder()->createFuncSymbol(x))
 #define DELETE_PTR(X) { if(X) delete (X); }
 }  
@@ -58,13 +58,15 @@ using namespace NS_OUTPUT;
 %token_type { std::string* }
 %token_destructor { DELETE_PTR($$) }
 
-%type head_atom		{ Object* }
-%type predicate		{ Object* }
+%type body			{ Conjunction* }
+%type body_literal	{ Atom* }
+%type predicate		{ Atom* }
 %type constant_list	{ ValueVector* }
 %type constant		{ Value* }
 %type number		{ int }
 
-%destructor head_atom		{ DELETE_PTR($$) }
+%destructor body			{ DELETE_PTR($$) }
+%destructor body_literal	{ DELETE_PTR($$) }
 %destructor predicate		{ DELETE_PTR($$) }
 %destructor constant_list	{ DELETE_PTR($$) }
 %destructor constant		{ DELETE_PTR($$) }
@@ -81,14 +83,24 @@ using namespace NS_OUTPUT;
 start ::= program.
 
 program ::= program fact DOT.
+program ::= program rule DOT.
 program ::= program ENDSTEP DOT.	{ pParser->endStep(); }
 program ::= program STOP DOT.		{ pParser->terminate(); }
+program ::= program CUMULATIVE DOT.	{  }
+program ::= program VOLATILE DOT.	{  }
 program ::= .
 
-fact ::= head_atom(head) IF .	{ pParser->addFact(new Fact(head)); }
-fact ::= head_atom(head).		{ pParser->addFact(new Fact(head)); }
+fact ::= predicate(head) IF.	{ pParser->addFact(head); }
+fact ::= predicate(head).		{ pParser->addFact(head); }
 
-head_atom(res) ::= predicate(pred). { res = pred; }
+rule ::= predicate(head) IF body(body).	{ Rule r(head, body); pParser->addRule(&r); }
+rule ::= IF body(body).					{ Integrity r(body);  pParser->addIntegrity(&r); }
+
+body(res) ::= body(body) COMMA body_literal(lit).	{ res = body; res->lits_.push_back(lit); }
+body(res) ::= body_literal(lit).					{ res = new Conjunction(); res->lits_.push_back(lit); }
+
+body_literal(res) ::= predicate(atom).		{ res = atom; }
+body_literal(res) ::= NOT predicate(atom).	{ res = atom; res->neg_ = true; }
 
 predicate(res) ::= IDENTIFIER(id) LPARA constant_list(list) RPARA.		{ res = new Atom(false, PRED(STRING(id), list->size()), *list); DELETE_PTR(list); }
 predicate(res) ::= IDENTIFIER(id).										{ res = new Atom(false, PRED(STRING(id), 0)); }

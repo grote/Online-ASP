@@ -52,8 +52,9 @@ namespace gringo
 		void readUntilHandler(const boost::system::error_code& e, size_t bytesT);
 		bool addInput();
 		bool checkFact(NS_OUTPUT::Object* object);
-		void addNewFact(NS_OUTPUT::Fact* fact, int line);
-		void addPrematureFact(NS_OUTPUT::Fact* fact);
+		void addNewFact(NS_OUTPUT::Atom* atom, int line);
+		void addNewAtom(NS_OUTPUT::Object* object, int line);
+		void addPrematureFact(NS_OUTPUT::Atom* atom);
 		bool needsNewStep();
 		IntSet getAssumptions();
 		void endIteration();
@@ -81,7 +82,7 @@ namespace gringo
 		std::vector<IntSet> externals_per_step_;
 		IntSet facts_;
 		IntSet facts_old_;
-		std::vector<NS_OUTPUT::Fact*> premature_facts_;
+		std::vector<NS_OUTPUT::Atom*> premature_facts_;
 		bool keep_externals_;
 
 		// socket stuff

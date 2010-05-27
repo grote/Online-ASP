@@ -45,7 +45,9 @@ exit = False
 data_old = ''
 online_input = [[]]
 FACT  = re.compile("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.?$")
-FACTT = re.compile("^-?[a-z_][a-zA-Z0-9_]*\(.*?,? *(\d+) *\)\.?$")
+FACTT = re.compile("^-?[a-z_][a-zA-Z0-9_]*\((.*?),?(\d+)\)\.?$")
+INTEGRITY = re.compile("^\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.$")
+RULE = re.compile("^\s*-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.$")
 PARSER = [
 	re.compile("^Step:\ (\d+)$"),
 	re.compile("^(-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\ *)+$"),
@@ -120,8 +122,11 @@ def prepareInput():
 				# match comment
 				elif re.match("^%.*\n$", line) != None:
 					continue
-				# match ground fact and insert into existing list
-				elif FACT.match(line) != None:
+				# match ground fact, integrity constraint or rule and insert into existing list
+				elif FACT.match(line) != None or INTEGRITY.match(line) != None or RULE.match(line) != None:
+					online_input[i].append(line)
+				# match sections
+				elif re.match("^#cumulative\.", line) != None or re.match("^#volatile\.", line) != None:
 					online_input[i].append(line)
 				# error: neither fact nor step
 				else:
@@ -206,7 +211,7 @@ def printAnswerSet(answer_set):
 	for predicate in answer_set:
 		match = FACTT.match(predicate)
 		if match != None:
-			t = int(match.group(1))
+			t = int(match.group(2))
 			if t in plan:
 				plan[t].append(predicate)
 			else:
@@ -256,12 +261,12 @@ def getInput():
 			result += "#endstep.\n"
 		else:
 			result = "#stop.\n"
+		
+		print "Got input:"
+		print result
 	else:
 		result = getInputFromSTDIN()
 	
-	print "Got input:"
-	print result
-
 	return result
 
 def getInputFromSTDIN():
@@ -277,7 +282,9 @@ def getInputFromSTDIN():
 		elif line == "#stop.\n":
 			input += line
 			break
-		elif FACT.match(line) != None:
+		elif re.match("^#cumulative\.", line) != None or re.match("^#volatile\.", line) != None:
+			input += line
+		elif FACT.match(line) != None or INTEGRITY.match(line) != None or RULE.match(line) != None:
 			input += line
 		else:
 			print "Warning: Unknown input."

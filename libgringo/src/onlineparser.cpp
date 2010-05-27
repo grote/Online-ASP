@@ -30,7 +30,7 @@ void onlineparser(void *yyp, int yymajor, std::string* yyminor, OnlineParser *pP
 OnlineParser::OnlineParser(Grounder *g, std::istream* in) : GrinGoParser(), grounder_(g), output_(0)
 {
 	lexer_  = new OnlineLexer();
-		pParser = onlineparserAlloc (malloc);
+	pParser = onlineparserAlloc (malloc);
 	streams_.push_back(in);
 	terminated_ = false;
 }
@@ -78,10 +78,10 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 	return true;
 }
 
-void OnlineParser::addFact(NS_OUTPUT::Fact* fact) {
-	if(!output_->getExternalKnowledge()->checkFact(fact->head_)) {
+void OnlineParser::addFact(NS_OUTPUT::Atom* atom) {
+	if(!output_->getExternalKnowledge()->checkFact(atom)) {
 		// hold fact back, because it might be declared external in the next step
-		output_->getExternalKnowledge()->addPrematureFact(fact);
+		output_->getExternalKnowledge()->addPrematureFact(atom);
 
 		std::stringstream warning_msg;
 		warning_msg << "Warning: Fact in line " << getLexer()->getLine() << " was not (yet) declared external.\n";
@@ -90,8 +90,19 @@ void OnlineParser::addFact(NS_OUTPUT::Fact* fact) {
 		output_->getExternalKnowledge()->sendToClient(warning_msg.str());
 	}
 	else {
-		output_->getExternalKnowledge()->addNewFact(fact, getLexer()->getLine());
+		output_->getExternalKnowledge()->addNewFact(atom, getLexer()->getLine());
 	}
+}
+
+void OnlineParser::addIntegrity(NS_OUTPUT::Integrity* integrity) {
+	output_->print(integrity);
+}
+
+void OnlineParser::addRule(NS_OUTPUT::Rule* rule) {
+	if(output_->getExternalKnowledge()->checkFact(rule->head_)) {
+		output_->getExternalKnowledge()->addNewAtom(rule->head_, getLexer()->getLine());
+	}
+	output_->print(rule);
 }
 
 void OnlineParser::endStep() {
@@ -104,6 +115,11 @@ void OnlineParser::terminate() {
 
 bool OnlineParser::isTerminated() {
 	return terminated_;
+}
+
+int OnlineParser::addSignature() {
+	output_->addSignature();
+	return 0;
 }
 
 OnlineParser::~OnlineParser()

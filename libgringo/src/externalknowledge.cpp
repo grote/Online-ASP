@@ -188,28 +188,37 @@ bool ExternalKnowledge::checkFact(NS_OUTPUT::Object* object) {
 	return false;
 }
 
-void ExternalKnowledge::addNewFact(NS_OUTPUT::Fact* fact, int line=0) {
-	// add Atom to get a uid assigned to it
-	output_->addAtom(static_cast<NS_OUTPUT::Atom*>(fact->head_));
+void ExternalKnowledge::addNewFact(NS_OUTPUT::Atom* atom, int line=0) {
+	addNewAtom(atom, line);
 
-	if(facts_old_.find(fact->head_->uid_) != facts_old_.end()) {
+	// add fact to program
+	NS_OUTPUT::Fact* fact = new NS_OUTPUT::Fact(atom);
+	output_->print(fact);
+
+	delete fact;
+}
+
+void ExternalKnowledge::addNewAtom(NS_OUTPUT::Object* object, int line=0) {
+	assert(dynamic_cast<NS_OUTPUT::Atom*>(object));
+	NS_OUTPUT::Atom* atom = static_cast<NS_OUTPUT::Atom*>(object);
+
+	// add Atom to get a uid assigned to it
+	output_->addAtom(atom);
+
+	if(facts_old_.find(atom->uid_) != facts_old_.end()) {
 		std::stringstream error_msg;
 		error_msg << "Warning: Fact in line " << line << " was already added." << std::endl;
 		std::cerr << error_msg.str() << std::endl;
 		sendToClient(error_msg.str());
 	}
 	else {
-		facts_.insert(fact->head_->uid_);
-		eraseUidFromExternals(&externals_, fact->head_->uid_);
-
-		// add fact to program
-		output_->print(fact);
+		facts_.insert(atom->uid_);
+		eraseUidFromExternals(&externals_, atom->uid_);
 	}
-	delete fact;
 }
 
-void ExternalKnowledge::addPrematureFact(NS_OUTPUT::Fact* fact) {
-	premature_facts_.push_back(fact);
+void ExternalKnowledge::addPrematureFact(NS_OUTPUT::Atom* atom) {
+	premature_facts_.push_back(atom);
 }
 
 bool ExternalKnowledge::needsNewStep() {
@@ -245,8 +254,8 @@ void ExternalKnowledge::endIteration() {
 
 void ExternalKnowledge::endStep() {
 	// add previously added premature facts
-	for(std::vector<NS_OUTPUT::Fact*>::iterator i = premature_facts_.begin(); i!= premature_facts_.end(); ++i) {
-		if(checkFact((*i)->head_)) {
+	for(std::vector<NS_OUTPUT::Atom*>::iterator i = premature_facts_.begin(); i!= premature_facts_.end(); ++i) {
+		if(checkFact(*i)) {
 			addNewFact(*i);
 		} else {
 			std::cerr << "Warning: Fact added last step was still not declared external and is now lost." << std::endl;
@@ -259,7 +268,7 @@ void ExternalKnowledge::endStep() {
 	endIteration();
 
 	for(UidValueMap::iterator i = externals_.begin(); i != externals_.end(); ++i) {
-		// freeze new external atoms, facts have been deleted already in addNewFact()
+		// freeze new external atoms, facts have been deleted already in addNewAtom()
 		output_->printExternalRule(i->second, i->first.first);
 	}
 
