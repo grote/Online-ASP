@@ -108,9 +108,14 @@ void ExternalKnowledge::sendToClient(std::string msg) {
 int ExternalKnowledge::poll() {
 	io_service_.reset();
 	int result = io_service_.poll_one();
-	if(result)
+	if(result) {
 		std::cerr << "Polled for input and started " << result << " handler." << std::endl;
-
+		if(solver_stopped_) {
+			// solver was already stopped, don't try to stop it again
+			result = 0;
+		}
+		solver_stopped_ = true;
+	}
 	return result;
 }
 
@@ -129,6 +134,8 @@ void ExternalKnowledge::get() {
 	catch (std::exception& e) {
 		std::cerr << "Warning: " << e.what() << std::endl;
 	}
+	// solver can be stopped again
+	solver_stopped_ = false;
 }
 
 void ExternalKnowledge::readUntilHandler(const boost::system::error_code& e, size_t bytesT) {
