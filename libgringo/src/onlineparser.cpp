@@ -32,6 +32,7 @@ OnlineParser::OnlineParser(Grounder *g, std::istream* in) : GrinGoParser(), grou
 	lexer_  = new OnlineLexer();
 	pParser = onlineparserAlloc (malloc);
 	streams_.push_back(in);
+	volatile_ = false;
 	terminated_ = false;
 }
 
@@ -95,6 +96,10 @@ void OnlineParser::addFact(NS_OUTPUT::Atom* atom) {
 }
 
 void OnlineParser::addIntegrity(NS_OUTPUT::Integrity* integrity) {
+	if(volatile_) {
+		addDeltaObject(integrity->body_);
+	}
+
 	output_->print(integrity);
 }
 
@@ -102,7 +107,28 @@ void OnlineParser::addRule(NS_OUTPUT::Rule* rule) {
 	if(output_->getExternalKnowledge()->checkFact(rule->head_)) {
 		output_->getExternalKnowledge()->addNewAtom(rule->head_, getLexer()->getLine());
 	}
+
+	if(volatile_) {
+		addDeltaObject(rule->body_);
+	}
+
 	output_->print(rule);
+}
+
+void OnlineParser::addDeltaObject(NS_OUTPUT::Object* object) {
+	assert(dynamic_cast<NS_OUTPUT::Conjunction*>(object));
+	NS_OUTPUT::Conjunction* body = static_cast<NS_OUTPUT::Conjunction*>(object);
+
+	NS_OUTPUT::DeltaObject* delta = new NS_OUTPUT::DeltaObject();
+	body->lits_.push_back(delta);
+}
+
+void OnlineParser::setCumulative() {
+	volatile_ = false;
+}
+
+void OnlineParser::setVolatile() {
+	volatile_ = true;
 }
 
 void OnlineParser::endStep() {

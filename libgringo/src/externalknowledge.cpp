@@ -250,6 +250,8 @@ void ExternalKnowledge::endIteration() {
 
 	// set model to false not only after completed step, but also after iterations
 	model_ = false;
+
+	std::cerr << "Controller Step: " << controller_step_ << std::endl;
 }
 
 void ExternalKnowledge::endStep() {

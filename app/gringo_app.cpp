@@ -338,7 +338,7 @@ struct FromGringo : public Clasp::Input {
 					return false;
 				}
 
-				// do new step if there's a model or we have not declared facts waiting or first step or controller need new step
+				// do new step if there's no model or we have not declared facts waiting or first step or controller need new step
 				if(!out.get()->getExternalKnowledge()->hasModel() || out.get()->getExternalKnowledge()->needsNewStep()) {
 					grounder->ground();
 					out.get()->getExternalKnowledge()->endStep();

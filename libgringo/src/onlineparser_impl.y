@@ -86,8 +86,8 @@ program ::= program fact DOT.
 program ::= program rule DOT.
 program ::= program ENDSTEP DOT.	{ pParser->endStep(); }
 program ::= program STOP DOT.		{ pParser->terminate(); }
-program ::= program CUMULATIVE DOT.	{  }
-program ::= program VOLATILE DOT.	{  }
+program ::= program CUMULATIVE DOT.	{ pParser->setCumulative(); }
+program ::= program VOLATILE DOT.	{ pParser->setVolatile(); }
 program ::= .
 
 fact ::= predicate(head) IF.	{ pParser->addFact(head); }

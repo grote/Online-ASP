@@ -36,6 +36,9 @@ namespace gringo
 		void addFact(NS_OUTPUT::Atom *atom);
 		void addIntegrity(NS_OUTPUT::Integrity *integrity);
 		void addRule(NS_OUTPUT::Rule *rule);
+		void addDeltaObject(NS_OUTPUT::Object* object);
+		void setCumulative();
+		void setVolatile();
 		GrinGoLexer *getLexer();
 		Grounder *getGrounder() { return grounder_; }
 		void endStep();
@@ -48,6 +51,7 @@ namespace gringo
 		Grounder* grounder_;
 		NS_OUTPUT::IClaspOutput* output_;
 		std::vector<std::istream*> streams_;
+		bool volatile_;
 		bool terminated_;
 		void *pParser;
 	};
