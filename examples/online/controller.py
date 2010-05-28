@@ -182,6 +182,10 @@ def recv_until(s, delimiter):
 			data = ''
 			try:
 				data = s.recv(2048)
+				if data == '':
+					exit = True
+					raise IOError("Socket was closed by server, probably because the program is not satisfiable anymore or --imax was reached.")
+					return data_old
 			except socket.error:
 				if opt.debug:
 					print "Socket was closed. Returning last received data..."
