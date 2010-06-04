@@ -36,6 +36,7 @@ ExternalKnowledge::ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* outp
 	new_input_ = false;
 
 	post_ = new ExternalKnowledge::PostPropagator(this);
+	my_post_ = true;
 	solver_stopped_ = false;
 
 	step_ = 1;
@@ -49,14 +50,25 @@ ExternalKnowledge::~ExternalKnowledge() {
 		socket_->close();
 		delete socket_;
 	}
-	// don't delete post_ because it now belongs to solver
+
+	// only delete post_ if it does not belong to solver
+	if(my_post_) delete post_;
 }
 
 void ExternalKnowledge::initialize(Clasp::Solver* s) {
 	if(not solver_) {
 		solver_ = s;
-		solver_->addPost(post_);
 	}
+}
+
+void ExternalKnowledge::addPostPropagator() {
+	my_post_ = false;
+	solver_->addPost(post_);
+}
+
+void ExternalKnowledge::removePostPropagator() {
+	solver_->removePost(post_);
+	my_post_ = true;
 }
 
 void ExternalKnowledge::addExternal(GroundAtom external, int uid) {
@@ -325,8 +337,6 @@ bool ExternalKnowledge::PostPropagator::propagate(Clasp::Solver &s) {
 		std::cerr << "Stopping solver..." << std::endl;
 		s.setStopConflict();
 	}
-
-	// TODO fix bug where iClingo stops and just UNSATISFIABLE is returned
 
 	if(s.hasConflict())	{
 		assert(s.hasConflict());

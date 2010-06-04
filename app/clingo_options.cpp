@@ -157,8 +157,6 @@ bool oClingoConfig::nextStep(Clasp::ClaspFacade& f) {
 		return true;
 	}
 	else {
-		// TODO wait for socket to close
-		//boost::thread::sleep(5);
 		return false;
 	}
 }

@@ -42,6 +42,7 @@ parser.set_defaults(
 (opt, args) = parser.parse_args()
 
 exit = False
+have_answer_set = False
 data_old = ''
 online_input = [[]]
 FACT  = re.compile("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.?$")
@@ -184,7 +185,7 @@ def recv_until(s, delimiter):
 				data = s.recv(2048)
 				if data == '':
 					exit = True
-					raise IOError("Socket was closed by server, probably because the program is not satisfiable anymore or --imax was reached.")
+					raise IOError("Socket was closed by server, probably because '#stop.' was sent, the program is not satisfiable anymore or --imax was reached.")
 					return data_old
 			except socket.error:
 				if opt.debug:
@@ -202,7 +203,9 @@ def recv_until(s, delimiter):
 	return data
 
 def processAnswerSets(answer_sets):
+	global have_answer_set
 	i = 1
+	have_answer_set = True
 	for answer_set in answer_sets:
 		print "Answer: %d" % i
 		printAnswerSet(answer_set)
@@ -322,10 +325,13 @@ class InputThread(Thread):
 		Thread.__init__(self)
 		self.s = s
 	def run(self):
-		global exit
+		global exit, have_answer_set
 		while 1:
 			input = getInput()
 			if input == "#stop.\n":
+				if not have_answer_set:
+					print "Ignoring '#stop.' and waiting for first answer set..."
+					continue
 				exit = True
 				endProgram(self.s)
 				break

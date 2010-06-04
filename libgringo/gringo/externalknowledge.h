@@ -42,6 +42,8 @@ namespace gringo
 		ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, bool keep_externals);
 		virtual ~ExternalKnowledge();
 		void initialize(Clasp::Solver* s);
+		void addPostPropagator();
+		void removePostPropagator();
 		void addExternal(GroundAtom external, int uid);
 		void startSocket(int port);
 		void sendModel(std::string);
@@ -94,6 +96,7 @@ namespace gringo
 		bool new_input_;
 
 		PostPropagator* post_;
+		bool my_post_;
 		bool solver_stopped_;
 
 		int step_;

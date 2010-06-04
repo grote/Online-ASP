@@ -508,6 +508,14 @@ void ClingoApp::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			solver_.stats.solve.reset();
 		}
 	}
+
+	// make sure we are not adding new input while doing propagation in preprocessing
+	if(f.state() == ClaspFacade::state_solve && e == ClaspFacade::event_state_enter) {
+		gringo_out_->getExternalKnowledge()->addPostPropagator();
+	}
+	else if(f.state() == ClaspFacade::state_solve && e == ClaspFacade::event_state_exit) {
+		gringo_out_->getExternalKnowledge()->removePostPropagator();
+	}
 }
 
 void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
