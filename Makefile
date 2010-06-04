@@ -64,15 +64,36 @@ iclingo_mingw32: gringo_release
 	cd build/iclingo/mingw32/bin && cp -sf ../../../gringo/release/bin/lemon lemon
 	cd build/iclingo/mingw32 && cmake -DCMAKE_TOOLCHAIN_FILE=../../../cmake/mingw32.cmake -DCMAKE_CXX_FLAGS="$(RELEASE_FLAGS) -static" -DCMAKE_BUILD_TYPE=release -DGRINGO_TYPE=iclingo ../../.. && $(MAKE)
 
-all_release: gringo_release clingo_release iclingo_release
+oclingo_release:
+	mkdir -p build/oclingo/release
+	cd build/oclingo/release && cmake -DCMAKE_CXX_FLAGS="$(RELEASE_FLAGS)" -DCMAKE_BUILD_TYPE=release -DGRINGO_TYPE=oclingo ../../.. && $(MAKE)
 
-all_debug: gringo_debug clingo_debug iclingo_debug
+oclingo_debug:
+	mkdir -p build/oclingo/debug
+	cd build/oclingo/debug && cmake -DCMAKE_CXX_FLAGS="$(DEBUG_FLAGS)" -DCMAKE_BUILD_TYPE=debug -DGRINGO_TYPE=oclingo ../../.. && $(MAKE)
 
-all_static: gringo_static clingo_static iclingo_static
+oclingo_static32:
+	mkdir -p build/oclingo/static32
+	cd build/oclingo/static32 && cmake -DCMAKE_CXX_FLAGS="$(RELEASE_FLAGS) -static -m32" -DCMAKE_BUILD_TYPE=release -DGRINGO_TYPE=oclingo ../../.. && $(MAKE)
 
-all_static32: gringo_static32 clingo_static32 iclingo_static32
+oclingo_static:
+	mkdir -p build/oclingo/static
+	cd build/oclingo/static && cmake -DCMAKE_CXX_FLAGS="$(RELEASE_FLAGS) -static" -DCMAKE_BUILD_TYPE=release -DGRINGO_TYPE=oclingo ../../.. && $(MAKE)
 
-all_mingw32: gringo_mingw32 clingo_mingw32 iclingo_mingw32
+oclingo_mingw32: gringo_release
+	mkdir -p build/oclingo/mingw32/bin
+	cd build/oclingo/mingw32/bin && cp -sf ../../../gringo/release/bin/lemon lemon
+	cd build/oclingo/mingw32 && cmake -DCMAKE_TOOLCHAIN_FILE=../../../cmake/mingw32.cmake -DCMAKE_CXX_FLAGS="$(RELEASE_FLAGS) -static" -DCMAKE_BUILD_TYPE=release -DGRINGO_TYPE=oclingo ../../.. && $(MAKE)
+
+all_release: gringo_release clingo_release iclingo_release oclingo_release
+
+all_debug: gringo_debug clingo_debug iclingo_debug oclingo_debug
+
+all_static: gringo_static clingo_static iclingo_static oclingo_static
+
+all_static32: gringo_static32 clingo_static32 iclingo_static32 oclingo_static32
+
+all_mingw32: gringo_mingw32 clingo_mingw32 iclingo_mingw32 oclingo_mingw32
 
 all: all_release all_debug all_static all_static32 all_mingw32
 

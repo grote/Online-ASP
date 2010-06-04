@@ -148,17 +148,17 @@ protected:
 	std::string getUsage()   const;
 	ProgramOptions::PosOption getPositionalParser() const;
 	void handleSignal(int sig);
-	int  doRun();
+	virtual int  doRun();
 	// -------------------------------------------------------------------------------------------
 	// ClaspFacade::Callback interface
-	void state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f);
-	void event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f);
+	virtual void state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f);
+	virtual void event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f);
 	void warning(const char* msg) { messages.warning.push_back(msg); }
 	// -------------------------------------------------------------------------------------------
 	enum ReasonEnd { reason_timeout, reason_interrupt, reason_end };
 	enum { numStates = Clasp::ClaspFacade::num_states };
 	void printResult(ReasonEnd re);
-	void configureInOut(Streams& s);
+	virtual void configureInOut(Streams& s);
 	typedef std::auto_ptr<Clasp::OutputFormat> ClaspOutPtr;
 	typedef std::auto_ptr<Clasp::Input> ClaspInPtr;
 	Clasp::Solver        solver_;           // solver to use for search
@@ -170,8 +170,6 @@ protected:
 	ClaspOutPtr          out_;              // printer for printing result of search
 	ClaspInPtr           in_;               // input for clasp
 	Clasp::ClaspFacade*  facade_;           // interface to clasp lib
-	gringo::Grounder*    gringo_grounder_;  // grounder object from gringo
-	NS_OUTPUT::Output*	 gringo_out_;		// output object from gringo
 };
 #endif
 

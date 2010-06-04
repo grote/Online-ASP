@@ -33,7 +33,7 @@ ENDIF()
 IF(NOT CMAKE_BUILD_TYPE)
 	SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
 ENDIF()
-set(GRINGO_TYPE "gringo" CACHE STRING "Choose whether to build gringo, clingo or iclingo.")
+set(GRINGO_TYPE "gringo" CACHE STRING "Choose whether to build gringo, clingo, iclingo or oclingo.")
 
 # add macros for version information
 ADD_DEFINITIONS(-DPACK_VERSION="\\"${CPACK_PACKAGE_VERSION}\\"")
@@ -50,6 +50,14 @@ if(${GRINGO_TYPE} STREQUAL "iclingo")
 	ADD_DEFINITIONS(-DWITH_CLASP)
 	ADD_DEFINITIONS(-DWITH_ICLASP)
 	ADD_DEFINITIONS(-DEXECUTABLE="\\"iclingo\\"")
+	add_subdirectory (libclasp)
+endif()
+
+if(${GRINGO_TYPE} STREQUAL "oclingo")
+	ADD_DEFINITIONS(-DWITH_CLASP)
+	ADD_DEFINITIONS(-DWITH_ICLASP)
+	ADD_DEFINITIONS(-DWITH_OCLASP)
+	ADD_DEFINITIONS(-DEXECUTABLE="\\"oclingo\\"")
 	add_subdirectory (libclasp)
 endif()
 

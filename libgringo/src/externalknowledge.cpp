@@ -21,10 +21,10 @@
 
 using namespace gringo;
 
-ExternalKnowledge::ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, bool keep_externals) {
+ExternalKnowledge::ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, Clasp::Solver* solver, bool keep_externals) {
 	output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
 	grounder_ = grounder;
-	solver_ = NULL;
+	solver_ = solver;
 	keep_externals_ = keep_externals;
 
 	externals_per_step_.push_back(IntSet());
@@ -53,12 +53,6 @@ ExternalKnowledge::~ExternalKnowledge() {
 
 	// only delete post_ if it does not belong to solver
 	if(my_post_) delete post_;
-}
-
-void ExternalKnowledge::initialize(Clasp::Solver* s) {
-	if(not solver_) {
-		solver_ = s;
-	}
 }
 
 void ExternalKnowledge::addPostPropagator() {

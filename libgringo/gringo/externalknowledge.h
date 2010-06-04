@@ -39,9 +39,8 @@ namespace gringo
 	class ExternalKnowledge
 	{
 	public:
-		ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, bool keep_externals);
+		ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, Clasp::Solver* solver, bool keep_externals);
 		virtual ~ExternalKnowledge();
-		void initialize(Clasp::Solver* s);
 		void addPostPropagator();
 		void removePostPropagator();
 		void addExternal(GroundAtom external, int uid);

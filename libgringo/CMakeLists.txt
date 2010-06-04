@@ -7,11 +7,6 @@ else()
 	include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR}/libclasp src .)
 endif()
 
-find_package(Boost 1.40 REQUIRED system regex)
-
-link_directories (${Boost_LIBRARY_DIRS})
-include_directories(${Boost_INCLUDE_DIRS})
-
 RE2C(src/lparselexer lparselexer LIBGRINGO_SRC)
 LEMON(src/lparseparser_impl lparseparser_impl LIBGRINGO_SRC)
 
@@ -23,7 +18,15 @@ LEMON(src/lparseconverter_impl lparseconverter_impl LIBGRINGO_SRC)
 
 add_library(gringo-lib STATIC ${LIBGRINGO_SRC} ${LIBGRINGO_INC})
 
-target_link_libraries(gringo-lib ${Boost_LIBRARIES})
+if(${GRINGO_TYPE} STREQUAL "oclingo")
+	find_package(Boost 1.40 REQUIRED system regex)
+
+	link_directories (${Boost_LIBRARY_DIRS})
+	include_directories(${Boost_INCLUDE_DIRS})
+
+	target_link_libraries(gringo-lib ${Boost_LIBRARIES})
+endif()
+
 set_target_properties(gringo-lib PROPERTIES OUTPUT_NAME gringo)
 
 if(PCHSupport_FOUND)

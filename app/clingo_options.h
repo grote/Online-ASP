@@ -27,7 +27,6 @@
 
 #include <string>
 #include <utility>
-//#include <boost/thread.hpp>
 #include <program_opts/app_options.h>
 #include <gringo/grounder.h>
 #include <clasp/clasp_facade.h>
@@ -41,8 +40,9 @@ struct iClingoConfig : public Clasp::IncrementalControl {
 	iClingoConfig() : minSteps(1), maxSteps(uint32(-1)), stopUnsat(false), keepLearnt(true), keepHeuristic(false) {}
 	uint32 minSteps;      /**< Perform at least minSteps incremental steps */
 	uint32 maxSteps;      /**< Perform at most maxSteps incremental steps */
-	bool   online;        /**< Perform on-line reasoning */
+#if defined(WITH_OCLASP)
 	bool   keep_externals;/**< Keep externals which have been defined in earlier steps */
+#endif
 	bool   stopUnsat;     /**< Stop on first unsat problem? */
 	bool   keepLearnt;    /**< Keep learnt nogoods between incremental steps? */
 	bool   keepHeuristic; /**< Keep heuristic values between incremental steps? */

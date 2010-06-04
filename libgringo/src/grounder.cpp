@@ -217,7 +217,6 @@ void Grounder::ground()
 			output_->initialize(this, getPred());
 		else
 			output_->reinitialize();
-
 		for(; incStep_ + 1 <= options().iquery; incStep_++)
 		{
 			reset();

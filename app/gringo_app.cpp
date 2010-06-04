@@ -18,6 +18,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 #include "gringo_app.h"
+#include "oclingo_app.h"
 #include <gringo/grounder.h>
 #include <gringo/gringoexception.h>
 #include <gringo/smodelsoutput.h>
@@ -46,6 +47,8 @@ Application::Application() {}
 Application& Application::instance() {
 #if !defined(WITH_CLASP)
 	static GringoApp app;
+#elif defined(WITH_OCLASP)
+	static oClingoApp app;
 #else
 	static ClingoApp app;
 #endif
@@ -276,7 +279,7 @@ struct FromGringo : public Clasp::Input {
 	typedef std::auto_ptr<gringo::LparseParser> ParserPtr;
 	typedef std::auto_ptr<NS_OUTPUT::Output> OutputPtr;
 	typedef Clasp::MinimizeConstraint* MinConPtr;
-	FromGringo(const GringoOptions& opts, Streams& str, bool clingoMode, bool online) : clingo(clingoMode) {
+	FromGringo(const GringoOptions& opts, Streams& str, bool clingoMode) : clingo(clingoMode) {
 		grounder.reset(new gringo::Grounder(opts.grounderOptions));
 		parser.reset(new gringo::LparseParser(grounder.get(), str.streams));
 		if (clingo) {
@@ -286,7 +289,6 @@ struct FromGringo : public Clasp::Input {
 		else {
 			out.reset(new NS_OUTPUT::IClaspOutput(0, opts.shift));
 		}
-		this->online = online;
 #endif
 	}
 	Format    format()      const { return Clasp::Input::SMODELS; }
@@ -299,18 +301,6 @@ struct FromGringo : public Clasp::Input {
 		if (!clingo) {
 			const Clasp::AtomIndex& i = *solver->strategies().symTab.get();
 			a.push_back(i.find(static_cast<NS_OUTPUT::IClaspOutput*>(out.get())->getIncUid())->lit);
-
-			// online: make external facts false
-			if(online) {
-				IntSet assumptions = out.get()->getExternalKnowledge()->getAssumptions();
-
-				for(IntSet::iterator ass = assumptions.begin(); ass != assumptions.end(); ++ass) {
-					Clasp::Atom* atom = i.find(*ass);
-					if(atom) { // atom is not in AtomIndex if hidden with #hide
-						a.push_back(~atom->lit);
-					}
-				}
-			}
 		}
 #endif
 	}
@@ -322,37 +312,7 @@ struct FromGringo : public Clasp::Input {
 			grounder->prepare(!clingo);
 			parser.reset(0);
 		}
-
-		if(online) {
-			if(solver->hasConflict()) {
-				out.get()->getExternalKnowledge()->sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
-			}
-			else {
-				// initialize external knowledge module with solver
-				out.get()->getExternalKnowledge()->initialize(solver);
-
-				// add new facts and check for termination condition
-				if(!out.get()->getExternalKnowledge()->addInput()) {
-					// exit if received #stop.
-					release();
-					return false;
-				}
-
-				// do new step if there's no model or we have not declared facts waiting or first step or controller need new step
-				if(!out.get()->getExternalKnowledge()->hasModel() || out.get()->getExternalKnowledge()->needsNewStep()) {
-					grounder->ground();
-					out.get()->getExternalKnowledge()->endStep();
-				}
-				else {
-					out.get()->getExternalKnowledge()->endIteration();
-				}
-			}
-			out.get()->getExternalKnowledge()->get();
-		}
-		else {
-			grounder->ground();
-		}
-
+		grounder->ground();
 		release();
 		return true;
 	}
@@ -367,10 +327,8 @@ struct FromGringo : public Clasp::Input {
 	OutputPtr              out;
 	Clasp::Solver*         solver;
 	bool                   clingo;
-	bool                   online;
 };
 }
-
 void ClingoApp::printVersion() const {
 	GringoApp::printVersion();
 	cout << endl;
@@ -413,14 +371,7 @@ void ClingoApp::configureInOut(Streams& s) {
 	else {
 		GringoApp::addConstStream(s);
 		s.open(generic.input);
-		FromGringo* gringo_output = new FromGringo(opts, s, clingo_.clingoMode, clingo_.inc.online);
-		// save grounder and output for continuing online solving
-		if(clingo_.inc.online) {
-			gringo_grounder_ = gringo_output->grounder.get();
-			gringo_out_ = gringo_output->out.get();
-			gringo_out_->setExternalKnowledge(new ExternalKnowledge(gringo_grounder_, gringo_out_, clingo_.inc.keep_externals));
-		}
-		in_.reset(gringo_output);
+		in_.reset(new FromGringo(opts, s, clingo_.clingoMode));
 	}
 	if (config_.onlyPre) { 
 		if (clingo_.claspMode || clingo_.clingoMode) {
@@ -454,10 +405,7 @@ int ClingoApp::doRun() {
 		clasp.solve(*in_, config_, this);
 	}
 	else {
-		if(clingo_.inc.online)
-			clasp.solveIncremental(*in_, config_, clingo_.online, this);
-		else
-			clasp.solveIncremental(*in_, config_, clingo_.inc, this);
+		clasp.solveIncremental(*in_, config_, clingo_.inc, this);
 	}
 	timer_[0].stop();
 	printResult(reason_end);
@@ -508,14 +456,6 @@ void ClingoApp::state(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			solver_.stats.solve.reset();
 		}
 	}
-
-	// make sure we are not adding new input while doing propagation in preprocessing
-	if(f.state() == ClaspFacade::state_solve && e == ClaspFacade::event_state_enter) {
-		gringo_out_->getExternalKnowledge()->addPostPropagator();
-	}
-	else if(f.state() == ClaspFacade::state_solve && e == ClaspFacade::event_state_exit) {
-		gringo_out_->getExternalKnowledge()->removePostPropagator();
-	}
 }
 
 void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
@@ -533,18 +473,6 @@ void ClingoApp::event(Clasp::ClaspFacade::Event e, Clasp::ClaspFacade& f) {
 			if (config_.solve.enumerator()->minimize()) {
 				out_->printOptimize(*config_.solve.enumerator()->minimize());
 			}
-		}
-		// TODO procedure
-		if(clingo_.inc.online) {
-			string model = "";
-			assert(solver_.strategies().symTab.get());
-			const AtomIndex& index = *solver_.strategies().symTab;
-			for (AtomIndex::const_iterator it = index.begin(); it != index.end(); ++it) {
-				if(solver_.value(it->second.lit.var()) == trueValue(it->second.lit) && !it->second.name.empty()) {
-					model += it->second.name + " ";
-				}
-			}
-			gringo_out_->getExternalKnowledge()->sendModel(model);
 		}
 	}
 	else if (e == ClaspFacade::event_p_prepared) {
@@ -633,7 +561,7 @@ void ClingoApp::printResult(ReasonEnd end) {
 	}
 	if (cmdOpts_.basic.stats) { 
 		out_->printStats(s.stats, en); 
-	}
+	}	
 }
 #undef STATUS
 #endif
