@@ -50,6 +50,7 @@ wumpus_at(X, Y, t) :- wumpus_at(X+1, Y, t-1), field(X, Y), wumpus_moves(left, t-
 wumpus_at(X, Y, t) :- wumpus_at(X-1, Y, t-1), field(X, Y), wumpus_moves(right, t-1).
 
 #external wumpus_moves(D, t-1) : direction(D).
+#external agent_moves(D, t) : direction(D).
 
 % wumpus waits if it doesn't move
 wumpus_at(X, Y, t) :- wumpus_at(X, Y, t-1), field(X, Y), not wumpus_moves(D, t-1) : direction(D).
@@ -75,6 +76,9 @@ dead(t) :- dead(t-1).
 
 % generate moves
 1 { go(D, t) : direction(D) } 1 :- not dead(t), not won(t).
+
+% gone if controller said so
+go(D, t) :- agent_moves(D, t), direction(D).
 
 % don't run into a wall twice in a row
 :- bump(t), go(D, t), go(D, t-1), direction(D).
