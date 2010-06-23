@@ -245,7 +245,7 @@ def printAnswerSet(answer_set):
 	# prints predicates in rows
 	if 'B' in plan:
 		printRow(plan, row_len, 'B')
-	for time in plan:
+	for time in sorted(plan.iterkeys()):
 		if time != 'B':
 			printRow(plan, row_len, time)
 
