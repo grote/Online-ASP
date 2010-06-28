@@ -49,6 +49,14 @@ FACT  = re.compile("^-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\.?$")
 FACTT = re.compile("^-?[a-z_][a-zA-Z0-9_]*\((.*?),?(\d+)\)\.?$")
 INTEGRITY = re.compile("^\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.$")
 RULE = re.compile("^\s*-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*:-(\s*(not\s+)?-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\s*,?\s*)+\.$")
+IN_PARSER = {
+	'step'			: re.compile("#step (\d+)\."),
+	'endstep'		: re.compile("#endstep\."),
+	'cumulative'	: re.compile("#cumulative\."),
+	'volatile'		: re.compile("#volatile\."),
+	'forget'		: re.compile("#forget (\d+)\."),
+	'stop'			: re.compile("#stop\."),
+}
 PARSER = [
 	re.compile("^Step:\ (\d+)$"),
 	re.compile("^(-?[a-z_][a-zA-Z0-9_]*(\(.+\))?\ *)+$"),
@@ -111,24 +119,30 @@ def prepareInput():
 			i = 0
 			
 			for line in f:
-				# match end of step and end list
-				if re.match("^#endstep\.\n$", line) != None:
-					i += 1
+				# match new step
+				if IN_PARSER['step'].match(line) != None:
 					online_input.insert(i, [])
-				# match end of online knowledge
-				elif re.match("^#stop\.\n$", line) != None:
-					if len(online_input[i]) == 0:
-						online_input.pop(i)
-					break
-				# match comment
-				elif re.match("^%.*\n$", line) != None:
-					continue
 				# match ground fact, integrity constraint or rule and insert into existing list
 				elif FACT.match(line) != None or INTEGRITY.match(line) != None or RULE.match(line) != None:
 					online_input[i].append(line)
 				# match sections
-				elif re.match("^#cumulative\.", line) != None or re.match("^#volatile\.", line) != None:
+				elif IN_PARSER['cumulative'].match(line) != None or IN_PARSER['volatile'].match(line) != None:
 					online_input[i].append(line)
+				# match forget
+				elif IN_PARSER['forget'].match(line) != None:
+					online_input[i].append(line)
+				# match comment
+				elif re.match("^%.*\n$", line) != None:
+					continue
+				# match end of step and end list
+				elif IN_PARSER['endstep'].match(line) != None:
+					i += 1
+					online_input.insert(i, [])
+				# match end of online knowledge
+				elif IN_PARSER['stop'].match(line) != None:
+					if len(online_input[i]) == 0:
+						online_input.pop(i)
+					break
 				# error: neither fact nor step
 				else:
 					i += 1
@@ -258,7 +272,7 @@ def printRow(plan, row_len, time):
 		 row += 1
 	print ""
 
-# is called by InputThread, make the main thread is not accessing at the same time
+# is called by InputThread, make sure the main thread is not accessing at the same time
 def getInput():
 	if len(args) == 1:
 		time.sleep(float(opt.time))
@@ -283,18 +297,19 @@ def getInputFromSTDIN():
 	while True:
 		line = sys.stdin.readline()
 
-		if line == "#endstep.\n":
+		if IN_PARSER['step'].match(line) != None or\
+		   IN_PARSER['forget'].match(line) != None or\
+		   IN_PARSER['cumulative'].match(line) != None or\
+		   IN_PARSER['volatile'].match(line) != None or\
+		   FACT.match(line) != None or\
+		   INTEGRITY.match(line) != None or\
+		   RULE.match(line) != None:
+			input += line
+		elif IN_PARSER['endstep'].match(line) != None or IN_PARSER['stop'].match(line) != None:
 			input += line
 			break
-		elif line == "#stop.\n":
-			input += line
-			break
-		elif re.match("^#cumulative\.", line) != None or re.match("^#volatile\.", line) != None:
-			input += line
-		elif FACT.match(line) != None or INTEGRITY.match(line) != None or RULE.match(line) != None:
-			input += line
 		else:
-			print "Warning: Unknown input."
+			print "  Warning: Ignoring unknown input."
 
 	return input
 
