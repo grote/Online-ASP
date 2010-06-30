@@ -64,6 +64,9 @@ struct oClingoBridge : public Clasp::Input {
 				Clasp::Atom* atom = i.find(*ass);
 				if(atom) { // atom is not in AtomIndex if hidden with #hide
 					a.push_back(~atom->lit);
+					// create conflict to skip solving for next step
+					if(out.get()->getExternalKnowledge()->controllerNeedsNewStep())
+						a.push_back(atom->lit);
 				}
 			}
 		}
@@ -79,25 +82,25 @@ struct oClingoBridge : public Clasp::Input {
 		}
 
 		if(online) {
+			ExternalKnowledge* ext = out.get()->getExternalKnowledge();
+
 			if(solver->hasConflict()) {
-				out.get()->getExternalKnowledge()->sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
+				ext->sendToClient("Error: The solver detected a conflict, so program is not satisfiable anymore.");
 			}
 			else {
 				// add new facts and check for termination condition
-				if(!out.get()->getExternalKnowledge()->addInput()) {
-					// exit if received #stop.
-					return false;
-				}
+				if(!ext->addInput())
+					return false; // exit if received #stop.
 
-				// do new step if there's no model or we have not declared facts waiting or first step or controller need new step
-				if(!out.get()->getExternalKnowledge()->hasModel() || out.get()->getExternalKnowledge()->needsNewStep()) {
+				// do new step if there's no model or controller needs new step
+				if(!ext->hasModel() || ext->needsNewStep()) {
 					grounder->ground();
-					out.get()->getExternalKnowledge()->endStep();
+					ext->endStep();
 				} else {
-					out.get()->getExternalKnowledge()->endIteration();
+					ext->endIteration();
 				}
 			}
-			out.get()->getExternalKnowledge()->get();
+			ext->get();
 		} else {
 			grounder->ground();
 			grounder.reset(0);
@@ -129,7 +132,7 @@ void oClingoApp::configureInOut(Streams& s) {
 
 		oClingoBridge* bridge = new oClingoBridge(opts, s, !clingo_.clingoMode);
 		gringo_out_ = bridge->out.get();
-		bridge->out.get()->setExternalKnowledge(new ExternalKnowledge(bridge->grounder.get(), gringo_out_, &solver_, clingo_.inc.keep_externals));
+		bridge->out.get()->setExternalKnowledge(new ExternalKnowledge(bridge->grounder.get(), gringo_out_, &solver_));
 		in_.reset(bridge);
 	}
 	if (config_.onlyPre) {

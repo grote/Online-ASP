@@ -84,10 +84,11 @@ start ::= program.
 
 program ::= program fact DOT.
 program ::= program rule DOT.
-program ::= program ENDSTEP DOT.	{ pParser->endStep(); }
-program ::= program STOP DOT.		{ pParser->terminate(); }
-program ::= program CUMULATIVE DOT.	{ pParser->setCumulative(); }
-program ::= program VOLATILE DOT.	{ pParser->setVolatile(); }
+program ::= program STEP NUMBER(n) DOT.	{ pParser->setStep(atol(n->c_str())); }
+program ::= program ENDSTEP DOT.		{  }
+program ::= program STOP DOT.			{ pParser->terminate(); }
+program ::= program CUMULATIVE DOT.		{ pParser->setCumulative(); }
+program ::= program VOLATILE DOT.		{ pParser->setVolatile(); }
 program ::= .
 
 fact ::= predicate(head) IF.	{ pParser->addFact(head); }

@@ -21,11 +21,10 @@
 
 using namespace gringo;
 
-ExternalKnowledge::ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, Clasp::Solver* solver, bool keep_externals) {
+ExternalKnowledge::ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, Clasp::Solver* solver) {
 	output_ = static_cast<NS_OUTPUT::IClaspOutput*>(output);
 	grounder_ = grounder;
 	solver_ = solver;
-	keep_externals_ = keep_externals;
 
 	externals_per_step_.push_back(IntSet());
 	externals_per_step_.push_back(IntSet());
@@ -233,6 +232,10 @@ bool ExternalKnowledge::needsNewStep() {
 			controller_step_ >= step_;	// controller wants to progress step count
 }
 
+bool ExternalKnowledge::controllerNeedsNewStep() {
+	return controller_step_ >= step_;
+}
+
 IntSet ExternalKnowledge::getAssumptions() {
 	IntSet result;
 
@@ -262,16 +265,20 @@ void ExternalKnowledge::endIteration() {
 
 void ExternalKnowledge::endStep() {
 	// add previously added premature facts
-	for(std::vector<NS_OUTPUT::Atom*>::iterator i = premature_facts_.begin(); i!= premature_facts_.end(); ++i) {
-		if(checkFact(*i)) {
-			addNewFact(*i);
-		} else {
-			std::cerr << "Warning: Fact added last step was still not declared external and is now lost." << std::endl;
-			sendToClient("Warning: Fact added last step was still not declared external and is now lost.");
-			delete *i;
+	if(controller_step_ <= step_) {
+		for(std::vector<NS_OUTPUT::Atom*>::iterator i = premature_facts_.begin(); i!= premature_facts_.end(); ++i) {
+			if(checkFact(*i)) {
+				addNewFact(*i);
+			} else {
+				std::stringstream emsg;
+				emsg << "Warning: Fact added for step " << controller_step_ << " has not been declared external and is now lost.";
+				std::cerr << emsg.str() << std::endl;
+				sendToClient(emsg.str());
+				delete *i;
+			}
 		}
+		premature_facts_.clear();
 	}
-	premature_facts_.clear();
 
 	endIteration();
 
@@ -280,16 +287,19 @@ void ExternalKnowledge::endStep() {
 		output_->printExternalRule(i->second, i->first.first);
 	}
 
+	/*
 	// unfreeze old externals for simplification by clasp
-	if(!keep_externals_) {
-		for(IntSet::iterator i = externals_per_step_.at(controller_step_).begin(); i != externals_per_step_.at(controller_step_).end(); ++i) {
-			if(eraseUidFromExternals(&externals_old_, *i) > 0) {
-				// external was still old, so needs unfreezing
-				output_->unfreezeAtom(*i);
-			}
+	std::cerr << "STEP: " << step_ << std::endl;
+	std::cerr << "SIZE: " << externals_per_step_.size() << std::endl;
+
+	for(IntSet::iterator i = externals_per_step_.at(step_).begin(); i != externals_per_step_.at(step_).end(); ++i) {
+		if(eraseUidFromExternals(&externals_old_, *i) > 0) {
+			// external was still old, so needs unfreezing
+			output_->unfreezeAtom(*i);
 		}
-		externals_per_step_.at(controller_step_).clear();
 	}
+	externals_per_step_.at(controller_step_).clear();
+	*/
 	externals_old_.insert(externals_.begin(), externals_.end());
 	externals_.clear();
 
@@ -314,8 +324,8 @@ int ExternalKnowledge::eraseUidFromExternals(UidValueMap* ext, int uid) {
 	return del.size();
 }
 
-void ExternalKnowledge::endControllerStep() {
-	controller_step_++;
+void ExternalKnowledge::setControllerStep(int step) {
+	controller_step_ = step;
 }
 
 //////////////////////////////////////////////////////////////////////////////

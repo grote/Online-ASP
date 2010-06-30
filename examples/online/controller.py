@@ -121,7 +121,7 @@ def prepareInput():
 			for line in f:
 				# match new step
 				if IN_PARSER['step'].match(line) != None:
-					online_input.insert(i, [])
+					online_input[i].append(line)
 				# match ground fact, integrity constraint or rule and insert into existing list
 				elif FACT.match(line) != None or INTEGRITY.match(line) != None or RULE.match(line) != None:
 					online_input[i].append(line)
@@ -132,7 +132,7 @@ def prepareInput():
 				elif IN_PARSER['forget'].match(line) != None:
 					online_input[i].append(line)
 				# match comment
-				elif re.match("^%.*\n$", line) != None:
+				elif re.match("^%.*\n$", line) != None or re.match("^\n$", line) != None:
 					continue
 				# match end of step and end list
 				elif IN_PARSER['endstep'].match(line) != None:

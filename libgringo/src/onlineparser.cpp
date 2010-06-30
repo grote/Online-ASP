@@ -32,6 +32,7 @@ OnlineParser::OnlineParser(Grounder *g, std::istream* in) : GrinGoParser(), grou
 	lexer_  = new OnlineLexer();
 	pParser = onlineparserAlloc (malloc);
 	streams_.push_back(in);
+	stepped_ = false;
 	volatile_ = false;
 	terminated_ = false;
 }
@@ -71,7 +72,6 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 			onlineparser(pParser, token, lval, this);
 			token = lexer_->lex(lval);
 		}
-		endStep();
 	}
 	onlineparser(pParser, 0, lval, this);
 	if(getError())
@@ -80,18 +80,19 @@ bool OnlineParser::parse(NS_OUTPUT::Output *output)
 }
 
 void OnlineParser::addFact(NS_OUTPUT::Atom* atom) {
-	if(!output_->getExternalKnowledge()->checkFact(atom)) {
-		// hold fact back, because it might be declared external in the next step
+	if(output_->getExternalKnowledge()->checkFact(atom)) {
+		output_->getExternalKnowledge()->addNewFact(atom, getLexer()->getLine());
+	}
+	else if(output_->getExternalKnowledge()->controllerNeedsNewStep()) {
+		// hold fact back, because it will be declared external in the next step
 		output_->getExternalKnowledge()->addPrematureFact(atom);
-
+	}
+	else {
 		std::stringstream warning_msg;
-		warning_msg << "Warning: Fact in line " << getLexer()->getLine() << " was not (yet) declared external.\n";
+		warning_msg << "Warning: Fact in line " << getLexer()->getLine() << " has not been declared external and was not added.\n";
 
 		std::cerr << warning_msg.str() << std::endl;
 		output_->getExternalKnowledge()->sendToClient(warning_msg.str());
-	}
-	else {
-		output_->getExternalKnowledge()->addNewFact(atom, getLexer()->getLine());
 	}
 }
 
@@ -131,8 +132,17 @@ void OnlineParser::setVolatile() {
 	volatile_ = true;
 }
 
-void OnlineParser::endStep() {
-	output_->getExternalKnowledge()->endControllerStep();
+void OnlineParser::setStep(int step) {
+	if(stepped_) {
+		std::stringstream warning_msg;
+		warning_msg << "Warning: New '#step " << step << ".' without prior '#endstep.' encountered. Ignoring....\n";
+
+		std::cerr << warning_msg.str() << std::endl;
+		output_->getExternalKnowledge()->sendToClient(warning_msg.str());
+	} else {
+		stepped_ = true;
+		output_->getExternalKnowledge()->setControllerStep(step);
+	}
 }
 
 void OnlineParser::terminate() {

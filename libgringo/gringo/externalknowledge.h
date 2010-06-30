@@ -39,7 +39,7 @@ namespace gringo
 	class ExternalKnowledge
 	{
 	public:
-		ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, Clasp::Solver* solver, bool keep_externals);
+		ExternalKnowledge(Grounder* grounder, NS_OUTPUT::Output* output, Clasp::Solver* solver);
 		virtual ~ExternalKnowledge();
 		void addPostPropagator();
 		void removePostPropagator();
@@ -57,11 +57,12 @@ namespace gringo
 		void addNewAtom(NS_OUTPUT::Object* object, int line);
 		void addPrematureFact(NS_OUTPUT::Atom* atom);
 		bool needsNewStep();
+		bool controllerNeedsNewStep();
 		IntSet getAssumptions();
 		void endIteration();
 		void endStep();
 		int eraseUidFromExternals(UidValueMap* ext, int uid);
-		void endControllerStep();
+		void setControllerStep(int step);
 	protected:
 		struct PostPropagator : public Clasp::PostPropagator {
 		public:
@@ -84,7 +85,6 @@ namespace gringo
 		IntSet facts_;
 		IntSet facts_old_;
 		std::vector<NS_OUTPUT::Atom*> premature_facts_;
-		bool keep_externals_;
 
 		// socket stuff
 		boost::asio::io_service io_service_;

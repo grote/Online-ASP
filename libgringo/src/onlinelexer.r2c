@@ -61,6 +61,7 @@ begin:
 		ENDCOMMENT      = "*%";
 		COMMENT         = "%";
 		DELIMITER       = "\000";
+		STEP            = "#step";
 		ENDSTEP         = "#endstep";
 		STOP            = "#stop";
 		CUMULATIVE      = "#cumulative";
@@ -73,6 +74,7 @@ begin:
 		NL              { if(eof == cursor) return ONLINEPARSER_EOI; step(); goto begin; }
 		IF              { return ONLINEPARSER_IF; }
 		NOT             { return ONLINEPARSER_NOT; }
+		STEP            { return ONLINEPARSER_STEP; }
 		ENDSTEP         { return ONLINEPARSER_ENDSTEP; }
 		STOP            { return ONLINEPARSER_STOP; }
 		CUMULATIVE      { return ONLINEPARSER_CUMULATIVE; }

@@ -41,7 +41,7 @@ namespace gringo
 		void setVolatile();
 		GrinGoLexer *getLexer();
 		Grounder *getGrounder() { return grounder_; }
-		void endStep();
+		void setStep(int step);
 		void terminate();
 		bool isTerminated();
 		int addSignature();
@@ -51,6 +51,7 @@ namespace gringo
 		Grounder* grounder_;
 		NS_OUTPUT::IClaspOutput* output_;
 		std::vector<std::istream*> streams_;
+		bool stepped_;
 		bool volatile_;
 		bool terminated_;
 		void *pParser;

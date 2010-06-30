@@ -40,9 +40,6 @@ struct iClingoConfig : public Clasp::IncrementalControl {
 	iClingoConfig() : minSteps(1), maxSteps(uint32(-1)), stopUnsat(false), keepLearnt(true), keepHeuristic(false) {}
 	uint32 minSteps;      /**< Perform at least minSteps incremental steps */
 	uint32 maxSteps;      /**< Perform at most maxSteps incremental steps */
-#if defined(WITH_OCLASP)
-	bool   keep_externals;/**< Keep externals which have been defined in earlier steps */
-#endif
 	bool   stopUnsat;     /**< Stop on first unsat problem? */
 	bool   keepLearnt;    /**< Keep learnt nogoods between incremental steps? */
 	bool   keepHeuristic; /**< Keep heuristic values between incremental steps? */

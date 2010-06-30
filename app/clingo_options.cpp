@@ -31,9 +31,6 @@ ClingoOptions::ClingoOptions()
 	inc.minSteps      = 1;
 	inc.maxSteps      = ~uint32(0);
 	inc.stopUnsat     = false;
-#if defined(WITH_OCLASP)
-	inc.keep_externals= false;
-#endif
 }
 
 void ClingoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOptions::OptionGroup& hidden) {
@@ -57,9 +54,6 @@ void ClingoOptions::initOptions(ProgramOptions::OptionGroup& root, ProgramOption
 		("iquery"      , value<int>()->defaultValue(1),
 			"Start solving at step <num>\n"
 			"      Default: 1\n", "<num>")
-#if defined(WITH_OCLASP)
-		("keep-externals",bool_switch(&inc.keep_externals), "Keep externals which have been defined in earlier steps\n")
-#endif
 		("ilearnt" , storeTo(inc.keepLearnt)->parser(mapKeepForget),
 			"Configure persistence of learnt nogoods\n"
 			"      Default: keep\n"
