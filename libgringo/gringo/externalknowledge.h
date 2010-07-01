@@ -61,6 +61,7 @@ namespace gringo
 		IntSet getAssumptions();
 		void endIteration();
 		void endStep();
+		void forgetExternals(int step);
 		int eraseUidFromExternals(UidValueMap* ext, int uid);
 		void setControllerStep(int step);
 	protected:

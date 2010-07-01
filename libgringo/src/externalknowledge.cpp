@@ -287,24 +287,29 @@ void ExternalKnowledge::endStep() {
 		output_->printExternalRule(i->second, i->first.first);
 	}
 
-	/*
-	// unfreeze old externals for simplification by clasp
-	std::cerr << "STEP: " << step_ << std::endl;
-	std::cerr << "SIZE: " << externals_per_step_.size() << std::endl;
-
-	for(IntSet::iterator i = externals_per_step_.at(step_).begin(); i != externals_per_step_.at(step_).end(); ++i) {
-		if(eraseUidFromExternals(&externals_old_, *i) > 0) {
-			// external was still old, so needs unfreezing
-			output_->unfreezeAtom(*i);
-		}
-	}
-	externals_per_step_.at(controller_step_).clear();
-	*/
 	externals_old_.insert(externals_.begin(), externals_.end());
 	externals_.clear();
 
 	step_++;
 	externals_per_step_.push_back(IntSet());
+}
+
+void ExternalKnowledge::forgetExternals(int step) {
+	// unfreeze old externals for simplification by clasp
+
+	if(step > externals_per_step_.size()-1) {
+		step = externals_per_step_.size()-1;
+	}
+
+	for(int i = 0; i <= step; ++i) {
+		for(IntSet::iterator ext = externals_per_step_.at(i).begin(); ext != externals_per_step_.at(i).end(); ++ext) {
+			if(eraseUidFromExternals(&externals_old_, *ext) > 0) {
+				// external was still old, so needs unfreezing
+				output_->unfreezeAtom(*ext);
+			}
+		}
+		externals_per_step_.at(i).clear();
+	}
 }
 
 // TODO is there any better way to do it?

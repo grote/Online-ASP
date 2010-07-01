@@ -42,6 +42,7 @@ namespace gringo
 		GrinGoLexer *getLexer();
 		Grounder *getGrounder() { return grounder_; }
 		void setStep(int step);
+		void forget(int step);
 		void terminate();
 		bool isTerminated();
 		int addSignature();

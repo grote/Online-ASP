@@ -63,6 +63,7 @@ begin:
 		DELIMITER       = "\000";
 		STEP            = "#step";
 		ENDSTEP         = "#endstep";
+		FORGET          = "#forget";
 		STOP            = "#stop";
 		CUMULATIVE      = "#cumulative";
 		VOLATILE        = "#volatile";
@@ -76,6 +77,7 @@ begin:
 		NOT             { return ONLINEPARSER_NOT; }
 		STEP            { return ONLINEPARSER_STEP; }
 		ENDSTEP         { return ONLINEPARSER_ENDSTEP; }
+		FORGET          { return ONLINEPARSER_FORGET; }
 		STOP            { return ONLINEPARSER_STOP; }
 		CUMULATIVE      { return ONLINEPARSER_CUMULATIVE; }
 		VOLATILE        { return ONLINEPARSER_VOLATILE; }
