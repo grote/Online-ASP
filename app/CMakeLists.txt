@@ -11,7 +11,11 @@ endif()
 add_executable (gringo-app ${GRINGO_SRC} ${GRINGO_INC})
 
 if(${GRINGO_TYPE} STREQUAL "oclingo")
-	target_link_libraries (gringo-app gringo-lib clasp-lib program_opts-lib)
+	find_library(LIB_PTHREAD "pthread")
+	if(NOT LIB_PTHREAD)
+		MESSAGE(FATAL_ERROR "Could not find library pthread")
+	endif()
+	target_link_libraries (gringo-app gringo-lib clasp-lib program_opts-lib ${Boost_LIBRARIES} ${LIB_PTHREAD})
 	set_target_properties(gringo-app PROPERTIES OUTPUT_NAME oclingo)
 endif()
 

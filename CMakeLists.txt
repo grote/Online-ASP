@@ -58,6 +58,10 @@ if(${GRINGO_TYPE} STREQUAL "oclingo")
 	ADD_DEFINITIONS(-DWITH_ICLASP)
 	ADD_DEFINITIONS(-DWITH_OCLASP)
 	ADD_DEFINITIONS(-DEXECUTABLE="\\"oclingo\\"")
+	
+	find_package(Boost 1.40.0 REQUIRED system regex)
+	include_directories(${Boost_INCLUDE_DIRS})
+
 	add_subdirectory (libclasp)
 endif()
 
