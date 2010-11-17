@@ -16,7 +16,7 @@
 % Fluents
 % ^^^^^^^
 % currentFloor(F, t).
-% on(F, D, t).
+% on(F, t).
 % open(t).
 
 #domain floor(F).

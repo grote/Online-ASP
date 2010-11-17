@@ -17,12 +17,6 @@
 
 #base.
 
-% sensor types
-sensor(motion).
-sensor(distance).
-sensor(nodata).
-#hide sensor/1.
-
 % grid |
 grid(0..6, 0..6).
 #hide grid/2.
